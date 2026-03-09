@@ -32,6 +32,10 @@ const JOB_TYPE_LABELS = {
   product_import: 'Product Import',
   csv_import: 'CSV Import',
   scheduled_daily: 'Scheduled Daily',
+  tiktok_import: 'TikTok Import',
+  amazon_import: 'Amazon Import',
+  supplier_import: 'Supplier Import',
+  full_data_sync: 'Full Data Sync',
 };
 
 const STATUS_CONFIG = {

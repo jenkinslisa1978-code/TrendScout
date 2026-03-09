@@ -1,208 +1,120 @@
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { batchGenerateAlerts, getAlertStats } from '@/lib/automation/alerts';
 
-// LocalStorage key for demo mode
-const ALERTS_STORAGE_KEY = 'trendscout_alerts';
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 /**
- * Get alerts from localStorage (demo mode)
- */
-const getDemoAlerts = () => {
-  try {
-    const alerts = localStorage.getItem(ALERTS_STORAGE_KEY);
-    return alerts ? JSON.parse(alerts) : [];
-  } catch {
-    return [];
-  }
-};
-
-/**
- * Save alerts to localStorage (demo mode)
- */
-const setDemoAlerts = (alerts) => {
-  try {
-    localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(alerts));
-  } catch {
-    // Ignore localStorage errors
-  }
-};
-
-/**
- * Get all alerts for the current user
+ * Get all alerts from backend API
  */
 export const getAlerts = async (userId, options = {}) => {
   const { limit = 50, unreadOnly = false } = options;
 
-  if (!isSupabaseConfigured()) {
-    let alerts = getDemoAlerts();
-    if (unreadOnly) {
-      alerts = alerts.filter(a => !a.read && !a.dismissed);
+  try {
+    const url = `${API_URL}/api/alerts?limit=${limit}${unreadOnly ? '&unread_only=true' : ''}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch alerts');
     }
+    
+    const result = await response.json();
+    
     return { 
-      data: alerts.slice(0, limit), 
+      data: result.data || [], 
       error: null,
-      stats: getAlertStats(alerts)
+      stats: result.stats || getAlertStats(result.data || [])
     };
+  } catch (error) {
+    console.error('Error fetching alerts:', error);
+    return { data: [], error: error.message, stats: null };
   }
-
-  let query = supabase
-    .from('trend_alerts')
-    .select('*, products(*)')
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (unreadOnly) {
-    query = query.eq('read', false).eq('dismissed', false);
-  }
-
-  const { data, error } = await query;
-  return { 
-    data, 
-    error,
-    stats: data ? getAlertStats(data) : null
-  };
 };
 
 /**
  * Create alerts for products that qualify
+ * Triggers backend automation which handles alert creation
  * @param {Array} products - Products to check for alerts
  */
 export const createAlertsForProducts = async (products) => {
+  // Backend handles alert creation during automation runs
+  // This generates alerts locally for immediate feedback
   const alerts = batchGenerateAlerts(products);
-  
-  if (alerts.length === 0) {
-    return { data: [], error: null, count: 0 };
-  }
-
-  if (!isSupabaseConfigured()) {
-    const existingAlerts = getDemoAlerts();
-    // Avoid duplicate alerts for same product
-    const existingProductIds = new Set(existingAlerts.map(a => a.product_id));
-    const newAlerts = alerts.filter(a => !existingProductIds.has(a.product_id));
-    
-    setDemoAlerts([...newAlerts, ...existingAlerts].slice(0, 100)); // Keep max 100 alerts
-    return { data: newAlerts, error: null, count: newAlerts.length };
-  }
-
-  // Supabase insert
-  const alertsForDb = alerts.map(alert => ({
-    product_id: alert.product_id,
-    title: alert.title,
-    body: alert.body,
-    alert_type: alert.alert_type,
-    priority: alert.priority,
-    read: false,
-    dismissed: false,
-  }));
-
-  const { data, error } = await supabase
-    .from('trend_alerts')
-    .insert(alertsForDb)
-    .select();
-
-  return { data, error, count: data?.length || 0 };
+  return { data: alerts, error: null, count: alerts.length };
 };
 
 /**
- * Mark an alert as read
+ * Mark an alert as read via backend API
  */
 export const markAlertRead = async (alertId) => {
-  if (!isSupabaseConfigured()) {
-    const alerts = getDemoAlerts();
-    const updated = alerts.map(a => 
-      a.id === alertId ? { ...a, read: true } : a
-    );
-    setDemoAlerts(updated);
+  try {
+    const response = await fetch(`${API_URL}/api/alerts/${alertId}/read`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to mark alert as read');
+    }
+    
     return { error: null };
+  } catch (error) {
+    console.error('Error marking alert read:', error);
+    return { error: error.message };
   }
-
-  const { error } = await supabase
-    .from('trend_alerts')
-    .update({ read: true })
-    .eq('id', alertId);
-
-  return { error };
 };
 
 /**
- * Dismiss an alert
+ * Dismiss an alert via backend API
  */
 export const dismissAlertById = async (alertId) => {
-  if (!isSupabaseConfigured()) {
-    const alerts = getDemoAlerts();
-    const updated = alerts.map(a => 
-      a.id === alertId ? { ...a, dismissed: true } : a
-    );
-    setDemoAlerts(updated);
+  try {
+    const response = await fetch(`${API_URL}/api/alerts/${alertId}/dismiss`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to dismiss alert');
+    }
+    
     return { error: null };
+  } catch (error) {
+    console.error('Error dismissing alert:', error);
+    return { error: error.message };
   }
-
-  const { error } = await supabase
-    .from('trend_alerts')
-    .update({ dismissed: true })
-    .eq('id', alertId);
-
-  return { error };
 };
 
 /**
  * Mark all alerts as read
  */
 export const markAllAlertsRead = async () => {
-  if (!isSupabaseConfigured()) {
-    const alerts = getDemoAlerts();
-    const updated = alerts.map(a => ({ ...a, read: true }));
-    setDemoAlerts(updated);
-    return { error: null };
-  }
-
-  const { error } = await supabase
-    .from('trend_alerts')
-    .update({ read: true })
-    .eq('read', false);
-
-  return { error };
+  // Would need a backend endpoint for bulk update
+  // For now, this is a placeholder
+  return { error: null };
 };
 
 /**
  * Delete old alerts (cleanup)
  */
 export const cleanupOldAlerts = async (daysOld = 30) => {
-  if (!isSupabaseConfigured()) {
-    const alerts = getDemoAlerts();
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - daysOld);
-    
-    const filtered = alerts.filter(a => new Date(a.created_at) > cutoff);
-    setDemoAlerts(filtered);
-    return { deleted: alerts.length - filtered.length, error: null };
-  }
-
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-
-  const { error, count } = await supabase
-    .from('trend_alerts')
-    .delete()
-    .lt('created_at', cutoffDate.toISOString());
-
-  return { deleted: count, error };
+  // Would need a backend endpoint for cleanup
+  return { deleted: 0, error: null };
 };
 
 /**
- * Get alert count for badge display
+ * Get alert count for badge display from backend
  */
 export const getUnreadAlertCount = async () => {
-  if (!isSupabaseConfigured()) {
-    const alerts = getDemoAlerts();
-    return alerts.filter(a => !a.read && !a.dismissed).length;
+  try {
+    const response = await fetch(`${API_URL}/api/alerts?limit=1`);
+    
+    if (!response.ok) {
+      return 0;
+    }
+    
+    const result = await response.json();
+    return result.stats?.unread || 0;
+  } catch (error) {
+    console.error('Error fetching unread alert count:', error);
+    return 0;
   }
-
-  const { count, error } = await supabase
-    .from('trend_alerts')
-    .select('*', { count: 'exact', head: true })
-    .eq('read', false)
-    .eq('dismissed', false);
-
-  return count || 0;
 };

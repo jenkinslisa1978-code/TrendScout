@@ -1,7 +1,4 @@
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-
-// LocalStorage key for demo mode
-const LOGS_STORAGE_KEY = 'trendscout_automation_logs';
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 /**
  * Automation Log Types
@@ -16,6 +13,10 @@ export const AutomationJobTypes = {
   PRODUCT_IMPORT: 'product_import',
   CSV_IMPORT: 'csv_import',
   SCHEDULED_DAILY: 'scheduled_daily',
+  TIKTOK_IMPORT: 'tiktok_import',
+  AMAZON_IMPORT: 'amazon_import',
+  SUPPLIER_IMPORT: 'supplier_import',
+  FULL_DATA_SYNC: 'full_data_sync',
 };
 
 /**
@@ -30,34 +31,13 @@ export const AutomationStatus = {
 };
 
 /**
- * Get logs from localStorage (demo mode)
- */
-const getDemoLogs = () => {
-  try {
-    const logs = localStorage.getItem(LOGS_STORAGE_KEY);
-    return logs ? JSON.parse(logs) : [];
-  } catch {
-    return [];
-  }
-};
-
-/**
- * Save logs to localStorage (demo mode)
- */
-const setDemoLogs = (logs) => {
-  try {
-    localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs));
-  } catch {
-    // Ignore localStorage errors
-  }
-};
-
-/**
- * Create a new automation log entry
+ * Create a new automation log entry via backend API
  * @param {Object} logData - Log data
  * @returns {Object} Created log entry
  */
 export const createAutomationLog = async (logData) => {
+  // For now, logs are created by backend during automation runs
+  // This creates a local placeholder for UI tracking
   const log = {
     id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     job_type: logData.job_type,
@@ -71,20 +51,7 @@ export const createAutomationLog = async (logData) => {
     metadata: logData.metadata || {},
   };
 
-  if (!isSupabaseConfigured()) {
-    const logs = getDemoLogs();
-    logs.unshift(log);
-    setDemoLogs(logs.slice(0, 100)); // Keep max 100 logs
-    return { data: log, error: null };
-  }
-
-  const { data, error } = await supabase
-    .from('automation_logs')
-    .insert([log])
-    .select()
-    .single();
-
-  return { data: data || log, error };
+  return { data: log, error: null };
 };
 
 /**
@@ -93,124 +60,74 @@ export const createAutomationLog = async (logData) => {
  * @param {Object} updates - Fields to update
  */
 export const updateAutomationLog = async (logId, updates) => {
-  const updateData = {
-    ...updates,
-    completed_at: updates.status === AutomationStatus.COMPLETED || 
-                  updates.status === AutomationStatus.FAILED ? 
-                  new Date().toISOString() : undefined,
-  };
-
-  if (!isSupabaseConfigured()) {
-    const logs = getDemoLogs();
-    const index = logs.findIndex(l => l.id === logId);
-    if (index !== -1) {
-      logs[index] = { ...logs[index], ...updateData };
-      setDemoLogs(logs);
-    }
-    return { error: null };
-  }
-
-  const { error } = await supabase
-    .from('automation_logs')
-    .update(updateData)
-    .eq('id', logId);
-
-  return { error };
+  // Backend handles log updates automatically
+  // This is a no-op for frontend-initiated updates
+  return { error: null };
 };
 
 /**
- * Get automation logs
+ * Get automation logs from backend API
  * @param {Object} options - Query options
  */
 export const getAutomationLogs = async (options = {}) => {
-  const { limit = 50, jobType = null, status = null } = options;
+  const { limit = 50 } = options;
 
-  if (!isSupabaseConfigured()) {
-    let logs = getDemoLogs();
+  try {
+    const response = await fetch(`${API_URL}/api/automation/logs?limit=${limit}`);
     
-    if (jobType) {
-      logs = logs.filter(l => l.job_type === jobType);
-    }
-    if (status) {
-      logs = logs.filter(l => l.status === status);
+    if (!response.ok) {
+      throw new Error('Failed to fetch automation logs');
     }
     
-    return { data: logs.slice(0, limit), error: null };
+    const result = await response.json();
+    return { data: result.data || [], error: null };
+  } catch (error) {
+    console.error('Error fetching automation logs:', error);
+    return { data: [], error: error.message };
   }
-
-  let query = supabase
-    .from('automation_logs')
-    .select('*')
-    .order('started_at', { ascending: false })
-    .limit(limit);
-
-  if (jobType) {
-    query = query.eq('job_type', jobType);
-  }
-  if (status) {
-    query = query.eq('status', status);
-  }
-
-  const { data, error } = await query;
-  return { data, error };
 };
 
 /**
- * Get automation stats
+ * Get automation stats from backend API
  */
 export const getAutomationStats = async () => {
-  if (!isSupabaseConfigured()) {
-    const logs = getDemoLogs();
-    const last24h = new Date();
-    last24h.setHours(last24h.getHours() - 24);
-
-    const recentLogs = logs.filter(l => new Date(l.started_at) > last24h);
+  try {
+    const response = await fetch(`${API_URL}/api/automation/stats`);
     
+    if (!response.ok) {
+      throw new Error('Failed to fetch automation stats');
+    }
+    
+    const stats = await response.json();
+    
+    // Transform backend stats to frontend format
     return {
       data: {
-        totalRuns: logs.length,
-        runsLast24h: recentLogs.length,
-        productsProcessed: logs.reduce((sum, l) => sum + (l.products_processed || 0), 0),
-        alertsGenerated: logs.reduce((sum, l) => sum + (l.alerts_generated || 0), 0),
-        successRate: logs.length > 0 ? 
-          Math.round((logs.filter(l => l.status === AutomationStatus.COMPLETED).length / logs.length) * 100) : 0,
-        lastRun: logs[0]?.started_at || null,
-        byType: Object.values(AutomationJobTypes).reduce((acc, type) => {
-          acc[type] = logs.filter(l => l.job_type === type).length;
-          return acc;
-        }, {}),
+        totalRuns: stats.total_runs || 0,
+        runsLast24h: 0, // Not tracked by backend currently
+        productsProcessed: stats.products_processed || 0,
+        alertsGenerated: stats.alerts_generated || 0,
+        successRate: stats.success_rate || 0,
+        lastRun: stats.last_run || null,
+        byType: {},
       },
       error: null,
     };
+  } catch (error) {
+    console.error('Error fetching automation stats:', error);
+    return { 
+      data: {
+        totalRuns: 0,
+        runsLast24h: 0,
+        productsProcessed: 0,
+        alertsGenerated: 0,
+        successRate: 0,
+        lastRun: null,
+        byType: {},
+      }, 
+      error: error.message 
+    };
   }
-
-  const { data: logs, error } = await supabase
-    .from('automation_logs')
-    .select('*')
-    .order('started_at', { ascending: false });
-
-  if (error) return { data: null, error };
-
-  const last24h = new Date();
-  last24h.setHours(last24h.getHours() - 24);
-  const recentLogs = logs.filter(l => new Date(l.started_at) > last24h);
-
-  return {
-    data: {
-      totalRuns: logs.length,
-      runsLast24h: recentLogs.length,
-      productsProcessed: logs.reduce((sum, l) => sum + (l.products_processed || 0), 0),
-      alertsGenerated: logs.reduce((sum, l) => sum + (l.alerts_generated || 0), 0),
-      successRate: logs.length > 0 ? 
-        Math.round((logs.filter(l => l.status === AutomationStatus.COMPLETED).length / logs.length) * 100) : 0,
-      lastRun: logs[0]?.started_at || null,
-      byType: Object.values(AutomationJobTypes).reduce((acc, type) => {
-        acc[type] = logs.filter(l => l.job_type === type).length;
-        return acc;
-      }, {}),
-    },
-    error: null,
-  };
 };
 
 /**
