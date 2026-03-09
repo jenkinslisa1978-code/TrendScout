@@ -31,6 +31,16 @@ Build a full-stack web app for a trending product research platform using the pr
 
 ## What's Been Implemented (Jan 2026)
 
+### Dashboard Enhancements (Latest)
+- **Stats Cards with Trends**: Show % change vs last period with up/down indicators
+- **Trend Activity Chart**: Interactive area chart showing products & opportunities over time
+- **Category Distribution**: Donut chart showing product distribution by category
+- **Secondary Stats Bar**: Avg Margin, Early Stage count, Total Ads Tracked, TikTok Views
+- **Enhanced Product Table**: Numbered rankings, margin display, hover effects
+- **Activity Feed**: Real-time activity showing new products, trend changes, warnings
+- **Quick Actions CTA**: Prominent call-to-action at bottom
+- **Time Range Selector**: Filter dashboard data by 24h, 7d, 30d, 90d
+
 ### Pages Created
 1. **LandingPage.jsx** - Hero, features grid, pricing cards, CTA sections
 2. **LoginPage.jsx** - Split layout, demo mode banner, form with validation
