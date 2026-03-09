@@ -31,7 +31,30 @@ Build a full-stack web app for a trending product research platform using the pr
 
 ## What's Been Implemented (Jan 2026)
 
-### Dashboard Enhancements (Latest)
+### Automation Architecture (Latest)
+Complete automation-ready infrastructure:
+
+**Automation Modules** (`/frontend/src/lib/automation/`):
+- `trend-score.js` - Rules-based trend score calculation (0-100) using TikTok views, ad count, competition, margin
+- `opportunity-score.js` - Opportunity rating calculation (low/medium/high/very high) with weighted factors
+- `trend-stage.js` - Automatic stage classification (early/rising/peak/saturated) based on signals
+- `ai-summary.js` - Template-based AI summary generation (OpenAI API placeholder ready)
+- `alerts.js` - Alert generation for high-opportunity products (trend score ≥75, high/very high opportunity)
+- `product-import.js` - CSV parser with column mapping and batch processing
+- `index.js` - Central exports with `runFullAutomation()` and `batchRunAutomation()`
+
+**New Pages**:
+- `AdminAutomationPage.jsx` - Import products (CSV/manual), run automation pipelines
+- `TrendAlertsPage.jsx` - Real-time alerts for Elite users with stats and filtering
+
+**New Services**:
+- `alertService.js` - Alert CRUD with localStorage persistence for demo mode
+
+**Updated Components**:
+- Sidebar with Elite section (Trend Alerts with badge) and Admin section (Admin Panel, Automation)
+- Product creation/update auto-triggers full automation pipeline
+
+### Dashboard Enhancements (Previous)
 - **Stats Cards with Trends**: Show % change vs last period with up/down indicators
 - **Trend Activity Chart**: Interactive area chart showing products & opportunities over time
 - **Category Distribution**: Donut chart showing product distribution by category
@@ -66,14 +89,15 @@ Build a full-stack web app for a trending product research platform using the pr
 
 ### P0 - Critical (Next)
 - [ ] Connect real Supabase credentials
-- [ ] Implement actual product image uploads
-- [ ] Add Stripe checkout for subscriptions
+- [ ] Implement Stripe checkout for subscriptions
+- [ ] Add OpenAI API key for real AI summaries
 
 ### P1 - High Priority
-- [ ] Email verification flow
-- [ ] Password reset functionality
-- [ ] Product CSV export for Pro/Elite
-- [ ] Real-time trend alerts for Elite
+- [ ] TikTok Creative Center API integration for auto-import
+- [ ] Amazon/AliExpress API for supplier data
+- [ ] Scheduled cron jobs for automated scoring (Supabase Edge Functions)
+- [ ] Email/push notifications for critical alerts
+- [ ] Product image uploads
 
 ### P2 - Medium Priority
 - [ ] User settings page
