@@ -38,13 +38,15 @@ import {
   RefreshCw,
   ArrowRight,
   Zap,
-  History
+  History,
+  Database
 } from 'lucide-react';
 import { parseCSV, processImportedProducts, generateImportReport, ImportSources } from '@/lib/automation/product-import';
 import { createProduct, runAutomationOnAllProducts, bulkImportProducts, getAllProductsRaw } from '@/services/productService';
 import { createAlertsForProducts } from '@/services/alertService';
 import { createAutomationLog, updateAutomationLog, AutomationJobTypes, AutomationStatus } from '@/services/automationLogService';
 import AutomationLogs from '@/components/automation/AutomationLogs';
+import DataIngestionPanel from '@/components/automation/DataIngestionPanel';
 import { toast } from 'sonner';
 
 const INITIAL_PRODUCT = {
@@ -61,7 +63,7 @@ const INITIAL_PRODUCT = {
 };
 
 export default function AdminAutomationPage() {
-  const [activeTab, setActiveTab] = useState('import');
+  const [activeTab, setActiveTab] = useState('sources');
   const [loading, setLoading] = useState({});
   const [formData, setFormData] = useState(INITIAL_PRODUCT);
   const [csvContent, setCsvContent] = useState('');
@@ -375,9 +377,13 @@ export default function AdminAutomationPage() {
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-slate-100">
+            <TabsTrigger value="sources" className="data-[state=active]:bg-white" data-testid="tab-sources">
+              <Database className="mr-2 h-4 w-4" />
+              Data Sources
+            </TabsTrigger>
             <TabsTrigger value="import" className="data-[state=active]:bg-white" data-testid="tab-import">
               <Upload className="mr-2 h-4 w-4" />
-              Import Products
+              CSV Import
             </TabsTrigger>
             <TabsTrigger value="manual" className="data-[state=active]:bg-white" data-testid="tab-manual">
               <Plus className="mr-2 h-4 w-4" />
@@ -392,6 +398,11 @@ export default function AdminAutomationPage() {
               Logs
             </TabsTrigger>
           </TabsList>
+
+          {/* Data Sources Tab */}
+          <TabsContent value="sources">
+            <DataIngestionPanel />
+          </TabsContent>
 
           {/* CSV Import Tab */}
           <TabsContent value="import">

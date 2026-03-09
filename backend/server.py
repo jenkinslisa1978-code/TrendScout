@@ -29,6 +29,7 @@ app = FastAPI(title="ViralScout API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 stripe_router = APIRouter(prefix="/api/stripe")
 automation_router = APIRouter(prefix="/api/automation")
+ingestion_router = APIRouter(prefix="/api/ingestion")
 
 # =====================
 # MODELS
@@ -50,6 +51,10 @@ class AutomationJobType(str, Enum):
     ALERT_GENERATION = "alert_generation"
     PRODUCT_IMPORT = "product_import"
     SCHEDULED_DAILY = "scheduled_daily"
+    TIKTOK_IMPORT = "tiktok_import"
+    AMAZON_IMPORT = "amazon_import"
+    SUPPLIER_IMPORT = "supplier_import"
+    FULL_DATA_SYNC = "full_data_sync"
 
 class AutomationLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -930,10 +935,368 @@ async def dismiss_alert(alert_id: str):
     await db.trend_alerts.update_one({"id": alert_id}, {"$set": {"dismissed": True}})
     return {"success": True}
 
+# =====================
+# DATA INGESTION ROUTES
+# =====================
+
+# Import data ingestion services
+import sys
+sys.path.insert(0, str(ROOT_DIR / 'services'))
+from data_ingestion.tiktok_import import TikTokImporter
+from data_ingestion.amazon_import import AmazonImporter
+from data_ingestion.supplier_import import SupplierImporter
+
+class ImportRequest(BaseModel):
+    category: Optional[str] = None
+    limit: int = 20
+
+class CSVImportRequest(BaseModel):
+    csv_content: str
+
+class JSONImportRequest(BaseModel):
+    json_content: str
+
+@ingestion_router.get("/sources")
+async def get_data_sources():
+    """Get available data sources and their status"""
+    tiktok = TikTokImporter(db)
+    amazon = AmazonImporter(db)
+    supplier = SupplierImporter(db)
+    
+    return {
+        "sources": [
+            {
+                "id": "tiktok",
+                "name": "TikTok Creative Center",
+                "description": "Trending products from TikTok viral content",
+                "config": tiktok.get_source_config(),
+                "status": "active",
+            },
+            {
+                "id": "amazon",
+                "name": "Amazon Movers & Shakers",
+                "description": "Fast-rising products from Amazon rankings",
+                "config": amazon.get_source_config(),
+                "status": "active",
+            },
+            {
+                "id": "supplier",
+                "name": "Supplier Feeds",
+                "description": "Products from AliExpress, CJ Dropshipping, etc.",
+                "config": supplier.get_source_config(),
+                "status": "active",
+            },
+        ]
+    }
+
+@ingestion_router.post("/tiktok")
+async def run_tiktok_import(request: ImportRequest):
+    """Import trending products from TikTok"""
+    # Create automation log
+    log_id = str(uuid.uuid4())
+    log = {
+        "id": log_id,
+        "job_type": "tiktok_import",
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "import_source": "tiktok",
+    }
+    await db.automation_logs.insert_one(log)
+    
+    try:
+        importer = TikTokImporter(db)
+        result = await importer.import_products(
+            category=request.category,
+            limit=request.limit
+        )
+        
+        # Clean _id from products
+        if result.get('products'):
+            for p in result['products']:
+                p.pop('_id', None)
+            automation_result = await run_automation_on_products(result['products'])
+            result['automation'] = automation_result
+        
+        # Update log
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "products_processed": result.get('inserted', 0) + result.get('updated', 0),
+                "alerts_generated": result.get('automation', {}).get('alerts_generated', 0),
+            }}
+        )
+        
+        # Remove products from response to reduce payload size
+        result.pop('products', None)
+        
+        return result
+        
+    except Exception as e:
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {"status": "failed", "error_message": str(e)}}
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+@ingestion_router.post("/amazon")
+async def run_amazon_import(request: ImportRequest):
+    """Import trending products from Amazon Movers & Shakers"""
+    log_id = str(uuid.uuid4())
+    log = {
+        "id": log_id,
+        "job_type": "amazon_import",
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "import_source": "amazon",
+    }
+    await db.automation_logs.insert_one(log)
+    
+    try:
+        importer = AmazonImporter(db)
+        result = await importer.import_products(
+            category=request.category,
+            limit=request.limit
+        )
+        
+        # Clean _id from products
+        if result.get('products'):
+            for p in result['products']:
+                p.pop('_id', None)
+            automation_result = await run_automation_on_products(result['products'])
+            result['automation'] = automation_result
+        
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "products_processed": result.get('inserted', 0) + result.get('updated', 0),
+                "alerts_generated": result.get('automation', {}).get('alerts_generated', 0),
+            }}
+        )
+        
+        result.pop('products', None)
+        return result
+        
+    except Exception as e:
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {"status": "failed", "error_message": str(e)}}
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+@ingestion_router.post("/supplier")
+async def run_supplier_import(request: ImportRequest):
+    """Import products from supplier feeds"""
+    log_id = str(uuid.uuid4())
+    log = {
+        "id": log_id,
+        "job_type": "supplier_import",
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "import_source": "supplier",
+    }
+    await db.automation_logs.insert_one(log)
+    
+    try:
+        importer = SupplierImporter(db)
+        result = await importer.import_products(
+            category=request.category,
+            limit=request.limit
+        )
+        
+        # Clean _id from products
+        if result.get('products'):
+            for p in result['products']:
+                p.pop('_id', None)
+            automation_result = await run_automation_on_products(result['products'])
+            result['automation'] = automation_result
+        
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "products_processed": result.get('inserted', 0) + result.get('updated', 0),
+                "alerts_generated": result.get('automation', {}).get('alerts_generated', 0),
+            }}
+        )
+        
+        result.pop('products', None)
+        return result
+        
+    except Exception as e:
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {"status": "failed", "error_message": str(e)}}
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+@ingestion_router.post("/supplier/csv")
+async def import_from_csv(request: CSVImportRequest):
+    """Import products from CSV content"""
+    log_id = str(uuid.uuid4())
+    log = {
+        "id": log_id,
+        "job_type": "product_import",
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "import_source": "csv_upload",
+    }
+    await db.automation_logs.insert_one(log)
+    
+    try:
+        importer = SupplierImporter(db)
+        result = await importer.import_from_csv(request.csv_content)
+        
+        # Run automation on imported products
+        if result.get('products'):
+            automation_result = await run_automation_on_products(result['products'])
+            result['automation'] = automation_result
+        
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "products_processed": result.get('inserted', 0) + result.get('updated', 0),
+                "alerts_generated": result.get('automation', {}).get('alerts_generated', 0),
+            }}
+        )
+        
+        return result
+        
+    except Exception as e:
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {"status": "failed", "error_message": str(e)}}
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+@ingestion_router.post("/full-sync")
+async def run_full_data_sync(request: ImportRequest):
+    """Run full data sync from all sources"""
+    log_id = str(uuid.uuid4())
+    log = {
+        "id": log_id,
+        "job_type": "full_data_sync",
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "import_source": "all",
+    }
+    await db.automation_logs.insert_one(log)
+    
+    results = {
+        "tiktok": None,
+        "amazon": None,
+        "supplier": None,
+        "total_imported": 0,
+        "total_alerts": 0,
+    }
+    
+    try:
+        # Import from TikTok
+        tiktok_importer = TikTokImporter(db)
+        results["tiktok"] = await tiktok_importer.import_products(limit=request.limit)
+        
+        # Import from Amazon
+        amazon_importer = AmazonImporter(db)
+        results["amazon"] = await amazon_importer.import_products(limit=request.limit)
+        
+        # Import from Suppliers
+        supplier_importer = SupplierImporter(db)
+        results["supplier"] = await supplier_importer.import_products(limit=request.limit)
+        
+        # Collect all products for automation
+        all_products = []
+        for source in ["tiktok", "amazon", "supplier"]:
+            if results[source] and results[source].get("products"):
+                all_products.extend(results[source]["products"])
+        
+        # Run automation on all imported products
+        if all_products:
+            automation_result = await run_automation_on_products(all_products)
+            results["automation"] = automation_result
+            results["total_alerts"] = automation_result.get("alerts_generated", 0)
+        
+        # Calculate totals
+        for source in ["tiktok", "amazon", "supplier"]:
+            if results[source]:
+                results["total_imported"] += results[source].get("inserted", 0) + results[source].get("updated", 0)
+        
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "products_processed": results["total_imported"],
+                "alerts_generated": results["total_alerts"],
+                "metadata": {
+                    "tiktok": results["tiktok"].get("fetched", 0) if results["tiktok"] else 0,
+                    "amazon": results["amazon"].get("fetched", 0) if results["amazon"] else 0,
+                    "supplier": results["supplier"].get("fetched", 0) if results["supplier"] else 0,
+                },
+            }}
+        )
+        
+        return {
+            "success": True,
+            "total_imported": results["total_imported"],
+            "total_alerts": results["total_alerts"],
+            "sources": {
+                "tiktok": {"imported": results["tiktok"].get("inserted", 0) + results["tiktok"].get("updated", 0)} if results["tiktok"] else None,
+                "amazon": {"imported": results["amazon"].get("inserted", 0) + results["amazon"].get("updated", 0)} if results["amazon"] else None,
+                "supplier": {"imported": results["supplier"].get("inserted", 0) + results["supplier"].get("updated", 0)} if results["supplier"] else None,
+            },
+        }
+        
+    except Exception as e:
+        await db.automation_logs.update_one(
+            {"id": log_id},
+            {"$set": {"status": "failed", "error_message": str(e)}}
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def run_automation_on_products(products: List[Dict]) -> Dict:
+    """Helper to run full automation pipeline on products"""
+    alerts_generated = 0
+    
+    for product in products:
+        # Remove _id if present (MongoDB adds it)
+        product.pop('_id', None)
+        
+        # Run full automation
+        result = run_full_automation(product)
+        processed = result['product']
+        
+        # Remove _id from processed product too
+        processed.pop('_id', None)
+        
+        # Update product in database
+        await db.products.update_one(
+            {"id": processed['id']},
+            {"$set": processed},
+            upsert=True
+        )
+        
+        # Save alert if generated
+        if result['alert']:
+            result['alert'].pop('_id', None)
+            await db.trend_alerts.insert_one(result['alert'])
+            alerts_generated += 1
+    
+    return {
+        "products_processed": len(products),
+        "alerts_generated": alerts_generated,
+    }
+
 # Include routers
 app.include_router(api_router)
 app.include_router(stripe_router)
 app.include_router(automation_router)
+app.include_router(ingestion_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -958,6 +1321,9 @@ async def startup_db():
     await db.products.create_index("category")
     await db.products.create_index("trend_score")
     await db.products.create_index("trend_stage")
+    await db.products.create_index("source")
+    await db.products.create_index("fingerprint")
+    await db.products.create_index("source_id")
     
     await db.trend_alerts.create_index("id", unique=True)
     await db.trend_alerts.create_index("product_id")
@@ -965,6 +1331,7 @@ async def startup_db():
     
     await db.automation_logs.create_index("id", unique=True)
     await db.automation_logs.create_index("started_at")
+    await db.automation_logs.create_index("job_type")
     
     await db.subscriptions.create_index("user_id", unique=True)
     await db.profiles.create_index("id", unique=True)

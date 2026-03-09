@@ -1,7 +1,7 @@
 # ViralScout/TrendScout - Product Requirements Document
 
 ## Product Overview
-ViralScout is a SaaS application for product research and trend analysis, designed for dropshippers and e-commerce entrepreneurs. The platform automatically scores products, calculates opportunity ratings, assigns trend stages, generates AI-style summaries, and creates alerts for high-potential opportunities.
+ViralScout is a SaaS application for product research and trend analysis, designed for dropshippers and e-commerce entrepreneurs. The platform automatically imports products from multiple data sources, scores them, calculates opportunity ratings, assigns trend stages, generates AI-style summaries, and creates alerts for high-potential opportunities.
 
 ## Tech Stack
 - **Frontend:** React SPA with React Router, TailwindCSS, Shadcn/UI
@@ -9,10 +9,55 @@ ViralScout is a SaaS application for product research and trend analysis, design
 - **Data Visualization:** Recharts
 - **State Management:** React Context API
 - **Payments:** Stripe-ready architecture
+- **Data Ingestion:** Modular importer architecture
+
+---
+
+## Data Ingestion Architecture (NEW)
+
+### Supported Data Sources
+
+| Source | Description | API Status | Data Types |
+|--------|-------------|------------|------------|
+| **TikTok Creative Center** | Viral product trends from TikTok | Curated + API-ready | Views, engagement, hashtags |
+| **Amazon Movers & Shakers** | Fast-rising Amazon products | Curated + API-ready | Rank, reviews, ratings |
+| **Supplier Feeds** | AliExpress, CJ Dropshipping | Curated + API-ready | Pricing, orders, suppliers |
+
+### Data Flow
+```
+External Source → Importer → Normalizer → Deduplicator → Database → Automation Pipeline → Alerts
+```
+
+### API Endpoints
+```
+GET  /api/ingestion/sources        - List available data sources
+POST /api/ingestion/tiktok         - Import from TikTok
+POST /api/ingestion/amazon         - Import from Amazon
+POST /api/ingestion/supplier       - Import from Supplier feeds
+POST /api/ingestion/supplier/csv   - Import from CSV upload
+POST /api/ingestion/full-sync      - Run full data sync from all sources
+```
+
+### Admin Controls
+- Run TikTok Import
+- Run Amazon Import
+- Run Supplier Import
+- Run Full Data Sync
+- Configure product limit (10/20/50/100)
+- View import results and alerts generated
+
+### Scheduled Automation
+Configure a cron job to call `/api/ingestion/full-sync` daily:
+```bash
+curl -X POST https://your-domain.com/api/ingestion/full-sync \
+  -H "Content-Type: application/json" \
+  -d '{"limit": 100}'
+```
 
 ---
 
 ## Stage 3 Completion Status (December 2025)
+
 
 ### A. What Was Fully Implemented
 
