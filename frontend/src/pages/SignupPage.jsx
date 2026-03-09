@@ -36,9 +36,11 @@ export default function SignupPage() {
 
     if (isDemoMode) {
       toast.success('Welcome to TrendScout!');
+      setLoading(false);
       navigate('/dashboard');
     } else {
       toast.success('Account created! Please check your email to verify.');
+      setLoading(false);
       navigate('/login');
     }
   };

@@ -1,12 +1,28 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-// Mock saved products for demo mode
-let MOCK_SAVED_PRODUCTS = [];
+// Helper to get saved products from localStorage in demo mode
+const getDemoSavedProducts = () => {
+  try {
+    const saved = localStorage.getItem('trendscout_saved_products');
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Helper to set saved products in localStorage for demo mode
+const setDemoSavedProducts = (products) => {
+  try {
+    localStorage.setItem('trendscout_saved_products', JSON.stringify(products));
+  } catch {
+    // Ignore localStorage errors
+  }
+};
 
 // Get user's saved products
 export const getSavedProducts = async (userId) => {
   if (!isSupabaseConfigured()) {
-    return { data: MOCK_SAVED_PRODUCTS, error: null };
+    return { data: getDemoSavedProducts(), error: null };
   }
 
   const { data, error } = await supabase
@@ -25,8 +41,9 @@ export const getSavedProducts = async (userId) => {
 // Check if product is saved
 export const isProductSaved = async (userId, productId) => {
   if (!isSupabaseConfigured()) {
+    const savedProducts = getDemoSavedProducts();
     return { 
-      data: MOCK_SAVED_PRODUCTS.some(sp => sp.product_id === productId), 
+      data: savedProducts.some(sp => sp.product_id === productId), 
       error: null 
     };
   }
@@ -44,15 +61,17 @@ export const isProductSaved = async (userId, productId) => {
 // Save a product
 export const saveProduct = async (userId, productId, productData = null) => {
   if (!isSupabaseConfigured()) {
-    const existing = MOCK_SAVED_PRODUCTS.find(sp => sp.product_id === productId);
+    const savedProducts = getDemoSavedProducts();
+    const existing = savedProducts.find(sp => sp.product_id === productId);
     if (!existing) {
-      MOCK_SAVED_PRODUCTS.push({
-        id: String(MOCK_SAVED_PRODUCTS.length + 1),
+      savedProducts.push({
+        id: String(Date.now()),
         user_id: userId,
         product_id: productId,
         products: productData,
         created_at: new Date().toISOString()
       });
+      setDemoSavedProducts(savedProducts);
     }
     return { error: null };
   }
@@ -67,7 +86,9 @@ export const saveProduct = async (userId, productId, productData = null) => {
 // Unsave a product
 export const unsaveProduct = async (userId, productId) => {
   if (!isSupabaseConfigured()) {
-    MOCK_SAVED_PRODUCTS = MOCK_SAVED_PRODUCTS.filter(sp => sp.product_id !== productId);
+    const savedProducts = getDemoSavedProducts();
+    const filtered = savedProducts.filter(sp => sp.product_id !== productId);
+    setDemoSavedProducts(filtered);
     return { error: null };
   }
 
