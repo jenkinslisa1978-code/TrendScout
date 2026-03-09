@@ -1,0 +1,176 @@
+{
+  "project_name": "TrendScout - Dropshipping Research Platform",
+  "design_philosophy": {
+    "archetype": "The Performance Pro (Light Mode)",
+    "core_vibe": "Analytic, Crisp, Opportunity-Focused",
+    "description": "A high-performance workspace for entrepreneurs. It blends the density of a financial terminal with the clean aesthetics of modern SaaS. White space is used for grouping, not just emptiness. Data is the hero.",
+    "emotional_tone": "Trust, Clarity, Speed"
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Manrope, sans-serif",
+      "body": "Inter, sans-serif",
+      "data": "JetBrains Mono, monospace"
+    },
+    "installation": {
+      "google_fonts_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+    },
+    "usage_rules": {
+      "headings": "Use 'Manrope' for all H1-H6. Weights: 600 (Semibold) or 800 (ExtraBold). Tracking: tight (-0.02em).",
+      "body": "Use 'Inter' for paragraphs, labels, and UI text. Weights: 400 (Regular) or 500 (Medium).",
+      "data": "Use 'JetBrains Mono' for prices, trend scores, dates, and IDs. This implies precision."
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": {
+        "app": "#F8FAFC",
+        "card": "#FFFFFF",
+        "sidebar": "#FFFFFF"
+      },
+      "primary": {
+        "main": "#4F46E5",
+        "hover": "#4338CA",
+        "foreground": "#FFFFFF"
+      },
+      "secondary": {
+        "main": "#F1F5F9",
+        "foreground": "#0F172A"
+      },
+      "text": {
+        "primary": "#0F172A",
+        "secondary": "#64748B",
+        "muted": "#94A3B8"
+      },
+      "border": {
+        "subtle": "#E2E8F0",
+        "default": "#CBD5E1",
+        "focus": "#4F46E5"
+      },
+      "accents": {
+        "success": "#10B981",
+        "success_bg": "#ECFDF5",
+        "warning": "#F59E0B",
+        "warning_bg": "#FFFBEB",
+        "danger": "#EF4444",
+        "danger_bg": "#FEF2F2",
+        "info": "#3B82F6",
+        "info_bg": "#EFF6FF"
+      }
+    },
+    "gradients": {
+      "hero_overlay": "linear-gradient(180deg, rgba(255,255,255,0) 0%, #F8FAFC 100%)",
+      "subtle_glow": "radial-gradient(circle at center, rgba(79, 70, 229, 0.08) 0%, transparent 70%)"
+    },
+    "forbidden_colors": ["#1B93A4", "#7351B7", "#000000"]
+  },
+  "visual_enhancers": {
+    "glassmorphism": {
+      "heavy": "bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-sm",
+      "light": "bg-white/60 backdrop-blur-md border border-white/40"
+    },
+    "shadows": {
+      "card": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+      "card_hover": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+      "float": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+    },
+    "borders": {
+      "default": "1px solid #E2E8F0",
+      "interactive": "1px solid #CBD5E1"
+    },
+    "radius": {
+      "card": "rounded-xl",
+      "button": "rounded-lg",
+      "badge": "rounded-full"
+    }
+  },
+  "layout_strategies": {
+    "dashboard_grid": {
+      "description": "Bento-style grid with mixed span sizes.",
+      "classes": "grid grid-cols-1 md:grid-cols-4 gap-6",
+      "areas": {
+        "summary": "col-span-1",
+        "chart": "col-span-2 md:col-span-3",
+        "feed": "col-span-1 md:col-span-1 row-span-2"
+      }
+    },
+    "landing_hero": {
+      "structure": "Centralized text with a large dashboard preview image tilting forward (3D transform).",
+      "spacing": "pt-32 pb-20"
+    },
+    "product_grid": {
+      "classes": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm h-10 px-4 py-2 font-medium transition-transform active:scale-95",
+      "secondary": "bg-white text-secondary-foreground border border-input hover:bg-secondary/80 shadow-sm h-10 px-4 py-2 font-medium"
+    },
+    "cards": {
+      "dashboard": "bg-white border border-border shadow-card rounded-xl p-6 hover:shadow-card_hover transition-shadow duration-200",
+      "product": "group bg-white border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-colors duration-200"
+    },
+    "badges": {
+      "trend_high": "bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider",
+      "trend_med": "bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider",
+      "trend_low": "bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider"
+    },
+    "tables": {
+      "container": "w-full text-sm text-left",
+      "header": "text-xs text-muted-foreground uppercase bg-secondary/50 font-semibold tracking-wider",
+      "row": "bg-white border-b hover:bg-slate-50 transition-colors"
+    }
+  },
+  "motion": {
+    "page_transition": {
+      "initial": { "opacity": 0, "y": 20 },
+      "animate": { "opacity": 1, "y": 0 },
+      "exit": { "opacity": 0, "y": -20 },
+      "transition": { "duration": 0.3, "ease": "easeOut" }
+    },
+    "list_item": {
+      "initial": { "opacity": 0, "x": -20 },
+      "animate": { "opacity": 1, "x": 0 }
+    },
+    "hover_lift": "hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
+  },
+  "image_assets": {
+    "hero_background": {
+      "url": "https://images.unsplash.com/photo-1759661142441-d77ffb3ca943?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjB0ZWNoJTIwd29ya3NwYWNlJTIwbGlnaHQlMjBtaW5pbWFsaXN0fGVufDB8fHx8MTc3MzA5MjUwMHww&ixlib=rb-4.1.0&q=85",
+      "alt": "Modern minimal workspace with laptop",
+      "usage": "Landing page hero background or side image"
+    },
+    "product_placeholders": [
+      {
+        "url": "https://images.unsplash.com/photo-1741720928049-2d167982b981?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHw0fHxnYWRnZXRzJTIwcHJvZHVjdHMlMjBtaW5pbWFsaXN0JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MzA5MjUwMXww&ixlib=rb-4.1.0&q=85",
+        "category": "Electronics"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1636820877358-5106624537db?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxnYWRnZXRzJTIwcHJvZHVjdHMlMjBtaW5pbWFsaXN0JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MzA5MjUwMXww&ixlib=rb-4.1.0&q=85",
+        "category": "Mobile Accessories"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwyfHxnYWRnZXRzJTIwcHJvZHVjdHMlMjBtaW5pbWFsaXN0JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MzA5MjUwMXww&ixlib=rb-4.1.0&q=85",
+        "category": "Audio"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "1. FONTS: Add the Google Fonts link to the head of 'index.html' immediately.",
+    "2. THEME: Implement the colors in 'tailwind.config.js' extending the theme. Do not just rely on Shadcn defaults.",
+    "3. LAYOUT: Create a 'DashboardLayout' component with a fixed sidebar and scrollable main content area. Use a 'LandingLayout' for public pages with a sticky glassmorphism header.",
+    "4. COMPONENTS: heavily customize Shadcn components. Remove the default heavy radiuses if they exist (keep to 0.5rem/8px). Ensure buttons have the 'Manrope' font weight 600.",
+    "5. CHARTS: Use Recharts for the trend analysis. Style them with the 'primary' color (#4F46E5) for lines/bars and remove grid lines for a cleaner look.",
+    "6. TABLES: Ensure data tables have sticky headers and hoverable rows. Use 'JetBrains Mono' for any column displaying currency or numerical scores.",
+    "7. TESTING: Add 'data-testid' to all buttons, inputs, and product cards."
+  ],
+  "universal_guidelines": [
+    "Do NOT use gradients for backgrounds. Keep it flat and clean.",
+    "Do NOT center-align text in dashboard cards. Left align is better for scanning.",
+    "Use 24px-32px padding inside cards. Don't cram content.",
+    "Always add a 'transition-all duration-200' to interactive elements.",
+    "Use 'sonner' for notifications (success/error states).",
+    "Never use generic 'Lorem Ipsum'. Use realistic product names (e.g., 'Portable Neck Fan', 'Magnetic Phone Mount')."
+  ]
+}
