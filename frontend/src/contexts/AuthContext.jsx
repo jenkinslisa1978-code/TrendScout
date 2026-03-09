@@ -8,14 +8,14 @@ export const useAuth = () => useContext(AuthContext);
 // Mock user for demo mode when Supabase is not configured
 const DEMO_USER = {
   id: 'demo-user-id',
-  email: 'demo@trendscout.com',
+  email: 'demo@viralscout.com',
   user_metadata: { full_name: 'Demo User' }
 };
 
 const DEMO_PROFILE = {
   id: 'demo-user-id',
   full_name: 'Demo User',
-  email: 'demo@trendscout.com',
+  email: 'demo@viralscout.com',
   role: 'admin',
   plan: 'elite'
 };
@@ -27,14 +27,18 @@ export const AuthProvider = ({ children }) => {
   const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
+    // Check if Supabase is configured
+    const supabaseConfigured = isSupabaseConfigured();
+    setIsDemoMode(!supabaseConfigured);
+
+    if (!supabaseConfigured) {
       // Demo mode - no Supabase configured
-      setIsDemoMode(true);
+      console.log('ViralScout running in Demo Mode - configure Supabase for live auth');
       setLoading(false);
       return;
     }
 
-    // Check for existing session
+    // Live mode - check for existing session
     const getSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -52,9 +56,14 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        // On sign up, create profile if it doesn't exist
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          await fetchProfile(session.user.id);
+        }
       } else {
         setProfile(null);
       }
@@ -73,7 +82,28 @@ export const AuthProvider = ({ children }) => {
         .eq('id', userId)
         .single();
 
-      if (!error && data) {
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create one
+        console.log('Creating new profile for user:', userId);
+        const { data: userData } = await supabase.auth.getUser();
+        const newProfile = {
+          id: userId,
+          full_name: userData?.user?.user_metadata?.full_name || 'User',
+          email: userData?.user?.email || '',
+          role: 'user',
+          plan: 'starter'
+        };
+        
+        const { data: created, error: createError } = await supabase
+          .from('profiles')
+          .insert([newProfile])
+          .select()
+          .single();
+          
+        if (!createError && created) {
+          setProfile(created);
+        }
+      } else if (!error && data) {
         setProfile(data);
       }
     } catch (error) {
@@ -82,7 +112,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signUp = async (email, password, fullName) => {
-    if (isDemoMode || !supabase) {
+    // In demo mode, simulate signup
+    if (isDemoMode) {
       setUser(DEMO_USER);
       setProfile(DEMO_PROFILE);
       return { data: { user: DEMO_USER }, error: null };
@@ -95,11 +126,13 @@ export const AuthProvider = ({ children }) => {
         data: { full_name: fullName }
       }
     });
+    
     return { data, error };
   };
 
   const signIn = async (email, password) => {
-    if (isDemoMode || !supabase) {
+    // In demo mode, simulate login
+    if (isDemoMode) {
       setUser(DEMO_USER);
       setProfile(DEMO_PROFILE);
       return { data: { user: DEMO_USER }, error: null };
@@ -109,17 +142,19 @@ export const AuthProvider = ({ children }) => {
       email,
       password
     });
+    
     return { data, error };
   };
 
   const signOut = async () => {
-    if (isDemoMode || !supabase) {
+    if (isDemoMode) {
       setUser(null);
       setProfile(null);
       return { error: null };
     }
 
     const { error } = await supabase.auth.signOut();
+    setUser(null);
     setProfile(null);
     return { error };
   };
@@ -132,8 +167,8 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signIn,
     signOut,
-    isAuthenticated: !!user,
-    isAdmin: profile?.role === 'admin'
+    isAuthenticated: !!user || isDemoMode,
+    isAdmin: profile?.role === 'admin' || isDemoMode
   };
 
   return (

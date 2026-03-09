@@ -40,6 +40,34 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Admin Route Component - Requires admin role
+const AdminRoute = ({ children }) => {
+  const { isAuthenticated, isAdmin, loading, isDemoMode } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  // In demo mode, allow admin access for testing
+  if (isDemoMode) {
+    return children;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
 function AppRoutes() {
   return (
     <Routes>
@@ -84,17 +112,17 @@ function AppRoutes() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <AdminPage />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
         path="/admin/automation"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <AdminAutomationPage />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
