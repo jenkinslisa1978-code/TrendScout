@@ -139,6 +139,146 @@ code {
     animation: fadeIn 0.3s ease-out;
 }
 
+/* Premium glassmorphism effects */
+.glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-sidebar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Premium gradient overlays */
+.gradient-subtle {
+    background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.05) 0%, transparent 50%);
+}
+
+/* Premium card hover effects */
+.card-premium {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Stat card shine effect */
+.stat-card-shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card-shine::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 60%
+    );
+    transform: rotate(45deg) translateX(-100%);
+    transition: transform 0.6s;
+}
+
+.stat-card-shine:hover::before {
+    transform: rotate(45deg) translateX(100%);
+}
+
+/* Premium number display */
+.number-display {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+/* Chart container premium styles */
+.chart-container {
+    position: relative;
+}
+
+.chart-container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to top, white, transparent);
+    pointer-events: none;
+}
+
+/* Table premium styles */
+.table-premium thead th {
+    background: linear-gradient(to bottom, #F8FAFC, #F1F5F9);
+    border-bottom: 2px solid #E2E8F0;
+}
+
+.table-premium tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.table-premium tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+/* Badge glow effects */
+.badge-glow-success {
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.badge-glow-warning {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.badge-glow-danger {
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Premium input focus */
+input:focus, textarea:focus, select:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Smooth page transitions */
+.page-enter {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.page-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Premium scrollbar for sidebars */
+.premium-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 3px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #CBD5E1;
+}
+
 /* Debug wrapper styles */
 @layer base {
     [data-debug-wrapper="true"] {

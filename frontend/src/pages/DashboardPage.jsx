@@ -19,8 +19,6 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell
@@ -32,7 +30,6 @@ import {
   Flame,
   Eye,
   ArrowUpRight,
-  ArrowDownRight,
   ArrowRight,
   Zap,
   Clock,
@@ -45,7 +42,6 @@ import {
 import { getProducts, getDashboardStats } from '@/services/productService';
 import { formatNumber, formatCurrency, getTrendStageColor, getOpportunityColor, getTrendScoreColor } from '@/lib/utils';
 
-// Mock trend data for charts
 const generateTrendData = () => {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   return days.map((day, i) => ({
@@ -94,7 +90,6 @@ export default function DashboardPage() {
 
   const categoryData = generateCategoryData(products);
 
-  // Calculate additional stats
   const avgMargin = products.length > 0 
     ? products.reduce((sum, p) => sum + (p.estimated_margin || 0), 0) / products.length 
     : 0;
@@ -109,9 +104,10 @@ export default function DashboardPage() {
       change: '+12%',
       changeType: 'positive',
       icon: Package,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      borderColor: 'border-indigo-100'
+      gradient: 'from-indigo-500 to-indigo-600',
+      bgGradient: 'from-indigo-50 to-indigo-100/50',
+      iconBg: 'bg-indigo-100',
+      iconColor: 'text-indigo-600'
     },
     {
       title: 'Avg Trend Score',
@@ -119,9 +115,10 @@ export default function DashboardPage() {
       change: '+5.2%',
       changeType: 'positive',
       icon: TrendingUp,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-100'
+      gradient: 'from-emerald-500 to-emerald-600',
+      bgGradient: 'from-emerald-50 to-emerald-100/50',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600'
     },
     {
       title: 'High Opportunity',
@@ -129,9 +126,10 @@ export default function DashboardPage() {
       change: '+8',
       changeType: 'positive',
       icon: Target,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-100'
+      gradient: 'from-amber-500 to-amber-600',
+      bgGradient: 'from-amber-50 to-amber-100/50',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600'
     },
     {
       title: 'Rising Trends',
@@ -139,37 +137,18 @@ export default function DashboardPage() {
       change: '+3',
       changeType: 'positive',
       icon: Flame,
-      color: 'text-rose-600',
-      bgColor: 'bg-rose-50',
-      borderColor: 'border-rose-100'
+      gradient: 'from-rose-500 to-rose-600',
+      bgGradient: 'from-rose-50 to-rose-100/50',
+      iconBg: 'bg-rose-100',
+      iconColor: 'text-rose-600'
     }
   ];
 
   const secondaryStats = [
-    {
-      title: 'Avg Margin',
-      value: formatCurrency(avgMargin),
-      icon: DollarSign,
-      color: 'text-emerald-600'
-    },
-    {
-      title: 'Early Stage',
-      value: earlyStageCount,
-      icon: Zap,
-      color: 'text-purple-600'
-    },
-    {
-      title: 'Total Ads Tracked',
-      value: formatNumber(totalAdCount),
-      icon: BarChart3,
-      color: 'text-blue-600'
-    },
-    {
-      title: 'TikTok Views',
-      value: formatNumber(stats?.totalTikTokViews || 0),
-      icon: Eye,
-      color: 'text-pink-600'
-    }
+    { title: 'Avg Margin', value: formatCurrency(avgMargin), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { title: 'Early Stage', value: earlyStageCount, icon: Zap, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { title: 'Ads Tracked', value: formatNumber(totalAdCount), icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'TikTok Views', value: formatNumber(stats?.totalTikTokViews || 0), icon: Eye, color: 'text-pink-600', bg: 'bg-pink-50' }
   ];
 
   const recentActivity = [
@@ -177,21 +156,20 @@ export default function DashboardPage() {
     { action: 'Trend score increased', product: 'Sunset Lamp', time: '15 mins ago', type: 'up' },
     { action: 'Competition level changed', product: 'Smart Bottle', time: '1 hour ago', type: 'alert' },
     { action: 'New supplier found', product: 'Mini Projector', time: '2 hours ago', type: 'new' },
-    { action: 'Market saturation warning', product: 'LED Strips', time: '3 hours ago', type: 'warning' },
   ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="space-y-8">
+        {/* Premium Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-manrope text-2xl font-bold text-slate-900">Dashboard</h1>
+            <h1 className="font-manrope text-3xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
             <p className="mt-1 text-slate-500">Your product research command center</p>
           </div>
           <div className="flex items-center gap-3">
             <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[140px] h-9 bg-white" data-testid="time-range-select">
+              <SelectTrigger className="w-[150px] h-10 bg-white border-slate-200 shadow-sm" data-testid="time-range-select">
                 <Clock className="mr-2 h-4 w-4 text-slate-400" />
                 <SelectValue />
               </SelectTrigger>
@@ -202,44 +180,44 @@ export default function DashboardPage() {
                 <SelectItem value="90d">Last 90 days</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="h-9" data-testid="refresh-btn">
+            <Button variant="outline" size="icon" className="h-10 w-10 shadow-sm" data-testid="refresh-btn">
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Primary Stats Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="stats-grid">
-          {statCards.map((stat) => (
+        {/* Premium Stats Grid */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" data-testid="stats-grid">
+          {statCards.map((stat, index) => (
             <Card 
               key={stat.title} 
-              className={`border ${stat.borderColor} shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group`}
+              className="relative overflow-hidden border-0 shadow-card hover:shadow-card-hover transition-all duration-300 card-premium stat-card-shine"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <CardContent className="p-5">
+              {/* Gradient accent line */}
+              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.gradient}`} />
+              
+              <CardContent className="p-6">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-slate-500">{stat.title}</p>
-                    <p className="font-mono text-3xl font-bold text-slate-900">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
+                    <p className="font-mono text-4xl font-bold text-slate-900 number-display">
                       {loading ? (
-                        <span className="inline-block w-16 h-8 bg-slate-100 animate-pulse rounded" />
+                        <span className="inline-block w-16 h-10 bg-slate-100 animate-pulse rounded-lg" />
                       ) : (
                         formatNumber(stat.value)
                       )}
                     </p>
-                    <div className={`flex items-center gap-1 text-sm ${
-                      stat.changeType === 'positive' ? 'text-emerald-600' : 'text-rose-600'
-                    }`}>
-                      {stat.changeType === 'positive' ? (
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <span className="flex items-center gap-0.5 text-emerald-600 font-semibold">
                         <ArrowUpRight className="h-4 w-4" />
-                      ) : (
-                        <ArrowDownRight className="h-4 w-4" />
-                      )}
-                      <span className="font-medium">{stat.change}</span>
+                        {stat.change}
+                      </span>
                       <span className="text-slate-400">vs last period</span>
                     </div>
                   </div>
-                  <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.bgColor} group-hover:scale-110 transition-transform duration-300`}>
-                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${stat.iconBg} transition-transform duration-300 group-hover:scale-110`}>
+                    <stat.icon className={`h-7 w-7 ${stat.iconColor}`} />
                   </div>
                 </div>
               </CardContent>
@@ -247,41 +225,41 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Charts Row */}
+        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Trend Chart - Takes 2 columns */}
-          <Card className="border-slate-200 shadow-sm lg:col-span-2">
-            <CardHeader className="pb-2">
+          {/* Trend Chart */}
+          <Card className="border-0 shadow-card lg:col-span-2">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="font-manrope text-base font-semibold text-slate-900">
+                  <CardTitle className="font-manrope text-lg font-bold text-slate-900">
                     Trend Activity
                   </CardTitle>
-                  <p className="text-sm text-slate-500 mt-0.5">Products & opportunities over time</p>
+                  <p className="text-sm text-slate-500 mt-1">Products & opportunities over time</p>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-6 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                    <span className="text-slate-500">Products</span>
+                    <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-sm" />
+                    <span className="text-slate-600 font-medium">Products</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                    <span className="text-slate-500">Opportunities</span>
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm" />
+                    <span className="text-slate-600 font-medium">Opportunities</span>
                   </div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
-              <div className="h-[280px]">
+            <CardContent className="pt-2">
+              <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorProducts" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.2}/>
+                        <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.15}/>
                         <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="colorOpportunities" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.15}/>
                         <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
@@ -290,7 +268,7 @@ export default function DashboardPage() {
                       dataKey="day" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#94A3B8', fontSize: 12 }}
+                      tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }}
                     />
                     <YAxis 
                       axisLine={false} 
@@ -300,16 +278,18 @@ export default function DashboardPage() {
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: 'white', 
-                        border: '1px solid #E2E8F0',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        border: 'none',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)',
+                        padding: '12px 16px'
                       }}
+                      labelStyle={{ fontWeight: 600, color: '#0F172A' }}
                     />
                     <Area 
                       type="monotone" 
                       dataKey="products" 
                       stroke="#4F46E5" 
-                      strokeWidth={2}
+                      strokeWidth={2.5}
                       fillOpacity={1} 
                       fill="url(#colorProducts)" 
                     />
@@ -317,7 +297,7 @@ export default function DashboardPage() {
                       type="monotone" 
                       dataKey="opportunities" 
                       stroke="#10B981" 
-                      strokeWidth={2}
+                      strokeWidth={2.5}
                       fillOpacity={1} 
                       fill="url(#colorOpportunities)" 
                     />
@@ -328,48 +308,53 @@ export default function DashboardPage() {
           </Card>
 
           {/* Category Distribution */}
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-0 shadow-card">
             <CardHeader className="pb-2">
-              <CardTitle className="font-manrope text-base font-semibold text-slate-900">
-                Category Distribution
+              <CardTitle className="font-manrope text-lg font-bold text-slate-900">
+                Category Mix
               </CardTitle>
-              <p className="text-sm text-slate-500 mt-0.5">Products by category</p>
+              <p className="text-sm text-slate-500 mt-1">Products by category</p>
             </CardHeader>
             <CardContent className="pt-2">
-              <div className="h-[200px]">
+              <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={categoryData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={2}
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={3}
                       dataKey="value"
+                      strokeWidth={0}
                     >
                       {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={CHART_COLORS[index % CHART_COLORS.length]} 
+                        />
                       ))}
                     </Pie>
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: 'white', 
-                        border: '1px solid #E2E8F0',
-                        borderRadius: '8px'
+                        border: 'none',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)'
                       }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap gap-2 mt-2 justify-center">
+              <div className="flex flex-wrap gap-3 mt-4 justify-center">
                 {categoryData.slice(0, 4).map((cat, i) => (
-                  <div key={cat.name} className="flex items-center gap-1.5 text-xs">
+                  <div key={cat.name} className="flex items-center gap-2 text-xs bg-slate-50 px-3 py-1.5 rounded-full">
                     <div 
                       className="w-2.5 h-2.5 rounded-full" 
                       style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
                     />
-                    <span className="text-slate-600">{cat.name}</span>
+                    <span className="text-slate-700 font-medium">{cat.name}</span>
                   </div>
                 ))}
               </div>
@@ -377,39 +362,39 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Secondary Stats Bar */}
+        {/* Secondary Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {secondaryStats.map((stat) => (
             <div
               key={stat.title}
-              className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors"
+              className="flex items-center gap-4 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200"
             >
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-slate-50`}>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bg}`}>
+                <stat.icon className={`h-6 w-6 ${stat.color}`} />
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.title}</p>
-                <p className="font-mono text-lg font-bold text-slate-900">{stat.value}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{stat.title}</p>
+                <p className="font-mono text-xl font-bold text-slate-900 mt-0.5">{stat.value}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Bottom Row - Products & Activity */}
+        {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Top Products - Takes 2 columns */}
-          <Card className="border-slate-200 shadow-sm lg:col-span-2">
-            <CardHeader className="border-b border-slate-100 pb-4">
+          {/* Top Products */}
+          <Card className="border-0 shadow-card lg:col-span-2">
+            <CardHeader className="border-b border-slate-100 pb-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="font-manrope text-base font-semibold text-slate-900">
+                  <CardTitle className="font-manrope text-lg font-bold text-slate-900">
                     Top Trending Products
                   </CardTitle>
-                  <p className="text-sm text-slate-500 mt-0.5">Highest performing products this week</p>
+                  <p className="text-sm text-slate-500 mt-1">Highest performing products this week</p>
                 </div>
                 <Link 
                   to="/discover" 
-                  className="flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                  className="flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
                   data-testid="view-all-products-link"
                 >
                   View all
@@ -421,7 +406,7 @@ export default function DashboardPage() {
               <div className="divide-y divide-slate-100">
                 {loading ? (
                   <div className="p-8 text-center text-slate-500">
-                    <div className="inline-block w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="inline-block w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : topProducts.length === 0 ? (
                   <div className="p-8 text-center text-slate-500">No products found</div>
@@ -430,41 +415,37 @@ export default function DashboardPage() {
                     <Link
                       key={product.id}
                       to={`/product/${product.id}`}
-                      className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group"
+                      className="flex items-center justify-between p-5 hover:bg-slate-50/80 transition-colors group"
                       data-testid={`product-row-${product.id}`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 font-mono text-sm font-bold text-slate-400">
-                          {index + 1}
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 font-mono text-sm font-bold text-slate-500 border border-slate-200/50">
+                          {String(index + 1).padStart(2, '0')}
                         </div>
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 group-hover:from-indigo-50 group-hover:to-slate-50 transition-colors">
-                          <Package className="h-5 w-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-slate-50 group-hover:from-indigo-100 transition-colors">
+                          <Package className="h-6 w-6 text-indigo-500" />
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900 group-hover:text-indigo-600 transition-colors">
+                          <p className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
                             {product.product_name}
                           </p>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex items-center gap-2 mt-1">
                             <span className="text-sm text-slate-500">{product.category}</span>
                             <span className="text-slate-300">•</span>
-                            <span className="text-sm text-slate-500">{formatCurrency(product.estimated_margin)} margin</span>
+                            <span className="text-sm font-medium text-emerald-600">{formatCurrency(product.estimated_margin)} margin</span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right mr-2">
-                          <p className={`font-mono text-xl font-bold ${getTrendScoreColor(product.trend_score)}`}>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className={`font-mono text-2xl font-bold ${getTrendScoreColor(product.trend_score)}`}>
                             {product.trend_score}
                           </p>
                         </div>
-                        <Badge 
-                          className={`${getTrendStageColor(product.trend_stage)} border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider`}
-                        >
+                        <Badge className={`${getTrendStageColor(product.trend_stage)} border px-3 py-1 text-xs font-bold uppercase tracking-wider`}>
                           {product.trend_stage}
                         </Badge>
-                        <Badge 
-                          className={`${getOpportunityColor(product.opportunity_rating)} border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider hidden sm:inline-flex`}
-                        >
+                        <Badge className={`${getOpportunityColor(product.opportunity_rating)} border px-3 py-1 text-xs font-bold uppercase tracking-wider hidden sm:inline-flex`}>
                           {product.opportunity_rating}
                         </Badge>
                       </div>
@@ -476,16 +457,16 @@ export default function DashboardPage() {
           </Card>
 
           {/* Activity Feed */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="border-b border-slate-100 pb-4">
+          <Card className="border-0 shadow-card">
+            <CardHeader className="border-b border-slate-100 pb-5">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="font-manrope text-base font-semibold text-slate-900 flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-indigo-600" />
-                    Recent Activity
-                  </CardTitle>
-                </div>
-                <Badge variant="outline" className="text-xs">Live</Badge>
+                <CardTitle className="font-manrope text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-indigo-600" />
+                  Recent Activity
+                </CardTitle>
+                <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs font-semibold px-2.5">
+                  Live
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -493,28 +474,28 @@ export default function DashboardPage() {
                 {recentActivity.map((activity, index) => (
                   <div 
                     key={index}
-                    className="flex items-start gap-3 p-4 hover:bg-slate-50 transition-colors"
+                    className="flex items-start gap-4 p-5 hover:bg-slate-50/80 transition-colors"
                   >
-                    <div className={`flex-shrink-0 mt-0.5 h-8 w-8 rounded-full flex items-center justify-center ${
-                      activity.type === 'new' ? 'bg-emerald-50' :
-                      activity.type === 'up' ? 'bg-blue-50' :
-                      activity.type === 'warning' ? 'bg-amber-50' :
-                      'bg-slate-50'
+                    <div className={`flex-shrink-0 mt-0.5 h-10 w-10 rounded-xl flex items-center justify-center ${
+                      activity.type === 'new' ? 'bg-emerald-100' :
+                      activity.type === 'up' ? 'bg-blue-100' :
+                      activity.type === 'warning' ? 'bg-amber-100' :
+                      'bg-slate-100'
                     }`}>
                       {activity.type === 'new' ? (
-                        <Sparkles className="h-4 w-4 text-emerald-600" />
+                        <Sparkles className="h-5 w-5 text-emerald-600" />
                       ) : activity.type === 'up' ? (
-                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                        <TrendingUp className="h-5 w-5 text-blue-600" />
                       ) : activity.type === 'warning' ? (
-                        <Activity className="h-4 w-4 text-amber-600" />
+                        <Activity className="h-5 w-5 text-amber-600" />
                       ) : (
-                        <Zap className="h-4 w-4 text-slate-600" />
+                        <Zap className="h-5 w-5 text-slate-600" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-slate-600">{activity.action}</p>
-                      <p className="text-sm font-medium text-slate-900 truncate">{activity.product}</p>
-                      <p className="text-xs text-slate-400 mt-1">{activity.time}</p>
+                      <p className="text-sm font-semibold text-slate-900 truncate mt-0.5">{activity.product}</p>
+                      <p className="text-xs text-slate-400 mt-1.5">{activity.time}</p>
                     </div>
                   </div>
                 ))}
@@ -523,29 +504,33 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-200">
-                  <Zap className="h-6 w-6 text-white" />
+        {/* Quick Actions CTA */}
+        <Card className="border-0 shadow-card bg-gradient-to-r from-indigo-600 via-indigo-600 to-purple-600 overflow-hidden">
+          <CardContent className="p-8 relative">
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+            <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full translate-y-1/2" />
+            
+            <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
+                  <Zap className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-manrope text-lg font-semibold text-slate-900">
+                  <h3 className="font-manrope text-xl font-bold text-white">
                     Ready to find your next winner?
                   </h3>
-                  <p className="text-slate-500">Explore trending products across all categories</p>
+                  <p className="text-indigo-100 mt-1">Explore trending products across all categories</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <Link to="/saved">
-                  <Button variant="outline" data-testid="view-saved-btn">
+                  <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm" data-testid="view-saved-btn">
                     View Saved
                   </Button>
                 </Link>
                 <Link to="/discover">
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-200" data-testid="discover-btn">
+                  <Button className="bg-white text-indigo-600 hover:bg-white/90 shadow-lg font-semibold" data-testid="discover-btn">
                     Discover Products
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

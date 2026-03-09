@@ -37,11 +37,14 @@ import {
   Plus,
   RefreshCw,
   ArrowRight,
-  Zap
+  Zap,
+  History
 } from 'lucide-react';
 import { parseCSV, processImportedProducts, generateImportReport, ImportSources } from '@/lib/automation/product-import';
 import { createProduct, runAutomationOnAllProducts, bulkImportProducts, getAllProductsRaw } from '@/services/productService';
 import { createAlertsForProducts } from '@/services/alertService';
+import { createAutomationLog, updateAutomationLog, AutomationJobTypes, AutomationStatus } from '@/services/automationLogService';
+import AutomationLogs from '@/components/automation/AutomationLogs';
 import { toast } from 'sonner';
 
 const INITIAL_PRODUCT = {
@@ -168,12 +171,24 @@ export default function AdminAutomationPage() {
   const handleRunTrendScoring = async () => {
     setLoading(prev => ({ ...prev, scoring: true }));
 
+    // Create log entry
+    const { data: log } = await createAutomationLog({
+      job_type: AutomationJobTypes.TREND_SCORING,
+      status: AutomationStatus.RUNNING,
+    });
+
     try {
       const { data, alerts, summary, error } = await runAutomationOnAllProducts();
 
       if (error) {
+        await updateAutomationLog(log.id, { status: AutomationStatus.FAILED, error_message: error });
         toast.error('Failed to run trend scoring');
       } else {
+        await updateAutomationLog(log.id, { 
+          status: AutomationStatus.COMPLETED, 
+          products_processed: summary.processed,
+          alerts_generated: summary.alertsGenerated || 0,
+        });
         setAutomationResults({
           type: 'scoring',
           ...summary,
@@ -182,6 +197,7 @@ export default function AdminAutomationPage() {
         toast.success(`Updated ${summary.processed} products`);
       }
     } catch (err) {
+      await updateAutomationLog(log.id, { status: AutomationStatus.FAILED, error_message: err.message });
       toast.error('Error running trend scoring');
     }
 
@@ -192,12 +208,22 @@ export default function AdminAutomationPage() {
   const handleGenerateSummaries = async () => {
     setLoading(prev => ({ ...prev, summaries: true }));
 
+    const { data: log } = await createAutomationLog({
+      job_type: AutomationJobTypes.AI_SUMMARY,
+      status: AutomationStatus.RUNNING,
+    });
+
     try {
       const { data, summary, error } = await runAutomationOnAllProducts();
 
       if (error) {
+        await updateAutomationLog(log.id, { status: AutomationStatus.FAILED, error_message: error });
         toast.error('Failed to generate summaries');
       } else {
+        await updateAutomationLog(log.id, { 
+          status: AutomationStatus.COMPLETED, 
+          products_processed: summary.processed,
+        });
         setAutomationResults({
           type: 'summaries',
           ...summary,
@@ -205,6 +231,7 @@ export default function AdminAutomationPage() {
         toast.success(`Generated AI summaries for ${summary.processed} products`);
       }
     } catch (err) {
+      await updateAutomationLog(log.id, { status: AutomationStatus.FAILED, error_message: err.message });
       toast.error('Error generating summaries');
     }
 
@@ -215,13 +242,24 @@ export default function AdminAutomationPage() {
   const handleGenerateAlerts = async () => {
     setLoading(prev => ({ ...prev, alerts: true }));
 
+    const { data: log } = await createAutomationLog({
+      job_type: AutomationJobTypes.ALERT_GENERATION,
+      status: AutomationStatus.RUNNING,
+    });
+
     try {
       const { data: products } = await getAllProductsRaw();
       const { data: alerts, count, error } = await createAlertsForProducts(products);
 
       if (error) {
+        await updateAutomationLog(log.id, { status: AutomationStatus.FAILED, error_message: error });
         toast.error('Failed to generate alerts');
       } else {
+        await updateAutomationLog(log.id, { 
+          status: AutomationStatus.COMPLETED, 
+          products_processed: products.length,
+          alerts_generated: count,
+        });
         setAutomationResults({
           type: 'alerts',
           alertsGenerated: count,
@@ -230,6 +268,7 @@ export default function AdminAutomationPage() {
         toast.success(`Generated ${count} new alerts`);
       }
     } catch (err) {
+      await updateAutomationLog(log.id, { status: AutomationStatus.FAILED, error_message: err.message });
       toast.error('Error generating alerts');
     }
 
@@ -345,8 +384,12 @@ export default function AdminAutomationPage() {
               Manual Entry
             </TabsTrigger>
             <TabsTrigger value="pipeline" className="data-[state=active]:bg-white" data-testid="tab-pipeline">
-              <Zap className="mr-2 h-4 w-4" />
-              Automation Pipeline
+              <Wand2 className="mr-2 h-4 w-4" />
+              Automation
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="data-[state=active]:bg-white" data-testid="tab-logs">
+              <History className="mr-2 h-4 w-4" />
+              Logs
             </TabsTrigger>
           </TabsList>
 
@@ -801,6 +844,11 @@ export default function AdminAutomationPage() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Logs Tab */}
+          <TabsContent value="logs">
+            <AutomationLogs />
           </TabsContent>
         </Tabs>
       </div>
