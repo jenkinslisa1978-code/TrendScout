@@ -1,128 +1,127 @@
-# TrendScout - Product Requirements Document
+# ViralScout/TrendScout - Product Requirements Document
 
 ## Product Overview
-TrendScout is a SaaS application for product research and trend analysis, primarily designed for dropshippers. The application helps users find, analyze, and save trending products with automated scoring and alerting capabilities.
+ViralScout is a SaaS application for product research and trend analysis, designed for dropshippers and e-commerce entrepreneurs. The platform automatically scores products, calculates opportunity ratings, assigns trend stages, generates AI-style summaries, and creates alerts for high-potential opportunities.
 
 ## Tech Stack
-- **Frontend:** React SPA with React Router
-- **Styling:** TailwindCSS + Shadcn/UI components
+- **Frontend:** React SPA with React Router, TailwindCSS, Shadcn/UI
+- **Backend:** FastAPI with MongoDB
 - **Data Visualization:** Recharts
-- **Backend:** Supabase (with full Demo Mode using localStorage)
 - **State Management:** React Context API
+- **Payments:** Stripe-ready architecture
 
-## Core Features
+---
 
-### ✅ Implemented Features
+## Stage 3 Completion Status (December 2025)
 
-#### 1. Landing Page
-- Professional hero section with value proposition
-- Feature highlights and pricing sections
-- CTAs for free trial and demo
+### A. What Was Fully Implemented
 
-#### 2. Authentication System
-- Login/Signup pages
-- Demo Mode: Accepts any credentials when Supabase not configured
-- Protected routes with authentication checks
-- Session persistence
+#### 1. Backend API (FastAPI + MongoDB)
+- **Products API:** Full CRUD with automatic automation on create/update
+- **Alerts API:** Create, read, mark read, dismiss with stats
+- **Automation API:** Run pipeline, get logs, get stats
+- **Scheduled Automation:** Cron-ready endpoint with API key authentication
+- **Stripe API:** Checkout session, portal session, webhook handler (scaffolded)
 
-#### 3. Analytics Dashboard
-- 4 primary stat cards (Total Products, Avg Trend Score, High Opportunity, Rising Trends)
-- 4 secondary stat cards (Avg Margin, Early Stage, Total Ads, TikTok Views)
-- Area chart for Trend Activity
-- Pie chart for Category Distribution
-- Top Trending Products list
-- Recent Activity feed
+#### 2. Automation Engine
+- **Trend Score Calculator:** Weighted algorithm based on TikTok views (35%), ad count (20%), competition (20%), margin (25%)
+- **Trend Stage Classifier:** Assigns early/rising/peak/saturated based on signals
+- **Opportunity Rating:** Calculates low/medium/high/very high based on composite score
+- **AI Summary Generator:** Rules-based summary generation (placeholder for real AI)
+- **Alert Generator:** Creates alerts for products with score >= 75 and opportunity >= high
 
-#### 4. Product Discovery
-- Product grid with search and filters
-- Filter by: Category, Trend Stage, Opportunity Rating
-- Sort by: Trend Score, Margin, TikTok Views, Newest
-- Save/unsave products functionality
-- Product cards with key metrics
+#### 3. Automation Logging System
+- Full logging of all automation runs
+- Tracks job type, status, products processed, alerts generated
+- Duration tracking with timestamps
+- Error message capture for failures
+- UI display in Automation Center Logs tab
 
-#### 5. Product Detail Page
-- Full product information display
-- Pricing details (Supplier Cost, Retail Price, Margin)
-- AI Analysis summary
-- Market Overview section
-- Save product button
-- Supplier link
+#### 4. Subscription Service
+- Plan definitions (Starter, Pro, Elite) with feature limits
+- Stripe checkout session creation (scaffolded)
+- Stripe customer portal (scaffolded)
+- Webhook event handler structure
+- Plan-based feature gating
 
-#### 6. Saved Products Page
-- List of user's saved products
-- Remove from saved functionality
+#### 5. Access Control Service
+- Permission definitions and checks
+- Plan-based access rules
+- Admin-only route protection
+- Feature availability by plan
 
-#### 7. Admin Panel
-- **Products Tab:** Full CRUD for products
-- **Users Tab:** User list display (mocked)
-- **Subscriptions Tab:** Subscription status (mocked)
+#### 6. Database Seeding
+- 15 realistic products with full automation data
+- 4+ alerts generated from qualifying products
+- Demo profile and subscription
+- Automation log entry
 
-#### 8. Automation Center
-- **Import Products Tab:** CSV upload with drag-drop, paste content
-- **Manual Entry Tab:** Form to add products with automation
-- **Automation Pipeline Tab:** Individual automation step controls
-- **Quick Actions:** Run Scoring, AI Summaries, Generate Alerts, Import Products
+### B. What Was Fixed
 
-#### 9. Automation Logic
-All calculations run automatically on product create/update:
-- **Trend Score (0-100):** Based on TikTok views, ad count, competition, margin
-- **Opportunity Rating:** low, medium, high, very high
-- **Trend Stage:** early, rising, peak, saturated
-- **AI Summary:** Rules-based text generation (placeholder for real AI)
-- **Alert Generation:** Creates alerts for high-opportunity products
+1. **MongoDB ObjectId Serialization:** Fixed JSON serialization error when creating products
+2. **Tab Duplication:** Fixed duplicate tabs in AdminAutomationPage
+3. **Linting Issues:** Fixed unused variables in backend server.py
 
-#### 10. Trend Alerts (Elite Feature)
-- Real-time alert display
-- Stats cards (Total, Unread, Critical, Early Stage)
-- Filter by: All, Unread, Critical, High Priority
-- Mark as read / Dismiss functionality
-- View product from alert
+### C. What Is Still Blocked
 
-#### 11. Plan-Based Access Control
-- Starter, Pro, Elite plans defined
-- Elite features accessible in Demo Mode
-- Admin role has full access
+1. **Live Stripe Integration:** Requires actual Stripe API keys (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, price IDs)
+2. **Real AI Summaries:** Requires OpenAI or similar LLM API key
+3. **Live Data Sources:** TikTok, Amazon, AliExpress APIs not integrated (placeholders)
+4. **Supabase Live Mode:** Frontend designed for Supabase but runs in Demo Mode with localStorage
 
-### 🔄 Demo Mode
-The entire application runs in "Demo Mode" when Supabase credentials are not configured:
-- Mock user authentication
-- 10 sample products preloaded
-- localStorage for data persistence
-- All features fully functional
+### D. What Requires External Credentials
 
-## Data Models
+| Service | Required Credentials | Purpose |
+|---------|---------------------|---------|
+| Stripe | STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, Price IDs | Live payment processing |
+| Supabase | REACT_APP_SUPABASE_URL, REACT_APP_SUPABASE_ANON_KEY | Production database & auth |
+| OpenAI | OPENAI_API_KEY | Real AI summaries |
+| TikTok API | API credentials | Live trend data |
 
-### Products
+### E. Final Status of All Areas
+
+| Area | Status | Notes |
+|------|--------|-------|
+| **Auth** | ✅ Working | Demo Mode with localStorage; Supabase ready |
+| **Supabase** | ⚠️ Scaffolded | Frontend structured for Supabase, runs in Demo Mode |
+| **Dashboard** | ✅ Working | Premium UI with charts, stats, product list |
+| **Product Detail** | ✅ Working | Full product info with AI summary |
+| **Saved Products** | ✅ Working | Save/unsave with localStorage persistence |
+| **Admin Panel** | ✅ Working | Products/Users/Subscriptions tabs |
+| **Automation Panel** | ✅ Working | Quick actions, CSV import, manual entry, logs |
+| **Automation Engine** | ✅ Working | Full pipeline: scoring, stages, opportunity, summaries, alerts |
+| **Alerts** | ✅ Working | Generation, display, read/dismiss, stats |
+| **Access Control** | ✅ Working | Plan-based permissions, admin checks |
+| **Stripe Readiness** | ⚠️ Scaffolded | Endpoints exist, returns demo_mode without keys |
+| **Scheduled Jobs** | ✅ Ready | /api/automation/scheduled/daily with API key auth |
+| **End-to-End** | ✅ Working | Products flow through automation pipeline correctly |
+
+---
+
+## Architecture
+
+### Backend Structure
 ```
-- id, product_name, category, short_description
-- supplier_cost, estimated_retail_price, estimated_margin
-- tiktok_views, ad_count, competition_level
-- trend_score, trend_stage, opportunity_rating
-- ai_summary, supplier_link, is_premium
-- created_at, updated_at
-```
-
-### Alerts
-```
-- id, product_id, product_name
-- alert_type, priority, title, body
-- trend_score, opportunity_rating
-- created_at, read, dismissed
-```
-
-### Profiles (Supabase)
-```
-- id, full_name, email, role, plan
+/app/backend/
+├── server.py           # Main FastAPI app with all routes
+├── seed_database.py    # Database seeding script
+├── requirements.txt
+└── tests/
+    └── test_viralscout_api.py
 ```
 
-## File Structure
+### Frontend Structure
 ```
 /app/frontend/src/
 ├── App.js
 ├── components/
-│   ├── layouts/DashboardLayout.jsx
+│   ├── automation/
+│   │   └── AutomationLogs.jsx
+│   ├── layouts/
+│   │   └── DashboardLayout.jsx
 │   └── ui/ (Shadcn components)
-├── contexts/AuthContext.jsx
+├── contexts/
+│   └── AuthContext.jsx
 ├── lib/
 │   ├── automation/
 │   │   ├── index.js
@@ -135,55 +134,93 @@ The entire application runs in "Demo Mode" when Supabase credentials are not con
 │   ├── supabase.js
 │   └── utils.js
 ├── pages/
-│   ├── LandingPage.jsx
-│   ├── LoginPage.jsx, SignupPage.jsx
 │   ├── DashboardPage.jsx
 │   ├── DiscoverPage.jsx
-│   ├── ProductDetailPage.jsx
-│   ├── SavedProductsPage.jsx
 │   ├── AdminPage.jsx
 │   ├── AdminAutomationPage.jsx
-│   └── TrendAlertsPage.jsx
+│   ├── TrendAlertsPage.jsx
+│   └── ...
 └── services/
     ├── productService.js
     ├── alertService.js
+    ├── automationLogService.js
+    ├── subscriptionService.js
+    ├── accessControlService.js
     └── savedProductService.js
 ```
 
-## Test Status
-- **Last Test:** December 2025
-- **Frontend Test Rate:** 100%
-- **All core features verified working**
-- **Minor issue:** Recharts console warnings (cosmetic only)
+### API Endpoints
+```
+GET  /api/health                    - Health check
+GET  /api/products                  - List products with filters
+POST /api/products                  - Create product (auto-scored)
+GET  /api/products/{id}             - Get single product
+PUT  /api/products/{id}             - Update product (re-scored)
+DELETE /api/products/{id}           - Delete product
+
+GET  /api/alerts                    - List alerts with stats
+PUT  /api/alerts/{id}/read          - Mark alert as read
+PUT  /api/alerts/{id}/dismiss       - Dismiss alert
+
+POST /api/automation/run            - Run automation pipeline
+GET  /api/automation/logs           - Get automation history
+GET  /api/automation/stats          - Get automation statistics
+POST /api/automation/scheduled/daily - Scheduled job endpoint (API key required)
+
+POST /api/stripe/create-checkout-session  - Start checkout
+POST /api/stripe/create-portal-session    - Customer portal
+POST /api/stripe/webhook                   - Handle webhooks
+POST /api/stripe/cancel-subscription       - Cancel subscription
+```
 
 ---
 
 ## Backlog
 
+### P0 - Critical for Production
+- [ ] Add Stripe live credentials and test checkout flow
+- [ ] Configure Supabase and migrate from Demo Mode
+- [ ] Set up actual scheduled cron job for daily automation
+
 ### P1 - High Priority
-- [ ] Implement live Stripe integration for subscriptions
-- [ ] Implement CSV product upload parsing logic
-- [ ] Add real AI service integration for product summaries
+- [ ] Integrate OpenAI for real AI summaries
+- [ ] Add user registration with email verification
+- [ ] Implement password reset flow
+- [ ] Add data export functionality (CSV/PDF)
 
 ### P2 - Medium Priority
-- [ ] Connect to live data sources (TikTok, Amazon, AliExpress APIs)
-- [ ] Implement scheduled automation (cron jobs)
-- [ ] Add webhook triggers for real-time updates
+- [ ] TikTok Creative Center API integration
+- [ ] Amazon Product API integration
+- [ ] AliExpress supplier API integration
 - [ ] Email notifications for alerts
+- [ ] Webhook triggers for real-time updates
 
 ### P3 - Low Priority
 - [ ] User onboarding flow
-- [ ] Advanced analytics and reporting
-- [ ] Export functionality (PDF, CSV reports)
-- [ ] Mobile responsive improvements
+- [ ] Advanced analytics dashboard
+- [ ] Team/organization support
+- [ ] API rate limiting and quotas
+
+---
+
+## Test Status
+
+- **Last Test:** December 2025
+- **Backend Tests:** 22/22 passed (100%)
+- **Frontend Tests:** 95% (Demo Mode working)
+- **Test Report:** /app/test_reports/iteration_4.json
 
 ---
 
 ## Changelog
 
-### December 2025
-- Completed full application audit
-- Verified all 20 core features working
-- Confirmed Demo Mode fully functional
-- All automation logic tested and working
-- Alerts system generating and displaying correctly
+### December 9, 2025 - Stage 3 Completion
+- Implemented backend API with FastAPI + MongoDB
+- Created automation logging system with full tracking
+- Built subscription service with Stripe scaffolding
+- Added access control service for plan-based permissions
+- Created database seeding script with 15 products
+- Fixed MongoDB ObjectId serialization bug
+- Updated Admin Automation page with Logs tab
+- All 22 backend API tests passing
+- End-to-end automation pipeline fully functional
