@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -10,9 +10,13 @@ import {
   LogOut,
   TrendingUp,
   Shield,
-  ChevronRight
+  ChevronRight,
+  Bell,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { getUnreadAlertCount } from '@/services/alertService';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -20,13 +24,35 @@ const navigation = [
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
 ];
 
+const eliteNavigation = [
+  { name: 'Trend Alerts', href: '/alerts', icon: Bell, badge: true },
+];
+
 const adminNavigation = [
   { name: 'Admin Panel', href: '/admin', icon: Shield },
+  { name: 'Automation', href: '/admin/automation', icon: Zap },
 ];
 
 export default function DashboardLayout({ children }) {
   const location = useLocation();
   const { user, profile, signOut, isDemoMode } = useAuth();
+  const [alertCount, setAlertCount] = useState(0);
+
+  const isElite = profile?.plan === 'elite' || profile?.role === 'admin' || isDemoMode;
+
+  useEffect(() => {
+    const fetchAlertCount = async () => {
+      const count = await getUnreadAlertCount();
+      setAlertCount(count);
+    };
+    
+    if (isElite) {
+      fetchAlertCount();
+      // Refresh alert count every 30 seconds
+      const interval = setInterval(fetchAlertCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isElite]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -69,12 +95,46 @@ export default function DashboardLayout({ children }) {
             );
           })}
 
+          {/* Elite features (Trend Alerts) */}
+          {isElite && (
+            <>
+              <div className="my-2 border-t border-slate-200" />
+              <p className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Elite</p>
+              {eliteNavigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    data-testid={`nav-${item.name.toLowerCase().replace(' ', '-')}`}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                      isActive
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.name}
+                    {item.badge && alertCount > 0 && (
+                      <Badge className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 min-w-[20px] text-center">
+                        {alertCount > 99 ? '99+' : alertCount}
+                      </Badge>
+                    )}
+                    {isActive && !item.badge && <ChevronRight className="ml-auto h-4 w-4" />}
+                  </Link>
+                );
+              })}
+            </>
+          )}
+
           {/* Admin navigation */}
           {(profile?.role === 'admin' || isDemoMode) && (
             <>
               <div className="my-2 border-t border-slate-200" />
+              <p className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin</p>
               {adminNavigation.map((item) => {
-                const isActive = location.pathname.startsWith(item.href);
+                const isActive = location.pathname === item.href;
                 return (
                   <Link
                     key={item.name}
@@ -92,6 +152,7 @@ export default function DashboardLayout({ children }) {
                     {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
                   </Link>
                 );
+              })}
               })}
             </>
           )}

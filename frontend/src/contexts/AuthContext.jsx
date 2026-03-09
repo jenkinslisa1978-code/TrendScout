@@ -17,7 +17,7 @@ const DEMO_PROFILE = {
   full_name: 'Demo User',
   email: 'demo@trendscout.com',
   role: 'admin',
-  plan: 'pro'
+  plan: 'elite'
 };
 
 export const AuthProvider = ({ children }) => {

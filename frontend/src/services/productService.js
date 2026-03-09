@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { runFullAutomation, batchRunAutomation } from '@/lib/automation';
 
 // Mock products for demo mode
 const MOCK_PRODUCTS = [
@@ -287,47 +288,72 @@ export const getCategories = async () => {
   return { data: [], error };
 };
 
-// Create product (admin only)
-export const createProduct = async (productData) => {
-  if (!isSupabaseConfigured()) {
-    const newProduct = {
+// Create product (admin only) - with automation
+export const createProduct = async (productData, runAutomation = true) => {
+  let processedData = productData;
+  let generatedAlert = null;
+
+  // Run automation pipeline if enabled
+  if (runAutomation) {
+    const automationResult = runFullAutomation(productData);
+    processedData = automationResult.product;
+    generatedAlert = automationResult.alert;
+  } else {
+    // Just calculate margin
+    processedData = {
       ...productData,
-      id: String(MOCK_PRODUCTS.length + 1),
-      created_at: new Date().toISOString(),
       estimated_margin: productData.estimated_retail_price - productData.supplier_cost
     };
+  }
+
+  if (!isSupabaseConfigured()) {
+    const newProduct = {
+      ...processedData,
+      id: String(Date.now()),
+      created_at: new Date().toISOString(),
+    };
     MOCK_PRODUCTS.push(newProduct);
-    return { data: newProduct, error: null };
+    return { data: newProduct, error: null, alert: generatedAlert };
   }
 
   const { data, error } = await supabase
     .from('products')
-    .insert([productData])
+    .insert([processedData])
     .select()
     .single();
 
-  return { data, error };
+  return { data, error, alert: generatedAlert };
 };
 
-// Update product (admin only)
-export const updateProduct = async (id, productData) => {
+// Update product (admin only) - with automation
+export const updateProduct = async (id, productData, runAutomation = true) => {
+  let processedData = productData;
+  let generatedAlert = null;
+
+  // Run automation pipeline if enabled
+  if (runAutomation) {
+    const automationResult = runFullAutomation(productData);
+    processedData = automationResult.product;
+    generatedAlert = automationResult.alert;
+  }
+
   if (!isSupabaseConfigured()) {
     const index = MOCK_PRODUCTS.findIndex(p => p.id === id);
     if (index !== -1) {
-      MOCK_PRODUCTS[index] = { ...MOCK_PRODUCTS[index], ...productData };
-      return { data: MOCK_PRODUCTS[index], error: null };
+      MOCK_PRODUCTS[index] = { ...MOCK_PRODUCTS[index], ...processedData, updated_at: new Date().toISOString() };
+      return { data: MOCK_PRODUCTS[index], error: null, alert: generatedAlert };
     }
-    return { data: null, error: { message: 'Product not found' } };
+    return { data: null, error: { message: 'Product not found' }, alert: null };
   }
 
   const { data, error } = await supabase
     .from('products')
-    .update(productData)
+    .update(processedData)
     .eq('id', id)
     .select()
     .single();
 
-  return { data, error };
+  return { data, error, alert: generatedAlert };
 };
 
 // Delete product (admin only)
@@ -379,4 +405,109 @@ export const getDashboardStats = async () => {
     },
     error: null
   };
+};
+
+
+// Run automation on all products (recalculate scores)
+export const runAutomationOnAllProducts = async () => {
+  if (!isSupabaseConfigured()) {
+    const result = batchRunAutomation(MOCK_PRODUCTS);
+    
+    // Update mock products with new calculated values
+    result.products.forEach((updatedProduct, index) => {
+      if (MOCK_PRODUCTS[index]) {
+        Object.assign(MOCK_PRODUCTS[index], updatedProduct);
+      }
+    });
+
+    return { 
+      data: result.products, 
+      alerts: result.alerts,
+      summary: result.summary,
+      error: null 
+    };
+  }
+
+  // Get all products
+  const { data: products, error: fetchError } = await supabase
+    .from('products')
+    .select('*');
+
+  if (fetchError) return { data: null, error: fetchError };
+
+  // Run automation
+  const result = batchRunAutomation(products);
+
+  // Update products in database (batch update)
+  for (const product of result.products) {
+    await supabase
+      .from('products')
+      .update({
+        trend_score: product.trend_score,
+        trend_stage: product.trend_stage,
+        opportunity_rating: product.opportunity_rating,
+        ai_summary: product.ai_summary,
+        estimated_margin: product.estimated_margin,
+        updated_at: product.updated_at,
+      })
+      .eq('id', product.id);
+  }
+
+  return { 
+    data: result.products, 
+    alerts: result.alerts,
+    summary: result.summary,
+    error: null 
+  };
+};
+
+// Bulk import products from CSV
+export const bulkImportProducts = async (products) => {
+  const result = batchRunAutomation(products);
+
+  if (!isSupabaseConfigured()) {
+    // Add to mock products with IDs
+    result.products.forEach(product => {
+      const newProduct = {
+        ...product,
+        id: String(Date.now() + Math.random()),
+        created_at: new Date().toISOString(),
+      };
+      MOCK_PRODUCTS.push(newProduct);
+    });
+
+    return { 
+      data: result.products, 
+      alerts: result.alerts,
+      summary: result.summary,
+      error: null 
+    };
+  }
+
+  // Insert all products
+  const { data, error } = await supabase
+    .from('products')
+    .insert(result.products)
+    .select();
+
+  return { 
+    data, 
+    alerts: result.alerts,
+    summary: result.summary,
+    error 
+  };
+};
+
+// Get all products (raw access for automation page)
+export const getAllProductsRaw = async () => {
+  if (!isSupabaseConfigured()) {
+    return { data: [...MOCK_PRODUCTS], error: null };
+  }
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  return { data, error };
 };

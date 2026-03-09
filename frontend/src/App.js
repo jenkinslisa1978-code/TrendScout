@@ -13,6 +13,8 @@ import DiscoverPage from "@/pages/DiscoverPage";
 import ProductDetailPage from "@/pages/ProductDetailPage";
 import SavedProductsPage from "@/pages/SavedProductsPage";
 import AdminPage from "@/pages/AdminPage";
+import AdminAutomationPage from "@/pages/AdminAutomationPage";
+import TrendAlertsPage from "@/pages/TrendAlertsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -84,6 +86,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/automation"
+        element={
+          <ProtectedRoute>
+            <AdminAutomationPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/alerts"
+        element={
+          <ProtectedRoute>
+            <TrendAlertsPage />
           </ProtectedRoute>
         }
       />
