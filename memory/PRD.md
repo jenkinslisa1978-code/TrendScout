@@ -476,6 +476,26 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **User Onboarding Flow (COMPLETE - March 10, 2026)**
+  - Created OnboardingModal component with 5-step flow:
+    - Step 1: Welcome to ViralScout (indigo)
+    - Step 2: Daily Winning Products highlight (amber)
+    - Step 3: Track with Watchlist (purple)
+    - Step 4: Create Your Store (emerald)
+    - Step 5: Stay Informed - Reports & Alerts (rose)
+  - Features:
+    - Dismissible via Skip button
+    - Progress bar and step indicators
+    - Navigation (prev/next) with clickable step dots
+    - Action buttons to navigate to relevant pages
+    - Only shown once per user (persisted in profile)
+  - Backend API Endpoints (3):
+    - `GET /api/user/onboarding-status` - Check if user completed onboarding
+    - `POST /api/user/complete-onboarding` - Mark onboarding as done
+    - `POST /api/user/reset-onboarding` - Reset for testing
+  - Database: `profiles.onboarding_completed` (boolean), `profiles.onboarding_completed_at` (timestamp)
+  - All tests passed (100% - 9/9 backend tests)
+
 - **Pricing Plans & Feature Gating with Stripe (COMPLETE - March 10, 2026)**
   - Created SubscriptionService (`/app/backend/services/subscription_service.py`) with:
     - 3 plans: Free (£0), Pro (£39/mo), Elite (£99/mo) - all in GBP
