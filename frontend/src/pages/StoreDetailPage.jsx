@@ -21,7 +21,11 @@ import {
   Loader2,
   Check,
   ExternalLink,
-  Copy
+  Copy,
+  Rocket,
+  Edit3,
+  FileDown,
+  CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -31,7 +35,8 @@ import {
   updateStoreProduct,
   deleteStoreProduct,
   regenerateProductCopy,
-  exportStore 
+  exportStore,
+  updateStoreStatus
 } from '@/services/storeService';
 
 const TABS = [
@@ -39,6 +44,23 @@ const TABS = [
   { id: 'products', label: 'Products', icon: Package },
   { id: 'branding', label: 'Branding', icon: Palette },
   { id: 'content', label: 'Content', icon: FileText },
+];
+
+// Status configuration
+const STATUS_CONFIG = {
+  draft: { label: 'Draft', color: 'bg-slate-100 text-slate-600', nextStatus: 'ready', nextLabel: 'Mark Ready' },
+  ready: { label: 'Ready', color: 'bg-blue-100 text-blue-700', nextStatus: 'exported', nextLabel: 'Export' },
+  exported: { label: 'Exported', color: 'bg-amber-100 text-amber-700', nextStatus: 'published', nextLabel: 'Mark Published' },
+  published: { label: 'Published', color: 'bg-emerald-100 text-emerald-700', nextStatus: null, nextLabel: null },
+  archived: { label: 'Archived', color: 'bg-slate-100 text-slate-500', nextStatus: null, nextLabel: null },
+};
+
+// Launch progress steps
+const LAUNCH_STEPS = [
+  { id: 1, label: 'Create', icon: Edit3, status: 'draft', description: 'Store created with AI-generated content' },
+  { id: 2, label: 'Review', icon: Check, status: 'ready', description: 'Review and customize your store' },
+  { id: 3, label: 'Export', icon: FileDown, status: 'exported', description: 'Export to Shopify format' },
+  { id: 4, label: 'Launch', icon: Rocket, status: 'published', description: 'Store is live!' },
 ];
 
 export default function StoreDetailPage() {
@@ -88,23 +110,20 @@ export default function StoreDetailPage() {
     setSaving(false);
   };
 
-  const handlePublish = async () => {
-    const newStatus = store.status === 'published' ? 'draft' : 'published';
-    const result = await updateStore(storeId, { status: newStatus }, userId);
+  const handleStatusChange = async (newStatus) => {
+    const result = await updateStoreStatus(storeId, newStatus, userId);
     if (result.success) {
-      toast.success(newStatus === 'published' ? 'Store published!' : 'Store unpublished');
+      const statusLabels = {
+        ready: 'Store marked as ready!',
+        exported: 'Store exported!',
+        published: 'Store published!',
+        draft: 'Store reverted to draft',
+      };
+      toast.success(statusLabels[newStatus] || 'Status updated');
       setStore({ ...store, status: newStatus });
       setEditedStore({ ...editedStore, status: newStatus });
-    }
-  };
-
-  const handleRegenerateCopy = async (productId) => {
-    const result = await regenerateProductCopy(storeId, productId, userId);
-    if (result.success) {
-      toast.success('Product copy regenerated');
-      setProducts(products.map(p => p.id === productId ? result.product : p));
     } else {
-      toast.error('Failed to regenerate copy');
+      toast.error('Failed to update status');
     }
   };
 
@@ -127,6 +146,18 @@ export default function StoreDetailPage() {
     URL.revokeObjectURL(url);
     
     toast.success('Store exported for Shopify');
+    // Refresh store to get updated status
+    loadStore();
+  };
+
+  const handleRegenerateCopy = async (productId) => {
+    const result = await regenerateProductCopy(storeId, productId, userId);
+    if (result.success) {
+      toast.success('Product copy regenerated');
+      setProducts(products.map(p => p.id === productId ? result.product : p));
+    } else {
+      toast.error('Failed to regenerate copy');
+    }
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -183,12 +214,8 @@ export default function StoreDetailPage() {
                 <h1 className="font-manrope text-2xl font-bold text-slate-900">
                   {store.name}
                 </h1>
-                <Badge className={
-                  store.status === 'published' 
-                    ? 'bg-emerald-100 text-emerald-700' 
-                    : 'bg-amber-100 text-amber-700'
-                }>
-                  {store.status}
+                <Badge className={STATUS_CONFIG[store.status]?.color || 'bg-slate-100 text-slate-600'}>
+                  {STATUS_CONFIG[store.status]?.label || store.status}
                 </Badge>
               </div>
               <p className="text-sm text-slate-500">{store.tagline}</p>
@@ -204,13 +231,75 @@ export default function StoreDetailPage() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button 
-              onClick={handlePublish}
-              variant={store.status === 'published' ? 'outline' : 'default'}
-              className={store.status !== 'published' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
-            >
-              {store.status === 'published' ? 'Unpublish' : 'Publish'}
-            </Button>
+            {/* Dynamic status action button */}
+            {STATUS_CONFIG[store.status]?.nextStatus && (
+              <Button 
+                onClick={() => handleStatusChange(STATUS_CONFIG[store.status].nextStatus)}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                {STATUS_CONFIG[store.status].nextLabel}
+              </Button>
+            )}
+            {store.status === 'published' && (
+              <Button 
+                variant="outline"
+                onClick={() => handleStatusChange('draft')}
+              >
+                Unpublish
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Launch Progress */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <h3 className="text-sm font-medium text-slate-900 mb-4">Launch Progress</h3>
+          <div className="flex items-start justify-between">
+            {LAUNCH_STEPS.map((step, index) => {
+              const currentProgress = Object.keys(STATUS_CONFIG).findIndex(s => s === store.status) + 1;
+              const stepProgress = LAUNCH_STEPS.findIndex(s => s.status === store.status) + 1;
+              const isComplete = index < stepProgress;
+              const isCurrent = step.status === store.status;
+              
+              return (
+                <React.Fragment key={step.id}>
+                  <div className="flex flex-col items-center text-center flex-1">
+                    <div 
+                      className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all ${
+                        isComplete 
+                          ? 'bg-emerald-500 text-white' 
+                          : isCurrent 
+                            ? 'bg-indigo-500 text-white ring-4 ring-indigo-100' 
+                            : 'bg-slate-100 text-slate-400'
+                      }`}
+                    >
+                      {isComplete && !isCurrent ? (
+                        <CheckCircle2 className="h-5 w-5" />
+                      ) : (
+                        <step.icon className="h-5 w-5" />
+                      )}
+                    </div>
+                    <span className={`text-sm font-medium ${
+                      isComplete || isCurrent ? 'text-slate-900' : 'text-slate-400'
+                    }`}>
+                      {step.label}
+                    </span>
+                    <span className="text-xs text-slate-500 mt-1 max-w-[120px]">
+                      {step.description}
+                    </span>
+                  </div>
+                  {index < LAUNCH_STEPS.length - 1 && (
+                    <div className="flex-1 flex items-center pt-4">
+                      <div 
+                        className={`h-1 w-full rounded ${
+                          isComplete ? 'bg-emerald-500' : 'bg-slate-200'
+                        }`}
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
 

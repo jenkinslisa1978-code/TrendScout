@@ -380,11 +380,25 @@ POST /api/stripe/cancel-subscription       - Cancel subscription
 ### March 10, 2026 - Store Launch Platform
 **MAJOR FEATURE: Multi-User Store Creation**
 
+**Store Status System:**
+- `draft` → Initial state after creation
+- `ready` → Reviewed and ready for export
+- `exported` → Exported to Shopify format
+- `published` → Live on Shopify
+
 **New Backend Components:**
 - `/app/backend/services/store_service.py` - StoreGenerator class with AI generation
 - Store API routes: CRUD, generate, export, preview, regenerate
+- `PUT /api/stores/:id/status` - Update store status with timestamps
 - Plan-based store limits (Starter: 1, Pro: 5, Elite: unlimited)
 - Shopify-compatible export format
+- Auto-status update on export
+
+**New Frontend Features:**
+- **Launch Progress Indicator** - 4-step visual progress (Create → Review → Export → Launch)
+- **Status-based Actions** - Dynamic buttons based on current status
+- **Progress in Store Cards** - Mini progress indicator in My Stores dashboard
+- Status badges with color coding (Draft=gray, Ready=blue, Exported=amber, Published=green)
 
 **New Frontend Pages:**
 - `/app/frontend/src/pages/StoresPage.jsx` - My Stores dashboard

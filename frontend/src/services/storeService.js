@@ -272,6 +272,26 @@ export const exportStore = async (storeId, userId, format = 'shopify') => {
 };
 
 /**
+ * Update store status
+ */
+export const updateStoreStatus = async (storeId, status, userId) => {
+  try {
+    const response = await fetch(`${API_URL}/api/stores/${storeId}/status?user_id=${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    
+    if (!response.ok) throw new Error('Failed to update status');
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating store status:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Get store preview data
  */
 export const getStorePreview = async (storeId) => {

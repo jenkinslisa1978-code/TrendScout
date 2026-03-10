@@ -128,6 +128,8 @@ class RunAutomationRequest(BaseModel):
 # Store Models
 class StoreStatus(str, Enum):
     DRAFT = "draft"
+    READY = "ready"
+    EXPORTED = "exported"
     PUBLISHED = "published"
     ARCHIVED = "archived"
 
@@ -164,6 +166,9 @@ class GenerateStoreRequest(BaseModel):
     user_id: str
     plan: str = "starter"
     store_name: Optional[str] = None  # Optional pre-selected name
+
+class UpdateStoreStatusRequest(BaseModel):
+    status: StoreStatus
 
 # =====================
 # AUTOMATION LOGIC
@@ -1672,7 +1677,42 @@ async def export_store(store_id: str, user_id: str, format: str = "shopify"):
             "exported_at": datetime.now(timezone.utc).isoformat(),
         }
     
+    # Update store status to exported (if not already published)
+    if store.get("status") not in ["published", "exported"]:
+        await db.stores.update_one(
+            {"id": store_id},
+            {"$set": {"status": "exported", "exported_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)}}
+        )
+    
     return export_data
+
+@stores_router.put("/{store_id}/status")
+async def update_store_status(store_id: str, request: UpdateStoreStatusRequest, user_id: str):
+    """Update store status (draft -> ready -> exported -> published)"""
+    # Verify store ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    update_data = {
+        "status": request.status.value,
+        "updated_at": datetime.now(timezone.utc)
+    }
+    
+    # Add timestamp for status changes
+    if request.status == StoreStatus.READY:
+        update_data["ready_at"] = datetime.now(timezone.utc)
+    elif request.status == StoreStatus.EXPORTED:
+        update_data["exported_at"] = datetime.now(timezone.utc)
+    elif request.status == StoreStatus.PUBLISHED:
+        update_data["published_at"] = datetime.now(timezone.utc)
+    
+    await db.stores.update_one({"id": store_id}, {"$set": update_data})
+    
+    updated = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    
+    return {"success": True, "store": updated}
 
 @stores_router.get("/{store_id}/preview")
 async def get_store_preview(store_id: str):
