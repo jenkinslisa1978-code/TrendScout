@@ -26,6 +26,9 @@ import MonthlyReportPage from "@/pages/MonthlyReportPage";
 import PublicWeeklyReportPage from "@/pages/PublicWeeklyReportPage";
 import PublicMonthlyReportPage from "@/pages/PublicMonthlyReportPage";
 
+// Settings Pages
+import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, isDemoMode } = useAuth();
@@ -165,6 +168,16 @@ function AppRoutes() {
       {/* Reports - Public Routes for SEO */}
       <Route path="/reports/weekly-winning-products" element={<PublicWeeklyReportPage />} />
       <Route path="/reports/monthly-market-trends" element={<PublicMonthlyReportPage />} />
+
+      {/* Settings Routes */}
+      <Route
+        path="/settings/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationSettingsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Reports - Protected Routes */}
       <Route

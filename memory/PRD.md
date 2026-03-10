@@ -88,6 +88,15 @@ Converts raw data into actionable insights.
 ### Advanced Dashboard Intelligence (NEW - March 2026)
 **Provides instant product discovery and opportunity monitoring**
 
+#### Notification System (NEW)
+- `GET /api/notifications/` - User notifications with pagination
+- `GET /api/notifications/unread-count` - Unread count for bell badge
+- `POST /api/notifications/mark-read` - Mark specific notifications as read
+- `POST /api/notifications/mark-all-read` - Mark all as read
+- `GET /api/notifications/preferences` - User notification preferences
+- `PUT /api/notifications/preferences` - Update preferences
+- `POST /api/notifications/test-alert` - Send test notification
+
 #### API Endpoints
 - `GET /api/dashboard/daily-winners` - Top products ranked by launch potential (public)
 - `GET /api/dashboard/market-radar` - Category-level market opportunity clusters (public)
@@ -111,6 +120,9 @@ Converts raw data into actionable insights.
   - `OpportunityWatchlist` - User's tracked products with change indicators
   - `AlertsPanel` - Real-time opportunity notifications
   - `OpportunityFeedPanel` - Live opportunity feed with real-time events
+- `/app/frontend/src/components/notifications/` - Notification system UI
+  - `NotificationCenter` - Bell icon dropdown with unread badge
+- `/app/frontend/src/pages/NotificationSettingsPage.jsx` - Full notification preferences page
 
 #### Dashboard Page Integration
 - Tabbed Intelligence Dashboard interface on DashboardPage
@@ -464,6 +476,36 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **Strong Launch Alert Notification System (COMPLETE - March 10, 2026)**
+  - Added NotificationService (`/app/backend/services/notification_service.py`) with:
+    - 4 notification types: strong_launch, exploding_trend, watchlist_alert, score_milestone
+    - 4-hour deduplication window to prevent notification spam
+    - Quiet hours support (configurable start/end times)
+    - Watchlist priority (bypasses quiet hours, gets HIGH priority)
+    - Threshold-based filtering (user configurable: 70-95)
+    - Email + in-app notification channels
+  - API Endpoints (7 new):
+    - `GET /api/notifications/` - Get user notifications with pagination
+    - `GET /api/notifications/unread-count` - Get unread count for badge
+    - `POST /api/notifications/mark-read` - Mark specific notifications as read
+    - `POST /api/notifications/mark-all-read` - Mark all as read
+    - `GET /api/notifications/preferences` - Get user preferences
+    - `PUT /api/notifications/preferences` - Update preferences
+    - `POST /api/notifications/test-alert` - Send test notification
+  - Frontend Components:
+    - `NotificationCenter.jsx` - Bell icon dropdown in sidebar with unread badge
+    - `NotificationSettingsPage.jsx` - Full settings page with all controls
+  - User Preferences include:
+    - Email on/off toggle
+    - In-app notifications on/off toggle
+    - Alert threshold slider (70-95)
+    - Quiet hours with start/end time pickers
+    - Notification type toggles for each alert type
+    - Watchlist priority toggle
+  - Pipeline Integration: Notifications auto-generated during pipeline runs
+  - Database: Uses `notifications` and `notification_preferences` collections
+  - All tests passed (100% - 23/23 backend tests)
+
 - **Live Opportunity Feed (COMPLETE - March 10, 2026)**
   - Added OpportunityFeedService (`/app/backend/services/opportunity_feed_service.py`) for event generation and management
   - 5 event types: entered_strong_launch, new_high_score, trend_spike, competition_increase, approaching_saturation

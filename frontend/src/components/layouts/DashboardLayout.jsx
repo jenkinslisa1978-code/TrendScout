@@ -14,11 +14,13 @@ import {
   Zap,
   Sparkles,
   Store,
-  FileText
+  FileText,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getUnreadAlertCount } from '@/services/alertService';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -188,15 +190,27 @@ export default function DashboardLayout({ children }) {
                 </span>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSignOut}
-              data-testid="logout-btn"
-              className="h-9 w-9 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <NotificationCenter />
+              <Link to="/settings/notifications">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSignOut}
+                data-testid="logout-btn"
+                className="h-9 w-9 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </aside>

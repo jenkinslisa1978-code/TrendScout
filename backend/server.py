@@ -43,6 +43,7 @@ intelligence_router = APIRouter(prefix="/api/intelligence")
 dashboard_router = APIRouter(prefix="/api/dashboard")
 reports_router = APIRouter(prefix="/api/reports")
 email_router = APIRouter(prefix="/api/email")
+notifications_router = APIRouter(prefix="/api/notifications")
 
 # =====================
 # MODELS
@@ -3942,6 +3943,198 @@ async def update_email_subscription_status(
     }
 
 
+
+# =====================
+# ROUTES - Notifications
+# =====================
+
+@notifications_router.get("/")
+async def get_notifications(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    limit: int = 50,
+    unread_only: bool = False,
+    types: Optional[str] = None
+):
+    """
+    Get user's notifications.
+    
+    Args:
+        limit: Max notifications to return (default 50)
+        unread_only: Only return unread notifications
+        types: Comma-separated list of notification types to filter
+    """
+    from services.notification_service import create_notification_service
+    
+    notification_service = create_notification_service(db)
+    
+    # Parse types if provided
+    type_list = None
+    if types:
+        type_list = [t.strip() for t in types.split(",")]
+    
+    notifications = await notification_service.get_notifications(
+        user_id=current_user.user_id,
+        limit=limit,
+        unread_only=unread_only,
+        notification_types=type_list
+    )
+    
+    unread_count = await notification_service.get_unread_count(current_user.user_id)
+    
+    return {
+        "notifications": notifications,
+        "count": len(notifications),
+        "unread_count": unread_count
+    }
+
+
+@notifications_router.get("/unread-count")
+async def get_unread_count(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get count of unread notifications"""
+    from services.notification_service import create_notification_service
+    
+    notification_service = create_notification_service(db)
+    count = await notification_service.get_unread_count(current_user.user_id)
+    
+    return {"unread_count": count}
+
+
+@notifications_router.post("/mark-read")
+async def mark_notifications_read(
+    notification_ids: List[str],
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Mark specific notifications as read"""
+    from services.notification_service import create_notification_service
+    
+    notification_service = create_notification_service(db)
+    modified = await notification_service.mark_as_read(
+        user_id=current_user.user_id,
+        notification_ids=notification_ids
+    )
+    
+    return {"status": "success", "modified_count": modified}
+
+
+@notifications_router.post("/mark-all-read")
+async def mark_all_notifications_read(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Mark all notifications as read"""
+    from services.notification_service import create_notification_service
+    
+    notification_service = create_notification_service(db)
+    modified = await notification_service.mark_all_as_read(current_user.user_id)
+    
+    return {"status": "success", "modified_count": modified}
+
+
+@notifications_router.delete("/{notification_id}")
+async def delete_notification(
+    notification_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Delete a specific notification"""
+    from services.notification_service import create_notification_service
+    
+    notification_service = create_notification_service(db)
+    deleted = await notification_service.delete_notification(
+        user_id=current_user.user_id,
+        notification_id=notification_id
+    )
+    
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    return {"status": "deleted"}
+
+
+@notifications_router.get("/preferences")
+async def get_notification_preferences(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get user's notification preferences"""
+    from services.notification_service import create_notification_service
+    
+    notification_service = create_notification_service(db)
+    prefs = await notification_service.get_user_preferences(current_user.user_id)
+    
+    return prefs
+
+
+class NotificationPreferencesUpdate(BaseModel):
+    email_enabled: Optional[bool] = None
+    in_app_enabled: Optional[bool] = None
+    alert_threshold: Optional[int] = None
+    quiet_hours_enabled: Optional[bool] = None
+    quiet_hours_start: Optional[str] = None
+    quiet_hours_end: Optional[str] = None
+    watchlist_priority_enabled: Optional[bool] = None
+    notification_types: Optional[Dict[str, bool]] = None
+
+
+@notifications_router.put("/preferences")
+async def update_notification_preferences(
+    updates: NotificationPreferencesUpdate,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Update user's notification preferences"""
+    from services.notification_service import create_notification_service
+    
+    notification_service = create_notification_service(db)
+    
+    # Convert to dict, excluding None values
+    update_dict = {k: v for k, v in updates.model_dump().items() if v is not None}
+    
+    prefs = await notification_service.update_user_preferences(
+        user_id=current_user.user_id,
+        updates=update_dict
+    )
+    
+    return prefs
+
+
+@notifications_router.post("/test-alert")
+async def send_test_notification(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Send a test notification to the current user (for testing)"""
+    from services.notification_service import create_notification_service, NotificationType
+    
+    notification_service = create_notification_service(db)
+    
+    # Get a sample product
+    product = await db.products.find_one(
+        {"launch_score": {"$gte": 75}},
+        {"_id": 0}
+    )
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="No products with high launch score found")
+    
+    notification = await notification_service.create_notification(
+        user_id=current_user.user_id,
+        notification_type=NotificationType.STRONG_LAUNCH,
+        product=product,
+        force=True  # Skip dedup for test
+    )
+    
+    if notification:
+        return {
+            "status": "success",
+            "message": "Test notification sent",
+            "notification": notification
+        }
+    else:
+        return {
+            "status": "skipped",
+            "message": "Notification was skipped (check preferences)"
+        }
+
+
+
 @stripe_router.post("/create-checkout-session")
 async def create_checkout_session(
     request: CheckoutSessionRequest,
@@ -5878,6 +6071,7 @@ app.include_router(intelligence_router)
 app.include_router(dashboard_router)
 app.include_router(reports_router)
 app.include_router(email_router)
+app.include_router(notifications_router)
 
 app.add_middleware(
     CORSMiddleware,

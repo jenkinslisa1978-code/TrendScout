@@ -21,6 +21,7 @@ from .data_sources import (
 )
 from .scoring import ScoringEngine
 from .opportunity_feed_service import create_feed_service
+from .notification_service import create_notification_service, NotificationType
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ class DataPipeline:
         self.ad_analyzer = AdActivityAnalyzer(db)
         self.scoring_engine = ScoringEngine(db)
         self.feed_service = create_feed_service(db)
+        self.notification_service = create_notification_service(db)
     
     async def run_full_pipeline(self, options: Dict[str, Any] = None) -> PipelineResult:
         """
@@ -122,6 +124,11 @@ class DataPipeline:
             if not options.get('skip_feed'):
                 logger.info("Step 7: Generating opportunity feed events...")
                 await self._generate_feed_events(result, options)
+            
+            # Step 8: Send user notifications for strong launches
+            if not options.get('skip_notifications'):
+                logger.info("Step 8: Sending user notifications...")
+                await self._send_user_notifications(result, options)
             
             result.success = True
             
@@ -446,6 +453,52 @@ class DataPipeline:
         except Exception as e:
             logger.error(f"Feed event generation error: {e}")
             result.errors.append(f"feed_events: {str(e)}")
+
+    async def _send_user_notifications(self, result: PipelineResult, options: Dict):
+        """
+        Send notifications to users for strong launch products and exploding trends.
+        This runs after feed events are generated.
+        """
+        try:
+            notifications_sent = 0
+            
+            # Get products that just entered Strong Launch (score >= 80)
+            strong_launch_products = await self.db.products.find({
+                "launch_score": {"$gte": 80}
+            }, {"_id": 0}).sort("launch_score", -1).limit(10).to_list(10)
+            
+            for product in strong_launch_products:
+                try:
+                    await self.notification_service.process_strong_launch_alert(
+                        product=product,
+                        previous_score=0  # Assume new for pipeline run
+                    )
+                    notifications_sent += 1
+                except Exception as e:
+                    logger.warning(f"Failed to process strong launch notification for {product.get('product_name')}: {e}")
+            
+            # Get products with exploding trends
+            exploding_products = await self.db.products.find({
+                "early_trend_label": "exploding"
+            }, {"_id": 0}).sort("early_trend_score", -1).limit(5).to_list(5)
+            
+            for product in exploding_products:
+                try:
+                    await self.notification_service.process_exploding_trend_alert(
+                        product=product,
+                        previous_label="rising"  # Assume trend just changed
+                    )
+                    notifications_sent += 1
+                except Exception as e:
+                    logger.warning(f"Failed to process exploding trend notification for {product.get('product_name')}: {e}")
+            
+            result.source_results['notifications'] = {'sent': notifications_sent}
+            logger.info(f"Processed {notifications_sent} notification alerts")
+            
+        except Exception as e:
+            logger.error(f"User notification error: {e}")
+            result.errors.append(f"notifications: {str(e)}")
+
     
     async def _log_pipeline_run(self, result: PipelineResult):
         """Log pipeline run to database"""

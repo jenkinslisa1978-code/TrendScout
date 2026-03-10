@@ -293,6 +293,161 @@ class EmailService:
             return '#f59e0b'  # Amber
         return '#ef4444'  # Red
 
+    async def send_product_alert_email(
+        self,
+        to_email: str,
+        notification: Dict[str, Any],
+        product: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Send a product alert email notification.
+        
+        Args:
+            to_email: Recipient email address
+            notification: Notification data
+            product: Product data
+            
+        Returns:
+            Dict with status and email_id
+        """
+        notification_type = notification.get("notification_type", "alert")
+        product_name = notification.get("product_name", "Unknown Product")
+        launch_score = notification.get("launch_score", 0)
+        
+        # Determine subject based on notification type
+        subjects = {
+            "strong_launch": f"🚀 Strong Launch Alert: {product_name} ({launch_score})",
+            "exploding_trend": f"🔥 Exploding Trend: {product_name}",
+            "watchlist_alert": f"📌 Watchlist Alert: {product_name}",
+            "score_milestone": f"📈 Score Milestone: {product_name}"
+        }
+        subject = subjects.get(notification_type, f"ViralScout Alert: {product_name}")
+        
+        # Generate HTML content
+        html = self._generate_alert_email_html(notification, product)
+        
+        return await self.send_email(to_email, subject, html)
+    
+    def _generate_alert_email_html(
+        self,
+        notification: Dict[str, Any],
+        product: Dict[str, Any]
+    ) -> str:
+        """Generate HTML content for alert email"""
+        product_name = notification.get("product_name", "Unknown Product")
+        launch_score = notification.get("launch_score", 0)
+        trend_stage = notification.get("trend_stage", "unknown")
+        estimated_margin = notification.get("estimated_margin", 0)
+        category = notification.get("category", "Unknown")
+        reason = notification.get("reason", "Opportunity detected")
+        title = notification.get("title", "Product Alert")
+        is_watchlist = notification.get("is_watchlist", False)
+        product_id = notification.get("product_id", "")
+        
+        score_color = self._get_score_color(launch_score)
+        
+        # Get score label
+        if launch_score >= 80:
+            score_label = "Strong Launch"
+        elif launch_score >= 60:
+            score_label = "Promising"
+        elif launch_score >= 40:
+            score_label = "Risky"
+        else:
+            score_label = "Avoid"
+        
+        watchlist_badge = ""
+        if is_watchlist:
+            watchlist_badge = '<span style="background:#8b5cf6;color:white;padding:4px 8px;border-radius:4px;font-size:12px;margin-left:8px;">📌 Watchlist</span>'
+        
+        # Product URL - would need frontend URL env var
+        product_url = f"https://scout-feed.preview.emergentagent.com/product/{product_id}"
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;">
+            <div style="max-width:600px;margin:0 auto;padding:20px;">
+                <!-- Header -->
+                <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:24px;border-radius:12px 12px 0 0;text-align:center;">
+                    <h1 style="color:white;margin:0;font-size:24px;">ViralScout</h1>
+                    <p style="color:rgba(255,255,255,0.9);margin:8px 0 0 0;font-size:14px;">Product Alert</p>
+                </div>
+                
+                <!-- Alert Title -->
+                <div style="background:white;padding:24px;border-bottom:1px solid #e2e8f0;">
+                    <h2 style="margin:0;color:#1e293b;font-size:18px;">{title}</h2>
+                    <p style="margin:8px 0 0 0;color:#64748b;font-size:14px;">{reason}</p>
+                </div>
+                
+                <!-- Product Card -->
+                <div style="background:white;padding:24px;">
+                    <div style="display:flex;align-items:center;margin-bottom:16px;">
+                        <h3 style="margin:0;color:#1e293b;font-size:20px;flex:1;">{product_name}</h3>
+                        {watchlist_badge}
+                    </div>
+                    
+                    <!-- Launch Score -->
+                    <div style="background:{score_color}15;border-left:4px solid {score_color};padding:16px;margin-bottom:16px;border-radius:0 8px 8px 0;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                            <div>
+                                <p style="margin:0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Launch Score</p>
+                                <p style="margin:4px 0 0 0;color:{score_color};font-size:32px;font-weight:bold;">{launch_score}</p>
+                            </div>
+                            <div style="text-align:right;">
+                                <span style="background:{score_color};color:white;padding:6px 12px;border-radius:20px;font-size:14px;font-weight:600;">{score_label}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Product Details -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+                        <div style="background:#f8fafc;padding:12px;border-radius:8px;">
+                            <p style="margin:0;color:#64748b;font-size:12px;">Category</p>
+                            <p style="margin:4px 0 0 0;color:#1e293b;font-weight:600;">{category}</p>
+                        </div>
+                        <div style="background:#f8fafc;padding:12px;border-radius:8px;">
+                            <p style="margin:0;color:#64748b;font-size:12px;">Trend Stage</p>
+                            <p style="margin:4px 0 0 0;color:#1e293b;font-weight:600;text-transform:capitalize;">{trend_stage}</p>
+                        </div>
+                        <div style="background:#f8fafc;padding:12px;border-radius:8px;">
+                            <p style="margin:0;color:#64748b;font-size:12px;">Est. Margin</p>
+                            <p style="margin:4px 0 0 0;color:#10b981;font-weight:600;">£{estimated_margin:.2f}</p>
+                        </div>
+                        <div style="background:#f8fafc;padding:12px;border-radius:8px;">
+                            <p style="margin:0;color:#64748b;font-size:12px;">Priority</p>
+                            <p style="margin:4px 0 0 0;color:#1e293b;font-weight:600;text-transform:capitalize;">{notification.get('priority', 'medium')}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- CTA Button -->
+                    <a href="{product_url}" style="display:block;background:#6366f1;color:white;text-align:center;padding:14px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+                        View Product Details →
+                    </a>
+                </div>
+                
+                <!-- Footer -->
+                <div style="background:#f1f5f9;padding:20px;border-radius:0 0 12px 12px;text-align:center;">
+                    <p style="margin:0;color:#64748b;font-size:12px;">
+                        You're receiving this because you have alert notifications enabled.
+                        <a href="https://scout-feed.preview.emergentagent.com/settings/notifications" style="color:#6366f1;">Manage preferences</a>
+                    </p>
+                    <p style="margin:8px 0 0 0;color:#94a3b8;font-size:11px;">
+                        © {datetime.now().year} ViralScout. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
+
+
 
 # Singleton instance
 email_service = EmailService()
