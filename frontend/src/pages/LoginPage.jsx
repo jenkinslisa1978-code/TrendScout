@@ -25,9 +25,7 @@ export default function LoginPage() {
     const { error } = await signIn(email, password);
 
     if (error) {
-      const msg = error.message || '';
-      // Show resend option if email not confirmed
-      if (msg.toLowerCase().includes('not confirmed') || msg.toLowerCase().includes('not verified')) {
+      if (error.showResend) {
         setShowResend(true);
       }
       toast.error(error.message || 'Failed to sign in');

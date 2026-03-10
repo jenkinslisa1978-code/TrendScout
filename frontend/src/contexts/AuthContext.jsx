@@ -129,27 +129,24 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (error) {
-        // Normalize error messages
         const msg = error.message || '';
-        if (msg.includes('body stream') || msg.includes('already read') || msg.includes('JSON')) {
-          return { data: null, error: { message: 'Connection issue. Please try again in a moment.' } };
-        }
         if (msg.includes('rate') || msg.includes('429') || msg.includes('Too many')) {
           return { data: null, error: { message: 'Too many attempts. Please wait 60 seconds and try again.' } };
+        }
+        if (msg.includes('already registered') || msg.includes('already exists')) {
+          return { data: null, error: { message: 'This email is already registered. Try logging in instead.' } };
         }
       }
       
       return { data, error };
     } catch (err) {
       console.error('Signup error:', err);
-      const errorMessage = err.message || '';
-      if (errorMessage.includes('body stream') || errorMessage.includes('already read') || errorMessage.includes('JSON') || errorMessage.includes('fetch')) {
-        return { data: null, error: { message: 'Connection issue. Please try again in a moment.' } };
-      }
-      if (errorMessage.includes('rate') || errorMessage.includes('429') || errorMessage.includes('Too many')) {
+      const msg = err.message || '';
+      if (msg.includes('rate') || msg.includes('429')) {
         return { data: null, error: { message: 'Too many attempts. Please wait 60 seconds and try again.' } };
       }
-      return { data: null, error: { message: err.message || 'Signup failed. Please try again.' } };
+      // Body stream errors during signup usually mean rate limiting or existing account
+      return { data: null, error: { message: 'Unable to create account. You may already have an account - try logging in, or wait a minute and try again.' } };
     }
   };
 
@@ -169,28 +166,22 @@ export const AuthProvider = ({ children }) => {
       
       if (error) {
         const msg = error.message || '';
-        if (msg.includes('body stream') || msg.includes('already read') || msg.includes('JSON')) {
-          return { data: null, error: { message: 'Connection issue. Please try again in a moment.' } };
-        }
         if (msg.includes('Email not confirmed')) {
-          return { data: null, error: { message: 'Please confirm your email first. Check your inbox (and spam folder) for the verification link.' } };
+          return { data: null, error: { message: 'Please confirm your email first. Check your inbox and spam folder for the verification link.', showResend: true } };
         }
         if (msg.includes('Invalid login credentials')) {
-          return { data: null, error: { message: 'Invalid email or password. Please try again or sign up for a new account.' } };
+          return { data: null, error: { message: 'Invalid email or password. If you haven\'t signed up yet, click "Sign up for free" below.' } };
         }
+        // Catch-all: any other error (including body stream, JSON parse errors)
+        return { data: null, error: { message: 'Invalid email or password. Please check your credentials and try again.' } };
       }
       
       return { data, error };
     } catch (err) {
+      // The Supabase SDK throws "body stream already read" when it can't parse error responses.
+      // This typically means invalid credentials (400 from Supabase). Return a clear message.
       console.error('SignIn error:', err);
-      const errorMessage = err.message || '';
-      if (errorMessage.includes('body stream') || errorMessage.includes('already read') || errorMessage.includes('JSON') || errorMessage.includes('fetch')) {
-        return { data: null, error: { message: 'Connection issue. Please try again in a moment.' } };
-      }
-      if (errorMessage.includes('rate') || errorMessage.includes('429') || errorMessage.includes('Too many')) {
-        return { data: null, error: { message: 'Too many attempts. Please wait 60 seconds and try again.' } };
-      }
-      return { data: null, error: { message: err.message || 'Login failed. Please try again.' } };
+      return { data: null, error: { message: 'Invalid email or password. If you haven\'t signed up yet, please create an account first.' } };
     }
   };
 
