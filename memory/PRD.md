@@ -458,6 +458,18 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **Product Identity & Deduplication System (COMPLETE - March 10, 2026)**
+  - Added ProductIdentityService for detecting and merging duplicate products
+  - Added ProductMatcher with multi-signal matching (title, keywords, category, URL, price)
+  - Added ProductMerger with source data preservation and provenance tracking
+  - Added canonical product records with merged metrics from multiple sources
+  - Added deduplication API endpoints: /api/ingestion/dedup/run, /api/ingestion/dedup/stats
+  - Products API now returns only canonical products by default
+  - Reports and dashboards updated to use canonical products only
+  - Scheduled daily deduplication job at 8 AM UTC
+  - Test results: 6 duplicate groups found, 12 products merged, 42 canonical products
+  - All tests passed (100% backend success rate)
+
 - **Real Data Ingestion System (COMPLETE - Phase 1)**
   - Added AliExpressScraper with rate limiting, caching, and health monitoring
   - Added TikTokTrendsScraper for trending hashtags and products
@@ -514,6 +526,12 @@ success_probability = (
 - ✅ Alert generation for high-potential products
 - ✅ Data ingestion from multiple sources (TikTok, Amazon, Suppliers)
 - ✅ Admin panel for automation management
+- ✅ **Product Identity & Deduplication System (NEW)**
+  - Detects duplicate products using multi-signal matching
+  - Merges duplicates into canonical records
+  - Preserves source-level data provenance
+  - Recomputes scores after merging
+  - Scheduled daily at 8 AM UTC
 
 ### Store-Launch Platform
 - ✅ Product-to-store workflow
