@@ -41,6 +41,34 @@ Converts raw data into actionable insights.
 
 ## Core Features (Implemented)
 
+### Advanced Dashboard Intelligence (NEW - March 2026)
+**Provides instant product discovery and opportunity monitoring**
+
+#### API Endpoints
+- `GET /api/dashboard/daily-winners` - Top products ranked by launch potential (public)
+- `GET /api/dashboard/market-radar` - Category-level market opportunity clusters (public)
+- `GET /api/dashboard/watchlist` - User's product watchlist with change tracking (auth required)
+- `POST /api/dashboard/watchlist` - Add product to watchlist with initial snapshot
+- `DELETE /api/dashboard/watchlist/{product_id}` - Remove from watchlist
+- `GET /api/dashboard/watchlist/check/{product_id}` - Check if product is in watchlist
+- `GET /api/dashboard/alerts` - User's opportunity alerts with read/unread state (auth required)
+- `POST /api/dashboard/alerts/{alert_id}/read` - Mark alert as read
+- `POST /api/dashboard/alerts/read-all` - Mark all alerts as read
+- `GET /api/dashboard/summary` - Combined dashboard data for home view
+
+#### Frontend Components
+- `/app/frontend/src/components/dashboard/` - Dashboard intelligence UI
+  - `DailyWinnersPanel` - Top products with launch recommendations
+  - `MarketRadar` - Category clusters with opportunity scores
+  - `OpportunityWatchlist` - User's tracked products with change indicators
+  - `AlertsPanel` - Real-time opportunity notifications
+
+#### Dashboard Page Integration
+- Tabbed Intelligence Dashboard interface on DashboardPage
+- 4 tabs: Winners, Radar, Watchlist, Alerts
+- Watchlist/Alerts show sign-in prompt for unauthenticated users
+- Daily Winners/Market Radar are publicly accessible
+
 ### Product Validation Engine (NEW - March 2026)
 **Answers the key question: "Should I launch this product?"**
 
@@ -384,6 +412,16 @@ success_probability = (
 - Automatic tracking on store creation and export
 
 ## Changelog
+
+### March 2026
+- **Advanced Dashboard Intelligence (COMPLETE)**
+  - Added DailyWinnersPanel component - displays top products by launch potential
+  - Added MarketRadar component - shows category-level market opportunity clusters
+  - Added OpportunityWatchlist component - tracks user's watched products with change indicators
+  - Added AlertsPanel component - displays real-time opportunity notifications
+  - Integrated Intelligence Dashboard with tabbed interface on DashboardPage
+  - Added dashboard API endpoints: daily-winners, market-radar, watchlist CRUD, alerts
+  - Watchlist stores initial snapshots for change detection over time
 
 ### March 2025
 - Added Product Success Tracking system
