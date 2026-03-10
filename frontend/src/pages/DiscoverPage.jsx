@@ -222,9 +222,10 @@ export default function DiscoverPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Markets</SelectItem>
-                  <SelectItem value="high">High Opportunity</SelectItem>
-                  <SelectItem value="medium">Medium Opportunity</SelectItem>
-                  <SelectItem value="low">Low Opportunity</SelectItem>
+                  <SelectItem value="massive">Massive Opportunity</SelectItem>
+                  <SelectItem value="strong">Strong Opportunity</SelectItem>
+                  <SelectItem value="competitive">Competitive</SelectItem>
+                  <SelectItem value="saturated">Saturated</SelectItem>
                 </SelectContent>
               </Select>
 

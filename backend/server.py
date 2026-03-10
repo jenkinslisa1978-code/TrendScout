@@ -111,15 +111,44 @@ class Product(BaseModel):
     proven_winner: bool = False  # True if product is proven successful
     # Market Intelligence fields
     active_competitor_stores: int = 0  # Number of stores selling this product
+    new_competitor_stores_week: int = 0  # New stores this week
     avg_selling_price: float = 0.0  # Average market selling price
     price_range: Optional[Dict[str, float]] = None  # Min/max prices
     estimated_monthly_ad_spend: int = 0  # Estimated monthly ad spend in GBP
     market_saturation: int = 0  # Market saturation score (0-100)
     market_score: int = 0  # Combined market opportunity score (0-100)
-    market_label: str = "medium"  # high, medium, low, very_low
-    market_score_breakdown: Optional[Dict[str, int]] = None  # demand, margin, competition scores
-    ai_summary: Optional[str] = None
+    market_label: str = "medium"  # massive, strong, competitive, saturated
+    market_description: Optional[str] = None
+    market_score_breakdown: Optional[Dict[str, int]] = None  # Component scores
+    # Scoring Engine fields
+    margin_score: int = 0
+    competition_score: int = 0
+    ad_activity_score: int = 0
+    supplier_demand_score: int = 0
+    # Ad Activity fields
+    recent_ad_growth: float = 0.0
+    new_ads_this_week: int = 0
+    ad_platform_distribution: Optional[Dict[str, int]] = None
+    ad_validation_level: str = "unknown"
+    # Supplier fields
     supplier_link: Optional[str] = None
+    supplier_rating: float = 0.0
+    supplier_reviews: int = 0
+    supplier_orders_30d: int = 0
+    supplier_processing_days: int = 3
+    supplier_shipping_days: int = 15
+    product_variants: Optional[List[str]] = None
+    # Data source tracking
+    data_source: str = "manual"
+    data_source_type: str = "manual"
+    confidence_score: int = 50
+    last_updated: Optional[str] = None
+    scores_updated_at: Optional[str] = None
+    competitor_last_updated: Optional[str] = None
+    ad_activity_last_updated: Optional[str] = None
+    supplier_data_updated: Optional[str] = None
+    # Legacy fields
+    ai_summary: Optional[str] = None
     is_premium: bool = False
     image_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -1215,6 +1244,136 @@ async def run_daily_automation(api_key: Optional[str] = Header(None, alias="X-AP
         raise HTTPException(status_code=401, detail="Invalid API key")
     
     return await run_automation(RunAutomationRequest(job_type=AutomationJobType.SCHEDULED_DAILY))
+
+
+# =====================
+# ROUTES - Data Pipeline
+# =====================
+
+@automation_router.post("/pipeline/full")
+async def run_full_pipeline(api_key: Optional[str] = Header(None, alias="X-API-Key")):
+    """
+    Run the full data ingestion pipeline.
+    Fetches from all sources, updates competitor/ad data, and recalculates scores.
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    
+    if api_key and api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    try:
+        from services.pipeline import DataPipeline
+        pipeline = DataPipeline(db)
+        result = await pipeline.run_full_pipeline()
+        
+        return {
+            "success": result.success,
+            "duration_seconds": result.duration_seconds,
+            "products_processed": result.products_processed,
+            "products_created": result.products_created,
+            "products_updated": result.products_updated,
+            "alerts_generated": result.alerts_generated,
+            "source_results": result.source_results,
+            "errors": result.errors if result.errors else None,
+        }
+    except Exception as e:
+        logging.error(f"Pipeline error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@automation_router.post("/pipeline/quick-refresh")
+async def run_quick_refresh():
+    """
+    Quick refresh - just update scores and competitor data.
+    Faster than full pipeline, skips source fetching.
+    """
+    try:
+        from services.pipeline import DataPipeline
+        pipeline = DataPipeline(db)
+        result = await pipeline.run_quick_refresh()
+        
+        return {
+            "success": result.success,
+            "duration_seconds": result.duration_seconds,
+            "products_updated": result.products_updated,
+            "errors": result.errors if result.errors else None,
+        }
+    except Exception as e:
+        logging.error(f"Quick refresh error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@automation_router.post("/pipeline/source/{source_name}")
+async def run_source_pipeline(source_name: str):
+    """
+    Run pipeline for a specific data source.
+    Valid sources: tiktok, amazon, aliexpress, cj_dropshipping
+    """
+    valid_sources = ['tiktok', 'amazon', 'aliexpress', 'cj_dropshipping']
+    if source_name not in valid_sources:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid source. Must be one of: {', '.join(valid_sources)}"
+        )
+    
+    try:
+        from services.pipeline import DataPipeline
+        pipeline = DataPipeline(db)
+        result = await pipeline.run_source_only(source_name)
+        
+        return {
+            "success": result.success,
+            "source": source_name,
+            "duration_seconds": result.duration_seconds,
+            "products_created": result.products_created,
+            "products_updated": result.products_updated,
+            "source_results": result.source_results.get(source_name, {}),
+            "errors": result.errors if result.errors else None,
+        }
+    except Exception as e:
+        logging.error(f"Source pipeline error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@automation_router.get("/pipeline/status")
+async def get_pipeline_status():
+    """
+    Get status of data sources and pipeline health.
+    """
+    # Get latest pipeline runs
+    cursor = db.automation_logs.find(
+        {"job_type": "full_pipeline"},
+        {"_id": 0}
+    ).sort("started_at", -1).limit(5)
+    recent_runs = await cursor.to_list(5)
+    
+    # Get product counts
+    total_products = await db.products.count_documents({})
+    products_with_scores = await db.products.count_documents({"market_score": {"$gte": 0}})
+    high_opportunity = await db.products.count_documents({"market_label": {"$in": ["massive", "strong"]}})
+    
+    # Get data freshness
+    latest_product = await db.products.find_one({}, {"_id": 0, "last_updated": 1}, sort=[("last_updated", -1)])
+    
+    return {
+        "pipeline_health": "healthy" if recent_runs and recent_runs[0].get("success") else "unknown",
+        "last_run": recent_runs[0] if recent_runs else None,
+        "recent_runs": recent_runs,
+        "product_stats": {
+            "total": total_products,
+            "with_scores": products_with_scores,
+            "high_opportunity": high_opportunity,
+        },
+        "data_freshness": latest_product.get("last_updated") if latest_product else None,
+        "sources": {
+            "tiktok_trends": {"status": "simulated", "description": "Curated trending products"},
+            "amazon_trends": {"status": "simulated", "description": "BSR movers data"},
+            "aliexpress_products": {"status": "simulated", "description": "Supplier pricing"},
+            "cj_dropshipping": {"status": "simulated", "description": "Fast shipping suppliers"},
+            "competitor_intelligence": {"status": "estimated", "description": "Store count estimates"},
+            "ad_activity": {"status": "estimated", "description": "Ad spend estimates"},
+        }
+    }
 
 # =====================
 # ROUTES - Stripe

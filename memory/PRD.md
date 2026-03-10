@@ -33,66 +33,85 @@ Build a platform that helps dropshippers and e-commerce entrepreneurs:
 - ✅ Alert generation for high-potential products
 - ✅ Data ingestion from multiple sources
 
-### Competitor & Market Intelligence System (NEW)
+### Competitor & Market Intelligence System (Updated Dec 2025)
 
-#### Market Score Calculation
+#### Live Data Pipeline Architecture
+The system now uses a **modular hybrid architecture** supporting both simulated and live data sources:
+
+```
+/services/
+├── data_sources/
+│   ├── base.py              # Abstract base class with caching, rate limiting
+│   ├── trend_sources.py     # TikTok, Amazon trending
+│   ├── supplier_data.py     # AliExpress, CJ Dropshipping
+│   ├── competitor_analysis.py  # Store detection
+│   └── ad_signals.py        # Ad activity estimation
+├── scoring/
+│   └── __init__.py          # 5-component scoring engine
+└── pipeline.py              # Orchestrator for all sources
+```
+
+#### Data Sources
+| Source | Status | Data Provided |
+|--------|--------|---------------|
+| TikTok Trends | Simulated | Views, engagement, hashtags |
+| Amazon BSR | Simulated | Sales rank, reviews, rating |
+| AliExpress | Simulated | Supplier cost, orders, shipping |
+| CJ Dropshipping | Simulated | Fast shipping suppliers |
+| Competitor Intelligence | Estimated | Store count, pricing |
+| Ad Activity | Estimated | Ad spend, platform distribution |
+
+**Note:** All sources are designed for easy swap to live APIs (SerpAPI, TikTok API, etc.)
+
+#### Market Score Calculation (5 Components)
 ```
 market_score = (
-  demand_score * 0.35 +
-  margin_score * 0.35 +
-  competition_score * 0.30
+  trend_score * 0.25 +
+  margin_score * 0.25 +
+  competition_score * 0.20 +
+  ad_activity_score * 0.15 +
+  supplier_demand_score * 0.15
 )
 ```
 
 #### Score Components
 | Component | Weight | Signals |
 |-----------|--------|---------|
-| Demand | 35% | TikTok views, trend momentum, ad validation |
-| Margin | 35% | Absolute margin, margin percentage |
-| Competition | 30% | Active stores, competition level, saturation |
+| Trend | 25% | TikTok views, view growth, engagement, stage |
+| Margin | 25% | Absolute margin (GBP), margin percentage |
+| Competition | 20% | Active stores, saturation, new entrants |
+| Ad Activity | 15% | Ad count sweet spot, growth, validation |
+| Supplier Demand | 15% | Order velocity, 30-day orders, fulfillment |
 
 #### Market Labels
-| Score Range | Label | Badge Color |
-|------------|-------|-------------|
-| 80-100 | High | Green |
-| 60-79 | Medium | Blue |
-| 40-59 | Low | Amber |
-| 0-39 | Very Low | Gray |
+| Score Range | Label | Badge |
+|------------|-------|-------|
+| 90+ | Massive Opportunity | Purple |
+| 75-89 | Strong Opportunity | Green |
+| 60-74 | Competitive | Amber |
+| <60 | Saturated | Gray |
 
-#### Tracked Metrics
-- **active_competitor_stores**: Number of stores selling the product
-- **avg_selling_price**: Average market price (GBP)
-- **price_range**: Min/max prices found in market
-- **estimated_monthly_ad_spend**: Market-wide ad spend estimate
-- **market_saturation**: Saturation percentage (0-100)
-- **market_score**: Combined opportunity score (0-100)
-- **market_label**: High/Medium/Low/Very Low
+#### Data Freshness Tracking
+All products include:
+- `last_updated`: When data was last refreshed
+- `data_source`: Source name (tiktok_trends, aliexpress, etc.)
+- `confidence_score`: Data quality score (0-100)
+- `scores_updated_at`: When scores were recalculated
 
-#### Competitor Store Data
-- Store name and ranking
-- Price and currency
-- Has active ads flag
-- Rating and review count
-- Estimated monthly sales
+#### Pipeline API Endpoints
+- `POST /api/automation/pipeline/full` - Run complete pipeline
+- `POST /api/automation/pipeline/quick-refresh` - Update scores only
+- `POST /api/automation/pipeline/source/{name}` - Run single source
+- `GET /api/automation/pipeline/status` - Get pipeline health
 
-#### UI Features
-- **Product Cards**: Market Score, Competitors count, Market Opportunity badge
-- **Product Detail Page**: 
-  - Score Breakdown chart (Demand, Margin, Competition, Ad Activity)
-  - Market Metrics (Active Stores, Avg Price, Ad Spend, Saturation)
-  - Competitor Stores list with prices and stats
-- **Dashboard**: "Market Opportunities" section (top products by market_score)
-- **Filters**: Market Opportunity filter (High/Medium/Low)
-- **Sort**: Sort by market_score
-
-#### API Endpoints
-- GET /api/products/market-opportunities/list - Top market opportunities
-- GET /api/products/{id}/competitors - Competitor data for product
-
-#### Data Source
-- Currently uses simulated/mock data
-- Designed for easy integration of real data sources (web scraping, APIs)
-- `data_source` field indicates "simulated" vs "live"
+#### Automation
+The daily automation job (`POST /api/automation/scheduled/daily`) now:
+1. Fetches from all trend sources (TikTok, Amazon)
+2. Merges supplier data (AliExpress, CJ)
+3. Updates competitor intelligence
+4. Updates ad activity signals
+5. Recalculates all 5 component scores
+6. Generates opportunity alerts (score ≥75)
 
 ### Store-Launch Platform
 - ✅ Product-to-store workflow

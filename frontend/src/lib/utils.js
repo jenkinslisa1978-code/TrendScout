@@ -130,6 +130,39 @@ export function getMarketScoreColor(score) {
 // Get market opportunity badge info
 export function getMarketOpportunityInfo(label) {
   const info = {
+    massive: { 
+      text: 'Massive Opportunity', 
+      shortText: 'Massive',
+      color: 'bg-purple-50 text-purple-700 border-purple-200',
+      bgColor: 'bg-purple-500',
+      textColor: 'text-purple-600',
+      description: 'Exceptional opportunity with high demand, margins, and low competition'
+    },
+    strong: { 
+      text: 'Strong Opportunity', 
+      shortText: 'Strong',
+      color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      bgColor: 'bg-emerald-500',
+      textColor: 'text-emerald-600',
+      description: 'Strong market demand with favorable margins and manageable competition'
+    },
+    competitive: { 
+      text: 'Competitive', 
+      shortText: 'Competitive',
+      color: 'bg-amber-50 text-amber-700 border-amber-200',
+      bgColor: 'bg-amber-500',
+      textColor: 'text-amber-600',
+      description: 'Good market potential but requires differentiation strategy'
+    },
+    saturated: { 
+      text: 'Saturated', 
+      shortText: 'Saturated',
+      color: 'bg-slate-100 text-slate-600 border-slate-200',
+      bgColor: 'bg-slate-400',
+      textColor: 'text-slate-500',
+      description: 'High competition - consider alternative products'
+    },
+    // Legacy labels (backwards compatibility)
     high: { 
       text: 'High Opportunity', 
       shortText: 'High',
@@ -163,7 +196,7 @@ export function getMarketOpportunityInfo(label) {
       description: 'Challenging market conditions'
     },
   };
-  return info[label] || info.medium;
+  return info[label] || info.competitive;
 }
 
 // Get market saturation color

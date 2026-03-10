@@ -134,13 +134,14 @@ export default function ProductDetailPage() {
   ];
 
   const marketBreakdown = product.market_score_breakdown || {
-    demand: 0,
+    trend: 0,
     margin: 0,
     competition: 0,
-    ad_activity: 0
+    ad_activity: 0,
+    supplier_demand: 0
   };
 
-  const marketInfo = getMarketOpportunityInfo(product.market_label || 'medium');
+  const marketInfo = getMarketOpportunityInfo(product.market_label || 'competitive');
 
   return (
     <DashboardLayout>
@@ -326,18 +327,18 @@ export default function ProductDetailPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-slate-600 flex items-center gap-2">
-                        <Activity className="h-4 w-4" />
-                        Demand
+                        <TrendingUp className="h-4 w-4" />
+                        Trend Score
                       </span>
-                      <span className="text-sm font-semibold text-slate-900">{marketBreakdown.demand}/100</span>
+                      <span className="text-sm font-semibold text-slate-900">{marketBreakdown.trend}/100</span>
                     </div>
-                    <Progress value={marketBreakdown.demand} className="h-2" />
+                    <Progress value={marketBreakdown.trend} className="h-2" />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-slate-600 flex items-center gap-2">
                         <PoundSterling className="h-4 w-4" />
-                        Margin
+                        Margin Score
                       </span>
                       <span className="text-sm font-semibold text-slate-900">{marketBreakdown.margin}/100</span>
                     </div>
@@ -347,7 +348,7 @@ export default function ProductDetailPage() {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-slate-600 flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        Competition (lower is better)
+                        Competition (higher = less)
                       </span>
                       <span className="text-sm font-semibold text-slate-900">{marketBreakdown.competition}/100</span>
                     </div>
@@ -357,11 +358,21 @@ export default function ProductDetailPage() {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-slate-600 flex items-center gap-2">
                         <Megaphone className="h-4 w-4" />
-                        Ad Activity (validation)
+                        Ad Validation
                       </span>
                       <span className="text-sm font-semibold text-slate-900">{marketBreakdown.ad_activity}/100</span>
                     </div>
                     <Progress value={marketBreakdown.ad_activity} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        Supplier Demand
+                      </span>
+                      <span className="text-sm font-semibold text-slate-900">{marketBreakdown.supplier_demand}/100</span>
+                    </div>
+                    <Progress value={marketBreakdown.supplier_demand} className="h-2" />
                   </div>
                 </div>
                 <p className="mt-4 text-xs text-slate-500">{marketInfo.description}</p>
