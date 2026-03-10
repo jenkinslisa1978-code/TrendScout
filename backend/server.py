@@ -4195,6 +4195,90 @@ async def run_automation_on_products(products: List[Dict]) -> Dict:
         "alerts_generated": alerts_generated,
     }
 
+
+# =====================
+# ROUTES - Real Data Scraping
+# =====================
+
+from services.scrapers.orchestrator import DataIngestionOrchestrator
+
+
+@ingestion_router.post("/scrape/full")
+async def run_full_scrape(
+    sources: Optional[List[str]] = None,
+    max_products: int = 30,
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """
+    Run full data scraping from real sources.
+    
+    Sources: aliexpress, tiktok_trends, amazon_movers, cj_dropshipping
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    orchestrator = DataIngestionOrchestrator(db)
+    
+    result = await orchestrator.run_full_ingestion(
+        sources=sources,
+        max_products_per_source=max_products
+    )
+    
+    return result
+
+
+@ingestion_router.post("/scrape/{source_name}")
+async def run_source_scrape(
+    source_name: str,
+    max_products: int = 30,
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """
+    Run scraping for a specific source.
+    
+    Valid sources: aliexpress, tiktok_trends, amazon_movers, cj_dropshipping
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    valid_sources = ['aliexpress', 'tiktok_trends', 'amazon_movers', 'cj_dropshipping']
+    if source_name not in valid_sources:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid source. Valid: {valid_sources}"
+        )
+    
+    orchestrator = DataIngestionOrchestrator(db)
+    result = await orchestrator.run_source_ingestion(source_name, max_products)
+    
+    return result.to_dict()
+
+
+@ingestion_router.get("/scrape/health")
+async def get_scraper_health(source_name: Optional[str] = None):
+    """Get health status of scraping sources"""
+    orchestrator = DataIngestionOrchestrator(db)
+    return await orchestrator.get_source_health(source_name)
+
+
+@ingestion_router.get("/scrape/history")
+async def get_scrape_history(limit: int = 10):
+    """Get recent scraping/ingestion runs"""
+    orchestrator = DataIngestionOrchestrator(db)
+    return await orchestrator.get_ingestion_history(limit)
+
+
+@ingestion_router.get("/scrape/quality")
+async def get_data_quality():
+    """Get data quality report (real vs simulated breakdown)"""
+    orchestrator = DataIngestionOrchestrator(db)
+    return await orchestrator.get_data_quality_report()
+
+
 # =====================
 # ROUTES - Stores
 # =====================
@@ -4937,6 +5021,13 @@ async def startup_db():
     await db.reports.create_index("metadata.report_type")
     await db.reports.create_index("metadata.is_latest")
     await db.reports.create_index([("metadata.generated_at", -1)])
+    
+    # Scraping indexes
+    await db.scrape_cache.create_index("key", unique=True)
+    await db.scrape_cache.create_index("cached_at")
+    await db.source_health.create_index("source_name", unique=True)
+    await db.ingestion_runs.create_index([("started_at", -1)])
+    await db.tiktok_hashtags.create_index("hashtag", unique=True)
     
     logger.info("Database indexes created")
     

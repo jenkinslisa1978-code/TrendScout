@@ -589,3 +589,39 @@ async def generate_monthly_report(db, params: Dict[str, Any]) -> Dict[str, Any]:
             'categories_analyzed': report.metadata.cluster_count,
         },
     }
+
+
+@TaskRegistry.register(
+    name="scrape_real_data",
+    description="Scrape real product data from live sources",
+    default_schedule="0 */6 * * *"  # Every 6 hours
+)
+async def scrape_real_data(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Scrape real product data from:
+    - AliExpress
+    - TikTok Creative Center
+    - Amazon Movers & Shakers
+    - CJ Dropshipping
+    """
+    from services.scrapers.orchestrator import DataIngestionOrchestrator
+    
+    max_products = params.get('max_products_per_source', 30)
+    sources = params.get('sources')  # None = all sources
+    
+    orchestrator = DataIngestionOrchestrator(db)
+    result = await orchestrator.run_full_ingestion(
+        sources=sources,
+        max_products_per_source=max_products
+    )
+    
+    return {
+        'records_processed': result.get('total_products_fetched', 0),
+        'details': {
+            'sources_successful': result.get('sources_successful', 0),
+            'products_created': result.get('total_products_created', 0),
+            'products_updated': result.get('total_products_updated', 0),
+            'duration_seconds': result.get('duration_seconds', 0),
+        },
+    }
+
