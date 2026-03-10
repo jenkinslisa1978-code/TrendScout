@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Trophy,
   Flame,
@@ -17,13 +18,17 @@ import {
   Zap,
   Plus,
   PieChart,
-  Users
+  Users,
+  Radar,
+  Bell,
+  LayoutDashboard
 } from 'lucide-react';
 import { getProducts, getProvenWinners, getMarketOpportunities } from '@/services/productService';
 import { getUserStores } from '@/services/storeService';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatNumber, formatCurrency, getEarlyTrendInfo, getEarlyTrendScoreColor, getSuccessProbabilityColor, getMarketOpportunityInfo, getMarketScoreColor } from '@/lib/utils';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
+import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
@@ -486,6 +491,56 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Intelligence Dashboard Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-manrope text-xl font-bold text-slate-900 flex items-center gap-2">
+                <LayoutDashboard className="h-6 w-6 text-indigo-500" />
+                Intelligence Dashboard
+              </h2>
+              <p className="text-slate-500 mt-1">Real-time market insights and personalized tracking</p>
+            </div>
+          </div>
+
+          <Tabs defaultValue="winners" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsTrigger value="winners" className="flex items-center gap-2" data-testid="tab-winners">
+                <Trophy className="h-4 w-4" />
+                <span className="hidden sm:inline">Winners</span>
+              </TabsTrigger>
+              <TabsTrigger value="radar" className="flex items-center gap-2" data-testid="tab-radar">
+                <Radar className="h-4 w-4" />
+                <span className="hidden sm:inline">Radar</span>
+              </TabsTrigger>
+              <TabsTrigger value="watchlist" className="flex items-center gap-2" data-testid="tab-watchlist">
+                <Eye className="h-4 w-4" />
+                <span className="hidden sm:inline">Watchlist</span>
+              </TabsTrigger>
+              <TabsTrigger value="alerts" className="flex items-center gap-2" data-testid="tab-alerts">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Alerts</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="winners">
+              <DailyWinnersPanel limit={5} />
+            </TabsContent>
+
+            <TabsContent value="radar">
+              <MarketRadar limit={5} />
+            </TabsContent>
+
+            <TabsContent value="watchlist">
+              <OpportunityWatchlist limit={5} />
+            </TabsContent>
+
+            <TabsContent value="alerts">
+              <AlertsPanel limit={5} />
+            </TabsContent>
+          </Tabs>
+        </div>
 
         {/* Quick Action Footer */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-center text-white">

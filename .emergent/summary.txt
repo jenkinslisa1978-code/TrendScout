@@ -1,167 +1,145 @@
 <analysis>**original_problem_statement:**
-The user wants to add viral growth features to the ViralScout application. The specific requirements are:
-1.  A Share Winning Product button on product pages.
-2.  Generation of shareable product insight cards (both downloadable images and HTML cards).
-3.  Public product pages with partial insights for SEO purposes.
-4.  A weekly Winning Products report page.
-5.  A referral system where users get +1 store slot per verified referral, capped at a maximum of +5 bonus slots.
-6.  All shared content must include ViralScout branding and a strong Call-To-Action.
+The user's vision for ViralScout is to create a complete ecommerce intelligence, prediction, validation, and store-launch SaaS platform built around real market signals. The platform must never fabricate data and should prioritize accuracy, reliability, and actionable insights for users.
 
-The user has also requested to implement feature gating and pricing plans (Free, Pro, Elite) and to upgrade the application to use real data sources instead of mock data, for which a modular, hybrid architecture was built.
+The core platform objectives include:
+-   **Architecture:** A scalable three-layer architecture (Data Pipeline, Application API, Intelligence & Prediction).
+-   **Data Ingestion:** Real, multi-source data ingestion from sources like TikTok, Amazon, AliExpress, and CJ Dropshipping.
+-   **Intelligence:** A robust intelligence layer featuring a Product Identity/Deduplication system, a comprehensive scoring engine, trend velocity detection, market saturation analysis, and a predictive success model.
+-   **Product Validation Engine:** A key feature to provide clear LAUNCH OPPORTUNITY, PROMISING BUT MONITOR, or HIGH RISK / SATURATED recommendations.
+-   **Advanced Dashboard:** A dashboard that provides instant product discovery (Daily Winning Products), opportunity monitoring (Watchlist & Alerts), and strategic trend awareness (Market Opportunity Radar).
+-   **User Growth:** Viral features like a Share Winning Product button, public SEO pages, a weekly report, and a referral system.
+-   **Monetization:** Subscription plans (Free, Pro, Elite) with feature gating.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application (React frontend, FastAPI/MongoDB backend) with a comprehensive product research and store-launch platform. Key systems include:
--   **Live Data Pipeline:** A modular, hybrid data ingestion system that pulls data from simulated sources (TikTok, Amazon) and real feeds (AliExpress, CJ Dropshipping) to calculate advanced product metrics.
--   **Advanced Scoring Engine:** Calculates multiple scores (, , , , etc.) to classify products into opportunity levels (Massive, Strong, Competitive, Saturated).
--   **Background Job System:** Uses  to run all heavy data processing (ingestion, scoring, analysis) in the background, ensuring the API remains fast. Jobs can be triggered automatically on a schedule or manually via API endpoints.
--   **Feature-Rich UI:** The frontend displays detailed product analytics, including a 5-component score breakdown, competitor lists, and market metrics.
--   **Supabase Authentication:** Live user authentication is integrated.
--   **Viral Growth Foundation:** The backend models and API routes for the referral system and public product pages have been created, and initial frontend components (, ) have been scaffolded.
+The application is a full-stack React and FastAPI platform with several foundational systems in place. The critical security vulnerability identified in the previous session has been **fully resolved**.
+
+-   **JWT-Based Security:** All protected backend endpoints now use JWT-based authentication. The user's identity is derived from a server-side validated token, eliminating the critical vulnerability of passing  from the client. The frontend has been refactored to use a centralized Axios client that automatically attaches the auth token to requests.
+-   **Data Integrity Layer (Phase 1 Complete):** A backend system for monitoring data source health and quality has been implemented. New API endpoints () provide this information. The frontend has been updated with new UI components (, , etc.) on product cards and detail pages to clearly label data source, freshness, and confidence, fulfilling the never fabricate data rule.
+-   **Product Validation Engine (Phase 2A Complete):** A backend Intelligence Layer () has been created. It contains modules for trend analysis, saturation, and success prediction, culminating in a product validation engine. A new API endpoint () provides a clear recommendation (LAUNCH OPPORTUNITY, etc.) with reasoning. The frontend  now displays this validation card.
+-   **Advanced Dashboard (Backend Started):** The backend for the advanced dashboard features is partially complete. New models for  and  have been created, and a new API router () provides endpoints for Daily Winning Products and Market Opportunity Radar.
 
 **Last working item**:
-The agent was in the middle of implementing the Viral Growth Features requested by the user.
-
-- **Last item agent was working:** Implementing the viral growth features. The agent had just created the backend models and API router () for referrals and public pages, and started creating the corresponding frontend components. The implementation is incomplete.
+- **Last item agent was working:** Implementing the **Advanced Dashboard Intelligence Features**. The agent created the backend models and API endpoints for the watchlist, alerts, daily winners, and market radar. It then began creating the frontend service () and the initial UI components (, ).
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
-- **Which testing method agent to use?** both. After completing the implementation, the agent should test the new backend endpoints () with  and verify all new frontend components (, , , public product pages, share buttons) with the . Given the scope, a final verification with the  is recommended.
+- **Which testing method agent to use?** both. The new backend endpoints should be tested with . The new frontend components on the Dashboard page need to be integrated and verified with the .
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: CRITICAL SECURITY VULNERABILITY (Priority: P0)**
-  - **Description:** During a security audit, the agent discovered that API endpoints were using a  passed as a query parameter from the client, rather than extracting it from a trusted, server-side authenticated session (e.g., a JWT). This allows any authenticated user to potentially access or modify another user's data by simply changing the  in the API call. The agent documented this finding but **did not fix it**.
-  - **Attempted fixes:** None. The agent only identified the issue using .
-  - **Next debug checklist:**
-    1.  Refactor all protected API endpoints in  that currently accept  from the query or body.
-    2.  Modify the dependency  to reliably extract the user's ID from the authorization token.
-    3.  Ensure all data access and modification queries (e.g., for stores) use this server-validated .
-    4.  Write a test using  to prove that a user cannot access another user's resources.
-  - **Why fix this issue and what will be achieved with the fix?** This is a critical data security and privacy issue. Fixing it will prevent unauthorized access to user data, which is essential before a public launch.
-  - **Status:** NOT STARTED
-  - **Is recurring issue?** N
-  - **Should Test frontend/backend/both after fix?** Backend.
-  - **Blocked on other issue:** None. This is a blocker for all other work.
-
-- **Issue 2: Supabase Rate Limiting on Signup (Priority: P2)**
-  - **Description:** The user signup flow may be blocked by a  error from Supabase due to the free tier's strict rate limits. The frontend handles the error gracefully, but it prevents new user registration when the limit is hit.
-  - **Status:** BLOCKED (by external service limits). The next agent should inform the user that they may need to upgrade their Supabase plan if this issue persists.
+- **Issue 1: Supabase Rate Limiting on Signup (Priority: P2)**
+  - **Description:** User signup can be blocked by  errors from Supabase's free tier. This was observed during testing.
+  - **Status:** BLOCKED (by external service limits). The code handles the error, but the root cause is the external service's usage quota. The user may need to upgrade their Supabase plan.
+  - **Is recurring issue?** Y
 
 **In progress Task List**:
-- **Task 1: Complete Viral Growth Features Implementation (Priority: P1)**
-  - **Where to resume:** The backend routes and models are partially created. The frontend components are scaffolded but need to be integrated.
-    1.  Finalize the backend logic in  for creating referrals and handling public product data.
-    2.  Create the  to display partial data for SEO.
-    3.  Integrate the  component into , triggered by a new Share button.
-    4.  Add the  component to the  to show users their referral status.
-    5.  Update the  to fetch data from the new public viral endpoints.
-    6.  Ensure all new UI components are correctly styled and functional.
-  - **What will be achieved with this?** A complete set of features designed to drive user acquisition through social sharing and referrals.
+- **Task 1: Complete Advanced Dashboard Intelligence Features (Priority: P0)**
+  - **Where to resume:**
+    1.  Create the remaining frontend components:  and .
+    2.  Integrate , , and the new components into .
+    3.  Implement the logic for adding/removing products from the watchlist via the new backend endpoints.
+    4.  Ensure all new dashboard sections are styled and display data correctly from the  endpoints.
+  - **What will be achieved with this?** A dynamic dashboard that provides users with immediate, actionable intelligence on winning products and market trends.
   - **Status:** IN PROGRESS
   - **Should Test frontend/backend/both after fix?** Both.
-  - **Blocked on something:** Blocked on **Issue 1: CRITICAL SECURITY VULNERABILITY**. The security fix must be implemented first.
+  - **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **P1: Implement Pricing Plans & Feature Gating:**
-        - Create ,  (£39/mo), and  (£99/mo) plans.
-        - Add logic to lock/unlock features based on the user's subscription plan (e.g., number of stores, access to trend detection, competitor analysis).
-        - Implement UI prompts for users to upgrade when they hit a feature limit.
+  - **P1: Implement Real Data Ingestion (Phase 2):**
+    - Connect to live data sources in the user-specified order: AliExpress, CJ Dropshipping, TikTok Creative Center, Amazon Movers & Shakers. Use APIs where available or implement safe scraping with rate-limiting.
+  - **P1: Complete Viral Growth Features:**
+    - Resume the paused work on the share button, public product pages, weekly winners report, and referral system. Ensure they are integrated with the now-secure authentication system.
+  - **P2: Implement Product Identity & Deduplication Layer:**
+    - Build the system to merge product data from multiple sources into single canonical records.
+
 - **Future Tasks:**
-    - **P2: Integrate Live Stripe:** Connect the backend to a live Stripe account to manage subscriptions and payments.
-    - **P2: Connect to More Live Data Sources:** Replace remaining simulated data sources (e.g., TikTok, Amazon) with real data ingestion via APIs or robust scraping (e.g., using SerpAPI).
-    - **P3: Integrate a Real AI Service:** Replace the rules-based content generator with a real LLM for generating store content.
+  - **P2: Implement Pricing Plans & Feature Gating:**
+    - Create , , and  plans and lock/unlock features based on the user's subscription.
+  - **P2: Integrate Live Stripe:**
+    - Connect the backend to manage real subscriptions and payments.
+  - **P3: Product Outcome Learning System:**
+    - Create the feedback loop to track product success and improve the platform's prediction models.
+  - **P3: Full Architecture Refactor:**
+    - Incrementally migrate the remaining parts of  into the new three-layer architecture (Data Pipeline, Application API, Intelligence).
 
 **Completed work in this session**
-- **Security and Architecture Audit:** Performed an audit and **discovered** a critical vulnerability related to user ID handling in API requests. A report was generated.
-- **Live Data Ingestion & Scoring Pipeline:** Built a modular, hybrid architecture to ingest and process data from multiple sources (simulated and real), with an enhanced 5-component scoring engine.
-- **Background Job System:** Implemented a robust background job system using  to handle all heavy processing asynchronously, with support for scheduled and manual job triggers.
-- **Competitor & Market Intelligence System:** Added a , new data fields (, ), and updated the UI with new badges, filters, and a detailed breakdown chart.
+- **Critical Security Vulnerability (RESOLVED):** Fixed the P0 security flaw by refactoring the entire application to use server-side validated JWT-based authentication. Created a new  module on the backend and a centralized  on the frontend.
+- **Data Integrity Layer (DONE):** Implemented backend services, API endpoints, and frontend components to display data source, freshness, and confidence scores for all products.
+- **Product Validation Engine (DONE):** Built the backend intelligence layer and API to provide actionable should I launch? recommendations. Integrated the results into the frontend product detail page.
+- **Advanced Dashboard Backend (DONE):** Created the backend models and API endpoints for the Daily Winners, Market Radar, Watchlist, and Alerts features.
 
 **Earlier issues found/mentioned but not fixed**
-- **Issue 1: CRITICAL SECURITY VULNERABILITY**
-  - **Debug checklist:** See All Pending/In progress Issue list above.
-  - **Why to solve this issue and what will be achieved with this?** To prevent unauthorized access to user data and secure the application for public launch.
-  - **Should Test frontend/backend/both after fix:** Backend.
-  - **Is recurring issue?** N
+- **Issue 1: Supabase Rate Limiting**
+  - **Debug checklist:** This is an external limitation. The next agent should inform the user that upgrading their Supabase plan may be necessary if the issue persists and blocks development or testing.
+  - **Why to solve this issue and what will be achieved with this?** To enable reliable user signup and testing without being blocked by external service limits.
+  - **Should Test frontend/backend/both after fix:** N/A (external issue).
+  - **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
 - **Issue:** Supabase Rate Limiting ().
 - **Recurrence count:** High.
-- **Status:** BLOCKED. The code handles the error, but the root cause is the external service limit.
+- **Status:** BLOCKED.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend:** React, TailwindCSS, 
-- **Backend:** FastAPI, MongoDB
-- **Authentication:** Supabase
-- **Background Jobs:** 
+- **Frontend:** React, TailwindCSS,  (for centralized API client)
+- **Backend:** FastAPI, MongoDB, 
+- **Authentication:** Supabase (JWT-based, server-side validated)
 
 **key DB schema**
-- ****: , , , , ****, ****, ****, ****, ****, ****, ****, ****, ****, , , .
+- ****: , , , , etc.
 - ****: , , .
-- ****: , uid=0(root) gid=0(root) groups=0(root), ****, ****, ****.
-- ****: , ,  ('pending', 'verified').
-- ****: , , , , , .
-
-**changes in tech stack**
-- **Backend:** Added  for background job processing.
-- **Frontend:** Added  for generating shareable image cards.
+- ****: , uid=0(root) gid=0(root) groups=0(root), , , .
+- ****: , , .
+- ** (NEW)**: , , .
+- ** (NEW)**: , , , , , .
 
 **All files of reference**
-- : **NEEDS REFACTORING** to fix the security vulnerability. Contains routing for all modules.
-- : Core of the new background processing system.
-- : Manages the entire data ingestion and scoring pipeline.
-- : New, in-progress routes for viral features.
-- : Needs to be updated with the Share button and modal.
-- : Needs to be updated with the .
-- : Contains details of the unfixed security issue.
-
-**Areas that need refactoring**:
-The single  file has grown very large (over 2000 lines). It should be broken down. More importantly, all API endpoints that rely on a client-provided  must be refactored immediately to derive the user ID from the server-side authentication session to fix the critical security flaw.
-
-**key api endpoints**
-- : Manually triggers a background job.
-- : Retrieves the history of all job runs.
-- : (In-progress) Get user's referral code.
-- : (In-progress) Get public data for a product.
-- : (In-progress) Get products for the weekly report.
+- : Majorly refactored to remove  parameters and use JWT-based dependency injection. New routers for data integrity, intelligence, and dashboard were added.
+- : New file that contains the core JWT authentication logic ().
+- : New file that provides a centralized  instance for making authenticated API calls.
+- : Core of the new Product Validation Engine.
+- : Core of the new Data Integrity system.
+- : The next file to be modified to integrate the new dashboard components.
+- : Already updated to show Data Integrity and Product Validation info.
+- : Contains the latest, most detailed product vision from the user.
 
 **Critical Info for New Agent**
-- **Your absolute first priority (P0) is to fix the critical security vulnerability.** The application is not secure for multiple users until you refactor the API endpoints to get the user's ID from the authenticated session, not from query parameters. Review  for details. Do not proceed with any feature work until this is resolved and tested.
-- After fixing the security issue, resume the implementation of the Viral Growth Features, which is currently in progress.
-- To test UI features that require a logged-in state without hitting Supabase rate limits, you may need to temporarily comment out the Supabase keys in  and restart the frontend (frontend: ERROR (not running)
-frontend: started) to activate the built-in demo mode. Remember to restore the keys afterward.
+- The P0 security vulnerability is **FIXED**. You do not need to work on it. The application now uses a secure JWT-based authentication pattern.
+- The user has provided a detailed, multi-phase product vision. Your work should align with this vision, which prioritizes: 1) Data Integrity & Validation, 2) Real Data Ingestion, 3) Growth & Monetization.
+- Your immediate task is to complete the **Advanced Dashboard Intelligence** features, starting with the frontend implementation.
+- All new backend code should follow the user's preferred three-layer architecture (Data Pipeline, Application API, Intelligence).
+- For testing authenticated features, you can use the demo mode implemented in , which uses a predictable token for .
 
 **documents and test reports created in this job**
-- 
-- 
+-  (Updated multiple times with new product vision)
+-  (Test script to verify the security fix)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requests viral growth features (share button, insight cards, public pages, weekly report, referral system). (In Progress)
-2.  **User:** Specifies choices for insight cards (both HTML and image) and referral rewards (+1 store, max +5). (Acknowledged)
-3.  **User:** Requests to refactor heavy processing into background jobs. (Completed)
-4.  **User:** Specifies choices for the job system (automatic schedule + manual trigger). (Completed)
-5.  **User:** Requests to upgrade from mock data to a real data ingestion system. (Completed)
-6.  **User:** Specifies a hybrid approach for the data system: build the full architecture but start with a mix of real and simulated sources. (Completed)
-7.  **User:** Requests pricing plans and feature gating. (Pending)
-8.  **User:** Requests a Competitor & Market Intelligence system. (Completed)
-9.  **User:** Specifies choices for the market score display (badge + breakdown chart). (Completed)
-10. **Agent Acknowledgment:** Agent confirms it has started implementing viral features based on the user's choices. (In Progress)
+1.  **User:** Provided a detailed vision for advanced dashboard features (Daily Winners, Watchlist, Alerts, Market Radar). (In Progress)
+2.  **User:** Agreed with the agent's recommendation to build the Product Validation Engine first. (Completed)
+3.  **Agent:** Asked the user to prioritize between the Product Validation Engine and an architecture refactor. (Completed)
+4.  **User:** Provided a refined, comprehensive vision document focusing on a three-layer architecture and a Product Validation Engine. (Completed)
+5.  **Agent:** Completed implementation of the Data Integrity feature. (Completed)
+6.  **User:** Agreed with the agent's plan to start with Phase 1: Data Integrity. (Completed)
+7.  **Agent:** Analyzed the user's new vision and proposed starting with Phase 1. (Completed)
+8.  **User:** Provided a detailed product vision focusing on real data, a scalable architecture, and a Data Integrity phase. (Completed)
+9.  **Agent:** Completed the critical security fix. (Completed)
+10. **User:** Confirmed that fixing the P0 security vulnerability is the top priority and provided detailed requirements for the fix. (Completed)
 
 **Project Health Check:**
 - **Broken:**
-  - **Critical Security Vulnerability:** Endpoints are susceptible to unauthorized data access due to improper user ID handling.
   - New user signup is potentially blocked by external Supabase rate limiting.
 - **Mocked:**
-  - Some data sources (TikTok, Amazon trends) are still simulated, as per the planned hybrid approach.
-  - AI content generation for stores is rules-based.
+  - All data sources (TikTok, Amazon, etc.) are still simulated. Replacing these with real data is a high-priority upcoming task.
+  - AI content generation is still rules-based.
 
 **3rd Party Integrations**
-- **Supabase:** User authentication (Live, but rate-limited).
+- **Supabase:** User authentication (Live, JWT-based, but rate-limited on free tier).
 - **MongoDB:** Database.
 - **Shopify:** Store publishing (scaffolded).
 - **APScheduler:** Backend background job processing.
@@ -170,11 +148,11 @@ frontend: started) to activate the built-in demo mode. Remember to restore the k
 **Testing status**
 - **Testing agent used after significant changes:** NO
 - **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:** None.
-- **Known regressions:** None, but a critical security issue was introduced/discovered.
+- **Test files created:** []
+- **Known regressions:** None.
 
 **Credentials to test flow:**
-Live Supabase credentials are in . For UI testing, you may need to temporarily remove them and restart the frontend to use demo mode, bypassing potential rate-limiting issues.
+To test authenticated routes, use the demo mode. A valid demo token can be generated for the user  as per the logic in .
 
 **What agent forgot to execute**
-The agent **failed to fix the critical security vulnerability it discovered**. It correctly identified that passing  as a query parameter is insecure, documented it in a report, and then moved on to the next task without implementing a fix. This is a major oversight that must be corrected immediately.</analysis>
+The agent has successfully followed the user's shifting priorities, moving from the initial viral growth features to the critical security fix, and then to the new data-centric vision (Data Integrity, Validation, Dashboard). No major tasks from the user's explicit instructions in this session have been forgotten. The original Viral Growth tasks are paused, not forgotten, pending the completion of the higher-priority data and intelligence features.</analysis>

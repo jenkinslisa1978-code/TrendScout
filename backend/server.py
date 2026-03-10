@@ -38,6 +38,7 @@ jobs_router = APIRouter(prefix="/api/jobs")
 viral_router = APIRouter(prefix="/api/viral")
 data_integrity_router = APIRouter(prefix="/api/data-integrity")
 intelligence_router = APIRouter(prefix="/api/intelligence")
+dashboard_router = APIRouter(prefix="/api/dashboard")
 
 # =====================
 # MODELS
@@ -199,6 +200,39 @@ class UserReferralStats(BaseModel):
     bonus_store_slots: int = 0
     max_bonus_slots: int = 5
     remaining_bonus_capacity: int = 5
+
+
+# Watchlist & Alert Models
+class WatchlistItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    product_id: str
+    added_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Snapshot at time of adding (for change detection)
+    initial_success_probability: Optional[float] = None
+    initial_trend_velocity: Optional[float] = None
+    initial_competition_level: Optional[str] = None
+    initial_margin_score: Optional[int] = None
+    notes: Optional[str] = None
+
+
+class WatchlistItemCreate(BaseModel):
+    product_id: str
+    notes: Optional[str] = None
+
+
+class OpportunityAlert(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    product_id: str
+    alert_type: str  # trend_spike, success_increase, competition_change, launch_opportunity
+    title: str
+    message: str
+    severity: str = "info"  # info, warning, success
+    is_read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    data: Optional[Dict[str, Any]] = None
+
 
 class RunAutomationRequest(BaseModel):
     job_type: Optional[AutomationJobType] = AutomationJobType.FULL_PIPELINE
@@ -2382,6 +2416,513 @@ async def get_early_trend_opportunities(limit: int = 20):
 
 
 # =====================
+# ROUTES - Dashboard Intelligence
+# =====================
+
+@dashboard_router.get("/daily-winners")
+async def get_daily_winning_products(limit: int = 10):
+    """
+    Get today's top winning products - answers "What should I launch today?"
+    
+    Ranked by composite score of:
+    - success_probability
+    - trend_velocity
+    - margin_score
+    - competition_score (inverted - lower is better)
+    """
+    # Get high-scoring products
+    products = await db.products.find(
+        {"win_score": {"$gte": 50}},
+        {"_id": 0}
+    ).sort("win_score", -1).limit(limit * 3).to_list(limit * 3)
+    
+    if not products:
+        # Fallback to all products sorted by score
+        products = await db.products.find(
+            {},
+            {"_id": 0}
+        ).sort("trend_score", -1).limit(limit * 2).to_list(limit * 2)
+    
+    # Score and rank each product
+    ranked_products = []
+    for product in products:
+        # Get validation and prediction
+        validation = product_validator.validate_product(product)
+        prediction = success_predictor.predict_success(product)
+        trend = trend_analyzer.analyze_trend(product)
+        
+        # Calculate composite ranking score
+        ranking_score = (
+            prediction.success_probability * 0.35 +
+            (trend.velocity_percent / 2 if trend.velocity_percent > 0 else 0) * 0.25 +
+            product.get("margin_score", 50) * 0.25 +
+            (100 - product.get("competition_score", 50)) * 0.15  # Lower competition = better
+        )
+        
+        # Only include promising products
+        if validation.overall_score >= 40:
+            ranked_products.append({
+                "product_id": product.get("id"),
+                "product_name": product.get("product_name"),
+                "category": product.get("category"),
+                "image_url": product.get("image_url"),
+                "trend_stage": product.get("trend_stage"),
+                "trend_velocity": trend.velocity_percent,
+                "estimated_margin": f"£{(product.get('estimated_retail_price', 0) - product.get('supplier_cost', 0)):.2f}",
+                "margin_percent": round(((product.get('estimated_retail_price', 0) - product.get('supplier_cost', 0)) / product.get('estimated_retail_price', 1)) * 100) if product.get('estimated_retail_price', 0) > 0 else 0,
+                "competition_level": product.get("competition_level"),
+                "success_probability": round(prediction.success_probability, 1),
+                "validation_result": validation.recommendation.value,
+                "validation_label": validation.recommendation_label,
+                "confidence_score": validation.confidence_score,
+                "ranking_score": round(ranking_score, 1),
+                "strengths": validation.strengths[:2],
+                "is_early_opportunity": trend.is_early_opportunity,
+                "is_simulated": product.get("data_source") == "simulated",
+            })
+    
+    # Sort by ranking score
+    ranked_products.sort(key=lambda x: x["ranking_score"], reverse=True)
+    
+    return {
+        "daily_winners": ranked_products[:limit],
+        "count": len(ranked_products[:limit]),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@dashboard_router.get("/watchlist")
+async def get_user_watchlist(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get user's product watchlist with updated metrics and change indicators"""
+    user_id = current_user.user_id
+    
+    # Get watchlist items
+    watchlist = await db.watchlist.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).sort("added_at", -1).to_list(100)
+    
+    # Enrich with current product data and changes
+    enriched_items = []
+    for item in watchlist:
+        product = await db.products.find_one({"id": item["product_id"]}, {"_id": 0})
+        if not product:
+            continue
+        
+        # Get current analysis
+        validation = product_validator.validate_product(product)
+        prediction = success_predictor.predict_success(product)
+        trend = trend_analyzer.analyze_trend(product)
+        
+        # Calculate changes from initial snapshot
+        initial_success = item.get("initial_success_probability", prediction.success_probability)
+        initial_velocity = item.get("initial_trend_velocity", trend.velocity_percent)
+        initial_competition = item.get("initial_competition_level", product.get("competition_level"))
+        initial_margin = item.get("initial_margin_score", product.get("margin_score", 50))
+        
+        success_change = prediction.success_probability - initial_success
+        velocity_change = trend.velocity_percent - initial_velocity
+        margin_change = product.get("margin_score", 50) - initial_margin
+        
+        # Determine competition change
+        competition_levels = {"low": 1, "medium": 2, "high": 3}
+        current_comp_num = competition_levels.get(product.get("competition_level"), 2)
+        initial_comp_num = competition_levels.get(initial_competition, 2)
+        competition_change = current_comp_num - initial_comp_num  # Positive = worse
+        
+        enriched_items.append({
+            "watchlist_id": item.get("id"),
+            "product_id": product.get("id"),
+            "product_name": product.get("product_name"),
+            "category": product.get("category"),
+            "image_url": product.get("image_url"),
+            "added_at": item.get("added_at"),
+            "notes": item.get("notes"),
+            
+            # Current metrics
+            "trend_stage": product.get("trend_stage"),
+            "trend_velocity": trend.velocity_percent,
+            "success_probability": round(prediction.success_probability, 1),
+            "competition_level": product.get("competition_level"),
+            "margin_score": product.get("margin_score", 50),
+            "validation_result": validation.recommendation.value,
+            "validation_label": validation.recommendation_label,
+            
+            # Change indicators
+            "changes": {
+                "success_change": round(success_change, 1),
+                "velocity_change": round(velocity_change, 1),
+                "margin_change": margin_change,
+                "competition_change": competition_change,  # Positive = got worse
+            },
+            
+            # Signal directions
+            "signals": {
+                "trend": "improving" if velocity_change > 5 else ("declining" if velocity_change < -5 else "stable"),
+                "success": "improving" if success_change > 3 else ("declining" if success_change < -3 else "stable"),
+                "competition": "improving" if competition_change < 0 else ("worsening" if competition_change > 0 else "stable"),
+                "margin": "improving" if margin_change > 3 else ("declining" if margin_change < -3 else "stable"),
+            },
+            
+            "is_simulated": product.get("data_source") == "simulated",
+        })
+    
+    return {
+        "watchlist": enriched_items,
+        "count": len(enriched_items),
+    }
+
+
+@dashboard_router.post("/watchlist")
+async def add_to_watchlist(
+    request: WatchlistItemCreate,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Add a product to user's watchlist"""
+    user_id = current_user.user_id
+    
+    # Check if already in watchlist
+    existing = await db.watchlist.find_one({
+        "user_id": user_id,
+        "product_id": request.product_id
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Product already in watchlist")
+    
+    # Get product for initial snapshot
+    product = await db.products.find_one({"id": request.product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Get current metrics for snapshot
+    prediction = success_predictor.predict_success(product)
+    trend = trend_analyzer.analyze_trend(product)
+    
+    # Create watchlist item
+    watchlist_item = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "product_id": request.product_id,
+        "added_at": datetime.now(timezone.utc).isoformat(),
+        "notes": request.notes,
+        "initial_success_probability": prediction.success_probability,
+        "initial_trend_velocity": trend.velocity_percent,
+        "initial_competition_level": product.get("competition_level"),
+        "initial_margin_score": product.get("margin_score", 50),
+    }
+    
+    await db.watchlist.insert_one(watchlist_item)
+    
+    return {
+        "success": True,
+        "watchlist_item": {k: v for k, v in watchlist_item.items() if k != "_id"},
+        "message": f"Added {product.get('product_name')} to watchlist"
+    }
+
+
+@dashboard_router.delete("/watchlist/{product_id}")
+async def remove_from_watchlist(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Remove a product from user's watchlist"""
+    user_id = current_user.user_id
+    
+    result = await db.watchlist.delete_one({
+        "user_id": user_id,
+        "product_id": product_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not in watchlist")
+    
+    return {"success": True, "message": "Removed from watchlist"}
+
+
+@dashboard_router.get("/watchlist/check/{product_id}")
+async def check_watchlist_status(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Check if a product is in user's watchlist"""
+    user_id = current_user.user_id
+    
+    item = await db.watchlist.find_one({
+        "user_id": user_id,
+        "product_id": product_id
+    }, {"_id": 0})
+    
+    return {
+        "in_watchlist": item is not None,
+        "watchlist_item": item
+    }
+
+
+@dashboard_router.get("/alerts")
+async def get_user_alerts(
+    unread_only: bool = False,
+    limit: int = 50,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get user's opportunity alerts"""
+    user_id = current_user.user_id
+    
+    query = {"user_id": user_id}
+    if unread_only:
+        query["is_read"] = False
+    
+    alerts = await db.alerts.find(
+        query,
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Count unread
+    unread_count = await db.alerts.count_documents({
+        "user_id": user_id,
+        "is_read": False
+    })
+    
+    return {
+        "alerts": alerts,
+        "count": len(alerts),
+        "unread_count": unread_count,
+    }
+
+
+@dashboard_router.post("/alerts/{alert_id}/read")
+async def mark_alert_read(
+    alert_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Mark an alert as read"""
+    user_id = current_user.user_id
+    
+    result = await db.alerts.update_one(
+        {"id": alert_id, "user_id": user_id},
+        {"$set": {"is_read": True}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    
+    return {"success": True}
+
+
+@dashboard_router.post("/alerts/read-all")
+async def mark_all_alerts_read(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Mark all alerts as read"""
+    user_id = current_user.user_id
+    
+    result = await db.alerts.update_many(
+        {"user_id": user_id, "is_read": False},
+        {"$set": {"is_read": True}}
+    )
+    
+    return {"success": True, "updated_count": result.modified_count}
+
+
+@dashboard_router.get("/market-radar")
+async def get_market_opportunity_radar(limit: int = 10):
+    """
+    Get market opportunity clusters - groups of related products showing trends.
+    
+    Identifies emerging opportunity clusters rather than individual products.
+    """
+    # Get all products (use trend_score as fallback if win_score is 0)
+    products = await db.products.find(
+        {},
+        {"_id": 0}
+    ).to_list(500)
+    
+    # Filter to products with some score
+    products = [p for p in products if p.get("trend_score", 0) > 0 or p.get("win_score", 0) > 0]
+    
+    if not products:
+        # Get any products if no scored ones
+        products = await db.products.find({}, {"_id": 0}).limit(100).to_list(100)
+    
+    # Group by category and analyze
+    category_clusters = {}
+    
+    for product in products:
+        category = product.get("category", "Other")
+        
+        if category not in category_clusters:
+            category_clusters[category] = {
+                "products": [],
+                "total_velocity": 0,
+                "total_success": 0,
+                "competition_levels": [],
+            }
+        
+        trend = trend_analyzer.analyze_trend(product)
+        prediction = success_predictor.predict_success(product)
+        
+        category_clusters[category]["products"].append(product)
+        category_clusters[category]["total_velocity"] += trend.velocity_percent
+        category_clusters[category]["total_success"] += prediction.success_probability
+        category_clusters[category]["competition_levels"].append(product.get("competition_level", "medium"))
+    
+    # Calculate cluster metrics
+    clusters = []
+    for category, data in category_clusters.items():
+        product_count = len(data["products"])
+        if product_count < 2:
+            continue  # Skip single-product clusters
+        
+        avg_velocity = data["total_velocity"] / product_count
+        avg_success = data["total_success"] / product_count
+        
+        # Calculate dominant competition level
+        comp_counts = {"low": 0, "medium": 0, "high": 0}
+        for level in data["competition_levels"]:
+            comp_counts[level] = comp_counts.get(level, 0) + 1
+        dominant_competition = max(comp_counts, key=comp_counts.get)
+        
+        # Determine trend stage for cluster
+        if avg_velocity > 50:
+            cluster_trend = "exploding"
+        elif avg_velocity > 20:
+            cluster_trend = "rising"
+        elif avg_velocity > 5:
+            cluster_trend = "early_trend"
+        elif avg_velocity >= -5:
+            cluster_trend = "stable"
+        else:
+            cluster_trend = "declining"
+        
+        # Calculate cluster opportunity score
+        cluster_score = (
+            avg_success * 0.4 +
+            (avg_velocity if avg_velocity > 0 else 0) * 0.3 +
+            (100 if dominant_competition == "low" else 60 if dominant_competition == "medium" else 30) * 0.3
+        )
+        
+        clusters.append({
+            "cluster_name": category,
+            "trend_stage": cluster_trend,
+            "avg_success_probability": round(avg_success, 1),
+            "avg_trend_velocity": round(avg_velocity, 1),
+            "product_count": product_count,
+            "competition_level": dominant_competition,
+            "opportunity_score": round(cluster_score, 1),
+            "top_products": [
+                {
+                    "id": p.get("id"),
+                    "name": p.get("product_name"),
+                    "success_probability": round(success_predictor.predict_success(p).success_probability, 1),
+                }
+                for p in sorted(data["products"], key=lambda x: x.get("win_score", 0), reverse=True)[:3]
+            ],
+        })
+    
+    # Sort by opportunity score
+    clusters.sort(key=lambda x: x["opportunity_score"], reverse=True)
+    
+    return {
+        "market_radar": clusters[:limit],
+        "count": len(clusters[:limit]),
+        "total_clusters": len(clusters),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@dashboard_router.get("/market-radar/{cluster_name}")
+async def get_cluster_products(cluster_name: str, limit: int = 20):
+    """Get all products in a market cluster/category"""
+    products = await db.products.find(
+        {"category": cluster_name},
+        {"_id": 0}
+    ).sort("win_score", -1).limit(limit).to_list(limit)
+    
+    enriched = []
+    for product in products:
+        validation = product_validator.validate_product(product)
+        prediction = success_predictor.predict_success(product)
+        
+        enriched.append({
+            "product_id": product.get("id"),
+            "product_name": product.get("product_name"),
+            "trend_stage": product.get("trend_stage"),
+            "success_probability": round(prediction.success_probability, 1),
+            "competition_level": product.get("competition_level"),
+            "validation_result": validation.recommendation.value,
+            "margin_score": product.get("margin_score", 50),
+            "is_simulated": product.get("data_source") == "simulated",
+        })
+    
+    return {
+        "cluster_name": cluster_name,
+        "products": enriched,
+        "count": len(enriched),
+    }
+
+
+@dashboard_router.get("/summary")
+async def get_dashboard_summary(
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_user)
+):
+    """
+    Get complete dashboard summary for the home view.
+    Combines daily winners, watchlist preview, alerts, and market radar.
+    """
+    user_id = current_user.user_id if current_user else None
+    
+    # Get daily winners (top 5)
+    daily_winners_response = await get_daily_winning_products(limit=5)
+    
+    # Get market radar (top 5 clusters)
+    market_radar_response = await get_market_opportunity_radar(limit=5)
+    
+    # Get watchlist and alerts if authenticated
+    watchlist_preview = []
+    unread_alerts = 0
+    
+    if user_id:
+        # Get watchlist preview
+        watchlist_items = await db.watchlist.find(
+            {"user_id": user_id},
+            {"_id": 0}
+        ).sort("added_at", -1).limit(3).to_list(3)
+        
+        for item in watchlist_items:
+            product = await db.products.find_one({"id": item["product_id"]}, {"_id": 0, "product_name": 1, "id": 1})
+            if product:
+                watchlist_preview.append({
+                    "product_id": product.get("id"),
+                    "product_name": product.get("product_name"),
+                })
+        
+        # Count unread alerts
+        unread_alerts = await db.alerts.count_documents({
+            "user_id": user_id,
+            "is_read": False
+        })
+    
+    # Get platform stats
+    total_products = await db.products.count_documents({})
+    launch_opportunities = len([p for p in daily_winners_response.get("daily_winners", []) if p.get("validation_result") == "launch_opportunity"])
+    
+    return {
+        "daily_winners": daily_winners_response.get("daily_winners", [])[:5],
+        "market_radar": market_radar_response.get("market_radar", [])[:5],
+        "watchlist_preview": watchlist_preview,
+        "unread_alerts": unread_alerts,
+        "stats": {
+            "total_products": total_products,
+            "launch_opportunities": launch_opportunities,
+            "trending_clusters": market_radar_response.get("count", 0),
+        },
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# =====================
 # ROUTES - Stripe
 # =====================
 
@@ -2927,7 +3468,7 @@ async def get_alerts(limit: int = 50, unread_only: bool = False):
     return {"data": alerts, "stats": stats}
 
 @api_router.put("/alerts/{alert_id}/read")
-async def mark_alert_read(alert_id: str):
+async def mark_trend_alert_read(alert_id: str):
     """Mark alert as read"""
     await db.trend_alerts.update_one({"id": alert_id}, {"$set": {"read": True}})
     return {"success": True}
@@ -3975,6 +4516,7 @@ app.include_router(viral_router)
 app.include_router(shopify_integration_router)
 app.include_router(data_integrity_router)
 app.include_router(intelligence_router)
+app.include_router(dashboard_router)
 
 app.add_middleware(
     CORSMiddleware,
