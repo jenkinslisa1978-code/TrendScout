@@ -88,9 +88,48 @@ early_trend_score = (
 ### Alerts
 - Now includes early trend alerts (exploding_trend, rising_early_trend, early_trend_detected)
 
+## Product Success Tracking System
+
+### Calculation Formula
+```
+success_probability = (
+  stores_created_score * 0.30 +
+  exports_count_score * 0.20 +
+  success_signals_score * 0.20 +
+  trend_metrics_score * 0.15 +
+  margin_score * 0.15
+)
+```
+
+### Tracked Metrics
+- **stores_created**: Number of stores built with this product
+- **exports_count**: Number of Shopify exports
+- **success_signals**: Estimated sales/conversion signals
+- **user_engagement_score**: Combined user interaction score
+- **proven_winner**: Boolean flag for high-performing products
+
+### Proven Winner Criteria
+- success_probability >= 70%
+- stores_created >= 3
+- exports_count >= 2 OR success_signals >= 10
+
+### Dashboard Features
+- "Proven Winning Products" section with aggregate stats
+- Success Rate column in product listings
+- "X stores built" indicator
+- "✓ Proven Winner" badge
+
+### API Endpoints
+- GET /api/products/proven-winners/list - Get top performing products
+- Automatic tracking on store creation and export
+
 ## Changelog
 
 ### March 2025
+- Added Product Success Tracking system
+- Added success_probability, stores_created, exports_count fields
+- Added "Proven Winning Products" dashboard section
+- Track store creation and exports automatically
 - Added Early Trend Detection system
 - Added early_trend_score and early_trend_label to Product model
 - Added view_growth_rate, engagement_rate, supplier_order_velocity fields

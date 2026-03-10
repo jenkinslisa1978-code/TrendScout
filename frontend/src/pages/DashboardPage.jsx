@@ -37,10 +37,13 @@ import {
   BarChart3,
   Activity,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Trophy,
+  Store,
+  CheckCircle2
 } from 'lucide-react';
-import { getProducts, getDashboardStats } from '@/services/productService';
-import { formatNumber, formatCurrency, getTrendStageColor, getOpportunityColor, getTrendScoreColor, getEarlyTrendInfo, getEarlyTrendScoreColor } from '@/lib/utils';
+import { getProducts, getDashboardStats, getProvenWinners } from '@/services/productService';
+import { formatNumber, formatCurrency, getTrendStageColor, getOpportunityColor, getTrendScoreColor, getEarlyTrendInfo, getEarlyTrendScoreColor, getSuccessProbabilityColor, getSuccessBadgeColor } from '@/lib/utils';
 
 const generateTrendData = () => {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -66,21 +69,28 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
+  const [provenWinners, setProvenWinners] = useState([]);
+  const [provenWinnersStats, setProvenWinnersStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7d');
   const [trendData] = useState(generateTrendData());
 
   useEffect(() => {
     const fetchData = async () => {
-      const [statsResult, productsResult] = await Promise.all([
+      const [statsResult, productsResult, winnersResult] = await Promise.all([
         getDashboardStats(),
-        getProducts({ sortBy: 'trend_score', sortOrder: 'desc' })
+        getProducts({ sortBy: 'trend_score', sortOrder: 'desc' }),
+        getProvenWinners(5)
       ]);
 
       if (statsResult.data) setStats(statsResult.data);
       if (productsResult.data) {
         setProducts(productsResult.data);
         setTopProducts(productsResult.data.slice(0, 5));
+      }
+      if (winnersResult.data) {
+        setProvenWinners(winnersResult.data);
+        setProvenWinnersStats(winnersResult.stats || {});
       }
       setLoading(false);
     };
@@ -458,6 +468,105 @@ export default function DashboardPage() {
                       </Link>
                     );
                   })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Proven Winning Products Section */}
+        <Card className="border-0 shadow-card overflow-hidden">
+          <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-manrope text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-emerald-500" />
+                  Proven Winning Products
+                </CardTitle>
+                <p className="text-sm text-slate-500 mt-1">Products with highest success rates from user data</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6 text-sm">
+                  <div className="text-center">
+                    <p className="font-mono text-xl font-bold text-emerald-600">{provenWinnersStats.total_stores_launched || 0}</p>
+                    <p className="text-xs text-slate-400">Stores Launched</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-mono text-xl font-bold text-blue-600">{provenWinnersStats.avg_success_rate?.toFixed(0) || 0}%</p>
+                    <p className="text-xs text-slate-400">Avg Success</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-mono text-xl font-bold text-amber-600">{formatCurrency(provenWinnersStats.avg_margin || 0)}</p>
+                    <p className="text-xs text-slate-400">Avg Margin</p>
+                  </div>
+                </div>
+                <Link 
+                  to="/discover?sort_by=success_probability" 
+                  className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                  data-testid="view-proven-winners-link"
+                >
+                  View all
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-slate-100">
+              {loading ? (
+                <div className="p-8 text-center text-slate-500">
+                  <div className="inline-block w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : provenWinners.length === 0 ? (
+                <div className="p-8 text-center text-slate-500">No proven winners yet. Build stores to track product success!</div>
+              ) : (
+                provenWinners.map((product) => (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    className="flex items-center justify-between p-5 hover:bg-slate-50/80 transition-colors group"
+                    data-testid={`proven-winner-row-${product.id}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 group-hover:from-emerald-100 transition-colors">
+                        {product.proven_winner ? (
+                          <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                        ) : (
+                          <Trophy className="h-6 w-6 text-amber-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors">
+                          {product.product_name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-sm text-slate-500">{product.category}</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-sm text-slate-500 flex items-center gap-1">
+                            <Store className="h-3 w-3" />
+                            {product.stores_created || 0} stores
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-sm font-medium text-emerald-600">
+                            {formatCurrency(product.estimated_margin)} margin
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className={`font-mono text-2xl font-bold ${getSuccessProbabilityColor(product.success_probability || 0)}`}>
+                          {product.success_probability || 0}%
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">Success Rate</p>
+                      </div>
+                      {product.proven_winner && (
+                        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border px-3 py-1 text-xs font-bold uppercase tracking-wider">
+                          Proven Winner
+                        </Badge>
+                      )}
+                    </div>
+                  </Link>
+                ))
               )}
             </div>
           </CardContent>

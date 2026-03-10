@@ -482,6 +482,61 @@ def get_early_trend_label(score):
         return 'stable'
 
 
+def calculate_success_probability(product):
+    """Calculate success probability based on tracking signals"""
+    stores_created = product.get('stores_created', 0)
+    exports_count = product.get('exports_count', 0)
+    success_signals = product.get('success_signals', 0)
+    trend_score = product.get('trend_score', 0)
+    early_trend_score = product.get('early_trend_score', 0)
+    estimated_margin = product.get('estimated_margin', 0)
+    
+    # Stores Created Score (30%)
+    if stores_created >= 20:
+        stores_score = 100
+    elif stores_created >= 10:
+        stores_score = 90
+    elif stores_created >= 5:
+        stores_score = 75
+    elif stores_created >= 3:
+        stores_score = 60
+    elif stores_created >= 1:
+        stores_score = 40
+    else:
+        stores_score = 0
+    
+    # Export Score (20%)
+    if exports_count >= 15:
+        export_score = 100
+    elif exports_count >= 8:
+        export_score = 85
+    elif exports_count >= 4:
+        export_score = 70
+    elif exports_count >= 2:
+        export_score = 50
+    elif exports_count >= 1:
+        export_score = 30
+    else:
+        export_score = 0
+    
+    # Success Signals Score (20%)
+    success_score = min(100, success_signals * 5)
+    
+    # Trend Metrics Score (15%)
+    trend_metrics_score = min(100, (trend_score + early_trend_score) / 2)
+    
+    # Margin Score (15%)
+    margin_score = min(100, estimated_margin * 3)
+    
+    return round(
+        stores_score * 0.30 +
+        export_score * 0.20 +
+        success_score * 0.20 +
+        trend_metrics_score * 0.15 +
+        margin_score * 0.15
+    )
+
+
 def process_product(product):
     """Process a product through the automation pipeline"""
     product['id'] = str(uuid.uuid4())
@@ -501,6 +556,22 @@ def process_product(product):
     # Calculate early trend score
     product['early_trend_score'] = calculate_early_trend_score(product)
     product['early_trend_label'] = get_early_trend_label(product['early_trend_score'])
+    
+    # Add success tracking fields with simulated data
+    product['stores_created'] = random.choice([0, 0, 0, 1, 1, 2, 3, 4, 5, 8, 12])
+    product['exports_count'] = random.choice([0, 0, 0, 0, 1, 1, 2, 3, 5, 7])
+    product['success_signals'] = product['stores_created'] * 2 + product['exports_count'] * 3 + random.randint(0, 10)
+    
+    # Calculate success probability
+    product['success_probability'] = calculate_success_probability(product)
+    product['proven_winner'] = (
+        product['success_probability'] >= 70 and 
+        product['stores_created'] >= 3 and 
+        (product['exports_count'] >= 2 or product['success_signals'] >= 10)
+    )
+    product['user_engagement_score'] = round(
+        (product['stores_created'] * 10 + product['exports_count'] * 5 + product['success_signals'] * 2) / 3, 1
+    )
     
     product['ai_summary'] = generate_ai_summary(product)
     product['estimated_margin'] = product['estimated_retail_price'] - product['supplier_cost']

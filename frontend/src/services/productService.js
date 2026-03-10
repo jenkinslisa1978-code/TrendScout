@@ -49,7 +49,24 @@ export const getProductById = async (id) => {
     return { data: result.data, error: null };
   } catch (error) {
     console.error('Error fetching product:', error);
-    return { data: null, error: { message: error.message } };
+    return { data: null, error: error.message };
+  }
+};
+
+// Get proven winning products
+export const getProvenWinners = async (limit = 10) => {
+  try {
+    const response = await fetch(`${API_URL}/api/products/proven-winners/list?limit=${limit}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch proven winners');
+    }
+    
+    const result = await response.json();
+    return { data: result.data || [], stats: result.stats || {}, error: null };
+  } catch (error) {
+    console.error('Error fetching proven winners:', error);
+    return { data: [], stats: {}, error: error.message };
   }
 };
 

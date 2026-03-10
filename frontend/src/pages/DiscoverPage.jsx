@@ -34,7 +34,8 @@ import {
   getCompetitionColor,
   getTrendScoreColor,
   getEarlyTrendInfo,
-  getEarlyTrendScoreColor
+  getEarlyTrendScoreColor,
+  getSuccessProbabilityColor
 } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -200,6 +201,7 @@ export default function DiscoverPage() {
                 <SelectContent>
                   <SelectItem value="trend_score">Trend Score</SelectItem>
                   <SelectItem value="early_trend_score">Early Trend Score</SelectItem>
+                  <SelectItem value="success_probability">Success Rate</SelectItem>
                   <SelectItem value="estimated_margin">Margin</SelectItem>
                   <SelectItem value="tiktok_views">TikTok Views</SelectItem>
                   <SelectItem value="created_at">Newest</SelectItem>
@@ -287,6 +289,14 @@ export default function DiscoverPage() {
                           </p>
                           <p className="text-xs text-slate-400">Early Score</p>
                         </div>
+                        {product.success_probability > 0 && (
+                          <div className="text-center">
+                            <p className={`font-mono text-xl font-bold ${getSuccessProbabilityColor(product.success_probability || 0)}`}>
+                              {product.success_probability}%
+                            </p>
+                            <p className="text-xs text-slate-400">Success</p>
+                          </div>
+                        )}
                         <div className="text-right">
                           <p className="font-mono text-lg font-semibold text-slate-900">
                             {formatCurrency(product.estimated_margin)}
@@ -299,10 +309,21 @@ export default function DiscoverPage() {
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         <Eye className="h-4 w-4" />
                         {formatNumber(product.tiktok_views)} TikTok views
+                        {product.stores_created > 0 && (
+                          <>
+                            <span className="text-slate-300">•</span>
+                            <span className="text-emerald-600">{product.stores_created} stores built</span>
+                          </>
+                        )}
                       </div>
 
                       {/* Badges */}
                       <div className="flex flex-wrap gap-2">
+                        {product.proven_winner && (
+                          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border text-xs">
+                            ✓ Proven Winner
+                          </Badge>
+                        )}
                         {product.early_trend_label && product.early_trend_label !== 'stable' && (
                           <Badge className={`${getEarlyTrendInfo(product.early_trend_label).color} border text-xs`}>
                             {getEarlyTrendInfo(product.early_trend_label).text}

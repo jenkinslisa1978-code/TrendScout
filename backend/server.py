@@ -102,9 +102,17 @@ class Product(BaseModel):
     view_growth_rate: float = 0.0  # Percentage growth velocity
     engagement_rate: float = 0.0  # Engagement as percentage
     supplier_order_velocity: int = 0  # Orders per week
+    # Product Success Tracking fields
+    stores_created: int = 0  # Number of stores created with this product
+    exports_count: int = 0  # Number of times exported
+    success_signals: int = 0  # Estimated sales/success signals
+    user_engagement_score: float = 0.0  # User interaction score
+    success_probability: int = 0  # Calculated success probability (0-100)
+    proven_winner: bool = False  # True if product is proven successful
     ai_summary: Optional[str] = None
     supplier_link: Optional[str] = None
     is_premium: bool = False
+    image_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -500,6 +508,160 @@ def should_generate_early_trend_alert(product: dict) -> bool:
     early_trend_score = product.get('early_trend_score', 0)
     early_trend_label = product.get('early_trend_label', 'stable')
     return early_trend_score >= 70 or early_trend_label in ['exploding', 'rising']
+
+
+def calculate_success_probability(product: dict) -> tuple:
+    """
+    Calculate success probability (0-100) based on user actions and performance signals.
+    Returns (success_probability, proven_winner, user_engagement_score)
+    
+    Signals:
+    - Stores created (30%): How many users built stores with this product
+    - Export count (20%): How many times exported
+    - Success signals (20%): Estimated sales/conversion signals
+    - Trend metrics (15%): Trend score and early trend score
+    - Margin potential (15%): Estimated margin attractiveness
+    """
+    stores_created = product.get('stores_created', 0)
+    exports_count = product.get('exports_count', 0)
+    success_signals = product.get('success_signals', 0)
+    trend_score = product.get('trend_score', 0)
+    early_trend_score = product.get('early_trend_score', 0)
+    estimated_margin = product.get('estimated_margin', 0)
+    
+    # 1. Stores Created Score (30%) - User validation
+    if stores_created >= 20:
+        stores_score = 100
+    elif stores_created >= 10:
+        stores_score = 90
+    elif stores_created >= 5:
+        stores_score = 75
+    elif stores_created >= 3:
+        stores_score = 60
+    elif stores_created >= 1:
+        stores_score = 40
+    else:
+        stores_score = 0
+    
+    # 2. Export Count Score (20%) - Action signals
+    if exports_count >= 15:
+        export_score = 100
+    elif exports_count >= 8:
+        export_score = 85
+    elif exports_count >= 4:
+        export_score = 70
+    elif exports_count >= 2:
+        export_score = 50
+    elif exports_count >= 1:
+        export_score = 30
+    else:
+        export_score = 0
+    
+    # 3. Success Signals Score (20%) - Estimated sales/conversions
+    if success_signals >= 100:
+        success_score = 100
+    elif success_signals >= 50:
+        success_score = 85
+    elif success_signals >= 20:
+        success_score = 70
+    elif success_signals >= 10:
+        success_score = 55
+    elif success_signals >= 5:
+        success_score = 40
+    else:
+        success_score = success_signals * 8
+    
+    # 4. Trend Metrics Score (15%) - Combined trend strength
+    combined_trend = (trend_score + early_trend_score) / 2
+    trend_metrics_score = min(100, combined_trend)
+    
+    # 5. Margin Score (15%) - Profit potential
+    if estimated_margin >= 40:
+        margin_score = 100
+    elif estimated_margin >= 30:
+        margin_score = 85
+    elif estimated_margin >= 20:
+        margin_score = 70
+    elif estimated_margin >= 15:
+        margin_score = 55
+    elif estimated_margin >= 10:
+        margin_score = 40
+    else:
+        margin_score = max(0, estimated_margin * 4)
+    
+    # Calculate weighted score
+    success_probability = (
+        stores_score * 0.30 +
+        export_score * 0.20 +
+        success_score * 0.20 +
+        trend_metrics_score * 0.15 +
+        margin_score * 0.15
+    )
+    
+    success_probability = min(100, max(0, round(success_probability)))
+    
+    # Calculate user engagement score (for tracking)
+    user_engagement_score = round(
+        (stores_created * 10 + exports_count * 5 + success_signals * 2) / 3, 1
+    )
+    
+    # Determine if proven winner
+    proven_winner = (
+        success_probability >= 70 and 
+        stores_created >= 3 and 
+        (exports_count >= 2 or success_signals >= 10)
+    )
+    
+    return success_probability, proven_winner, user_engagement_score
+
+
+async def track_product_store_created(product_id: str):
+    """Track when a store is created for a product"""
+    # Increment stores_created counter
+    await db.products.update_one(
+        {"id": product_id},
+        {
+            "$inc": {"stores_created": 1, "success_signals": 1},
+            "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
+        }
+    )
+    # Recalculate success probability
+    await recalculate_product_success(product_id)
+
+
+async def track_product_exported(product_id: str):
+    """Track when a product is exported"""
+    # Increment exports_count counter
+    await db.products.update_one(
+        {"id": product_id},
+        {
+            "$inc": {"exports_count": 1, "success_signals": 2},
+            "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
+        }
+    )
+    # Recalculate success probability
+    await recalculate_product_success(product_id)
+
+
+async def recalculate_product_success(product_id: str):
+    """Recalculate success probability for a product"""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        return
+    
+    success_probability, proven_winner, user_engagement_score = calculate_success_probability(product)
+    
+    await db.products.update_one(
+        {"id": product_id},
+        {
+            "$set": {
+                "success_probability": success_probability,
+                "proven_winner": proven_winner,
+                "user_engagement_score": user_engagement_score,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
 
 def should_generate_alert(product: dict) -> bool:
     """Check if product qualifies for alert"""
@@ -1092,6 +1254,41 @@ async def get_product(product_id: str):
         raise HTTPException(status_code=404, detail="Product not found")
     return {"data": product}
 
+
+@api_router.get("/products/proven-winners/list")
+async def get_proven_winners(limit: int = 10):
+    """Get proven winning products based on success tracking"""
+    # Find products that are proven winners or have high success probability
+    cursor = db.products.find(
+        {
+            "$or": [
+                {"proven_winner": True},
+                {"success_probability": {"$gte": 60}},
+                {"stores_created": {"$gte": 2}}
+            ]
+        },
+        {"_id": 0}
+    ).sort([("success_probability", -1), ("stores_created", -1)]).limit(limit)
+    
+    products = await cursor.to_list(limit)
+    
+    # Calculate aggregate stats
+    total_stores = sum(p.get('stores_created', 0) for p in products)
+    total_exports = sum(p.get('exports_count', 0) for p in products)
+    avg_margin = sum(p.get('estimated_margin', 0) for p in products) / len(products) if products else 0
+    avg_success_rate = sum(p.get('success_probability', 0) for p in products) / len(products) if products else 0
+    
+    return {
+        "data": products,
+        "stats": {
+            "count": len(products),
+            "total_stores_launched": total_stores,
+            "total_exports": total_exports,
+            "avg_margin": round(avg_margin, 2),
+            "avg_success_rate": round(avg_success_rate, 1)
+        }
+    }
+
 @api_router.post("/products")
 async def create_product(product: Product):
     """Create new product with automation"""
@@ -1669,6 +1866,9 @@ async def create_store(request: StoreCreate):
     await db.stores.insert_one(store_doc)
     await db.store_products.insert_one(store_product_doc)
     
+    # Track product success - store created
+    await track_product_store_created(request.product_id)
+    
     # Remove _id for response
     store_doc.pop("_id", None)
     store_product_doc.pop("_id", None)
@@ -1875,6 +2075,12 @@ async def export_store(store_id: str, user_id: str, format: str = "shopify"):
             "products": products,
             "exported_at": datetime.now(timezone.utc).isoformat(),
         }
+    
+    # Track product export for success tracking
+    for product in products:
+        source_product_id = product.get("source_product_id")
+        if source_product_id:
+            await track_product_exported(source_product_id)
     
     # Update store status to exported (if not already published)
     if store.get("status") not in ["published", "exported"]:
