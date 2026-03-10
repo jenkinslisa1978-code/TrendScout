@@ -42,6 +42,7 @@ data_integrity_router = APIRouter(prefix="/api/data-integrity")
 intelligence_router = APIRouter(prefix="/api/intelligence")
 dashboard_router = APIRouter(prefix="/api/dashboard")
 reports_router = APIRouter(prefix="/api/reports")
+email_router = APIRouter(prefix="/api/email")
 
 # =====================
 # MODELS
@@ -3593,6 +3594,210 @@ async def download_public_weekly_report_pdf():
         raise HTTPException(status_code=500, detail="Failed to generate PDF report")
 
 
+# =====================================================
+# EMAIL ENDPOINTS - Weekly Digest & Notifications
+# =====================================================
+
+@email_router.post("/send-test")
+async def send_test_email(
+    to_email: str,
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """
+    Send a test email to verify Resend integration (admin only).
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    from services.email_service import email_service
+    
+    html_content = """
+    <html>
+    <body style="font-family: sans-serif; padding: 20px;">
+        <h1 style="color: #4f46e5;">ViralScout Test Email</h1>
+        <p>This is a test email from ViralScout to verify the email integration is working correctly.</p>
+        <p style="color: #6b7280; font-size: 12px;">Sent via Resend API</p>
+    </body>
+    </html>
+    """
+    
+    result = await email_service.send_email(
+        to_email=to_email,
+        subject="ViralScout - Test Email",
+        html_content=html_content
+    )
+    
+    return result
+
+
+@email_router.post("/send-weekly-digest")
+async def send_weekly_digest_to_user(
+    to_email: str,
+    user_name: Optional[str] = None,
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """
+    Send weekly digest email to a specific user (admin only).
+    Uses latest weekly report data.
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    from services.email_service import email_service
+    
+    # Get latest weekly report
+    report = await db.reports.find_one(
+        {
+            "metadata.report_type": "weekly_winning_products",
+            "metadata.is_latest": True,
+            "metadata.status": "completed"
+        },
+        {"_id": 0}
+    )
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="No weekly report available")
+    
+    result = await email_service.send_weekly_digest(
+        to_email=to_email,
+        user_name=user_name or "there",
+        report_data=report
+    )
+    
+    return result
+
+
+@email_router.post("/send-weekly-digest-all")
+async def send_weekly_digest_to_all_subscribers(
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """
+    Send weekly digest email to all subscribed users (admin only).
+    This is called by the scheduled job.
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    from services.email_service import email_service
+    
+    # Get latest weekly report
+    report = await db.reports.find_one(
+        {
+            "metadata.report_type": "weekly_winning_products",
+            "metadata.is_latest": True,
+            "metadata.status": "completed"
+        },
+        {"_id": 0}
+    )
+    
+    if not report:
+        return {"status": "skipped", "reason": "No weekly report available", "sent": 0}
+    
+    # Get all users subscribed to weekly digest
+    subscribed_users = await db.users.find(
+        {"email_preferences.weekly_digest": True},
+        {"_id": 0, "email": 1, "name": 1}
+    ).to_list(None)
+    
+    # If no explicit subscribers, check for users with email
+    if not subscribed_users:
+        subscribed_users = await db.users.find(
+            {"email": {"$exists": True, "$ne": None}},
+            {"_id": 0, "email": 1, "name": 1}
+        ).to_list(50)  # Limit to 50 for safety
+    
+    results = {
+        "status": "completed",
+        "total_subscribers": len(subscribed_users),
+        "sent": 0,
+        "failed": 0,
+        "errors": []
+    }
+    
+    for user in subscribed_users:
+        try:
+            result = await email_service.send_weekly_digest(
+                to_email=user.get('email'),
+                user_name=user.get('name', user.get('email', '').split('@')[0]),
+                report_data=report
+            )
+            if result.get('status') == 'success':
+                results['sent'] += 1
+            else:
+                results['failed'] += 1
+                results['errors'].append({
+                    'email': user.get('email'),
+                    'error': result.get('error')
+                })
+        except Exception as e:
+            results['failed'] += 1
+            results['errors'].append({
+                'email': user.get('email'),
+                'error': str(e)
+            })
+    
+    return results
+
+
+@email_router.get("/subscription-status")
+async def get_email_subscription_status(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    Get current user's email subscription status.
+    """
+    user = await db.users.find_one(
+        {"email": current_user.email},
+        {"_id": 0, "email_preferences": 1}
+    )
+    
+    default_prefs = {
+        "weekly_digest": True,
+        "product_alerts": True,
+        "marketing": False
+    }
+    
+    return {
+        "email": current_user.email,
+        "preferences": user.get("email_preferences", default_prefs) if user else default_prefs
+    }
+
+
+@email_router.post("/subscription-status")
+async def update_email_subscription_status(
+    weekly_digest: Optional[bool] = True,
+    product_alerts: Optional[bool] = True,
+    marketing: Optional[bool] = False,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    Update current user's email subscription preferences.
+    """
+    preferences = {
+        "weekly_digest": weekly_digest,
+        "product_alerts": product_alerts,
+        "marketing": marketing
+    }
+    
+    await db.users.update_one(
+        {"email": current_user.email},
+        {
+            "$set": {"email_preferences": preferences},
+            "$setOnInsert": {"email": current_user.email}
+        },
+        upsert=True
+    )
+    
+    return {
+        "status": "updated",
+        "email": current_user.email,
+        "preferences": preferences
+    }
+
+
 @stripe_router.post("/create-checkout-session")
 async def create_checkout_session(
     request: CheckoutSessionRequest,
@@ -5528,6 +5733,7 @@ app.include_router(data_integrity_router)
 app.include_router(intelligence_router)
 app.include_router(dashboard_router)
 app.include_router(reports_router)
+app.include_router(email_router)
 
 app.add_middleware(
     CORSMiddleware,

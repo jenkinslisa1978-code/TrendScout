@@ -653,3 +653,97 @@ async def run_deduplication(db, params: Dict[str, Any]) -> Dict[str, Any]:
         },
     }
 
+
+
+# =====================================================
+# WEEKLY EMAIL DIGEST TASK
+# =====================================================
+
+@TaskRegistry.register(
+    name="send_weekly_email_digest",
+    description="Send weekly winning products digest to all subscribed users",
+    default_schedule="0 10 * * 1"  # Every Monday at 10:00 AM UTC
+)
+async def send_weekly_email_digest(db, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Send weekly email digest to all subscribed users.
+    
+    Runs every Monday at 10 AM UTC (after the weekly report is generated).
+    """
+    from services.email_service import email_service
+    
+    logger.info("Starting weekly email digest send...")
+    
+    # Get latest weekly report
+    report = await db.reports.find_one(
+        {
+            "metadata.report_type": "weekly_winning_products",
+            "metadata.is_latest": True,
+            "metadata.status": "completed"
+        },
+        {"_id": 0}
+    )
+    
+    if not report:
+        logger.warning("No weekly report available for email digest")
+        return {
+            'records_processed': 0,
+            'details': {
+                'status': 'skipped',
+                'reason': 'No weekly report available'
+            }
+        }
+    
+    # Get all users subscribed to weekly digest
+    subscribed_users = await db.users.find(
+        {"email_preferences.weekly_digest": True},
+        {"_id": 0, "email": 1, "name": 1}
+    ).to_list(None)
+    
+    # If no explicit subscribers, get users with verified emails (limit for safety)
+    if not subscribed_users:
+        subscribed_users = await db.users.find(
+            {"email": {"$exists": True, "$ne": None}},
+            {"_id": 0, "email": 1, "name": 1}
+        ).to_list(100)
+    
+    sent_count = 0
+    failed_count = 0
+    errors = []
+    
+    for user in subscribed_users:
+        try:
+            result = await email_service.send_weekly_digest(
+                to_email=user.get('email'),
+                user_name=user.get('name', user.get('email', '').split('@')[0]),
+                report_data=report
+            )
+            
+            if result.get('status') == 'success':
+                sent_count += 1
+            else:
+                failed_count += 1
+                errors.append({
+                    'email': user.get('email'),
+                    'error': result.get('error')
+                })
+        except Exception as e:
+            failed_count += 1
+            errors.append({
+                'email': user.get('email'),
+                'error': str(e)
+            })
+            logger.error(f"Failed to send digest to {user.get('email')}: {str(e)}")
+    
+    logger.info(f"Weekly email digest completed: {sent_count} sent, {failed_count} failed")
+    
+    return {
+        'records_processed': sent_count + failed_count,
+        'details': {
+            'status': 'completed',
+            'total_subscribers': len(subscribed_users),
+            'sent': sent_count,
+            'failed': failed_count,
+            'errors': errors[:5]  # Only keep first 5 errors
+        }
+    }
