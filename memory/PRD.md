@@ -458,6 +458,17 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **Launch Score Explainer Modal (COMPLETE - March 10, 2026)**
+  - Added `/api/products/{id}/launch-score-breakdown` API endpoint
+  - Returns detailed breakdown with 5 components (trend momentum, profit margins, market accessibility, advertiser validation, supplier reliability)
+  - Each component shows: raw score, weight percentage, weighted contribution, level, impact, plain-English explanation
+  - Formula section shows calculation: "25.5 + 17.8 + 13.4 + 10.2 + 7.8 = 75"
+  - Summary section with: rating explanation, strengths, weaknesses, improvement suggestions
+  - Created LaunchScoreExplainerModal.jsx with progress bars, color coding, and educational content
+  - Added ExplainScoreButton component with icon/button/text variants
+  - Integrated into: DailyWinnersPanel, OpportunityWatchlist, DiscoverPage product cards, ProductDetailPage
+  - All tests passed (100% - 17/17 backend tests)
+
 - **Product Launch Score Feature (COMPLETE - March 10, 2026)**
   - Added `launch_score` as the PRIMARY DECISION METRIC (0-100 scale)
   - Formula: launch_score = 0.30*trend + 0.25*margin + 0.20*competition + 0.15*ad_activity + 0.10*supplier_demand
