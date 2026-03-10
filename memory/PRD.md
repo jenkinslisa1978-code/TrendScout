@@ -458,6 +458,20 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **Product Launch Score Feature (COMPLETE - March 10, 2026)**
+  - Added `launch_score` as the PRIMARY DECISION METRIC (0-100 scale)
+  - Formula: launch_score = 0.30*trend + 0.25*margin + 0.20*competition + 0.15*ad_activity + 0.10*supplier_demand
+  - Categories: 80-100=Strong Launch (green), 60-79=Promising (blue), 40-59=Risky (amber), 0-39=Avoid (red)
+  - Added `launch_score_label` and `launch_score_reasoning` fields with transparent explanations
+  - Added LaunchScoreBadge component with color-coded visual display
+  - Updated DailyWinnersPanel to show launch score as primary metric with tooltips
+  - Updated OpportunityWatchlist to display launch score prominently
+  - Updated DiscoverPage product cards with launch score as first metric
+  - Added POST /api/automation/compute-launch-scores endpoint for batch computation
+  - Daily winners now sorted by launch_score
+  - All tests passed (100% - 14/14 backend tests)
+  - Distribution: 5 strong_launch, 17 promising, 13 risky, 0 avoid products
+
 - **Product Identity & Deduplication System (COMPLETE - March 10, 2026)**
   - Added ProductIdentityService for detecting and merging duplicate products
   - Added ProductMatcher with multi-signal matching (title, keywords, category, URL, price)
@@ -526,12 +540,17 @@ success_probability = (
 - ✅ Alert generation for high-potential products
 - ✅ Data ingestion from multiple sources (TikTok, Amazon, Suppliers)
 - ✅ Admin panel for automation management
-- ✅ **Product Identity & Deduplication System (NEW)**
+- ✅ **Product Identity & Deduplication System**
   - Detects duplicate products using multi-signal matching
   - Merges duplicates into canonical records
   - Preserves source-level data provenance
   - Recomputes scores after merging
   - Scheduled daily at 8 AM UTC
+- ✅ **Product Launch Score (PRIMARY DECISION METRIC)**
+  - Composite score: 0.30*trend + 0.25*margin + 0.20*competition + 0.15*ad_activity + 0.10*supplier_demand
+  - Categories: Strong Launch (80+), Promising (60-79), Risky (40-59), Avoid (<40)
+  - Color-coded badges with transparent reasoning
+  - Displayed prominently on cards, dashboard, watchlist, and reports
 
 ### Store-Launch Platform
 - ✅ Product-to-store workflow
