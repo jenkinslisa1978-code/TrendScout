@@ -36,7 +36,9 @@ import {
   getTrendScoreColor,
   getEarlyTrendInfo,
   getEarlyTrendScoreColor,
-  getSuccessProbabilityColor
+  getSuccessProbabilityColor,
+  getMarketOpportunityInfo,
+  getMarketScoreColor
 } from '@/lib/utils';
 import { toast } from 'sonner';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
@@ -59,6 +61,7 @@ export default function DiscoverPage() {
   const [trendStage, setTrendStage] = useState('all');
   const [opportunityRating, setOpportunityRating] = useState('all');
   const [earlyTrendFilter, setEarlyTrendFilter] = useState('all');
+  const [marketFilter, setMarketFilter] = useState('all');
   const [sortBy, setSortBy] = useState('trend_score');
   const [sortOrder, setSortOrder] = useState('desc');
 
@@ -79,6 +82,7 @@ export default function DiscoverPage() {
         trend_stage: trendStage !== 'all' ? trendStage : undefined,
         opportunity_rating: opportunityRating !== 'all' ? opportunityRating : undefined,
         early_trend_label: earlyTrendFilter !== 'all' ? earlyTrendFilter : undefined,
+        market_label: marketFilter !== 'all' ? marketFilter : undefined,
         sortBy,
         sortOrder
       };
@@ -90,7 +94,7 @@ export default function DiscoverPage() {
     
     const debounce = setTimeout(fetchProducts, 300);
     return () => clearTimeout(debounce);
-  }, [search, category, trendStage, opportunityRating, earlyTrendFilter, sortBy, sortOrder]);
+  }, [search, category, trendStage, opportunityRating, earlyTrendFilter, marketFilter, sortBy, sortOrder]);
 
   const handleSaveToggle = async (product, e) => {
     e.preventDefault();
@@ -211,12 +215,26 @@ export default function DiscoverPage() {
                 </SelectContent>
               </Select>
 
+              {/* Market Opportunity filter */}
+              <Select value={marketFilter} onValueChange={setMarketFilter}>
+                <SelectTrigger className="w-[160px] h-10" data-testid="market-filter">
+                  <SelectValue placeholder="Market Opp." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Markets</SelectItem>
+                  <SelectItem value="high">High Opportunity</SelectItem>
+                  <SelectItem value="medium">Medium Opportunity</SelectItem>
+                  <SelectItem value="low">Low Opportunity</SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* Sort */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[140px] h-10" data-testid="sort-by-filter">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="market_score">Market Score</SelectItem>
                   <SelectItem value="trend_score">Trend Score</SelectItem>
                   <SelectItem value="early_trend_score">Early Trend Score</SelectItem>
                   <SelectItem value="success_probability">Success Rate</SelectItem>
@@ -296,27 +314,25 @@ export default function DiscoverPage() {
                       {/* Stats */}
                       <div className="flex items-center justify-between">
                         <div>
+                          <p className={`font-mono text-xl font-bold ${getMarketScoreColor(product.market_score || 0)}`}>
+                            {product.market_score || 0}
+                          </p>
+                          <p className="text-xs text-slate-400">Market Score</p>
+                        </div>
+                        <div className="text-center">
                           <p className={`font-mono text-xl font-bold ${getTrendScoreColor(product.trend_score)}`}>
                             {product.trend_score}
                           </p>
-                          <p className="text-xs text-slate-400">Trend Score</p>
+                          <p className="text-xs text-slate-400">Trend</p>
                         </div>
                         <div className="text-center">
-                          <p className={`font-mono text-xl font-bold ${getEarlyTrendScoreColor(product.early_trend_score || 0)}`}>
-                            {product.early_trend_score || 0}
+                          <p className="font-mono text-lg font-semibold text-slate-700">
+                            {product.active_competitor_stores || 0}
                           </p>
-                          <p className="text-xs text-slate-400">Early Score</p>
+                          <p className="text-xs text-slate-400">Competitors</p>
                         </div>
-                        {product.success_probability > 0 && (
-                          <div className="text-center">
-                            <p className={`font-mono text-xl font-bold ${getSuccessProbabilityColor(product.success_probability || 0)}`}>
-                              {product.success_probability}%
-                            </p>
-                            <p className="text-xs text-slate-400">Success</p>
-                          </div>
-                        )}
                         <div className="text-right">
-                          <p className="font-mono text-lg font-semibold text-slate-900">
+                          <p className="font-mono text-lg font-semibold text-emerald-600">
                             {formatCurrency(product.estimated_margin)}
                           </p>
                           <p className="text-xs text-slate-400">Est. Margin</p>
@@ -337,6 +353,15 @@ export default function DiscoverPage() {
 
                       {/* Badges */}
                       <div className="flex flex-wrap gap-2">
+                        {/* Market Opportunity Badge - Priority display */}
+                        {product.market_label && (
+                          <Badge 
+                            className={`${getMarketOpportunityInfo(product.market_label).color} border text-xs font-semibold`}
+                            data-testid={`market-badge-${product.id}`}
+                          >
+                            {getMarketOpportunityInfo(product.market_label).shortText} Opp.
+                          </Badge>
+                        )}
                         {product.proven_winner && (
                           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border text-xs">
                             ✓ Proven Winner
@@ -349,9 +374,6 @@ export default function DiscoverPage() {
                         )}
                         <Badge className={`${getTrendStageColor(product.trend_stage)} border text-xs`}>
                           {product.trend_stage}
-                        </Badge>
-                        <Badge className={`${getOpportunityColor(product.opportunity_rating)} border text-xs`}>
-                          {product.opportunity_rating}
                         </Badge>
                         <Badge className={`${getCompetitionColor(product.competition_level)} border text-xs`}>
                           {product.competition_level} comp.

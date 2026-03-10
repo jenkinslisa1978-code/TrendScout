@@ -27,14 +27,72 @@ Build a platform that helps dropshippers and e-commerce entrepreneurs:
 - ✅ TikTok views and ad count tracking
 - ✅ Opportunity rating algorithm (low/medium/high/very high)
 - ✅ Trend stage classification (early/rising/peak/saturated)
-- ✅ **Early Trend Detection System** (NEW)
-  - early_trend_score (0-100)
-  - Labels: 🔥 Exploding, 📈 Rising, 🌱 Early Trend, Stable
-  - Signals: view growth velocity, engagement rate, supplier orders, ad activity, competition
-  - Automatic alert generation for high early_trend_score
+- ✅ **Early Trend Detection System**
+- ✅ **Competitor & Market Intelligence System** (NEW - Dec 2025)
 - ✅ AI-generated product summaries
 - ✅ Alert generation for high-potential products
 - ✅ Data ingestion from multiple sources
+
+### Competitor & Market Intelligence System (NEW)
+
+#### Market Score Calculation
+```
+market_score = (
+  demand_score * 0.35 +
+  margin_score * 0.35 +
+  competition_score * 0.30
+)
+```
+
+#### Score Components
+| Component | Weight | Signals |
+|-----------|--------|---------|
+| Demand | 35% | TikTok views, trend momentum, ad validation |
+| Margin | 35% | Absolute margin, margin percentage |
+| Competition | 30% | Active stores, competition level, saturation |
+
+#### Market Labels
+| Score Range | Label | Badge Color |
+|------------|-------|-------------|
+| 80-100 | High | Green |
+| 60-79 | Medium | Blue |
+| 40-59 | Low | Amber |
+| 0-39 | Very Low | Gray |
+
+#### Tracked Metrics
+- **active_competitor_stores**: Number of stores selling the product
+- **avg_selling_price**: Average market price (GBP)
+- **price_range**: Min/max prices found in market
+- **estimated_monthly_ad_spend**: Market-wide ad spend estimate
+- **market_saturation**: Saturation percentage (0-100)
+- **market_score**: Combined opportunity score (0-100)
+- **market_label**: High/Medium/Low/Very Low
+
+#### Competitor Store Data
+- Store name and ranking
+- Price and currency
+- Has active ads flag
+- Rating and review count
+- Estimated monthly sales
+
+#### UI Features
+- **Product Cards**: Market Score, Competitors count, Market Opportunity badge
+- **Product Detail Page**: 
+  - Score Breakdown chart (Demand, Margin, Competition, Ad Activity)
+  - Market Metrics (Active Stores, Avg Price, Ad Spend, Saturation)
+  - Competitor Stores list with prices and stats
+- **Dashboard**: "Market Opportunities" section (top products by market_score)
+- **Filters**: Market Opportunity filter (High/Medium/Low)
+- **Sort**: Sort by market_score
+
+#### API Endpoints
+- GET /api/products/market-opportunities/list - Top market opportunities
+- GET /api/products/{id}/competitors - Competitor data for product
+
+#### Data Source
+- Currently uses simulated/mock data
+- Designed for easy integration of real data sources (web scraping, APIs)
+- `data_source` field indicates "simulated" vs "live"
 
 ### Store-Launch Platform
 - ✅ Product-to-store workflow

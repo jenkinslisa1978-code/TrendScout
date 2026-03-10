@@ -109,6 +109,15 @@ class Product(BaseModel):
     user_engagement_score: float = 0.0  # User interaction score
     success_probability: int = 0  # Calculated success probability (0-100)
     proven_winner: bool = False  # True if product is proven successful
+    # Market Intelligence fields
+    active_competitor_stores: int = 0  # Number of stores selling this product
+    avg_selling_price: float = 0.0  # Average market selling price
+    price_range: Optional[Dict[str, float]] = None  # Min/max prices
+    estimated_monthly_ad_spend: int = 0  # Estimated monthly ad spend in GBP
+    market_saturation: int = 0  # Market saturation score (0-100)
+    market_score: int = 0  # Combined market opportunity score (0-100)
+    market_label: str = "medium"  # high, medium, low, very_low
+    market_score_breakdown: Optional[Dict[str, int]] = None  # demand, margin, competition scores
     ai_summary: Optional[str] = None
     supplier_link: Optional[str] = None
     is_premium: bool = False
@@ -510,6 +519,265 @@ def should_generate_early_trend_alert(product: dict) -> bool:
     return early_trend_score >= 70 or early_trend_label in ['exploding', 'rising']
 
 
+# =====================
+# MARKET INTELLIGENCE
+# =====================
+
+def calculate_market_score(product: dict) -> tuple:
+    """
+    Calculate market opportunity score (0-100) combining demand, margin, and competition.
+    Returns (market_score, market_label, score_breakdown)
+    
+    Components:
+    - Demand Score (35%): Based on TikTok views, engagement, trend velocity
+    - Margin Score (35%): Based on estimated margin and margin percentage
+    - Competition Score (30%): Based on active stores, ad activity, saturation
+    """
+    # Get product metrics
+    tiktok_views = product.get('tiktok_views', 0)
+    ad_count = product.get('ad_count', 0)
+    competition_level = product.get('competition_level', 'medium')
+    estimated_margin = product.get('estimated_margin', 0)
+    estimated_retail_price = product.get('estimated_retail_price', 0)
+    trend_score = product.get('trend_score', 0)
+    early_trend_score = product.get('early_trend_score', 0)
+    active_competitor_stores = product.get('active_competitor_stores', 0)
+    market_saturation = product.get('market_saturation', 0)
+    
+    # Calculate margin percentage
+    margin_percent = (estimated_margin / estimated_retail_price * 100) if estimated_retail_price > 0 else 0
+    
+    # 1. Demand Score (35%) - Market interest and momentum
+    demand_signals = 0
+    
+    # TikTok views signal (40% of demand)
+    if tiktok_views >= 50000000:
+        views_score = 100
+    elif tiktok_views >= 10000000:
+        views_score = 85
+    elif tiktok_views >= 1000000:
+        views_score = 70
+    elif tiktok_views >= 100000:
+        views_score = 50
+    else:
+        views_score = min(50, (tiktok_views / 100000) * 50)
+    
+    demand_signals += views_score * 0.40
+    
+    # Trend momentum (40% of demand)
+    combined_trend = (trend_score + early_trend_score) / 2
+    demand_signals += combined_trend * 0.40
+    
+    # Ad activity as demand validation (20% of demand)
+    if ad_count == 0:
+        ad_demand_score = 30  # Unvalidated
+    elif ad_count < 50:
+        ad_demand_score = 70  # Early validation
+    elif ad_count < 150:
+        ad_demand_score = 100  # Strong validation
+    elif ad_count < 300:
+        ad_demand_score = 80  # Good demand
+    else:
+        ad_demand_score = 60  # Saturated but proven
+    
+    demand_signals += ad_demand_score * 0.20
+    demand_score = min(100, demand_signals)
+    
+    # 2. Margin Score (35%) - Profit potential
+    margin_signals = 0
+    
+    # Absolute margin (60% of margin score)
+    if estimated_margin >= 40:
+        abs_margin_score = 100
+    elif estimated_margin >= 30:
+        abs_margin_score = 85
+    elif estimated_margin >= 20:
+        abs_margin_score = 70
+    elif estimated_margin >= 15:
+        abs_margin_score = 55
+    elif estimated_margin >= 10:
+        abs_margin_score = 40
+    else:
+        abs_margin_score = max(0, estimated_margin * 4)
+    
+    margin_signals += abs_margin_score * 0.60
+    
+    # Margin percentage (40% of margin score)
+    if margin_percent >= 70:
+        pct_margin_score = 100
+    elif margin_percent >= 50:
+        pct_margin_score = 85
+    elif margin_percent >= 35:
+        pct_margin_score = 70
+    elif margin_percent >= 25:
+        pct_margin_score = 55
+    else:
+        pct_margin_score = max(0, margin_percent * 2.2)
+    
+    margin_signals += pct_margin_score * 0.40
+    margin_score = min(100, margin_signals)
+    
+    # 3. Competition Score (30%) - Market accessibility
+    competition_signals = 0
+    
+    # Active competitor stores (40% of competition)
+    if active_competitor_stores == 0:
+        stores_score = 90  # Blue ocean
+    elif active_competitor_stores < 10:
+        stores_score = 100  # Low competition, validated
+    elif active_competitor_stores < 30:
+        stores_score = 75  # Moderate competition
+    elif active_competitor_stores < 60:
+        stores_score = 50  # Getting crowded
+    elif active_competitor_stores < 100:
+        stores_score = 30  # High competition
+    else:
+        stores_score = 15  # Very saturated
+    
+    competition_signals += stores_score * 0.40
+    
+    # Competition level (30% of competition)
+    comp_level_scores = {'low': 100, 'medium': 60, 'high': 25}
+    competition_signals += comp_level_scores.get(competition_level, 50) * 0.30
+    
+    # Market saturation (30% of competition)
+    saturation_score = max(0, 100 - market_saturation)
+    competition_signals += saturation_score * 0.30
+    
+    competition_score = min(100, competition_signals)
+    
+    # Calculate final weighted score
+    market_score = (
+        demand_score * 0.35 +
+        margin_score * 0.35 +
+        competition_score * 0.30
+    )
+    
+    market_score = min(100, max(0, round(market_score)))
+    
+    # Determine label
+    if market_score >= 80:
+        market_label = 'high'
+    elif market_score >= 60:
+        market_label = 'medium'
+    elif market_score >= 40:
+        market_label = 'low'
+    else:
+        market_label = 'very_low'
+    
+    # Build breakdown for UI
+    score_breakdown = {
+        'demand': round(demand_score),
+        'margin': round(margin_score),
+        'competition': round(competition_score),
+        'ad_activity': ad_demand_score,
+    }
+    
+    return market_score, market_label, score_breakdown
+
+
+def generate_mock_competitor_data(product: dict) -> dict:
+    """
+    Generate simulated competitor data for a product.
+    This is designed to be replaced with real data sources later.
+    
+    Returns competitor intelligence including:
+    - active_competitor_stores: Number of stores selling this product
+    - avg_selling_price: Average market price
+    - price_range: Min/max prices found
+    - estimated_ad_spend: Monthly ad activity estimate
+    - market_saturation: Saturation percentage (0-100)
+    - competitor_stores: List of simulated competitor stores
+    """
+    import random
+    
+    # Use product signals to generate realistic competitor data
+    ad_count = product.get('ad_count', 0)
+    trend_score = product.get('trend_score', 0)
+    competition_level = product.get('competition_level', 'medium')
+    estimated_retail_price = product.get('estimated_retail_price', 0)
+    supplier_cost = product.get('supplier_cost', 0)
+    category = product.get('category', 'General')
+    
+    # Base competitor count on ad activity and competition level
+    base_stores = {
+        'low': random.randint(3, 15),
+        'medium': random.randint(15, 45),
+        'high': random.randint(45, 120),
+    }
+    active_stores = base_stores.get(competition_level, 25)
+    
+    # Adjust based on ad count
+    if ad_count > 200:
+        active_stores = int(active_stores * 1.5)
+    elif ad_count < 30:
+        active_stores = int(active_stores * 0.6)
+    
+    # Generate price variations
+    price_variation = estimated_retail_price * 0.25
+    min_price = max(supplier_cost + 5, estimated_retail_price - price_variation)
+    max_price = estimated_retail_price + price_variation
+    avg_price = estimated_retail_price + random.uniform(-5, 10)
+    
+    # Calculate market saturation
+    saturation_base = {
+        'low': random.randint(15, 35),
+        'medium': random.randint(35, 60),
+        'high': random.randint(60, 90),
+    }
+    market_saturation = saturation_base.get(competition_level, 45)
+    
+    # Adjust saturation based on trend stage
+    trend_stage = product.get('trend_stage', 'rising')
+    if trend_stage == 'saturated':
+        market_saturation = min(95, market_saturation + 20)
+    elif trend_stage == 'early':
+        market_saturation = max(10, market_saturation - 20)
+    
+    # Estimate ad spend based on ad count
+    estimated_monthly_ad_spend = ad_count * random.randint(80, 200)  # GBP estimate
+    
+    # Generate mock competitor stores
+    store_name_prefixes = ['Quick', 'Best', 'Top', 'Premium', 'Smart', 'Value', 'Direct', 'Pro', 'Elite', 'Super']
+    store_name_suffixes = ['Shop', 'Store', 'Market', 'Deals', 'Hub', 'Zone', 'Express', 'Outlet', 'Central', 'Direct']
+    
+    competitor_stores = []
+    num_visible_stores = min(10, active_stores)  # Show up to 10 competitor stores
+    
+    for i in range(num_visible_stores):
+        store_price = round(random.uniform(min_price, max_price), 2)
+        has_ads = random.random() < 0.6  # 60% have active ads
+        
+        competitor_stores.append({
+            'id': f'comp_{product.get("id", "unknown")}_{i}',
+            'name': f'{random.choice(store_name_prefixes)}{random.choice(store_name_suffixes)}',
+            'price': store_price,
+            'currency': 'GBP',
+            'has_active_ads': has_ads,
+            'estimated_monthly_sales': random.randint(10, 200) if has_ads else random.randint(5, 50),
+            'rating': round(random.uniform(3.5, 5.0), 1),
+            'reviews_count': random.randint(10, 500),
+            'last_seen': datetime.now(timezone.utc).isoformat(),
+        })
+    
+    # Sort by price
+    competitor_stores.sort(key=lambda x: x['price'])
+    
+    return {
+        'active_competitor_stores': active_stores,
+        'avg_selling_price': round(avg_price, 2),
+        'price_range': {
+            'min': round(min_price, 2),
+            'max': round(max_price, 2),
+        },
+        'estimated_monthly_ad_spend': estimated_monthly_ad_spend,
+        'market_saturation': market_saturation,
+        'competitor_stores': competitor_stores,
+        'data_freshness': datetime.now(timezone.utc).isoformat(),
+        'data_source': 'simulated',  # Will be 'live' when real data is integrated
+    }
+
+
 def calculate_success_probability(product: dict) -> tuple:
     """
     Calculate success probability (0-100) based on user actions and performance signals.
@@ -738,6 +1006,21 @@ def run_full_automation(product: dict) -> dict:
     
     margin = product.get('estimated_retail_price', 0) - product.get('supplier_cost', 0)
     product['estimated_margin'] = margin
+    
+    # Generate competitor/market intelligence (mock data for now)
+    competitor_data = generate_mock_competitor_data(product)
+    product['active_competitor_stores'] = competitor_data['active_competitor_stores']
+    product['avg_selling_price'] = competitor_data['avg_selling_price']
+    product['price_range'] = competitor_data['price_range']
+    product['estimated_monthly_ad_spend'] = competitor_data['estimated_monthly_ad_spend']
+    product['market_saturation'] = competitor_data['market_saturation']
+    
+    # Calculate market score
+    market_score, market_label, score_breakdown = calculate_market_score(product)
+    product['market_score'] = market_score
+    product['market_label'] = market_label
+    product['market_score_breakdown'] = score_breakdown
+    
     product['updated_at'] = datetime.now(timezone.utc).isoformat()
     
     # Generate regular alert
@@ -1218,6 +1501,7 @@ async def get_products(
     trend_stage: Optional[str] = None,
     opportunity_rating: Optional[str] = None,
     early_trend_label: Optional[str] = None,
+    market_label: Optional[str] = None,
     search: Optional[str] = None,
     sort_by: str = "trend_score",
     sort_order: str = "desc",
@@ -1234,6 +1518,8 @@ async def get_products(
         query["opportunity_rating"] = opportunity_rating
     if early_trend_label:
         query["early_trend_label"] = early_trend_label
+    if market_label:
+        query["market_label"] = market_label
     if search:
         query["$or"] = [
             {"product_name": {"$regex": search, "$options": "i"}},
@@ -1287,6 +1573,69 @@ async def get_proven_winners(limit: int = 10):
             "avg_margin": round(avg_margin, 2),
             "avg_success_rate": round(avg_success_rate, 1)
         }
+    }
+
+
+@api_router.get("/products/market-opportunities/list")
+async def get_market_opportunities(limit: int = 10):
+    """Get top market opportunities based on market_score"""
+    cursor = db.products.find(
+        {
+            "$or": [
+                {"market_score": {"$gte": 60}},
+                {"market_label": {"$in": ["high", "medium"]}}
+            ]
+        },
+        {"_id": 0}
+    ).sort([("market_score", -1), ("estimated_margin", -1)]).limit(limit)
+    
+    products = await cursor.to_list(limit)
+    
+    # Calculate aggregate stats
+    avg_market_score = sum(p.get('market_score', 0) for p in products) / len(products) if products else 0
+    avg_margin = sum(p.get('estimated_margin', 0) for p in products) / len(products) if products else 0
+    high_opp_count = len([p for p in products if p.get('market_label') == 'high'])
+    avg_competition = sum(p.get('active_competitor_stores', 0) for p in products) / len(products) if products else 0
+    
+    return {
+        "data": products,
+        "stats": {
+            "count": len(products),
+            "avg_market_score": round(avg_market_score, 1),
+            "avg_margin": round(avg_margin, 2),
+            "high_opportunity_count": high_opp_count,
+            "avg_competitor_stores": round(avg_competition, 0)
+        }
+    }
+
+
+@api_router.get("/products/{product_id}/competitors")
+async def get_product_competitors(product_id: str):
+    """Get competitor data for a specific product"""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Generate fresh competitor data (in production, this would come from a cache or live source)
+    competitor_data = generate_mock_competitor_data(product)
+    
+    return {
+        "product_id": product_id,
+        "product_name": product.get("product_name"),
+        "market_intelligence": {
+            "active_competitor_stores": competitor_data['active_competitor_stores'],
+            "avg_selling_price": competitor_data['avg_selling_price'],
+            "price_range": competitor_data['price_range'],
+            "estimated_monthly_ad_spend": competitor_data['estimated_monthly_ad_spend'],
+            "market_saturation": competitor_data['market_saturation'],
+            "market_score": product.get('market_score', 0),
+            "market_label": product.get('market_label', 'medium'),
+            "market_score_breakdown": product.get('market_score_breakdown', {}),
+        },
+        "competitor_stores": competitor_data['competitor_stores'],
+        "data_freshness": competitor_data['data_freshness'],
+        "data_source": competitor_data['data_source'],
     }
 
 @api_router.post("/products")

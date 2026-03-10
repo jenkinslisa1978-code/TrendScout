@@ -118,3 +118,66 @@ export function getSuccessBadgeColor(score) {
   if (score >= 40) return 'bg-amber-50 text-amber-700 border-amber-200';
   return 'bg-slate-100 text-slate-600 border-slate-200';
 }
+
+// Get market score color
+export function getMarketScoreColor(score) {
+  if (score >= 80) return 'text-emerald-600';
+  if (score >= 60) return 'text-blue-600';
+  if (score >= 40) return 'text-amber-600';
+  return 'text-slate-500';
+}
+
+// Get market opportunity badge info
+export function getMarketOpportunityInfo(label) {
+  const info = {
+    high: { 
+      text: 'High Opportunity', 
+      shortText: 'High',
+      color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      bgColor: 'bg-emerald-500',
+      textColor: 'text-emerald-600',
+      description: 'Strong market demand with favorable margins and low competition'
+    },
+    medium: { 
+      text: 'Medium Opportunity', 
+      shortText: 'Medium',
+      color: 'bg-blue-50 text-blue-700 border-blue-200',
+      bgColor: 'bg-blue-500',
+      textColor: 'text-blue-600',
+      description: 'Good market potential with balanced competition'
+    },
+    low: { 
+      text: 'Low Opportunity', 
+      shortText: 'Low',
+      color: 'bg-amber-50 text-amber-700 border-amber-200',
+      bgColor: 'bg-amber-500',
+      textColor: 'text-amber-600',
+      description: 'Moderate market potential, consider differentiation'
+    },
+    very_low: { 
+      text: 'Very Low', 
+      shortText: 'V. Low',
+      color: 'bg-slate-100 text-slate-600 border-slate-200',
+      bgColor: 'bg-slate-400',
+      textColor: 'text-slate-500',
+      description: 'Challenging market conditions'
+    },
+  };
+  return info[label] || info.medium;
+}
+
+// Get market saturation color
+export function getMarketSaturationColor(saturation) {
+  if (saturation >= 70) return 'text-red-600';
+  if (saturation >= 50) return 'text-amber-600';
+  if (saturation >= 30) return 'text-blue-600';
+  return 'text-emerald-600';
+}
+
+// Get market saturation label
+export function getMarketSaturationLabel(saturation) {
+  if (saturation >= 70) return 'Saturated';
+  if (saturation >= 50) return 'Competitive';
+  if (saturation >= 30) return 'Growing';
+  return 'Emerging';
+}

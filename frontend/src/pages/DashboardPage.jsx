@@ -15,12 +15,14 @@ import {
   Package,
   Eye,
   Zap,
-  Plus
+  Plus,
+  PieChart,
+  Users
 } from 'lucide-react';
-import { getProducts, getProvenWinners } from '@/services/productService';
+import { getProducts, getProvenWinners, getMarketOpportunities } from '@/services/productService';
 import { getUserStores } from '@/services/storeService';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatNumber, formatCurrency, getEarlyTrendInfo, getEarlyTrendScoreColor, getSuccessProbabilityColor } from '@/lib/utils';
+import { formatNumber, formatCurrency, getEarlyTrendInfo, getEarlyTrendScoreColor, getSuccessProbabilityColor, getMarketOpportunityInfo, getMarketScoreColor } from '@/lib/utils';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 
 export default function DashboardPage() {
@@ -28,6 +30,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [winningProducts, setWinningProducts] = useState([]);
   const [earlyTrendProducts, setEarlyTrendProducts] = useState([]);
+  const [marketOpportunities, setMarketOpportunities] = useState([]);
   const [userStores, setUserStores] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -39,9 +42,10 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         // Fetch winning products (sorted by combined score)
-        const [productsResult, winnersResult] = await Promise.all([
+        const [productsResult, winnersResult, marketResult] = await Promise.all([
           getProducts({ sortBy: 'trend_score', sortOrder: 'desc', limit: 50 }),
-          getProvenWinners(10)
+          getProvenWinners(10),
+          getMarketOpportunities(5)
         ]);
 
         if (productsResult.data) {
@@ -67,6 +71,11 @@ export default function DashboardPage() {
             .sort((a, b) => (b.early_trend_score || 0) - (a.early_trend_score || 0))
             .slice(0, 5);
           setEarlyTrendProducts(earlyTrends);
+        }
+
+        // Set market opportunities
+        if (marketResult.data) {
+          setMarketOpportunities(marketResult.data);
         }
 
         // Fetch user's stores
@@ -307,7 +316,99 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Section 3: Your Stores */}
+        {/* Section 3: Market Opportunities */}
+        <Card className="border-0 shadow-lg overflow-hidden">
+          <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-manrope text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <PieChart className="h-6 w-6 text-emerald-500" />
+                  Market Opportunities
+                </CardTitle>
+                <p className="text-sm text-slate-600 mt-1">Best balance of demand, margin, and competition</p>
+              </div>
+              <Link 
+                to="/discover?sort_by=market_score" 
+                className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                data-testid="view-market-opportunities-link"
+              >
+                View all
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="p-12 text-center">
+                <div className="inline-block w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : marketOpportunities.length === 0 ? (
+              <div className="p-12 text-center text-slate-500">
+                <PieChart className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                <p>No market opportunities found</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {marketOpportunities.map((product, index) => {
+                  const marketInfo = getMarketOpportunityInfo(product.market_label);
+                  return (
+                    <div 
+                      key={product.id}
+                      className="flex items-center justify-between p-5 hover:bg-slate-50/80 transition-colors group"
+                      data-testid={`market-opportunity-${product.id}`}
+                    >
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 font-bold text-emerald-700 text-lg shrink-0">
+                          #{index + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <Link 
+                            to={`/product/${product.id}`}
+                            className="font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors truncate block"
+                          >
+                            {product.product_name}
+                          </Link>
+                          <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
+                            <span>{product.category}</span>
+                            <span className="text-slate-300">•</span>
+                            <span className="font-medium text-emerald-600">{formatCurrency(product.estimated_margin)} margin</span>
+                            <span className="text-slate-300">•</span>
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {product.active_competitor_stores || 0} competitors
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 shrink-0">
+                        <Badge className={`${marketInfo.color} border px-3 py-1 text-xs font-bold uppercase tracking-wider hidden sm:flex`}>
+                          {marketInfo.shortText}
+                        </Badge>
+                        <div className="text-right hidden sm:block">
+                          <p className={`font-mono text-2xl font-bold ${getMarketScoreColor(product.market_score || 0)}`}>
+                            {product.market_score || 0}
+                          </p>
+                          <p className="text-xs text-slate-400">Market Score</p>
+                        </div>
+                        <Button 
+                          onClick={() => handleBuildStore(product)}
+                          className="bg-indigo-600 hover:bg-indigo-700 shrink-0"
+                          data-testid={`build-store-market-${product.id}`}
+                        >
+                          <Rocket className="mr-2 h-4 w-4" />
+                          Build Store
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Section 4: Your Stores */}
         <Card className="border-0 shadow-lg overflow-hidden">
           <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50">
             <div className="flex items-center justify-between">

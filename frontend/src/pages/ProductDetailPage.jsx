@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
   ArrowLeft, 
   Bookmark, 
@@ -18,9 +19,13 @@ import {
   Package,
   Loader2,
   Store,
-  Plus
+  Plus,
+  Users,
+  Megaphone,
+  PieChart,
+  Activity
 } from 'lucide-react';
-import { getProductById } from '@/services/productService';
+import { getProductById, getProductCompetitors } from '@/services/productService';
 import { toggleSaveProduct, isProductSaved } from '@/services/savedProductService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -29,7 +34,11 @@ import {
   getTrendStageColor, 
   getOpportunityColor, 
   getCompetitionColor,
-  getTrendScoreColor 
+  getTrendScoreColor,
+  getMarketOpportunityInfo,
+  getMarketScoreColor,
+  getMarketSaturationColor,
+  getMarketSaturationLabel
 } from '@/lib/utils';
 import { toast } from 'sonner';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
@@ -39,6 +48,7 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [product, setProduct] = useState(null);
+  const [competitorData, setCompetitorData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [showStoreBuilder, setShowStoreBuilder] = useState(false);
@@ -55,6 +65,12 @@ export default function ProductDetailPage() {
       }
 
       setProduct(data);
+      
+      // Fetch competitor data
+      const { data: competitors } = await getProductCompetitors(id);
+      if (competitors) {
+        setCompetitorData(competitors);
+      }
       
       // Check if saved
       const { data: saved } = await isProductSaved(user?.id || 'demo-user-id', id);
@@ -92,6 +108,12 @@ export default function ProductDetailPage() {
 
   const stats = [
     {
+      label: 'Market Score',
+      value: product.market_score || 0,
+      icon: PieChart,
+      color: getMarketScoreColor(product.market_score || 0)
+    },
+    {
       label: 'Trend Score',
       value: product.trend_score,
       icon: TrendingUp,
@@ -104,18 +126,21 @@ export default function ProductDetailPage() {
       color: 'text-emerald-600'
     },
     {
-      label: 'TikTok Views',
-      value: formatNumber(product.tiktok_views),
-      icon: Eye,
-      color: 'text-blue-600'
-    },
-    {
-      label: 'Ad Count',
-      value: product.ad_count,
-      icon: BarChart3,
+      label: 'Competitors',
+      value: product.active_competitor_stores || 0,
+      icon: Users,
       color: 'text-purple-600'
     }
   ];
+
+  const marketBreakdown = product.market_score_breakdown || {
+    demand: 0,
+    margin: 0,
+    competition: 0,
+    ad_activity: 0
+  };
+
+  const marketInfo = getMarketOpportunityInfo(product.market_label || 'medium');
 
   return (
     <DashboardLayout>
@@ -279,6 +304,152 @@ export default function ProductDetailPage() {
           </Card>
         </div>
 
+        {/* Market Intelligence Section */}
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="border-b border-slate-100 pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="font-manrope text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-indigo-600" />
+                Market Intelligence
+              </CardTitle>
+              <Badge className={`${marketInfo.color} border px-3 py-1`}>
+                {marketInfo.text}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Market Score Breakdown Chart */}
+              <div>
+                <h4 className="text-sm font-medium text-slate-700 mb-4">Score Breakdown</h4>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <Activity className="h-4 w-4" />
+                        Demand
+                      </span>
+                      <span className="text-sm font-semibold text-slate-900">{marketBreakdown.demand}/100</span>
+                    </div>
+                    <Progress value={marketBreakdown.demand} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <PoundSterling className="h-4 w-4" />
+                        Margin
+                      </span>
+                      <span className="text-sm font-semibold text-slate-900">{marketBreakdown.margin}/100</span>
+                    </div>
+                    <Progress value={marketBreakdown.margin} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Competition (lower is better)
+                      </span>
+                      <span className="text-sm font-semibold text-slate-900">{marketBreakdown.competition}/100</span>
+                    </div>
+                    <Progress value={marketBreakdown.competition} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <Megaphone className="h-4 w-4" />
+                        Ad Activity (validation)
+                      </span>
+                      <span className="text-sm font-semibold text-slate-900">{marketBreakdown.ad_activity}/100</span>
+                    </div>
+                    <Progress value={marketBreakdown.ad_activity} className="h-2" />
+                  </div>
+                </div>
+                <p className="mt-4 text-xs text-slate-500">{marketInfo.description}</p>
+              </div>
+
+              {/* Market Metrics */}
+              <div>
+                <h4 className="text-sm font-medium text-slate-700 mb-4">Market Metrics</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider">Active Stores</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">{product.active_competitor_stores || 0}</p>
+                    <p className="text-xs text-slate-500">selling this product</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider">Avg. Price</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">{formatCurrency(product.avg_selling_price || product.estimated_retail_price)}</p>
+                    <p className="text-xs text-slate-500">market average</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider">Est. Ad Spend</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900">{formatCurrency(product.estimated_monthly_ad_spend || 0)}</p>
+                    <p className="text-xs text-slate-500">monthly market</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider">Saturation</p>
+                    <p className={`mt-1 text-2xl font-bold ${getMarketSaturationColor(product.market_saturation || 0)}`}>
+                      {product.market_saturation || 0}%
+                    </p>
+                    <p className="text-xs text-slate-500">{getMarketSaturationLabel(product.market_saturation || 0)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Competitor Stores Section */}
+        {competitorData?.competitor_stores && competitorData.competitor_stores.length > 0 && (
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="border-b border-slate-100 pb-4">
+              <CardTitle className="font-manrope text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <Store className="h-5 w-5 text-indigo-600" />
+                Competitor Stores ({competitorData.market_intelligence?.active_competitor_stores || 0} total)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-slate-100">
+                {competitorData.competitor_stores.slice(0, 8).map((store, index) => (
+                  <div key={store.id} className="flex items-center justify-between p-4 hover:bg-slate-50">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 font-semibold text-slate-600 text-sm">
+                        #{index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{store.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                          <span>★ {store.rating}</span>
+                          <span className="text-slate-300">•</span>
+                          <span>{store.reviews_count} reviews</span>
+                          {store.has_active_ads && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-xs">Running Ads</Badge>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono font-semibold text-slate-900">{formatCurrency(store.price)}</p>
+                      <p className="text-xs text-slate-500">~{store.estimated_monthly_sales} sales/mo</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {competitorData.competitor_stores.length > 8 && (
+                <div className="p-4 bg-slate-50 text-center text-sm text-slate-500">
+                  + {competitorData.competitor_stores.length - 8} more competitors
+                </div>
+              )}
+              <div className="p-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-400 text-center">
+                Data source: {competitorData.data_source} • Updated: {new Date(competitorData.data_freshness).toLocaleDateString()}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Market Overview */}
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="border-b border-slate-100 pb-4">
@@ -307,10 +478,10 @@ export default function ProductDetailPage() {
                 </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider">Opportunity Rating</h4>
-                <p className="mt-2 text-lg font-semibold text-slate-900 capitalize">{product.opportunity_rating}</p>
+                <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wider">TikTok Visibility</h4>
+                <p className="mt-2 text-lg font-semibold text-slate-900">{formatNumber(product.tiktok_views)} views</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  Based on trend score and competition analysis
+                  Social proof and viral potential
                 </p>
               </div>
             </div>

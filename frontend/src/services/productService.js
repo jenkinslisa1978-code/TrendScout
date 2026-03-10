@@ -11,6 +11,7 @@ export const getProducts = async (filters = {}) => {
     if (filters.trend_stage) params.append('trend_stage', filters.trend_stage);
     if (filters.opportunity_rating) params.append('opportunity_rating', filters.opportunity_rating);
     if (filters.early_trend_label) params.append('early_trend_label', filters.early_trend_label);
+    if (filters.market_label) params.append('market_label', filters.market_label);
     if (filters.search) params.append('search', filters.search);
     if (filters.sortBy) params.append('sort_by', filters.sortBy);
     if (filters.sortOrder) params.append('sort_order', filters.sortOrder);
@@ -67,6 +68,40 @@ export const getProvenWinners = async (limit = 10) => {
   } catch (error) {
     console.error('Error fetching proven winners:', error);
     return { data: [], stats: {}, error: error.message };
+  }
+};
+
+// Get market opportunities
+export const getMarketOpportunities = async (limit = 10) => {
+  try {
+    const response = await fetch(`${API_URL}/api/products/market-opportunities/list?limit=${limit}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch market opportunities');
+    }
+    
+    const result = await response.json();
+    return { data: result.data || [], stats: result.stats || {}, error: null };
+  } catch (error) {
+    console.error('Error fetching market opportunities:', error);
+    return { data: [], stats: {}, error: error.message };
+  }
+};
+
+// Get competitor data for a product
+export const getProductCompetitors = async (productId) => {
+  try {
+    const response = await fetch(`${API_URL}/api/products/${productId}/competitors`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch competitor data');
+    }
+    
+    const result = await response.json();
+    return { data: result, error: null };
+  } catch (error) {
+    console.error('Error fetching competitors:', error);
+    return { data: null, error: error.message };
   }
 };
 
