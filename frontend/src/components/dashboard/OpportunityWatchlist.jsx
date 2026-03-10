@@ -3,6 +3,7 @@
  * 
  * Displays user's watchlist with change indicators showing
  * how metrics have changed since the product was added.
+ * Now prominently featuring Launch Score as the primary metric.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -22,10 +23,19 @@ import {
   Clock,
   Target,
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Rocket,
+  XCircle
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { getWatchlist, removeFromWatchlist } from '@/services/dashboardService';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -63,6 +73,20 @@ export default function OpportunityWatchlist({ limit = 5 }) {
     setRemoving(null);
   };
 
+  // Launch Score styling - PRIMARY METRIC
+  const getLaunchScoreStyle = (score, label) => {
+    if (label === 'strong_launch' || score >= 80) {
+      return { bg: 'bg-green-500', text: 'text-green-600', badge: 'bg-green-50 text-green-700 border-green-200', icon: Rocket, label: 'Strong Launch' };
+    }
+    if (label === 'promising' || score >= 60) {
+      return { bg: 'bg-blue-500', text: 'text-blue-600', badge: 'bg-blue-50 text-blue-700 border-blue-200', icon: TrendingUp, label: 'Promising' };
+    }
+    if (label === 'risky' || score >= 40) {
+      return { bg: 'bg-amber-500', text: 'text-amber-600', badge: 'bg-amber-50 text-amber-700 border-amber-200', icon: AlertTriangle, label: 'Risky' };
+    }
+    return { bg: 'bg-red-500', text: 'text-red-600', badge: 'bg-red-50 text-red-700 border-red-200', icon: XCircle, label: 'Avoid' };
+  };
+
   const getSignalIcon = (signal) => {
     switch (signal) {
       case 'improving':
@@ -74,26 +98,6 @@ export default function OpportunityWatchlist({ limit = 5 }) {
       default:
         return <Minus className="h-3 w-3 text-slate-400" />;
     }
-  };
-
-  const getValidationBadge = (result) => {
-    switch (result) {
-      case 'launch_opportunity':
-        return { color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle, label: 'Launch' };
-      case 'promising_monitor':
-        return { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Eye, label: 'Monitor' };
-      case 'high_risk':
-        return { color: 'bg-red-100 text-red-700 border-red-200', icon: AlertCircle, label: 'Risk' };
-      default:
-        return { color: 'bg-slate-100 text-slate-600 border-slate-200', icon: Target, label: 'Unknown' };
-    }
-  };
-
-  const getChangeIndicator = (change, isInverted = false) => {
-    const actualChange = isInverted ? -change : change;
-    if (actualChange > 3) return { color: 'text-green-600', prefix: '+' };
-    if (actualChange < -3) return { color: 'text-red-600', prefix: '' };
-    return { color: 'text-slate-500', prefix: '' };
   };
 
   const formatTimeAgo = (dateString) => {
@@ -149,14 +153,14 @@ export default function OpportunityWatchlist({ limit = 5 }) {
             {watchlist.length} Products
           </Badge>
         </div>
-        <p className="text-sm text-cyan-700">Products you're monitoring with change tracking</p>
+        <p className="text-sm text-cyan-700">Products you're monitoring with Launch Score tracking</p>
       </CardHeader>
       <CardContent className="pt-2">
         <div className="space-y-3">
           {watchlist.map((item) => {
-            const validation = getValidationBadge(item.validation_result);
-            const ValidationIcon = validation.icon;
-            const successChange = getChangeIndicator(item.changes?.success_change || 0);
+            const launchScore = item.launch_score || item.success_probability || 0;
+            const launchStyle = getLaunchScoreStyle(launchScore, item.launch_score_label);
+            const LaunchIcon = launchStyle.icon;
             
             return (
               <Link 
@@ -179,10 +183,6 @@ export default function OpportunityWatchlist({ limit = 5 }) {
                       <h4 className="font-medium text-slate-900 truncate group-hover:text-cyan-600 transition-colors">
                         {item.product_name}
                       </h4>
-                      <Badge variant="outline" className={`text-xs ${validation.color}`}>
-                        <ValidationIcon className="h-3 w-3 mr-1" />
-                        {validation.label}
-                      </Badge>
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
@@ -198,36 +198,34 @@ export default function OpportunityWatchlist({ limit = 5 }) {
                     </div>
                   </div>
                   
-                  {/* Change Indicators */}
+                  {/* Launch Score - PRIMARY METRIC */}
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    {/* Success Probability */}
-                    <div className="text-center">
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold text-sm text-slate-900">
-                          {Math.round(item.success_probability)}%
-                        </span>
-                        {getSignalIcon(item.signals?.success)}
-                      </div>
-                      <div className={`text-xs ${successChange.color}`}>
-                        {successChange.prefix}{item.changes?.success_change > 0 ? '+' : ''}{Math.round(item.changes?.success_change || 0)}%
-                      </div>
-                    </div>
-                    
-                    {/* Trend */}
-                    <div className="text-center hidden sm:block">
-                      <div className="flex items-center gap-1">
-                        {item.signals?.trend === 'improving' ? (
-                          <TrendingUp className="h-4 w-4 text-green-500" />
-                        ) : item.signals?.trend === 'declining' ? (
-                          <TrendingDown className="h-4 w-4 text-red-500" />
-                        ) : (
-                          <Minus className="h-4 w-4 text-slate-400" />
-                        )}
-                      </div>
-                      <div className="text-xs text-slate-500 capitalize">
-                        {item.signals?.trend || 'Stable'}
-                      </div>
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-center cursor-help">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`p-1 rounded ${launchStyle.bg}`}>
+                                <LaunchIcon className="h-3 w-3 text-white" />
+                              </div>
+                              <span className={`font-mono font-bold text-lg ${launchStyle.text}`}>
+                                {Math.round(launchScore)}
+                              </span>
+                              {getSignalIcon(item.signals?.success)}
+                            </div>
+                            <Badge className={`${launchStyle.badge} border text-xs mt-1`}>
+                              {launchStyle.label}
+                            </Badge>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-[200px]">
+                          <p className="font-medium">Launch Score: {Math.round(launchScore)}</p>
+                          {item.launch_score_reasoning && (
+                            <p className="text-xs mt-1 text-slate-600">{item.launch_score_reasoning}</p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     
                     {/* Remove Button */}
                     <Button

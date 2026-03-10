@@ -214,3 +214,84 @@ export function getMarketSaturationLabel(saturation) {
   if (saturation >= 30) return 'Growing';
   return 'Emerging';
 }
+
+// =====================
+// LAUNCH SCORE UTILITIES
+// =====================
+
+// Get launch score color
+export function getLaunchScoreColor(score) {
+  if (score >= 80) return 'text-green-600';
+  if (score >= 60) return 'text-blue-600';
+  if (score >= 40) return 'text-amber-600';
+  return 'text-red-600';
+}
+
+// Get launch score label
+export function getLaunchScoreLabel(score) {
+  if (score >= 80) return 'Strong Launch';
+  if (score >= 60) return 'Promising';
+  if (score >= 40) return 'Risky';
+  return 'Avoid';
+}
+
+// Get launch score badge color
+export function getLaunchScoreBadgeColor(score) {
+  if (score >= 80) return 'bg-green-50 text-green-700 border-green-200';
+  if (score >= 60) return 'bg-blue-50 text-blue-700 border-blue-200';
+  if (score >= 40) return 'bg-amber-50 text-amber-700 border-amber-200';
+  return 'bg-red-50 text-red-700 border-red-200';
+}
+
+// Get launch score info
+export function getLaunchScoreInfo(score, label = null) {
+  const config = {
+    strong_launch: {
+      label: 'Strong Launch',
+      shortLabel: 'Launch',
+      color: 'bg-green-50 text-green-700 border-green-200',
+      bgColor: 'bg-green-500',
+      textColor: 'text-green-600',
+      icon: 'rocket',
+      description: 'Excellent conditions for launch'
+    },
+    promising: {
+      label: 'Promising',
+      shortLabel: 'Promising',
+      color: 'bg-blue-50 text-blue-700 border-blue-200',
+      bgColor: 'bg-blue-500',
+      textColor: 'text-blue-600',
+      icon: 'trending-up',
+      description: 'Good potential with manageable risks'
+    },
+    risky: {
+      label: 'Risky',
+      shortLabel: 'Risky',
+      color: 'bg-amber-50 text-amber-700 border-amber-200',
+      bgColor: 'bg-amber-500',
+      textColor: 'text-amber-600',
+      icon: 'alert-triangle',
+      description: 'Proceed with caution - test small first'
+    },
+    avoid: {
+      label: 'Avoid',
+      shortLabel: 'Avoid',
+      color: 'bg-red-50 text-red-700 border-red-200',
+      bgColor: 'bg-red-500',
+      textColor: 'text-red-600',
+      icon: 'x-circle',
+      description: 'High risk - consider alternatives'
+    }
+  };
+  
+  // Determine label from score if not provided
+  let key = label;
+  if (!key) {
+    if (score >= 80) key = 'strong_launch';
+    else if (score >= 60) key = 'promising';
+    else if (score >= 40) key = 'risky';
+    else key = 'avoid';
+  }
+  
+  return config[key] || config.risky;
+}

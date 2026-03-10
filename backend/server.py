@@ -134,6 +134,10 @@ class Product(BaseModel):
     competition_score: int = 0
     ad_activity_score: int = 0
     supplier_demand_score: int = 0
+    # Product Launch Score - Primary decision metric
+    launch_score: int = 0  # 0-100 composite score for launch decision
+    launch_score_label: str = "risky"  # strong_launch, promising, risky, avoid
+    launch_score_reasoning: Optional[str] = None  # Human-readable explanation
     # Ad Activity fields
     recent_ad_growth: float = 0.0
     new_ads_this_week: int = 0
@@ -765,6 +769,91 @@ def calculate_market_score(product: dict) -> tuple:
     return market_score, market_label, score_breakdown
 
 
+def calculate_launch_score(product: dict) -> tuple:
+    """
+    Calculate Product Launch Score - the primary decision metric.
+    
+    Formula:
+    launch_score = 0.30 × trend_score + 0.25 × margin_score + 
+                   0.20 × competition_score + 0.15 × ad_activity_score + 
+                   0.10 × supplier_demand_score
+    
+    Returns: (launch_score, launch_score_label, launch_score_reasoning)
+    
+    Labels:
+    - 80-100: Strong Launch Opportunity
+    - 60-79: Promising
+    - 40-59: Risky
+    - 0-39: Avoid
+    """
+    # Get component scores (all 0-100)
+    trend_score = product.get('trend_score', 0)
+    margin_score = product.get('margin_score', 0)
+    competition_score = product.get('competition_score', 0)
+    ad_activity_score = product.get('ad_activity_score', 0)
+    supplier_demand_score = product.get('supplier_demand_score', 0)
+    
+    # Calculate weighted launch score
+    launch_score = (
+        trend_score * 0.30 +
+        margin_score * 0.25 +
+        competition_score * 0.20 +
+        ad_activity_score * 0.15 +
+        supplier_demand_score * 0.10
+    )
+    
+    launch_score = min(100, max(0, round(launch_score)))
+    
+    # Determine label
+    if launch_score >= 80:
+        label = 'strong_launch'
+    elif launch_score >= 60:
+        label = 'promising'
+    elif launch_score >= 40:
+        label = 'risky'
+    else:
+        label = 'avoid'
+    
+    # Generate reasoning
+    reasoning_parts = []
+    
+    # Identify top strengths
+    scores = {
+        'Trend momentum': trend_score,
+        'Profit margins': margin_score,
+        'Market accessibility': competition_score,
+        'Advertiser validation': ad_activity_score,
+        'Supplier reliability': supplier_demand_score
+    }
+    
+    # Sort by score value
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    
+    # Top 2 strengths
+    strengths = [name for name, score in sorted_scores[:2] if score >= 60]
+    weaknesses = [name for name, score in sorted_scores if score < 40]
+    
+    if strengths:
+        reasoning_parts.append(f"Strong: {', '.join(strengths)}")
+    
+    if weaknesses and label in ['risky', 'avoid']:
+        reasoning_parts.append(f"Weak: {', '.join(weaknesses[:2])}")
+    
+    # Add specific insights based on label
+    if label == 'strong_launch':
+        reasoning_parts.append("Excellent conditions for launch")
+    elif label == 'promising':
+        reasoning_parts.append("Good potential with manageable risks")
+    elif label == 'risky':
+        reasoning_parts.append("Proceed with caution - test small first")
+    else:
+        reasoning_parts.append("High risk - consider alternatives")
+    
+    reasoning = ". ".join(reasoning_parts) if reasoning_parts else "Insufficient data for analysis"
+    
+    return launch_score, label, reasoning
+
+
 def generate_mock_competitor_data(product: dict) -> dict:
     """
     Generate simulated competitor data for a product.
@@ -1110,6 +1199,12 @@ def run_full_automation(product: dict) -> dict:
     product['market_label'] = market_label
     product['market_score_breakdown'] = score_breakdown
     
+    # Calculate Product Launch Score - PRIMARY DECISION METRIC
+    launch_score, launch_label, launch_reasoning = calculate_launch_score(product)
+    product['launch_score'] = launch_score
+    product['launch_score_label'] = launch_label
+    product['launch_score_reasoning'] = launch_reasoning
+    
     product['updated_at'] = datetime.now(timezone.utc).isoformat()
     
     # Generate regular alert
@@ -1410,7 +1505,9 @@ async def get_pipeline_status():
     # Get product counts
     total_products = await db.products.count_documents({})
     products_with_scores = await db.products.count_documents({"market_score": {"$gte": 0}})
+    products_with_launch_score = await db.products.count_documents({"launch_score": {"$gte": 1}})
     high_opportunity = await db.products.count_documents({"market_label": {"$in": ["massive", "strong"]}})
+    strong_launch = await db.products.count_documents({"launch_score": {"$gte": 80}})
     
     # Get data freshness
     latest_product = await db.products.find_one({}, {"_id": 0, "last_updated": 1}, sort=[("last_updated", -1)])
@@ -1422,7 +1519,9 @@ async def get_pipeline_status():
         "product_stats": {
             "total": total_products,
             "with_scores": products_with_scores,
+            "with_launch_score": products_with_launch_score,
             "high_opportunity": high_opportunity,
+            "strong_launch": strong_launch,
         },
         "data_freshness": latest_product.get("last_updated") if latest_product else None,
         "sources": {
@@ -1434,6 +1533,54 @@ async def get_pipeline_status():
             "ad_activity": {"status": "estimated", "description": "Ad spend estimates"},
         }
     }
+
+
+@automation_router.post("/compute-launch-scores")
+async def compute_launch_scores_batch(api_key: Optional[str] = Header(None, alias="X-API-Key")):
+    """
+    Batch compute Launch Scores for all products.
+    This updates the launch_score, launch_score_label, and launch_score_reasoning fields.
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    try:
+        start_time = datetime.now(timezone.utc)
+        
+        # Get all products
+        products = await db.products.find({}, {"_id": 0}).to_list(None)
+        updated_count = 0
+        
+        for product in products:
+            # Calculate launch score
+            launch_score, launch_label, launch_reasoning = calculate_launch_score(product)
+            
+            # Update in database
+            await db.products.update_one(
+                {"id": product.get("id")},
+                {
+                    "$set": {
+                        "launch_score": launch_score,
+                        "launch_score_label": launch_label,
+                        "launch_score_reasoning": launch_reasoning,
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            )
+            updated_count += 1
+        
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        
+        return {
+            "success": True,
+            "products_updated": updated_count,
+            "duration_seconds": round(duration, 2),
+            "message": f"Updated launch scores for {updated_count} products"
+        }
+    except Exception as e:
+        logging.error(f"Launch score computation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # =====================
@@ -1674,7 +1821,6 @@ async def resume_scheduled_job(task_name: str):
 
 def generate_referral_code(user_id: str) -> str:
     """Generate a unique referral code for a user"""
-    import hashlib
     hash_input = f"{user_id}:{datetime.now(timezone.utc).timestamp()}"
     return f"VS{hashlib.sha256(hash_input.encode()).hexdigest()[:8].upper()}"
 
@@ -2425,48 +2571,53 @@ async def get_daily_winning_products(limit: int = 10):
     """
     Get today's top winning products - answers "What should I launch today?"
     
-    Ranked by composite score of:
-    - success_probability
-    - trend_velocity
-    - margin_score
-    - competition_score (inverted - lower is better)
+    Ranked primarily by launch_score (the primary decision metric).
     """
-    # Get high-scoring products
+    # Get products with launch_score, sorted by launch_score
     products = await db.products.find(
-        {"win_score": {"$gte": 50}},
+        {"launch_score": {"$gte": 40}},
         {"_id": 0}
-    ).sort("win_score", -1).limit(limit * 3).to_list(limit * 3)
+    ).sort("launch_score", -1).limit(limit * 3).to_list(limit * 3)
     
     if not products:
-        # Fallback to all products sorted by score
+        # Fallback to products with win_score
+        products = await db.products.find(
+            {"win_score": {"$gte": 50}},
+            {"_id": 0}
+        ).sort("win_score", -1).limit(limit * 2).to_list(limit * 2)
+    
+    if not products:
+        # Final fallback to all products sorted by trend_score
         products = await db.products.find(
             {},
             {"_id": 0}
         ).sort("trend_score", -1).limit(limit * 2).to_list(limit * 2)
     
-    # Score and rank each product
+    # Build response with launch_score as primary metric
     ranked_products = []
     for product in products:
-        # Get validation and prediction
+        # Get validation and prediction for additional context
         validation = product_validator.validate_product(product)
         prediction = success_predictor.predict_success(product)
         trend = trend_analyzer.analyze_trend(product)
         
-        # Calculate composite ranking score
-        ranking_score = (
-            prediction.success_probability * 0.35 +
-            (trend.velocity_percent / 2 if trend.velocity_percent > 0 else 0) * 0.25 +
-            product.get("margin_score", 50) * 0.25 +
-            (100 - product.get("competition_score", 50)) * 0.15  # Lower competition = better
-        )
+        # Use launch_score as the primary ranking metric
+        launch_score = product.get("launch_score", 0)
+        launch_label = product.get("launch_score_label", "risky")
+        launch_reasoning = product.get("launch_score_reasoning", "")
         
-        # Only include promising products
-        if validation.overall_score >= 40:
+        # Only include products with reasonable scores
+        if launch_score >= 40 or validation.overall_score >= 40:
             ranked_products.append({
                 "product_id": product.get("id"),
                 "product_name": product.get("product_name"),
                 "category": product.get("category"),
                 "image_url": product.get("image_url"),
+                # Launch Score - PRIMARY METRIC
+                "launch_score": launch_score,
+                "launch_score_label": launch_label,
+                "launch_score_reasoning": launch_reasoning,
+                # Supporting metrics
                 "trend_stage": product.get("trend_stage"),
                 "trend_velocity": trend.velocity_percent,
                 "estimated_margin": f"£{(product.get('estimated_retail_price', 0) - product.get('supplier_cost', 0)):.2f}",
@@ -2476,14 +2627,14 @@ async def get_daily_winning_products(limit: int = 10):
                 "validation_result": validation.recommendation.value,
                 "validation_label": validation.recommendation_label,
                 "confidence_score": validation.confidence_score,
-                "ranking_score": round(ranking_score, 1),
+                "ranking_score": launch_score,  # Use launch_score for ranking
                 "strengths": validation.strengths[:2],
                 "is_early_opportunity": trend.is_early_opportunity,
                 "is_simulated": product.get("data_source") == "simulated",
             })
     
-    # Sort by ranking score
-    ranked_products.sort(key=lambda x: x["ranking_score"], reverse=True)
+    # Sort by launch_score (primary decision metric)
+    ranked_products.sort(key=lambda x: x["launch_score"], reverse=True)
     
     return {
         "daily_winners": ranked_products[:limit],
@@ -4730,7 +4881,6 @@ async def export_store(
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
     """Export store data for Shopify or other platforms (requires ownership)"""
-    from services.shopify_service import format_store_for_export
     
     user_id = current_user.user_id
     # Verify store ownership

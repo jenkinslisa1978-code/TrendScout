@@ -330,12 +330,34 @@ class ProductIdentityService:
         # Market Score (0-100)
         market_score = self._compute_market_score(product, source_data)
         
-        # Win Score (0-100) - Overall opportunity score
+        # Ad Activity Score (0-100)
+        ad_activity_score = product.get('ad_activity_score', 50)
+        
+        # Supplier Demand Score (0-100)
+        supplier_demand_score = product.get('supplier_demand_score', 50)
+        
+        # Win Score (0-100) - Overall opportunity score (legacy)
         win_score = (
             trend_score * 0.30 +
             margin_score * 0.25 +
             (100 - competition_score) * 0.25 +
             market_score * 0.20
+        )
+        
+        # Launch Score (0-100) - PRIMARY DECISION METRIC
+        launch_score = (
+            trend_score * 0.30 +
+            margin_score * 0.25 +
+            competition_score * 0.20 +
+            ad_activity_score * 0.15 +
+            supplier_demand_score * 0.10
+        )
+        launch_score = min(100, max(0, round(launch_score)))
+        
+        # Determine launch score label and reasoning
+        launch_label, launch_reasoning = self._get_launch_label_and_reasoning(
+            launch_score, trend_score, margin_score, competition_score, 
+            ad_activity_score, supplier_demand_score
         )
         
         # Success Probability (0-100)
@@ -354,12 +376,61 @@ class ProductIdentityService:
             'margin_score': round(margin_score, 1),
             'competition_score': round(competition_score, 1),
             'market_score': round(market_score, 1),
+            'ad_activity_score': ad_activity_score,
+            'supplier_demand_score': supplier_demand_score,
             'win_score': round(win_score, 1),
+            'launch_score': launch_score,
+            'launch_score_label': launch_label,
+            'launch_score_reasoning': launch_reasoning,
             'success_probability': round(success_probability, 1),
             'trend_stage': trend_stage,
             'competition_level': competition_level,
             'scores_updated_at': datetime.now(timezone.utc).isoformat()
         }
+    
+    def _get_launch_label_and_reasoning(
+        self, launch_score: float, trend_score: float, margin_score: float,
+        competition_score: float, ad_activity_score: float, supplier_demand_score: float
+    ) -> tuple:
+        """Get launch score label and reasoning"""
+        # Determine label
+        if launch_score >= 80:
+            label = 'strong_launch'
+        elif launch_score >= 60:
+            label = 'promising'
+        elif launch_score >= 40:
+            label = 'risky'
+        else:
+            label = 'avoid'
+        
+        # Generate reasoning
+        scores = {
+            'Trend momentum': trend_score,
+            'Profit margins': margin_score,
+            'Market accessibility': competition_score,
+            'Advertiser validation': ad_activity_score,
+            'Supplier reliability': supplier_demand_score
+        }
+        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        strengths = [name for name, score in sorted_scores[:2] if score >= 60]
+        weaknesses = [name for name, score in sorted_scores if score < 40]
+        
+        parts = []
+        if strengths:
+            parts.append(f"Strong: {', '.join(strengths)}")
+        if weaknesses and label in ['risky', 'avoid']:
+            parts.append(f"Weak: {', '.join(weaknesses[:2])}")
+        
+        if label == 'strong_launch':
+            parts.append("Excellent conditions for launch")
+        elif label == 'promising':
+            parts.append("Good potential with manageable risks")
+        elif label == 'risky':
+            parts.append("Proceed with caution")
+        else:
+            parts.append("High risk - consider alternatives")
+        
+        return label, ". ".join(parts)
     
     def _compute_trend_score(
         self, 

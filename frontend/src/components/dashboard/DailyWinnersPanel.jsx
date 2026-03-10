@@ -1,7 +1,7 @@
 /**
  * Daily Winning Products Panel
  * 
- * Displays top products ranked by opportunity score.
+ * Displays top products ranked by Launch Score - the primary decision metric.
  * Answers: "What product should I launch today?"
  */
 
@@ -17,12 +17,20 @@ import {
   Rocket,
   Eye,
   AlertTriangle,
+  XCircle,
   Sparkles,
   ChevronRight,
   Star,
   Package,
-  Loader2
+  Loader2,
+  Info
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { getDailyWinners } from '@/services/dashboardService';
 
 export default function DailyWinnersPanel({ limit = 5 }) {
@@ -39,17 +47,18 @@ export default function DailyWinnersPanel({ limit = 5 }) {
     fetchWinners();
   }, [limit]);
 
-  const getRecommendationStyle = (result) => {
-    switch (result) {
-      case 'launch_opportunity':
-        return { bg: 'bg-green-500', icon: Rocket };
-      case 'promising_monitor':
-        return { bg: 'bg-blue-500', icon: Eye };
-      case 'high_risk':
-        return { bg: 'bg-red-500', icon: AlertTriangle };
-      default:
-        return { bg: 'bg-gray-400', icon: Sparkles };
+  // Launch Score styling
+  const getLaunchScoreStyle = (score, label) => {
+    if (label === 'strong_launch' || score >= 80) {
+      return { bg: 'bg-green-500', text: 'text-green-600', badge: 'bg-green-50 text-green-700 border-green-200', icon: Rocket, label: 'Strong Launch' };
     }
+    if (label === 'promising' || score >= 60) {
+      return { bg: 'bg-blue-500', text: 'text-blue-600', badge: 'bg-blue-50 text-blue-700 border-blue-200', icon: TrendingUp, label: 'Promising' };
+    }
+    if (label === 'risky' || score >= 40) {
+      return { bg: 'bg-amber-500', text: 'text-amber-600', badge: 'bg-amber-50 text-amber-700 border-amber-200', icon: AlertTriangle, label: 'Risky' };
+    }
+    return { bg: 'bg-red-500', text: 'text-red-600', badge: 'bg-red-50 text-red-700 border-red-200', icon: XCircle, label: 'Avoid' };
   };
 
   const getTrendIcon = (stage) => {
@@ -85,13 +94,14 @@ export default function DailyWinnersPanel({ limit = 5 }) {
             {winners.length} Opportunities
           </Badge>
         </div>
-        <p className="text-sm text-amber-700">Top products ranked by launch potential</p>
+        <p className="text-sm text-amber-700">Top products ranked by Launch Score</p>
       </CardHeader>
       <CardContent className="pt-2">
         <div className="space-y-3">
           {winners.map((product, index) => {
-            const recStyle = getRecommendationStyle(product.validation_result);
-            const RecIcon = recStyle.icon;
+            const launchScore = product.launch_score || Math.round(product.ranking_score) || 0;
+            const launchStyle = getLaunchScoreStyle(launchScore, product.launch_score_label);
+            const LaunchIcon = launchStyle.icon;
             
             return (
               <Link 
@@ -134,17 +144,31 @@ export default function DailyWinnersPanel({ limit = 5 }) {
                     </div>
                   </div>
                   
-                  {/* Metrics */}
+                  {/* Launch Score - PRIMARY METRIC */}
                   <div className="text-right flex-shrink-0">
-                    <div className="flex items-center gap-1 justify-end">
-                      <RecIcon className="h-4 w-4 text-white p-0.5 rounded" style={{backgroundColor: recStyle.bg.replace('bg-', '')}} />
-                      <span className="font-bold text-lg text-slate-900">
-                        {Math.round(product.success_probability)}%
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {product.margin_percent}% margin
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 justify-end cursor-help">
+                            <div className={`p-1 rounded ${launchStyle.bg}`}>
+                              <LaunchIcon className="h-4 w-4 text-white" />
+                            </div>
+                            <span className={`font-mono font-bold text-xl ${launchStyle.text}`}>
+                              {launchScore}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-[220px]">
+                          <p className="font-medium">{launchStyle.label}</p>
+                          {product.launch_score_reasoning && (
+                            <p className="text-xs mt-1 text-slate-600">{product.launch_score_reasoning}</p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <Badge className={`${launchStyle.badge} border text-xs mt-1`}>
+                      {launchStyle.label}
+                    </Badge>
                   </div>
                   
                   <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-amber-500 transition-colors" />

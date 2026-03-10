@@ -102,20 +102,32 @@ class ReportGenerator:
     async def get_top_products(
         self, 
         limit: int = 20,
-        min_score: int = 50
+        min_score: int = 40
     ) -> List[Dict[str, Any]]:
-        """Get top canonical products by opportunity score"""
+        """Get top canonical products by launch_score (primary decision metric)"""
+        # First try to get products by launch_score
         cursor = self.db.products.find(
             {
-                "win_score": {"$gte": min_score},
+                "launch_score": {"$gte": min_score},
                 "is_canonical": {"$ne": False}
             },
             {"_id": 0}
-        ).sort("win_score", -1).limit(limit)
+        ).sort("launch_score", -1).limit(limit)
         
         products = await cursor.to_list(limit)
         
-        # If not enough high-score products, get more
+        # Fallback to win_score if launch_score not populated
+        if len(products) < limit:
+            cursor = self.db.products.find(
+                {
+                    "win_score": {"$gte": min_score},
+                    "is_canonical": {"$ne": False}
+                },
+                {"_id": 0}
+            ).sort("win_score", -1).limit(limit)
+            products = await cursor.to_list(limit)
+        
+        # Final fallback to trend_score
         if len(products) < limit:
             cursor = self.db.products.find(
                 {"is_canonical": {"$ne": False}},

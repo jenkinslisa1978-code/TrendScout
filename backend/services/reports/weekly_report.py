@@ -210,6 +210,11 @@ class WeeklyWinningProductsReport(ReportGenerator):
             "name": product.get("product_name"),
             "category": product.get("category"),
             "image_url": product.get("image_url"),
+            # Launch Score - PRIMARY DECISION METRIC
+            "launch_score": product.get("launch_score", 0),
+            "launch_score_label": product.get("launch_score_label", "risky"),
+            "launch_score_reasoning": product.get("launch_score_reasoning", ""),
+            # Supporting metrics
             "trend_stage": product.get("trend_stage"),
             "success_probability": product.get("success_probability", 0),
             "competition_level": product.get("competition_level"),

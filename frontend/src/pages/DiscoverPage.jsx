@@ -12,6 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Search, 
   Package, 
@@ -22,7 +28,10 @@ import {
   BookmarkCheck,
   Eye,
   Loader2,
-  Rocket
+  Rocket,
+  TrendingUp,
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
 import { getProducts, getCategories } from '@/services/productService';
 import { toggleSaveProduct, isProductSaved } from '@/services/savedProductService';
@@ -38,7 +47,11 @@ import {
   getEarlyTrendScoreColor,
   getSuccessProbabilityColor,
   getMarketOpportunityInfo,
-  getMarketScoreColor
+  getMarketScoreColor,
+  getLaunchScoreColor,
+  getLaunchScoreLabel,
+  getLaunchScoreBadgeColor,
+  getLaunchScoreInfo
 } from '@/lib/utils';
 import { toast } from 'sonner';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
@@ -62,7 +75,7 @@ export default function DiscoverPage() {
   const [opportunityRating, setOpportunityRating] = useState('all');
   const [earlyTrendFilter, setEarlyTrendFilter] = useState('all');
   const [marketFilter, setMarketFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('trend_score');
+  const [sortBy, setSortBy] = useState('launch_score');
   const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
@@ -235,6 +248,7 @@ export default function DiscoverPage() {
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="launch_score">Launch Score</SelectItem>
                   <SelectItem value="market_score">Market Score</SelectItem>
                   <SelectItem value="trend_score">Trend Score</SelectItem>
                   <SelectItem value="early_trend_score">Early Trend Score</SelectItem>
@@ -312,25 +326,47 @@ export default function DiscoverPage() {
                         <p className="text-sm text-slate-500 mt-0.5">{product.category}</p>
                       </div>
 
-                      {/* Stats */}
+                      {/* Stats - Launch Score as PRIMARY */}
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className={`font-mono text-xl font-bold ${getMarketScoreColor(product.market_score || 0)}`}>
-                            {product.market_score || 0}
-                          </p>
-                          <p className="text-xs text-slate-400">Market Score</p>
-                        </div>
+                        {/* Launch Score - PRIMARY METRIC */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="cursor-help">
+                                <div className="flex items-center gap-1.5">
+                                  {(() => {
+                                    const info = getLaunchScoreInfo(product.launch_score || 0, product.launch_score_label);
+                                    const IconComponent = product.launch_score >= 80 ? Rocket : 
+                                                         product.launch_score >= 60 ? TrendingUp : 
+                                                         product.launch_score >= 40 ? AlertTriangle : XCircle;
+                                    return (
+                                      <>
+                                        <div className={`p-1 rounded ${info.bgColor}`}>
+                                          <IconComponent className="h-3 w-3 text-white" />
+                                        </div>
+                                        <p className={`font-mono text-2xl font-bold ${info.textColor}`}>
+                                          {product.launch_score || 0}
+                                        </p>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                                <p className="text-xs text-slate-400">Launch Score</p>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[200px]">
+                              <p className="font-medium">{getLaunchScoreLabel(product.launch_score || 0)}</p>
+                              {product.launch_score_reasoning && (
+                                <p className="text-xs mt-1 text-slate-600">{product.launch_score_reasoning}</p>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         <div className="text-center">
-                          <p className={`font-mono text-xl font-bold ${getTrendScoreColor(product.trend_score)}`}>
+                          <p className={`font-mono text-lg font-semibold ${getTrendScoreColor(product.trend_score)}`}>
                             {product.trend_score}
                           </p>
                           <p className="text-xs text-slate-400">Trend</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="font-mono text-lg font-semibold text-slate-700">
-                            {product.active_competitor_stores || 0}
-                          </p>
-                          <p className="text-xs text-slate-400">Competitors</p>
                         </div>
                         <div className="text-right">
                           <p className="font-mono text-lg font-semibold text-emerald-600">
@@ -352,20 +388,18 @@ export default function DiscoverPage() {
                         )}
                       </div>
 
-                      {/* Badges */}
+                      {/* Badges - Launch Score Label first */}
                       <div className="flex flex-wrap gap-2">
-                        {/* Market Opportunity Badge - Priority display */}
-                        {product.market_label && (
-                          <Badge 
-                            className={`${getMarketOpportunityInfo(product.market_label).color} border text-xs font-semibold`}
-                            data-testid={`market-badge-${product.id}`}
-                          >
-                            {getMarketOpportunityInfo(product.market_label).shortText} Opp.
-                          </Badge>
-                        )}
+                        {/* Launch Score Badge - PRIMARY */}
+                        <Badge 
+                          className={`${getLaunchScoreBadgeColor(product.launch_score || 0)} border text-xs font-semibold`}
+                          data-testid={`launch-badge-${product.id}`}
+                        >
+                          {getLaunchScoreLabel(product.launch_score || 0)}
+                        </Badge>
                         {product.proven_winner && (
                           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border text-xs">
-                            ✓ Proven Winner
+                            Proven Winner
                           </Badge>
                         )}
                         {product.early_trend_label && product.early_trend_label !== 'stable' && (
