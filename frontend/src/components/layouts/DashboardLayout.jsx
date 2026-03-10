@@ -13,7 +13,8 @@ import {
   Bell,
   Zap,
   Sparkles,
-  Store
+  Store,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ import { getUnreadAlertCount } from '@/services/alertService';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Discover', href: '/discover', icon: Search },
+  { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'My Stores', href: '/stores', icon: Store },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
 ];

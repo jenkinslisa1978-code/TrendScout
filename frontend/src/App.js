@@ -19,6 +19,13 @@ import StoresPage from "@/pages/StoresPage";
 import StoreDetailPage from "@/pages/StoreDetailPage";
 import StorePreviewPage from "@/pages/StorePreviewPage";
 
+// Reports Pages
+import ReportsPage from "@/pages/ReportsPage";
+import WeeklyReportPage from "@/pages/WeeklyReportPage";
+import MonthlyReportPage from "@/pages/MonthlyReportPage";
+import PublicWeeklyReportPage from "@/pages/PublicWeeklyReportPage";
+import PublicMonthlyReportPage from "@/pages/PublicMonthlyReportPage";
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, isDemoMode } = useAuth();
@@ -154,6 +161,36 @@ function AppRoutes() {
       />
       {/* Public store preview */}
       <Route path="/preview/:storeId" element={<StorePreviewPage />} />
+
+      {/* Reports - Public Routes for SEO */}
+      <Route path="/reports/weekly-winning-products" element={<PublicWeeklyReportPage />} />
+      <Route path="/reports/monthly-market-trends" element={<PublicMonthlyReportPage />} />
+
+      {/* Reports - Protected Routes */}
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports/weekly/:slug"
+        element={
+          <ProtectedRoute>
+            <WeeklyReportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports/monthly/:slug"
+        element={
+          <ProtectedRoute>
+            <MonthlyReportPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

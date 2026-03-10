@@ -541,3 +541,51 @@ async def cleanup_stale_jobs(db, params: Dict[str, Any]) -> Dict[str, Any]:
             'stale_jobs_cleaned': cleaned,
         },
     }
+
+
+@TaskRegistry.register(
+    name="generate_weekly_report",
+    description="Generate weekly winning products report",
+    default_schedule="0 6 * * 1"  # Every Monday at 6 AM UTC
+)
+async def generate_weekly_report(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate the weekly winning products report"""
+    from services.reports import WeeklyWinningProductsReport
+    
+    generator = WeeklyWinningProductsReport(db)
+    report = await generator.generate()
+    
+    return {
+        'records_processed': report.metadata.product_count,
+        'details': {
+            'report_id': report.metadata.id,
+            'slug': report.metadata.slug,
+            'title': report.metadata.title,
+            'products_analyzed': report.metadata.product_count,
+            'clusters_analyzed': report.metadata.cluster_count,
+        },
+    }
+
+
+@TaskRegistry.register(
+    name="generate_monthly_report",
+    description="Generate monthly market trends report",
+    default_schedule="0 6 1 * *"  # First day of each month at 6 AM UTC
+)
+async def generate_monthly_report(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate the monthly market trends report"""
+    from services.reports import MonthlyMarketTrendsReport
+    
+    generator = MonthlyMarketTrendsReport(db)
+    report = await generator.generate()
+    
+    return {
+        'records_processed': report.metadata.product_count,
+        'details': {
+            'report_id': report.metadata.id,
+            'slug': report.metadata.slug,
+            'title': report.metadata.title,
+            'products_analyzed': report.metadata.product_count,
+            'categories_analyzed': report.metadata.cluster_count,
+        },
+    }

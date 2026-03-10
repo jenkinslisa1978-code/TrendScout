@@ -39,6 +39,7 @@ viral_router = APIRouter(prefix="/api/viral")
 data_integrity_router = APIRouter(prefix="/api/data-integrity")
 intelligence_router = APIRouter(prefix="/api/intelligence")
 dashboard_router = APIRouter(prefix="/api/dashboard")
+reports_router = APIRouter(prefix="/api/reports")
 
 # =====================
 # MODELS
@@ -2923,8 +2924,366 @@ async def get_dashboard_summary(
 
 
 # =====================
-# ROUTES - Stripe
+# ROUTES - Market Intelligence Reports
 # =====================
+
+from services.reports import WeeklyWinningProductsReport, MonthlyMarketTrendsReport
+from services.reports.report_generator import ReportType, ReportAccessLevel
+
+
+def check_report_access(user_plan: str, required_level: str) -> bool:
+    """Check if user's plan allows access to a report section"""
+    plan_levels = {
+        "free": 0,
+        "pro": 1,
+        "elite": 2
+    }
+    access_levels = {
+        "public": -1,
+        "free": 0,
+        "pro": 1, 
+        "elite": 2
+    }
+    
+    user_level = plan_levels.get(user_plan, 0)
+    required = access_levels.get(required_level, 0)
+    
+    return user_level >= required
+
+
+def filter_report_by_access(report: dict, user_plan: str) -> dict:
+    """Filter report sections based on user's subscription plan"""
+    filtered_sections = []
+    
+    for section in report.get("sections", []):
+        section_access = section.get("access_level", "free")
+        if check_report_access(user_plan, section_access):
+            filtered_sections.append(section)
+        else:
+            # Include section metadata but mark as locked
+            filtered_sections.append({
+                "title": section.get("title"),
+                "description": section.get("description"),
+                "access_level": section_access,
+                "locked": True,
+                "unlock_message": f"Upgrade to {section_access.title()} to access this section"
+            })
+    
+    return {
+        **report,
+        "sections": filtered_sections
+    }
+
+
+@reports_router.get("/")
+async def list_reports(
+    report_type: Optional[str] = None,
+    limit: int = 20
+):
+    """List available reports - public endpoint"""
+    query = {"metadata.status": "completed"}
+    
+    if report_type:
+        query["metadata.report_type"] = report_type
+    
+    cursor = db.reports.find(
+        query,
+        {"_id": 0, "metadata": 1, "summary": 1, "public_preview": 1}
+    ).sort("metadata.generated_at", -1).limit(limit)
+    
+    reports = await cursor.to_list(limit)
+    
+    # Get latest of each type
+    weekly_latest = await db.reports.find_one(
+        {"metadata.report_type": "weekly_winning_products", "metadata.is_latest": True},
+        {"_id": 0, "metadata.slug": 1, "metadata.title": 1}
+    )
+    monthly_latest = await db.reports.find_one(
+        {"metadata.report_type": "monthly_market_trends", "metadata.is_latest": True},
+        {"_id": 0, "metadata.slug": 1, "metadata.title": 1}
+    )
+    
+    return {
+        "reports": reports,
+        "count": len(reports),
+        "latest": {
+            "weekly": weekly_latest,
+            "monthly": monthly_latest
+        }
+    }
+
+
+@reports_router.get("/weekly-winning-products")
+async def get_weekly_report(
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_user)
+):
+    """Get the latest weekly winning products report"""
+    report = await db.reports.find_one(
+        {
+            "metadata.report_type": "weekly_winning_products",
+            "metadata.is_latest": True,
+            "metadata.status": "completed"
+        },
+        {"_id": 0}
+    )
+    
+    if not report:
+        # Generate report if none exists
+        generator = WeeklyWinningProductsReport(db)
+        generated = await generator.generate()
+        report = generated.model_dump()
+        report["metadata"]["report_type"] = generated.metadata.report_type.value
+        report["metadata"]["status"] = generated.metadata.status.value
+        report["metadata"]["access_level"] = generated.metadata.access_level.value
+        report["metadata"]["period_start"] = generated.metadata.period_start.isoformat()
+        report["metadata"]["period_end"] = generated.metadata.period_end.isoformat()
+        report["metadata"]["generated_at"] = generated.metadata.generated_at.isoformat()
+    
+    # Determine user's plan
+    user_plan = "free"
+    if current_user:
+        profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0, "plan": 1})
+        user_plan = profile.get("plan", "free") if profile else "free"
+    
+    # Filter by access level
+    filtered_report = filter_report_by_access(report, user_plan)
+    
+    return {
+        "report": filtered_report,
+        "user_plan": user_plan,
+        "is_authenticated": current_user is not None
+    }
+
+
+@reports_router.get("/monthly-market-trends")
+async def get_monthly_report(
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_user)
+):
+    """Get the latest monthly market trends report"""
+    report = await db.reports.find_one(
+        {
+            "metadata.report_type": "monthly_market_trends",
+            "metadata.is_latest": True,
+            "metadata.status": "completed"
+        },
+        {"_id": 0}
+    )
+    
+    if not report:
+        # Generate report if none exists
+        generator = MonthlyMarketTrendsReport(db)
+        generated = await generator.generate()
+        report = generated.model_dump()
+        report["metadata"]["report_type"] = generated.metadata.report_type.value
+        report["metadata"]["status"] = generated.metadata.status.value
+        report["metadata"]["access_level"] = generated.metadata.access_level.value
+        report["metadata"]["period_start"] = generated.metadata.period_start.isoformat()
+        report["metadata"]["period_end"] = generated.metadata.period_end.isoformat()
+        report["metadata"]["generated_at"] = generated.metadata.generated_at.isoformat()
+    
+    # Determine user's plan
+    user_plan = "free"
+    if current_user:
+        profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0, "plan": 1})
+        user_plan = profile.get("plan", "free") if profile else "free"
+    
+    # Filter by access level
+    filtered_report = filter_report_by_access(report, user_plan)
+    
+    return {
+        "report": filtered_report,
+        "user_plan": user_plan,
+        "is_authenticated": current_user is not None
+    }
+
+
+@reports_router.get("/public/weekly-winning-products")
+async def get_public_weekly_report():
+    """Get public preview of weekly report - for SEO"""
+    report = await db.reports.find_one(
+        {
+            "metadata.report_type": "weekly_winning_products",
+            "metadata.is_latest": True,
+            "metadata.status": "completed"
+        },
+        {"_id": 0, "metadata": 1, "public_preview": 1, "summary": 1}
+    )
+    
+    if not report:
+        # Generate report if none exists
+        generator = WeeklyWinningProductsReport(db)
+        generated = await generator.generate()
+        report = {
+            "metadata": {
+                "title": generated.metadata.title,
+                "description": generated.metadata.description,
+                "period_start": generated.metadata.period_start.isoformat(),
+                "period_end": generated.metadata.period_end.isoformat(),
+                "generated_at": generated.metadata.generated_at.isoformat(),
+                "slug": generated.metadata.slug
+            },
+            "public_preview": generated.public_preview,
+            "summary": generated.summary
+        }
+    
+    return {
+        "report": report,
+        "cta": {
+            "message": "Unlock the full report to see all winning products, detailed margins, and opportunity clusters.",
+            "action": "Sign up for free",
+            "url": "/signup"
+        }
+    }
+
+
+@reports_router.get("/public/monthly-market-trends")
+async def get_public_monthly_report():
+    """Get public preview of monthly report - for SEO"""
+    report = await db.reports.find_one(
+        {
+            "metadata.report_type": "monthly_market_trends",
+            "metadata.is_latest": True,
+            "metadata.status": "completed"
+        },
+        {"_id": 0, "metadata": 1, "public_preview": 1, "summary": 1}
+    )
+    
+    if not report:
+        # Generate report if none exists
+        generator = MonthlyMarketTrendsReport(db)
+        generated = await generator.generate()
+        report = {
+            "metadata": {
+                "title": generated.metadata.title,
+                "description": generated.metadata.description,
+                "period_start": generated.metadata.period_start.isoformat(),
+                "period_end": generated.metadata.period_end.isoformat(),
+                "generated_at": generated.metadata.generated_at.isoformat(),
+                "slug": generated.metadata.slug
+            },
+            "public_preview": generated.public_preview,
+            "summary": generated.summary
+        }
+    
+    return {
+        "report": report,
+        "cta": {
+            "message": "Unlock the full report to see all category insights, growth predictions, and market analysis.",
+            "action": "Sign up for free",
+            "url": "/signup"
+        }
+    }
+
+
+@reports_router.get("/history/{report_type}")
+async def get_report_history(
+    report_type: str,
+    limit: int = 20,
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_user)
+):
+    """Get historical reports of a specific type"""
+    valid_types = ["weekly_winning_products", "monthly_market_trends"]
+    if report_type not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Invalid report type. Must be one of: {valid_types}")
+    
+    # Determine user's plan
+    user_plan = "free"
+    if current_user:
+        profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0, "plan": 1})
+        user_plan = profile.get("plan", "free") if profile else "free"
+    
+    # Check access for historical reports
+    if user_plan == "free":
+        limit = 3  # Free users only see recent 3
+    elif user_plan == "pro":
+        limit = min(limit, 10)  # Pro users see 10
+    # Elite users get full access
+    
+    cursor = db.reports.find(
+        {"metadata.report_type": report_type, "metadata.status": "completed"},
+        {"_id": 0, "metadata": 1, "summary": 1}
+    ).sort("metadata.generated_at", -1).limit(limit)
+    
+    reports = await cursor.to_list(limit)
+    
+    return {
+        "reports": reports,
+        "count": len(reports),
+        "user_plan": user_plan,
+        "access_note": "Upgrade to Elite for full historical archive" if user_plan != "elite" else None
+    }
+
+
+@reports_router.get("/by-slug/{slug}")
+async def get_report_by_slug(
+    slug: str,
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_user)
+):
+    """Get a specific report by its slug"""
+    report = await db.reports.find_one(
+        {"metadata.slug": slug, "metadata.status": "completed"},
+        {"_id": 0}
+    )
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    # Determine user's plan
+    user_plan = "free"
+    if current_user:
+        profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0, "plan": 1})
+        user_plan = profile.get("plan", "free") if profile else "free"
+    
+    # Filter by access level
+    filtered_report = filter_report_by_access(report, user_plan)
+    
+    return {
+        "report": filtered_report,
+        "user_plan": user_plan,
+        "is_authenticated": current_user is not None
+    }
+
+
+@reports_router.post("/generate/weekly")
+async def generate_weekly_report(
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """Manually trigger weekly report generation (admin only)"""
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    generator = WeeklyWinningProductsReport(db)
+    report = await generator.generate()
+    
+    return {
+        "success": True,
+        "report_id": report.metadata.id,
+        "slug": report.metadata.slug,
+        "title": report.metadata.title
+    }
+
+
+@reports_router.post("/generate/monthly")
+async def generate_monthly_report(
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """Manually trigger monthly report generation (admin only)"""
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    generator = MonthlyMarketTrendsReport(db)
+    report = await generator.generate()
+    
+    return {
+        "success": True,
+        "report_id": report.metadata.id,
+        "slug": report.metadata.slug,
+        "title": report.metadata.title
+    }
 
 @stripe_router.post("/create-checkout-session")
 async def create_checkout_session(
@@ -4517,6 +4876,7 @@ app.include_router(shopify_integration_router)
 app.include_router(data_integrity_router)
 app.include_router(intelligence_router)
 app.include_router(dashboard_router)
+app.include_router(reports_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -4570,6 +4930,13 @@ async def startup_db():
     await db.alerts.create_index("id", unique=True)
     await db.alerts.create_index("product_id")
     await db.alerts.create_index([("created_at", -1)])
+    
+    # Report indexes
+    await db.reports.create_index("metadata.id", unique=True)
+    await db.reports.create_index("metadata.slug", unique=True)
+    await db.reports.create_index("metadata.report_type")
+    await db.reports.create_index("metadata.is_latest")
+    await db.reports.create_index([("metadata.generated_at", -1)])
     
     logger.info("Database indexes created")
     
