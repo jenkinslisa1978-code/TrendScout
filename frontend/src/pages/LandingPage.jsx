@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
+import ProductOfTheWeek from '@/components/common/ProductOfTheWeek';
 import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, 
@@ -254,6 +255,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Product of the Week */}
+      <ProductOfTheWeek />
 
       {/* Pricing Section */}
       <section id="pricing" className="py-24 bg-[#F8FAFC]">
