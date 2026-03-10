@@ -3,6 +3,8 @@ Database Seeding Script for ViralScout
 
 Run this script to populate the database with realistic sample data.
 Usage: python seed_database.py
+
+Note: Requires MONGO_URL and DB_NAME environment variables to be set.
 """
 
 import asyncio
@@ -16,8 +18,12 @@ import random
 # Load environment
 load_dotenv()
 
-mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-db_name = os.environ.get('DB_NAME', 'viralscout')
+# Require explicit configuration - no fallbacks for production safety
+mongo_url = os.environ.get('MONGO_URL')
+db_name = os.environ.get('DB_NAME')
+
+if not mongo_url or not db_name:
+    raise ValueError("MONGO_URL and DB_NAME environment variables must be set")
 
 # Sample product data
 SAMPLE_PRODUCTS = [
