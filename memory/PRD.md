@@ -99,6 +99,10 @@ Converts raw data into actionable insights.
 - `POST /api/dashboard/alerts/{alert_id}/read` - Mark alert as read
 - `POST /api/dashboard/alerts/read-all` - Mark all alerts as read
 - `GET /api/dashboard/summary` - Combined dashboard data for home view
+- `GET /api/dashboard/opportunity-feed` - Live opportunity feed with recent events (public)
+- `GET /api/dashboard/opportunity-feed/stats` - Feed statistics
+- `POST /api/dashboard/opportunity-feed/generate-sample` - Generate sample events (admin)
+- `POST /api/dashboard/opportunity-feed/mark-read` - Mark events as read (auth required)
 
 #### Frontend Components
 - `/app/frontend/src/components/dashboard/` - Dashboard intelligence UI
@@ -106,12 +110,14 @@ Converts raw data into actionable insights.
   - `MarketRadar` - Category clusters with opportunity scores
   - `OpportunityWatchlist` - User's tracked products with change indicators
   - `AlertsPanel` - Real-time opportunity notifications
+  - `OpportunityFeedPanel` - Live opportunity feed with real-time events
 
 #### Dashboard Page Integration
 - Tabbed Intelligence Dashboard interface on DashboardPage
-- 4 tabs: Winners, Radar, Watchlist, Alerts
+- 5 tabs: Feed, Winners, Radar, Watchlist, Alerts
+- Feed tab is the default view showing real-time opportunity events
 - Watchlist/Alerts show sign-in prompt for unauthenticated users
-- Daily Winners/Market Radar are publicly accessible
+- Daily Winners/Market Radar/Feed are publicly accessible
 
 ### Product Validation Engine (NEW - March 2026)
 **Answers the key question: "Should I launch this product?"**
@@ -458,6 +464,21 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **Live Opportunity Feed (COMPLETE - March 10, 2026)**
+  - Added OpportunityFeedService (`/app/backend/services/opportunity_feed_service.py`) for event generation and management
+  - 5 event types: entered_strong_launch, new_high_score, trend_spike, competition_increase, approaching_saturation
+  - Features: Priority-based sorting, 4-hour deduplication window, confidence scores, product data enrichment
+  - API Endpoints:
+    - `GET /api/dashboard/opportunity-feed` - Get feed events with filtering by limit, hours, event_types
+    - `GET /api/dashboard/opportunity-feed/stats` - Get feed statistics (total events, last 24h count, by type)
+    - `POST /api/dashboard/opportunity-feed/generate-sample` - Admin endpoint to generate sample events (requires X-API-Key)
+    - `POST /api/dashboard/opportunity-feed/mark-read` - Mark events as read (auth required)
+  - Frontend: OpportunityFeedPanel.jsx with color-coded cards, relative timestamps, refresh button, auto-refresh (60s)
+  - Dashboard Integration: Added as "Feed" tab in Intelligence Dashboard (first tab, default view)
+  - Pipeline Integration: Feed events auto-generated during pipeline runs via `_generate_feed_events()` method
+  - Database: Uses `opportunity_feed` collection
+  - All tests passed (100% - 16/16 backend tests)
+
 - **Weekly Email Reports via Resend (COMPLETE - March 10, 2026)**
   - Created EmailService (`/app/backend/services/email_service.py`) with Resend API integration
   - Professional HTML email template with inline CSS for email client compatibility
