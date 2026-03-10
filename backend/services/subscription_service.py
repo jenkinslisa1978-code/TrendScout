@@ -295,24 +295,34 @@ class SubscriptionService:
                     upsert=True
                 )
             
-            # Create checkout session
-            # Note: We need to create prices in Stripe Dashboard first
-            # For now, use price_data for dynamic pricing
-            session = stripe.checkout.Session.create(
-                customer=stripe_customer_id,
-                payment_method_types=["card"],
-                line_items=[{
+            # Create checkout session using Stripe Price IDs
+            stripe_price_id = plan_config.get("stripe_price_id")
+            
+            # Build line items - use Price ID if available, otherwise dynamic pricing
+            if stripe_price_id:
+                line_items = [{
+                    "price": stripe_price_id,
+                    "quantity": 1
+                }]
+            else:
+                # Fallback to dynamic pricing
+                line_items = [{
                     "price_data": {
                         "currency": "gbp",
                         "product_data": {
                             "name": f"ViralScout {plan_config['name']} Plan",
                             "description": ", ".join(plan_config["feature_descriptions"][:3])
                         },
-                        "unit_amount": plan_config["price_monthly"] * 100,  # Convert to pence
+                        "unit_amount": plan_config["price_monthly"] * 100,
                         "recurring": {"interval": "month"}
                     },
                     "quantity": 1
-                }],
+                }]
+            
+            session = stripe.checkout.Session.create(
+                customer=stripe_customer_id,
+                payment_method_types=["card"],
+                line_items=line_items,
                 mode="subscription",
                 success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
                 cancel_url=cancel_url,
