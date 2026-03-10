@@ -3,6 +3,8 @@
 ## Project Overview
 ViralScout is a full-stack SaaS platform for product research and e-commerce store launching. Users can discover trending products, analyze opportunities, and build complete Shopify-ready stores with AI-generated content.
 
+**Default Currency: GBP (£)**
+
 ## Original Problem Statement
 Build a platform that helps dropshippers and e-commerce entrepreneurs:
 1. Find trending products before they go viral
@@ -16,6 +18,7 @@ Build a platform that helps dropshippers and e-commerce entrepreneurs:
 - **Database**: MongoDB
 - **Auth**: Supabase (ready, requires credentials)
 - **Payments**: Stripe (scaffolded, requires credentials)
+- **Currency**: GBP (British Pound Sterling)
 
 ## Core Features (Implemented)
 

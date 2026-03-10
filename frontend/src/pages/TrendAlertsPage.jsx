@@ -9,7 +9,7 @@ import {
   BellOff,
   Sparkles,
   TrendingUp,
-  DollarSign,
+  PoundSterling,
   Target,
   Clock,
   CheckCircle2,
@@ -44,7 +44,7 @@ const ALERT_TYPE_CONFIG = {
     label: 'Rising Trend',
   },
   high_margin: {
-    icon: DollarSign,
+    icon: PoundSterling,
     color: 'text-amber-600',
     bgColor: 'bg-amber-50',
     label: 'High Margin',

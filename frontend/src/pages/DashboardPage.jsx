@@ -33,7 +33,7 @@ import {
   ArrowRight,
   Zap,
   Clock,
-  DollarSign,
+  PoundSterling,
   BarChart3,
   Activity,
   Sparkles,
@@ -145,7 +145,7 @@ export default function DashboardPage() {
   ];
 
   const secondaryStats = [
-    { title: 'Avg Margin', value: formatCurrency(avgMargin), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { title: 'Avg Margin', value: formatCurrency(avgMargin), icon: PoundSterling, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { title: 'Early Stage', value: earlyStageCount, icon: Zap, color: 'text-purple-600', bg: 'bg-purple-50' },
     { title: 'Ads Tracked', value: formatNumber(totalAdCount), icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
     { title: 'TikTok Views', value: formatNumber(stats?.totalTikTokViews || 0), icon: Eye, color: 'text-pink-600', bg: 'bg-pink-50' }

@@ -393,11 +393,11 @@ export default function StoreDetailPage() {
                         </p>
                         <div className="flex items-center gap-4 text-sm">
                           <span className="font-semibold text-slate-900">
-                            ${product.price?.toFixed(2)}
+                            £{product.price?.toFixed(2)}
                           </span>
                           {product.compare_at_price > product.price && (
                             <span className="text-slate-400 line-through">
-                              ${product.compare_at_price?.toFixed(2)}
+                              £{product.compare_at_price?.toFixed(2)}
                             </span>
                           )}
                           <span className="text-slate-500">{product.category}</span>

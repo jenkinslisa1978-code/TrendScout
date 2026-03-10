@@ -166,11 +166,11 @@ export default function StorePreviewPage() {
                 {/* Price */}
                 <div className="flex items-baseline gap-3">
                   <span className="text-4xl font-bold" style={{ color: primaryColor }}>
-                    ${product.price?.toFixed(2)}
+                    £{product.price?.toFixed(2)}
                   </span>
                   {product.compare_at_price > product.price && (
                     <span className="text-xl text-slate-400 line-through">
-                      ${product.compare_at_price?.toFixed(2)}
+                      £{product.compare_at_price?.toFixed(2)}
                     </span>
                   )}
                   {product.compare_at_price > product.price && (

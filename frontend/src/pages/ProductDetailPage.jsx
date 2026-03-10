@@ -10,7 +10,7 @@ import {
   BookmarkCheck, 
   ExternalLink,
   TrendingUp,
-  DollarSign,
+  PoundSterling,
   Eye,
   BarChart3,
   Target,
@@ -100,7 +100,7 @@ export default function ProductDetailPage() {
     {
       label: 'Est. Margin',
       value: formatCurrency(product.estimated_margin),
-      icon: DollarSign,
+      icon: PoundSterling,
       color: 'text-emerald-600'
     },
     {

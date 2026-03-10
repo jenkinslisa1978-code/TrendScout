@@ -290,8 +290,10 @@ def format_store_for_export(store: Dict, products: List[Dict]) -> Dict:
         'store': {
             'name': store.get('name', ''),
             'description': store.get('tagline', ''),
+            'currency': 'GBP',
         },
         'products': shopify_products,
+        'currency': 'GBP',
         'export_format': 'shopify_api_v2024_01',
         'export_version': '1.0',
         'exported_at': datetime.now(timezone.utc).isoformat(),

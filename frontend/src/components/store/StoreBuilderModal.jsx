@@ -246,7 +246,7 @@ export default function StoreBuilderModal({ product, isOpen, onClose }) {
                       </p>
                       <div className="flex items-center gap-4">
                         <span className="text-2xl font-bold text-slate-900">
-                          ${generation.product?.pricing?.suggested_price?.toFixed(2)}
+                          £{generation.product?.pricing?.suggested_price?.toFixed(2)}
                         </span>
                         <Badge 
                           style={{ 

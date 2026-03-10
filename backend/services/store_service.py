@@ -235,7 +235,7 @@ Order now and experience why this is quickly becoming one of the most sought-aft
         return {
             "suggested_price": suggested_price,
             "compare_at_price": compare_at,
-            "currency": "USD",
+            "currency": "GBP",
             "supplier_cost": supplier_cost,
             "estimated_margin": round(suggested_price - supplier_cost, 2),
         }
@@ -300,9 +300,9 @@ Order now and experience why this is quickly becoming one of the most sought-aft
 
 {store_name} is committed to delivering your order quickly and safely.
 
-Standard Shipping (5-10 business days): FREE on orders over $50
-Express Shipping (2-3 business days): $9.99
-Priority Shipping (1-2 business days): $14.99
+Standard Shipping (5-10 business days): FREE on orders over £40
+Express Shipping (2-3 business days): £7.99
+Priority Shipping (1-2 business days): £12.99
 
 All orders are processed within 1-2 business days. You will receive a tracking number via email once your order ships.
 
@@ -428,7 +428,7 @@ def create_store_product_document(
         "price": pricing.get("suggested_price", 0),
         "compare_at_price": pricing.get("compare_at_price", 0),
         "cost": pricing.get("supplier_cost", 0),
-        "currency": "USD",
+        "currency": "GBP",
         "category": product.get("category", "General"),
         "image_url": product.get("image_url"),
         "supplier_link": product.get("supplier_link"),
