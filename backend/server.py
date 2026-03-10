@@ -44,6 +44,7 @@ dashboard_router = APIRouter(prefix="/api/dashboard")
 reports_router = APIRouter(prefix="/api/reports")
 email_router = APIRouter(prefix="/api/email")
 notifications_router = APIRouter(prefix="/api/notifications")
+user_router = APIRouter(prefix="/api/user")
 
 # =====================
 # MODELS
@@ -4136,6 +4137,64 @@ async def send_test_notification(
 
 
 
+# =====================
+# ROUTES - User / Onboarding
+# =====================
+
+@user_router.get("/onboarding-status")
+async def get_onboarding_status(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Check if user has completed onboarding"""
+    profile = await db.profiles.find_one(
+        {"id": current_user.user_id},
+        {"_id": 0, "onboarding_completed": 1}
+    )
+    
+    return {
+        "onboarding_completed": profile.get("onboarding_completed", False) if profile else False
+    }
+
+
+@user_router.post("/complete-onboarding")
+async def complete_onboarding(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Mark onboarding as completed for the user"""
+    await db.profiles.update_one(
+        {"id": current_user.user_id},
+        {
+            "$set": {
+                "onboarding_completed": True,
+                "onboarding_completed_at": datetime.now(timezone.utc).isoformat()
+            }
+        },
+        upsert=True
+    )
+    
+    return {"status": "success", "onboarding_completed": True}
+
+
+@user_router.post("/reset-onboarding")
+async def reset_onboarding(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Reset onboarding status (for testing)"""
+    await db.profiles.update_one(
+        {"id": current_user.user_id},
+        {
+            "$set": {
+                "onboarding_completed": False,
+                "onboarding_completed_at": None
+            }
+        }
+    )
+    
+    return {"status": "success", "onboarding_completed": False}
+
+
+
+
 @stripe_router.post("/create-checkout-session")
 async def create_checkout_session(
     request: CheckoutSessionRequest,
@@ -6081,6 +6140,7 @@ app.include_router(dashboard_router)
 app.include_router(reports_router)
 app.include_router(email_router)
 app.include_router(notifications_router)
+app.include_router(user_router)
 
 app.add_middleware(
     CORSMiddleware,

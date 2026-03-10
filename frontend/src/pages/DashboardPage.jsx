@@ -31,10 +31,13 @@ import { formatNumber, formatCurrency, getEarlyTrendInfo, getEarlyTrendScoreColo
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
+import OnboardingModal from '@/components/onboarding/OnboardingModal';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { showOnboarding, closeOnboarding } = useOnboarding();
   const [winningProducts, setWinningProducts] = useState([]);
   const [earlyTrendProducts, setEarlyTrendProducts] = useState([]);
   const [marketOpportunities, setMarketOpportunities] = useState([]);
@@ -581,6 +584,12 @@ export default function DashboardPage() {
           onSuccess={handleStoreCreated}
         />
       )}
+      
+      {/* Onboarding Modal for New Users */}
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={closeOnboarding} 
+      />
     </DashboardLayout>
   );
 }

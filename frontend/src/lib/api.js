@@ -102,7 +102,11 @@ export const apiDelete = async (endpoint) => {
   return apiRequest(endpoint, { method: 'DELETE' });
 };
 
-export default {
+/**
+ * API methods matching common axios/fetch patterns
+ * These wrap the underlying functions to provide a cleaner API
+ */
+const api = {
   getAccessToken,
   getAuthHeaders,
   apiRequest,
@@ -110,4 +114,27 @@ export default {
   apiPost,
   apiPut,
   apiDelete,
+  // Axios-like interface methods
+  get: async (endpoint) => {
+    const response = await apiGet(endpoint);
+    const data = await response.json().catch(() => ({}));
+    return { data, status: response.status, ok: response.ok };
+  },
+  post: async (endpoint, body = {}) => {
+    const response = await apiPost(endpoint, body);
+    const data = await response.json().catch(() => ({}));
+    return { data, status: response.status, ok: response.ok };
+  },
+  put: async (endpoint, body = {}) => {
+    const response = await apiPut(endpoint, body);
+    const data = await response.json().catch(() => ({}));
+    return { data, status: response.status, ok: response.ok };
+  },
+  delete: async (endpoint) => {
+    const response = await apiDelete(endpoint);
+    const data = await response.json().catch(() => ({}));
+    return { data, status: response.status, ok: response.ok };
+  },
 };
+
+export default api;
