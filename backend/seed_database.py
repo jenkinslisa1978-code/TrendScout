@@ -25,7 +25,7 @@ db_name = os.environ.get('DB_NAME')
 if not mongo_url or not db_name:
     raise ValueError("MONGO_URL and DB_NAME environment variables must be set")
 
-# Sample product data
+# Sample product data - includes early trend detection signals
 SAMPLE_PRODUCTS = [
     {
         "product_name": "Portable Neck Fan",
@@ -37,7 +37,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 234,
         "competition_level": "medium",
         "supplier_link": "https://alibaba.com/example1",
-        "is_premium": False
+        "is_premium": False,
+        "view_growth_rate": 45.0,
+        "engagement_rate": 6.2,
+        "supplier_order_velocity": 180
     },
     {
         "product_name": "Magnetic Phone Mount",
@@ -49,7 +52,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 156,
         "competition_level": "high",
         "supplier_link": "https://alibaba.com/example2",
-        "is_premium": False
+        "is_premium": False,
+        "view_growth_rate": 25.0,
+        "engagement_rate": 4.1,
+        "supplier_order_velocity": 95
     },
     {
         "product_name": "Sunset Projection Lamp",
@@ -61,7 +67,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 89,
         "competition_level": "low",
         "supplier_link": "https://alibaba.com/example3",
-        "is_premium": True
+        "is_premium": True,
+        "view_growth_rate": 120.0,
+        "engagement_rate": 12.5,
+        "supplier_order_velocity": 320
     },
     {
         "product_name": "LED Strip Lights RGB",
@@ -73,7 +82,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 412,
         "competition_level": "high",
         "supplier_link": "https://alibaba.com/example4",
-        "is_premium": False
+        "is_premium": False,
+        "view_growth_rate": 8.0,
+        "engagement_rate": 3.2,
+        "supplier_order_velocity": 450
     },
     {
         "product_name": "Wireless Earbuds Pro",
@@ -85,7 +97,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 278,
         "competition_level": "high",
         "supplier_link": "https://alibaba.com/example5",
-        "is_premium": False
+        "is_premium": False,
+        "view_growth_rate": 15.0,
+        "engagement_rate": 4.8,
+        "supplier_order_velocity": 210
     },
     {
         "product_name": "Cloud Slippers",
@@ -97,7 +112,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 523,
         "competition_level": "high",
         "supplier_link": "https://alibaba.com/example6",
-        "is_premium": False
+        "is_premium": False,
+        "view_growth_rate": 5.0,
+        "engagement_rate": 2.8,
+        "supplier_order_velocity": 520
     },
     {
         "product_name": "Aesthetic Desk Organizer",
@@ -109,7 +127,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 67,
         "competition_level": "low",
         "supplier_link": "https://alibaba.com/example7",
-        "is_premium": True
+        "is_premium": True,
+        "view_growth_rate": 85.0,
+        "engagement_rate": 9.2,
+        "supplier_order_velocity": 145
     },
     {
         "product_name": "Smart Water Bottle",
@@ -121,7 +142,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 145,
         "competition_level": "medium",
         "supplier_link": "https://alibaba.com/example8",
-        "is_premium": False
+        "is_premium": False,
+        "view_growth_rate": 55.0,
+        "engagement_rate": 7.5,
+        "supplier_order_velocity": 175
     },
     {
         "product_name": "Portable Blender",
@@ -133,7 +157,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 389,
         "competition_level": "high",
         "supplier_link": "https://alibaba.com/example9",
-        "is_premium": False
+        "is_premium": False,
+        "view_growth_rate": 12.0,
+        "engagement_rate": 5.1,
+        "supplier_order_velocity": 380
     },
     {
         "product_name": "Mini Projector",
@@ -145,7 +172,10 @@ SAMPLE_PRODUCTS = [
         "ad_count": 198,
         "competition_level": "medium",
         "supplier_link": "https://alibaba.com/example10",
-        "is_premium": True
+        "is_premium": True,
+        "view_growth_rate": 35.0,
+        "engagement_rate": 6.8,
+        "supplier_order_velocity": 125
     },
     {
         "product_name": "Posture Corrector",
@@ -353,12 +383,125 @@ def generate_ai_summary(product):
     
     return templates.get(opportunity, templates['medium'])
 
+def calculate_early_trend_score(product):
+    """Calculate early trend score (0-100) based on acceleration signals"""
+    tiktok_views = product.get('tiktok_views', 0)
+    ad_count = product.get('ad_count', 0)
+    competition_level = product.get('competition_level', 'medium')
+    view_growth_rate = product.get('view_growth_rate', 0)
+    engagement_rate = product.get('engagement_rate', 0)
+    supplier_order_velocity = product.get('supplier_order_velocity', 0)
+    trend_stage = product.get('trend_stage', 'rising')
+    
+    # 1. View Growth Velocity Score (25%)
+    if view_growth_rate >= 200:
+        growth_score = 100
+    elif view_growth_rate >= 100:
+        growth_score = 85
+    elif view_growth_rate >= 50:
+        growth_score = 70
+    elif view_growth_rate >= 25:
+        growth_score = 55
+    elif view_growth_rate >= 10:
+        growth_score = 40
+    else:
+        growth_score = max(0, view_growth_rate * 4)
+    
+    # 2. Engagement Rate Score (20%)
+    if engagement_rate >= 15:
+        engagement_score = 100
+    elif engagement_rate >= 10:
+        engagement_score = 85
+    elif engagement_rate >= 5:
+        engagement_score = 65
+    elif engagement_rate >= 2:
+        engagement_score = 45
+    else:
+        engagement_score = engagement_rate * 22.5
+    
+    # 3. Supplier Order Velocity Score (20%)
+    if supplier_order_velocity >= 500:
+        supplier_score = 100
+    elif supplier_order_velocity >= 200:
+        supplier_score = 85
+    elif supplier_order_velocity >= 100:
+        supplier_score = 70
+    elif supplier_order_velocity >= 50:
+        supplier_score = 55
+    elif supplier_order_velocity >= 20:
+        supplier_score = 40
+    else:
+        supplier_score = supplier_order_velocity * 2
+    
+    # 4. Ad Activity Score (20%)
+    if ad_count == 0:
+        ad_activity_score = 60
+    elif ad_count < 30:
+        ad_activity_score = 100
+    elif ad_count < 80:
+        ad_activity_score = 90
+    elif ad_count < 150:
+        ad_activity_score = 70
+    elif ad_count < 300:
+        ad_activity_score = 45
+    else:
+        ad_activity_score = 20
+    
+    # 5. Competition Score (15%)
+    competition_scores = {'low': 100, 'medium': 55, 'high': 15}
+    competition_score = competition_scores.get(competition_level, 50)
+    
+    # Bonus for early stage with high views
+    stage_bonus = 0
+    if trend_stage == 'early' and tiktok_views >= 100000:
+        stage_bonus = 10
+    elif trend_stage == 'rising' and ad_count < 100:
+        stage_bonus = 5
+    
+    early_trend_score = (
+        growth_score * 0.25 +
+        engagement_score * 0.20 +
+        supplier_score * 0.20 +
+        ad_activity_score * 0.20 +
+        competition_score * 0.15 +
+        stage_bonus
+    )
+    
+    return min(100, max(0, round(early_trend_score)))
+
+
+def get_early_trend_label(score):
+    """Get label for early trend score"""
+    if score >= 85:
+        return 'exploding'
+    elif score >= 65:
+        return 'rising'
+    elif score >= 45:
+        return 'early_trend'
+    else:
+        return 'stable'
+
+
 def process_product(product):
     """Process a product through the automation pipeline"""
     product['id'] = str(uuid.uuid4())
+    
+    # Add default early trend signals if not present
+    if 'view_growth_rate' not in product:
+        product['view_growth_rate'] = random.uniform(5, 150)
+    if 'engagement_rate' not in product:
+        product['engagement_rate'] = random.uniform(1, 15)
+    if 'supplier_order_velocity' not in product:
+        product['supplier_order_velocity'] = random.randint(10, 400)
+    
     product['trend_stage'] = calculate_trend_stage(product)
     product['trend_score'] = calculate_trend_score(product)
     product['opportunity_rating'] = calculate_opportunity_rating(product)
+    
+    # Calculate early trend score
+    product['early_trend_score'] = calculate_early_trend_score(product)
+    product['early_trend_label'] = get_early_trend_label(product['early_trend_score'])
+    
     product['ai_summary'] = generate_ai_summary(product)
     product['estimated_margin'] = product['estimated_retail_price'] - product['supplier_cost']
     product['created_at'] = datetime.now(timezone.utc).isoformat()
@@ -385,6 +528,7 @@ async def seed_database():
     print("Generating alerts...")
     alerts = []
     for product in processed_products:
+        # Regular trend alerts
         if product['trend_score'] >= 75 and product['opportunity_rating'] in ['high', 'very high']:
             alert = {
                 'id': str(uuid.uuid4()),
@@ -401,6 +545,40 @@ async def seed_database():
                 'dismissed': False,
             }
             alerts.append(alert)
+        
+        # Early trend alerts
+        if product['early_trend_score'] >= 70 or product['early_trend_label'] in ['exploding', 'rising']:
+            label = product['early_trend_label']
+            if label == 'exploding':
+                alert_type = 'exploding_trend'
+                title = f"🔥 EXPLODING: {product['product_name']}"
+                priority = 'critical'
+            elif label == 'rising':
+                alert_type = 'rising_early_trend'
+                title = f"📈 Rising Fast: {product['product_name']}"
+                priority = 'high'
+            else:
+                alert_type = 'early_trend_detected'
+                title = f"🌱 Early Trend: {product['product_name']}"
+                priority = 'medium'
+            
+            early_alert = {
+                'id': str(uuid.uuid4()),
+                'product_id': product['id'],
+                'product_name': product['product_name'],
+                'alert_type': alert_type,
+                'priority': priority,
+                'title': title,
+                'body': f"Early trend signals detected. {product['view_growth_rate']:.0f}% view growth | {product['engagement_rate']:.1f}% engagement | Score: {product['early_trend_score']}",
+                'trend_score': product['trend_score'],
+                'early_trend_score': product['early_trend_score'],
+                'early_trend_label': product['early_trend_label'],
+                'opportunity_rating': product['opportunity_rating'],
+                'created_at': datetime.now(timezone.utc).isoformat(),
+                'read': False,
+                'dismissed': False,
+            }
+            alerts.append(early_alert)
     
     if alerts:
         await db.trend_alerts.insert_many(alerts)

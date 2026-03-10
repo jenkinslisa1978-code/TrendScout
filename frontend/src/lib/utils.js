@@ -63,3 +63,42 @@ export function getTrendScoreColor(score) {
   if (score >= 40) return 'text-amber-600';
   return 'text-slate-500';
 }
+
+// Get early trend label info
+export function getEarlyTrendInfo(label) {
+  const info = {
+    exploding: { 
+      text: '🔥 Exploding', 
+      color: 'bg-red-50 text-red-700 border-red-200',
+      icon: '🔥',
+      priority: 'critical'
+    },
+    rising: { 
+      text: '📈 Rising', 
+      color: 'bg-orange-50 text-orange-700 border-orange-200',
+      icon: '📈',
+      priority: 'high'
+    },
+    early_trend: { 
+      text: '🌱 Early Trend', 
+      color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      icon: '🌱',
+      priority: 'medium'
+    },
+    stable: { 
+      text: 'Stable', 
+      color: 'bg-slate-100 text-slate-600 border-slate-200',
+      icon: '—',
+      priority: 'low'
+    },
+  };
+  return info[label] || info.stable;
+}
+
+// Get early trend score color
+export function getEarlyTrendScoreColor(score) {
+  if (score >= 85) return 'text-red-600';
+  if (score >= 65) return 'text-orange-600';
+  if (score >= 45) return 'text-emerald-600';
+  return 'text-slate-500';
+}

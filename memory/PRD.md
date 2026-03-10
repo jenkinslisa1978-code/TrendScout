@@ -16,9 +16,90 @@ Build a platform that helps dropshippers and e-commerce entrepreneurs:
 - **Frontend**: React + TailwindCSS + Shadcn/UI
 - **Backend**: FastAPI (Python)
 - **Database**: MongoDB
-- **Auth**: Supabase (ready, requires credentials)
+- **Auth**: Supabase (configured)
 - **Payments**: Stripe (scaffolded, requires credentials)
 - **Currency**: GBP (British Pound Sterling)
+
+## Core Features (Implemented)
+
+### Product Research Platform
+- ✅ Product database with trend scoring
+- ✅ TikTok views and ad count tracking
+- ✅ Opportunity rating algorithm (low/medium/high/very high)
+- ✅ Trend stage classification (early/rising/peak/saturated)
+- ✅ **Early Trend Detection System** (NEW)
+  - early_trend_score (0-100)
+  - Labels: 🔥 Exploding, 📈 Rising, 🌱 Early Trend, Stable
+  - Signals: view growth velocity, engagement rate, supplier orders, ad activity, competition
+  - Automatic alert generation for high early_trend_score
+- ✅ AI-generated product summaries
+- ✅ Alert generation for high-potential products
+- ✅ Data ingestion from multiple sources
+
+### Store-Launch Platform
+- ✅ Product-to-store workflow
+- ✅ AI content generation (store names, taglines, descriptions)
+- ✅ Branding style suggestions
+- ✅ Pricing recommendations in GBP
+- ✅ Store management dashboard
+- ✅ Shopify-compatible JSON export with currency: "GBP"
+
+### User Management
+- ✅ Supabase authentication (configured)
+- ✅ Demo mode fallback
+- ✅ User data isolation
+- ✅ Plan-based feature gating
+
+## Early Trend Detection System
+
+### Calculation Formula
+```
+early_trend_score = (
+  view_growth_rate_score * 0.25 +
+  engagement_rate_score * 0.20 +
+  supplier_order_velocity_score * 0.20 +
+  ad_activity_score * 0.20 +
+  competition_score * 0.15 +
+  stage_bonus
+)
+```
+
+### Labels
+| Score Range | Label | Icon |
+|------------|-------|------|
+| 85-100 | Exploding | 🔥 |
+| 65-84 | Rising | 📈 |
+| 45-64 | Early Trend | 🌱 |
+| 0-44 | Stable | — |
+
+### Dashboard Features
+- Early Trend Opportunities section
+- Early Score column in product listings
+- Filter by early_trend_label
+- Sort by early_trend_score
+- Automatic early trend alerts
+
+## API Endpoints
+
+### Products
+- GET /api/products - List products (supports early_trend_label filter)
+- GET /api/products/{id} - Get product details
+
+### Alerts
+- Now includes early trend alerts (exploding_trend, rising_early_trend, early_trend_detected)
+
+## Changelog
+
+### March 2025
+- Added Early Trend Detection system
+- Added early_trend_score and early_trend_label to Product model
+- Added view_growth_rate, engagement_rate, supplier_order_velocity fields
+- Added Early Trend Opportunities section to dashboard
+- Added Early Trend filter to Discover page
+- Added Early Trend Score column to product cards
+- Updated alert generation for early trends
+- Fixed Supabase "body stream already read" error
+- Implemented GBP currency throughout the app
 
 ## Core Features (Implemented)
 

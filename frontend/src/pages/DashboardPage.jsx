@@ -40,7 +40,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { getProducts, getDashboardStats } from '@/services/productService';
-import { formatNumber, formatCurrency, getTrendStageColor, getOpportunityColor, getTrendScoreColor } from '@/lib/utils';
+import { formatNumber, formatCurrency, getTrendStageColor, getOpportunityColor, getTrendScoreColor, getEarlyTrendInfo, getEarlyTrendScoreColor } from '@/lib/utils';
 
 const generateTrendData = () => {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -379,6 +379,89 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* Early Trend Opportunities Section */}
+        <Card className="border-0 shadow-card overflow-hidden">
+          <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-red-50 via-orange-50 to-amber-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-manrope text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Flame className="h-5 w-5 text-red-500" />
+                  Early Trend Opportunities
+                </CardTitle>
+                <p className="text-sm text-slate-500 mt-1">Products accelerating rapidly before saturation</p>
+              </div>
+              <Link 
+                to="/discover?early_trend=true" 
+                className="flex items-center gap-1.5 text-sm font-semibold text-red-600 hover:text-red-700 transition-colors"
+                data-testid="view-early-trends-link"
+              >
+                View all
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-slate-100">
+              {loading ? (
+                <div className="p-8 text-center text-slate-500">
+                  <div className="inline-block w-8 h-8 border-3 border-red-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : products.filter(p => p.early_trend_score >= 65 || ['exploding', 'rising'].includes(p.early_trend_label)).length === 0 ? (
+                <div className="p-8 text-center text-slate-500">No early trend opportunities detected</div>
+              ) : (
+                products
+                  .filter(p => p.early_trend_score >= 65 || ['exploding', 'rising'].includes(p.early_trend_label))
+                  .sort((a, b) => (b.early_trend_score || 0) - (a.early_trend_score || 0))
+                  .slice(0, 5)
+                  .map((product) => {
+                    const earlyTrendInfo = getEarlyTrendInfo(product.early_trend_label);
+                    return (
+                      <Link
+                        key={product.id}
+                        to={`/product/${product.id}`}
+                        className="flex items-center justify-between p-5 hover:bg-slate-50/80 transition-colors group"
+                        data-testid={`early-trend-row-${product.id}`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-red-50 to-orange-50 group-hover:from-red-100 transition-colors text-2xl">
+                            {earlyTrendInfo.icon}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 group-hover:text-red-600 transition-colors">
+                              {product.product_name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-sm text-slate-500">{product.category}</span>
+                              {product.view_growth_rate > 0 && (
+                                <>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="text-sm font-medium text-emerald-600">
+                                    +{product.view_growth_rate?.toFixed(0)}% growth
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className={`font-mono text-2xl font-bold ${getEarlyTrendScoreColor(product.early_trend_score || 0)}`}>
+                              {product.early_trend_score || 0}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-0.5">Early Score</p>
+                          </div>
+                          <Badge className={`${earlyTrendInfo.color} border px-3 py-1 text-xs font-bold uppercase tracking-wider`}>
+                            {earlyTrendInfo.text}
+                          </Badge>
+                        </div>
+                      </Link>
+                    );
+                  })
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

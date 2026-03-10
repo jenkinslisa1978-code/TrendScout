@@ -10,6 +10,7 @@ export const getProducts = async (filters = {}) => {
     if (filters.category) params.append('category', filters.category);
     if (filters.trend_stage) params.append('trend_stage', filters.trend_stage);
     if (filters.opportunity_rating) params.append('opportunity_rating', filters.opportunity_rating);
+    if (filters.early_trend_label) params.append('early_trend_label', filters.early_trend_label);
     if (filters.search) params.append('search', filters.search);
     if (filters.sortBy) params.append('sort_by', filters.sortBy);
     if (filters.sortOrder) params.append('sort_order', filters.sortOrder);

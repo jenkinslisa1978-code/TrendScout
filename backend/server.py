@@ -96,6 +96,12 @@ class Product(BaseModel):
     trend_score: int = 0
     trend_stage: str = "rising"
     opportunity_rating: str = "medium"
+    # Early Trend Detection fields
+    early_trend_score: int = 0
+    early_trend_label: str = "stable"
+    view_growth_rate: float = 0.0  # Percentage growth velocity
+    engagement_rate: float = 0.0  # Engagement as percentage
+    supplier_order_velocity: int = 0  # Orders per week
     ai_summary: Optional[str] = None
     supplier_link: Optional[str] = None
     is_premium: bool = False
@@ -344,12 +350,22 @@ def generate_ai_summary(product: dict) -> str:
     competition = product.get('competition_level', 'medium')
     category = product.get('category', 'General')
     margin = product.get('estimated_retail_price', 0) - product.get('supplier_cost', 0)
+    early_trend_label = product.get('early_trend_label', 'stable')
     _ = stage  # Used in category insights
     
+    # Add early trend context
+    early_trend_context = ""
+    if early_trend_label == 'exploding':
+        early_trend_context = "🔥 EXPLODING - Extremely rapid growth detected. "
+    elif early_trend_label == 'rising':
+        early_trend_context = "📈 Rising fast with strong momentum. "
+    elif early_trend_label == 'early_trend':
+        early_trend_context = "🌱 Early trend indicators detected. "
+    
     templates = {
-        'very high': f"Exceptional viral potential with {competition} current competition. Strong TikTok presence driving consumer awareness. Perfect for content creators and lifestyle consumers. Act fast before market saturation.",
-        'high': f"Solid opportunity with growing demand. {'Strong' if trend_score >= 80 else 'Building'} TikTok presence. {'Low advertiser activity creates favorable entry conditions.' if competition == 'low' else 'Moderate competition requires clear value proposition.'} Good time to test with controlled ad spend.",
-        'medium': f"Moderate opportunity requiring differentiation. {'Market is getting competitive' if competition == 'high' else 'Some competition present'}. {'Moderate margins provide room for competitive pricing.' if margin >= 15 else 'Thin margins demand high volume strategy.'} Proceed with caution.",
+        'very high': f"{early_trend_context}Exceptional viral potential with {competition} current competition. Strong TikTok presence driving consumer awareness. Perfect for content creators and lifestyle consumers. Act fast before market saturation.",
+        'high': f"{early_trend_context}Solid opportunity with growing demand. {'Strong' if trend_score >= 80 else 'Building'} TikTok presence. {'Low advertiser activity creates favorable entry conditions.' if competition == 'low' else 'Moderate competition requires clear value proposition.'} Good time to test with controlled ad spend.",
+        'medium': f"{early_trend_context}Moderate opportunity requiring differentiation. {'Market is getting competitive' if competition == 'high' else 'Some competition present'}. {'Moderate margins provide room for competitive pricing.' if margin >= 15 else 'Thin margins demand high volume strategy.'} Proceed with caution.",
         'low': f"Challenging market conditions. {'Crowded market demands strong differentiation.' if competition == 'high' else 'Limited market validation.'} Consider alternative products or unique angle.",
     }
     
@@ -365,6 +381,125 @@ def generate_ai_summary(product: dict) -> str:
     
     insight = category_insights.get(category, '')
     return f"{base} {insight}".strip()
+
+
+def calculate_early_trend_score(product: dict) -> tuple:
+    """
+    Calculate early trend score (0-100) based on acceleration signals.
+    Returns (score, label) tuple.
+    
+    Signals:
+    - View growth velocity (25%): How fast views are growing
+    - Engagement rate (20%): User interaction level
+    - Supplier order velocity (20%): Rising supplier demand
+    - Ad activity level (20%): Early advertiser interest
+    - Competition level (15%): Room for entry
+    """
+    # Get product metrics
+    tiktok_views = product.get('tiktok_views', 0)
+    ad_count = product.get('ad_count', 0)
+    competition_level = product.get('competition_level', 'medium')
+    view_growth_rate = product.get('view_growth_rate', 0)
+    engagement_rate = product.get('engagement_rate', 0)
+    supplier_order_velocity = product.get('supplier_order_velocity', 0)
+    trend_stage = product.get('trend_stage', 'rising')
+    
+    # 1. View Growth Velocity Score (25%) - High growth = early trend
+    if view_growth_rate >= 200:  # 200%+ growth
+        growth_score = 100
+    elif view_growth_rate >= 100:  # 100-200% growth
+        growth_score = 85
+    elif view_growth_rate >= 50:  # 50-100% growth
+        growth_score = 70
+    elif view_growth_rate >= 25:  # 25-50% growth
+        growth_score = 55
+    elif view_growth_rate >= 10:  # 10-25% growth
+        growth_score = 40
+    else:
+        growth_score = max(0, view_growth_rate * 4)
+    
+    # 2. Engagement Rate Score (20%) - High engagement = viral potential
+    if engagement_rate >= 15:  # 15%+ engagement
+        engagement_score = 100
+    elif engagement_rate >= 10:
+        engagement_score = 85
+    elif engagement_rate >= 5:
+        engagement_score = 65
+    elif engagement_rate >= 2:
+        engagement_score = 45
+    else:
+        engagement_score = engagement_rate * 22.5
+    
+    # 3. Supplier Order Velocity Score (20%) - Rising orders = demand signal
+    if supplier_order_velocity >= 500:  # 500+ orders/week
+        supplier_score = 100
+    elif supplier_order_velocity >= 200:
+        supplier_score = 85
+    elif supplier_order_velocity >= 100:
+        supplier_score = 70
+    elif supplier_order_velocity >= 50:
+        supplier_score = 55
+    elif supplier_order_velocity >= 20:
+        supplier_score = 40
+    else:
+        supplier_score = supplier_order_velocity * 2
+    
+    # 4. Ad Activity Score (20%) - Sweet spot is medium activity (not saturated)
+    # Low ads = early opportunity, Medium = validation, High = saturated
+    if ad_count == 0:
+        ad_activity_score = 60  # Very early, unvalidated
+    elif ad_count < 30:
+        ad_activity_score = 100  # Perfect early window
+    elif ad_count < 80:
+        ad_activity_score = 90  # Still early
+    elif ad_count < 150:
+        ad_activity_score = 70  # Getting competitive
+    elif ad_count < 300:
+        ad_activity_score = 45  # Competitive
+    else:
+        ad_activity_score = 20  # Saturated
+    
+    # 5. Competition Score (15%) - Low competition = better opportunity
+    competition_scores = {'low': 100, 'medium': 55, 'high': 15}
+    competition_score = competition_scores.get(competition_level, 50)
+    
+    # Bonus for early stage products with high views
+    stage_bonus = 0
+    if trend_stage == 'early' and tiktok_views >= 100000:
+        stage_bonus = 10
+    elif trend_stage == 'rising' and ad_count < 100:
+        stage_bonus = 5
+    
+    # Calculate weighted score
+    early_trend_score = (
+        growth_score * 0.25 +
+        engagement_score * 0.20 +
+        supplier_score * 0.20 +
+        ad_activity_score * 0.20 +
+        competition_score * 0.15 +
+        stage_bonus
+    )
+    
+    early_trend_score = min(100, max(0, round(early_trend_score)))
+    
+    # Determine label
+    if early_trend_score >= 85:
+        label = 'exploding'
+    elif early_trend_score >= 65:
+        label = 'rising'
+    elif early_trend_score >= 45:
+        label = 'early_trend'
+    else:
+        label = 'stable'
+    
+    return early_trend_score, label
+
+
+def should_generate_early_trend_alert(product: dict) -> bool:
+    """Check if product qualifies for early trend alert"""
+    early_trend_score = product.get('early_trend_score', 0)
+    early_trend_label = product.get('early_trend_label', 'stable')
+    return early_trend_score >= 70 or early_trend_label in ['exploding', 'rising']
 
 def should_generate_alert(product: dict) -> bool:
     """Check if product qualifies for alert"""
@@ -431,6 +566,11 @@ def run_full_automation(product: dict) -> dict:
     opportunity_rating = calculate_opportunity_rating(product)
     product['opportunity_rating'] = opportunity_rating
     
+    # Calculate early trend score
+    early_trend_score, early_trend_label = calculate_early_trend_score(product)
+    product['early_trend_score'] = early_trend_score
+    product['early_trend_label'] = early_trend_label
+    
     ai_summary = generate_ai_summary(product)
     product['ai_summary'] = ai_summary
     
@@ -438,9 +578,62 @@ def run_full_automation(product: dict) -> dict:
     product['estimated_margin'] = margin
     product['updated_at'] = datetime.now(timezone.utc).isoformat()
     
+    # Generate regular alert
     alert = generate_alert(product)
     
-    return {'product': product, 'alert': alert}
+    # Generate early trend alert if applicable
+    early_alert = generate_early_trend_alert(product)
+    
+    return {'product': product, 'alert': alert, 'early_alert': early_alert}
+
+
+def generate_early_trend_alert(product: dict) -> Optional[dict]:
+    """Generate alert for early trend detection"""
+    if not should_generate_early_trend_alert(product):
+        return None
+    
+    early_trend_score = product.get('early_trend_score', 0)
+    early_trend_label = product.get('early_trend_label', 'stable')
+    view_growth_rate = product.get('view_growth_rate', 0)
+    engagement_rate = product.get('engagement_rate', 0)
+    
+    # Determine alert type and title based on label
+    if early_trend_label == 'exploding':
+        alert_type = 'exploding_trend'
+        title = f"🔥 EXPLODING: {product.get('product_name')}"
+        priority = 'critical'
+    elif early_trend_label == 'rising':
+        alert_type = 'rising_early_trend'
+        title = f"📈 Rising Fast: {product.get('product_name')}"
+        priority = 'high'
+    else:
+        alert_type = 'early_trend_detected'
+        title = f"🌱 Early Trend: {product.get('product_name')}"
+        priority = 'medium'
+    
+    body_parts = []
+    if view_growth_rate >= 50:
+        body_parts.append(f"{view_growth_rate:.0f}% view growth")
+    if engagement_rate >= 5:
+        body_parts.append(f"{engagement_rate:.1f}% engagement")
+    body_parts.append(f"Early trend score: {early_trend_score}")
+    
+    return {
+        'id': str(uuid.uuid4()),
+        'product_id': product.get('id'),
+        'product_name': product.get('product_name'),
+        'alert_type': alert_type,
+        'priority': priority,
+        'title': title,
+        'body': f"Early trend signals detected. {' | '.join(body_parts)}. Act before competition increases.",
+        'trend_score': product.get('trend_score', 0),
+        'early_trend_score': early_trend_score,
+        'early_trend_label': early_trend_label,
+        'opportunity_rating': product.get('opportunity_rating', 'medium'),
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'read': False,
+        'dismissed': False,
+    }
 
 # =====================
 # ROUTES - Basic API
@@ -496,6 +689,8 @@ async def run_automation(request: RunAutomationRequest):
             processed_products.append(result['product'])
             if result['alert']:
                 alerts.append(result['alert'])
+            if result.get('early_alert'):
+                alerts.append(result['early_alert'])
         
         # Update products in database
         for product in processed_products:
@@ -860,6 +1055,7 @@ async def get_products(
     category: Optional[str] = None,
     trend_stage: Optional[str] = None,
     opportunity_rating: Optional[str] = None,
+    early_trend_label: Optional[str] = None,
     search: Optional[str] = None,
     sort_by: str = "trend_score",
     sort_order: str = "desc",
@@ -874,6 +1070,8 @@ async def get_products(
         query["trend_stage"] = trend_stage
     if opportunity_rating:
         query["opportunity_rating"] = opportunity_rating
+    if early_trend_label:
+        query["early_trend_label"] = early_trend_label
     if search:
         query["$or"] = [
             {"product_name": {"$regex": search, "$options": "i"}},

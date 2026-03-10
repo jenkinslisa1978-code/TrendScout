@@ -32,7 +32,9 @@ import {
   getTrendStageColor, 
   getOpportunityColor, 
   getCompetitionColor,
-  getTrendScoreColor 
+  getTrendScoreColor,
+  getEarlyTrendInfo,
+  getEarlyTrendScoreColor
 } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -48,6 +50,7 @@ export default function DiscoverPage() {
   const [category, setCategory] = useState('all');
   const [trendStage, setTrendStage] = useState('all');
   const [opportunityRating, setOpportunityRating] = useState('all');
+  const [earlyTrendFilter, setEarlyTrendFilter] = useState('all');
   const [sortBy, setSortBy] = useState('trend_score');
   const [sortOrder, setSortOrder] = useState('desc');
 
@@ -67,6 +70,7 @@ export default function DiscoverPage() {
         category: category !== 'all' ? category : undefined,
         trend_stage: trendStage !== 'all' ? trendStage : undefined,
         opportunity_rating: opportunityRating !== 'all' ? opportunityRating : undefined,
+        early_trend_label: earlyTrendFilter !== 'all' ? earlyTrendFilter : undefined,
         sortBy,
         sortOrder
       };
@@ -78,7 +82,7 @@ export default function DiscoverPage() {
     
     const debounce = setTimeout(fetchProducts, 300);
     return () => clearTimeout(debounce);
-  }, [search, category, trendStage, opportunityRating, sortBy, sortOrder]);
+  }, [search, category, trendStage, opportunityRating, earlyTrendFilter, sortBy, sortOrder]);
 
   const handleSaveToggle = async (product, e) => {
     e.preventDefault();
@@ -174,6 +178,20 @@ export default function DiscoverPage() {
                 </SelectContent>
               </Select>
 
+              {/* Early Trend filter */}
+              <Select value={earlyTrendFilter} onValueChange={setEarlyTrendFilter}>
+                <SelectTrigger className="w-[160px] h-10" data-testid="early-trend-filter">
+                  <SelectValue placeholder="Early Trend" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Trends</SelectItem>
+                  <SelectItem value="exploding">🔥 Exploding</SelectItem>
+                  <SelectItem value="rising">📈 Rising</SelectItem>
+                  <SelectItem value="early_trend">🌱 Early Trend</SelectItem>
+                  <SelectItem value="stable">Stable</SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* Sort */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[140px] h-10" data-testid="sort-by-filter">
@@ -181,6 +199,7 @@ export default function DiscoverPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="trend_score">Trend Score</SelectItem>
+                  <SelectItem value="early_trend_score">Early Trend Score</SelectItem>
                   <SelectItem value="estimated_margin">Margin</SelectItem>
                   <SelectItem value="tiktok_views">TikTok Views</SelectItem>
                   <SelectItem value="created_at">Newest</SelectItem>
@@ -262,6 +281,12 @@ export default function DiscoverPage() {
                           </p>
                           <p className="text-xs text-slate-400">Trend Score</p>
                         </div>
+                        <div className="text-center">
+                          <p className={`font-mono text-xl font-bold ${getEarlyTrendScoreColor(product.early_trend_score || 0)}`}>
+                            {product.early_trend_score || 0}
+                          </p>
+                          <p className="text-xs text-slate-400">Early Score</p>
+                        </div>
                         <div className="text-right">
                           <p className="font-mono text-lg font-semibold text-slate-900">
                             {formatCurrency(product.estimated_margin)}
@@ -278,6 +303,11 @@ export default function DiscoverPage() {
 
                       {/* Badges */}
                       <div className="flex flex-wrap gap-2">
+                        {product.early_trend_label && product.early_trend_label !== 'stable' && (
+                          <Badge className={`${getEarlyTrendInfo(product.early_trend_label).color} border text-xs`}>
+                            {getEarlyTrendInfo(product.early_trend_label).text}
+                          </Badge>
+                        )}
                         <Badge className={`${getTrendStageColor(product.trend_stage)} border text-xs`}>
                           {product.trend_stage}
                         </Badge>
