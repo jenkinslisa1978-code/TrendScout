@@ -476,6 +476,34 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **Pricing Plans & Feature Gating with Stripe (COMPLETE - March 10, 2026)**
+  - Created SubscriptionService (`/app/backend/services/subscription_service.py`) with:
+    - 3 plans: Free (£0), Pro (£39/mo), Elite (£99/mo) - all in GBP
+    - FeatureGate utility class for consistent access checks
+    - Stripe checkout session creation with dynamic pricing
+    - Webhook handling for subscription events (checkout.completed, subscription.updated/deleted, payment.succeeded/failed)
+    - Customer portal session creation for billing management
+  - API Endpoints (7):
+    - `GET /api/stripe/plans` - Returns all plans with GBP pricing (public)
+    - `GET /api/stripe/subscription` - Current user subscription status (auth required)
+    - `GET /api/stripe/feature-access` - User's feature access by plan (auth required)
+    - `POST /api/stripe/create-checkout-session` - Create Stripe checkout for upgrade
+    - `POST /api/stripe/create-portal-session` - Create billing portal for subscription management
+    - `POST /api/stripe/webhook` - Handle Stripe events
+    - `POST /api/stripe/cancel-subscription` - Downgrade to free at period end
+  - Plan Features:
+    - Free: Limited insights, report previews, 1 store, limited watchlist/alerts
+    - Pro: Full insights, full reports, 5 stores, full watchlist/alerts
+    - Elite: Everything in Pro + early trend detection, automation insights, advanced opportunities, unlimited stores
+  - Frontend:
+    - `PricingPage.jsx` - Professional pricing page with plan cards, feature comparison table
+    - `UpgradePrompts.jsx` - LockedContent, UpgradeBadge, UpgradeCard, StoreLimitPrompt, ReportUpgradePrompt, EarlyTrendUpgradePrompt, WatchlistUpgradePrompt
+    - `useSubscription.js` hook - SubscriptionProvider context with feature access methods
+  - Feature Gating Integration:
+    - ReportsPage: Shows ReportUpgradePrompt for free users
+    - StoresPage: Shows StoreLimitPrompt when store limit reached
+  - All tests passed (100% - 20/20 backend tests)
+
 - **Strong Launch Alert Notification System (COMPLETE - March 10, 2026)**
   - Added NotificationService (`/app/backend/services/notification_service.py`) with:
     - 4 notification types: strong_launch, exploding_trend, watchlist_alert, score_milestone
