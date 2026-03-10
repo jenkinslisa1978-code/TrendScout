@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TrendingUp, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { TrendingUp, Eye, EyeOff, Loader2, Gift } from 'lucide-react';
 import { toast } from 'sonner';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -15,6 +17,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const { signUp, isDemoMode } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get('ref');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,12 +30,23 @@ export default function SignupPage() {
       return;
     }
 
-    const { error } = await signUp(email, password, fullName);
+    const { error, data } = await signUp(email, password, fullName);
 
     if (error) {
       toast.error(error.message || 'Failed to create account');
       setLoading(false);
       return;
+    }
+
+    // Track referral if code present
+    if (referralCode && data?.user?.id) {
+      try {
+        await fetch(`${API_URL}/api/viral/referral/track?referral_code=${encodeURIComponent(referralCode)}&referred_user_id=${encodeURIComponent(data.user.id)}`, {
+          method: 'POST',
+        });
+      } catch (err) {
+        console.error('Failed to track referral:', err);
+      }
     }
 
     if (isDemoMode) {
@@ -96,6 +111,13 @@ export default function SignupPage() {
           {isDemoMode && (
             <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
               <strong>Demo Mode:</strong> Fill in any details to explore the dashboard.
+            </div>
+          )}
+
+          {referralCode && (
+            <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2" data-testid="referral-badge">
+              <Gift className="h-4 w-4" />
+              <span>You were referred by a friend!</span>
             </div>
           )}
 

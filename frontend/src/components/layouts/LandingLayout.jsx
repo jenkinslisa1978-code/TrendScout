@@ -11,6 +11,7 @@ export default function LandingLayout({ children }) {
   const location = useLocation();
 
   const navigation = [
+    { name: 'Trending', href: '/trending-products' },
     { name: 'Features', href: '/#features' },
     { name: 'Pricing', href: '/#pricing' },
   ];

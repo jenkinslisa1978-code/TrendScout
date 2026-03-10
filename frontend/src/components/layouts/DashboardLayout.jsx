@@ -15,7 +15,8 @@ import {
   Sparkles,
   Store,
   FileText,
-  Settings
+  Settings,
+  Gift
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'My Stores', href: '/stores', icon: Store },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
+  { name: 'Referrals', href: '/referrals', icon: Gift },
 ];
 
 const eliteNavigation = [

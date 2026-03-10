@@ -1,156 +1,142 @@
 <analysis>**original_problem_statement:**
-The user's vision is to build ViralScout, a comprehensive e-commerce intelligence SaaS platform. The platform's goal is to provide data-driven insights for product discovery, validation, and store launching.
+The user's vision is to build TrendScout (originally ViralScout), a comprehensive e-commerce intelligence SaaS platform. The goal is to provide data-driven insights for product discovery and validation.
 
-The core platform objectives include:
--   **Architecture:** A scalable three-layer architecture.
--   **Data Ingestion:** Real, multi-source data ingestion.
--   **Intelligence Layer:** A robust system featuring product deduplication, a comprehensive scoring engine (including the recently added Launch Score), trend velocity detection, and market saturation analysis.
--   **Product Validation:** A clear recommendation engine for product launch opportunities.
--   **Advanced Dashboard:** A dashboard that provides instant product discovery, a watchlist, alerts, and a market radar. A new Live Opportunity Feed has been requested for this.
--   **Market Intelligence Reports:** An automated reporting system with PDF export capabilities.
--   **User Engagement & Monetization:** Features like weekly email reports, viral growth mechanics, and subscription plans.
+Most recently, the user requested a suite of growth and marketing features to drive user acquisition, SEO traffic, and referrals. This includes:
+1.  **Public Trending Products Page:** An SEO-optimized page () showcasing the top 10 trending products.
+2.  **Homepage Landing Page:** A new public landing page () with a clear value proposition, feature overview, and pricing.
+3.  **Public Product Pages:** SEO-friendly detail pages for individual products ().
+4.  **Shareable Product Cards:** A feature to allow users to share product insights on social media.
+5.  **Referral System:** A system where users get rewards (additional store slots) for referring new signups.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack platform using React for the frontend and FastAPI for the backend. The following major components are implemented and functional:
--   **Advanced Dashboard:** Frontend UI for Daily Winners, Watchlist, Alerts, and Market Radar.
--   **Real Data Ingestion:** A web scraping pipeline fetches data from AliExpress, TikTok, and Amazon.
--   **Product Identity & Deduplication:** A backend system that merges duplicate products into single canonical records, ensuring data integrity across the app.
--   **Market Intelligence Reports:** A complete system for generating, scheduling, and displaying automated weekly/monthly reports, with both public and premium views.
--   **Product Launch Score & Explainer:** A primary scoring metric () has been added to all products, along with a UI modal that transparently explains the score's breakdown and reasoning.
--   **PDF Export for Reports:** Users can download weekly and monthly reports as PDF files.
--   **Weekly Email Reports:** A scheduled job uses the Resend API to email users a weekly digest of winning products.
+The application is a full-stack SaaS platform using React and FastAPI. The following features are implemented and have been tested:
+-   **Core Intelligence:** A dashboard with Daily Winners, a watchlist, alerts, a market radar, and a Live Opportunity Feed.
+-   **Data Pipeline:** Ingests data from multiple sources, deduplicates products, and calculates a proprietary Launch Score.
+-   **Reporting:** Automated weekly/monthly market intelligence reports with PDF export.
+-   **Monetization:** A complete Stripe integration for subscription plans (, , , ) in GBP (£), including checkout, webhook handling, feature gating, and a customer portal. Live keys have been configured.
+-   **User Management:** Supabase for authentication, a new user onboarding flow, and an advanced notification system (in-app & email via Resend). Live credentials for Supabase and Resend are configured.
+-   **Admin System:** An admin role bypasses Stripe billing and provides Elite access for testing and management.
+-   **Deployment:** The application has been deployed, and a custom domain () has been configured at the DNS level.
 
 **Last working item**:
-- **Last item agent was working:** Implementing the **Live Opportunity Feed** for the dashboard. The agent created the initial backend service, API endpoint, and the frontend component structure.
-- **Status:** IN PROGRESS
-- **Agent Testing Done:** N
-- **Which testing method agent to use?** both. The backend logic for event generation needs to be tested by triggering the automation pipeline and querying the new  endpoint. The frontend needs to be tested with the screenshot tool to verify the  renders correctly on the dashboard.
-- **User Testing Done:** N
+-   **Last item agent was working:** The agent began implementing the **Growth and Marketing Features** by creating the initial files for the new public-facing pages.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** both. The new public pages will require frontend testing (screenshot tool). The referral system will require backend testing (curl) to verify code generation and tracking logic. A full E2E test by the testing agent should be performed after the entire feature set is complete.
+-   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Supabase Rate Limiting (Priority: P2)**
-    -   **Description:** User signup is intermittently blocked by  errors from Supabase's free tier.
-    -   **Status:** BLOCKED (by external service limits). This is a known external limitation.
+-   **Issue 1: SSL Certificate Error for Custom Domain (Priority: P0)**
+    -   **Description:** The user's custom domain  is showing an SSL error. DNS records have been added, but the SSL certificate has not been successfully provisioned.
+    -   **Status:** BLOCKED (on external service/platform provisioning).
+    -   **Is recurring issue?** N
+-   **Issue 2: Production Deployment is Outdated (Priority: P1)**
+    -   **Description:** The live deployed version of the app does not include the latest changes, such as the 4-tier pricing model (with the Starter plan) and the admin account system.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
+-   **Issue 3: Supabase Rate Limiting (Priority: P2)**
+    -   **Description:** User signup is intermittently blocked by  errors from Supabase, likely due to the user's plan tier.
+    -   **Status:** BLOCKED (by external service limits).
     -   **Is recurring issue?** Y
+-   **Issue 4: CJ Dropshipping Scraper Blocked (Priority: P3)**
+    -   **Description:** The scraper for this data source is being blocked by the site.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** Y
+-   **Issue 5: Gateway Timeout on Full Scrape (Priority: P3)**
+    -   **Description:** Running all data scrapers simultaneously can cause a gateway timeout.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
 
 **In progress Task List**:
--   **Task 1: Complete Live Opportunity Feed Implementation (Priority: P0)**
-    -   **Where to resume:** The foundational files have been created (, ), but the core logic is incomplete.
-        1.  **Backend:** Implement the  function in  to detect meaningful signal changes (e.g., trend spikes, new high scores) and store them as feed events.
-        2.  **Backend:** Integrate the call to  into the main automation pipeline in  so that events are created after data is processed.
-        3.  **Frontend:** Update  to fetch data from the  endpoint and render the events with appropriate styling, icons, and relative timestamps.
-    -   **What will be achieved with this?** The dashboard will feature a real-time feed that surfaces new product opportunities and signal changes, making the platform feel more dynamic and responsive.
+-   **Task 1: Complete Growth and Marketing Features (Priority: P0)**
+    -   **Where to resume:** The initial files (, ) have been created. The next steps are:
+        1.  **Public Trending Products Page:** Implement the backend endpoint to fetch the top 10 products and build the frontend UI in .
+        2.  **Homepage Landing Page:** Build the multi-section landing page in .
+        3.  **Public Product Pages:** Create a new route and component for  to display public product data.
+        4.  **Referral System:** Implement the backend logic (code generation, tracking) and frontend UI for user referrals.
+        5.  **Shareable Product Cards:** Add a Share button to product pages that generates a shareable link/image.
+    -   **What will be achieved with this?** Increased organic traffic, social sharing, and user acquisition.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** Both.
     -   **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **P3: Complete Viral Growth Features:** Resume work on the share button, public product pages, and referral system.
-
+    - **P1: Resolve SSL and Re-deploy:** Once the SSL issue is fixed, re-deploy the application to push the latest features (4-tier pricing, admin system) to production.
 - **Future Tasks:**
-    - **P2: Implement Pricing Plans & Feature Gating:** Create , , and  subscription plans.
-    - **P2: Integrate Live Stripe:** Connect the backend to manage real user subscriptions.
     - **P3: Product Outcome Learning System:** Create a feedback loop to track the success of launched products and improve the prediction models.
-    - **P3: Full Architecture Refactor:** Continue migrating logic from  into the defined three-layer architecture.
-    - **P3: Improve Data Ingestion:**
-        - Resolve the issue of the CJ Dropshipping scraper being blocked.
-        - Address the gateway timeout that occurs when running a full scrape of all sources simultaneously.
+    - **P3: Full Architecture Refactor:** Continue migrating logic from  into a cleaner service-oriented structure.
 
 **Completed work in this session**
-- **Product Identity & Deduplication System (VERIFIED):** Confirmed that the previously built system is fully functional and correctly integrated. All APIs (products, dashboard, reports) use canonical product data.
-- **Product Launch Score (DONE):** A new primary metric for evaluating products was implemented on the backend and integrated across the frontend UI.
-- **Launch Score Explainer (DONE):** A modal was created to provide users with a transparent breakdown and reasoning for each product's Launch Score.
-- **PDF Export for Reports (DONE):** Added backend functionality and frontend UI to allow users to download reports in PDF format.
-- **Weekly Email Reports via Resend (DONE):** Integrated the Resend API to automate a weekly email digest for users. The feature is functional but is limited by Resend's domain verification requirement for non-owner recipients.
-
-**Earlier issues found/mentioned but not fixed**
--   **Issue 1: CJ Dropshipping Scraper Blocked**
-    -   **Debug checklist:** Investigate the request headers and site structure to see if the block can be bypassed. Consider alternative data sources.
-    -   **Why to solve this issue and what will be achieved with this?** To add another valuable data source to the ingestion pipeline, increasing data diversity.
-    -   **Is recurring issue?** Y
--   **Issue 2: Gateway Timeout on Full Scrape**
-    -   **Debug checklist:** Refactor  to run scrapers sequentially or in smaller, parallel batches instead of all at once.
-    -   **Why to solve this issue and what will be achieved with this?** To ensure the data ingestion process is robust and does not fail when refreshing all sources.
-    -   **Is recurring issue?** N
-
-**Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork:** Supabase Rate Limiting ().
--   **Recurrence count:** High
--   **Status:** BLOCKED
+-   **Live Opportunity Feed (DONE):** Successfully implemented and integrated the real-time feed into the dashboard.
+-   **Advanced Notification System (DONE):** Built a full-featured notification system for in-app and email alerts with user-configurable preferences.
+-   **Pricing Plans & Feature Gating (DONE):** Integrated Stripe to handle , , , and  subscription tiers, including feature-gating logic and a customer portal.
+-   **New User Onboarding Flow (DONE):** Created a multi-step, dismissible onboarding modal for new users.
+-   **Production Go-Live Configuration (DONE):** Guided the user to configure live keys and settings for Stripe, Supabase, and Resend.
+-   **Admin Account System (DONE):** Implemented an admin role that bypasses billing and grants full access for user .
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend:** React, TailwindCSS, 
-- **Backend:** FastAPI, MongoDB, 
-- **Authentication:** Supabase (JWT-based)
-- **PDF Generation:** 
-- **Email:** 
+-   **Frontend:** React, TailwindCSS, 
+-   **Backend:** FastAPI, MongoDB, 
+-   **Payments:** Stripe (Subscriptions, Webhooks, Customer Portal)
+-   **Authentication:** Supabase (JWT-based)
+-   **Email:** Resend
+-   **Deployment:** Custom domain configuration, SSL
 
 **key DB schema**
--   ****: Updated with , , .
--   ** (NEW)**: , , , , .
--   ****: , , .
+-   ****: Added , , , .
+-   ****: Added  to identify admin accounts by email.
+-   **(For referral system)  (to be created)**: , , .
 
 **All files of reference**
--   : Core logic for the in-progress Live Opportunity Feed.
--   : Needs modification to integrate feed event generation.
--   : Frontend component for the in-progress feed.
--   : The main dashboard page where the new feed will be displayed.
--   : The Product Requirements Document.
+-   : The new public landing page (started).
+-   : The new public trending products page (started).
+-   : Contains the admin management endpoint and will house referral endpoints.
+-   : Defines the 4-tier pricing plans.
 
 **Critical Info for New Agent**
--   The user is guiding priorities on a feature-by-feature basis. The current active task is the Live Opportunity Feed.
--   The agent successfully identified a re-requested feature (Product Deduplication) was already complete, saving significant effort. The next agent should continue this practice of verifying existence before building.
--   The Resend integration is functional for testing (sending to the owner's email), but sending to other user emails will require domain verification by the user, which is expected behavior.
-
-**documents and test reports created in this job**
--    (Continuously updated)
--   
--   
--   
--   
--   
+-   **SSL ERROR IS THE TOP PRIORITY BLOCKER.** The user's custom domain  is not working due to an SSL certificate error. The app is accessible via its temporary deployment URL, but this issue prevents a full go-live. You should first check the DNS and SSL status. If it persists, guide the user to contact platform support.
+-   **PRODUCTION IS OUT OF SYNC.** The live deployment is missing the Starter plan and the admin account system. A re-deployment is required after the SSL issue is fixed.
+-   The app has been rebranded from **ViralScout** to **TrendScout**. The user is using the new name, but the codebase and deployment host still contain ViralScout or . Be mindful of this.
+-   The user's admin account is . This account automatically gets Elite access and bypasses all billing.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Yes, proceed with the Live Opportunity Feed implementation. (Completed)
-2.  **Agent:** Proposed the implementation plan for the Live Opportunity Feed. (Completed)
-3.  **User:** Add a Live Opportunity Feed to the dashboard. (New Request, In Progress)
-4.  **Agent:** Finished the Weekly Email Reports feature. (Completed)
-5.  **User:** Provided the Resend API key for the email feature. (Completed)
-6.  **Agent:** Proposed the plan for Weekly Email Reports. (Completed)
-7.  **User:** yes - confirming to proceed with PDF export. (Completed)
-8.  **Agent:** Proposed the plan for PDF export. (Completed)
-9.  **User:** proceed with P1 - confirming PDF export as the next priority. (Completed)
-10. **Agent:** Provided a comprehensive summary of the already-completed Product Identity & Deduplication system after the user re-requested it. (Completed)
+1.  **User:** Requested implementation of growth/marketing features (public pages, referrals, etc.). (In Progress)
+2.  **User:** Requested an admin account to bypass Stripe billing (). (Completed)
+3.  **User:** Decided to add the Starter plan (£19/mo) back into the pricing structure. (Completed)
+4.  **User:** Reported seeing old pricing (£19.99) on the landing page, which led to the decision to formalize the Starter plan. (Addressed)
+5.  **User:** Reported an SSL error on the custom domain . (Pending)
+6.  **User:** Confirmed their Resend domain was verified. (Completed)
+7.  **User:** Provided the Supabase JWT secret for production. (Completed)
+8.  **User:** Provided all live Stripe keys (secret key, price IDs, webhook secret). (Completed)
+9.  **User:** Asked what they needed to do in Stripe Live from scratch. (Addressed)
+10. **User:** Confirmed DNS records were added for the custom domain. (Completed)
 
 **Project Health Check:**
 -   **Broken:**
-    -   New user signup is intermittently blocked by external Supabase rate limiting.
-    -   The CJ Dropshipping scraper is non-functional (site is blocking requests).
--   **Mocked:**
-    -   The database contains a mix of real (scraped) and simulated data.
+    -   Custom domain () due to SSL provisioning failure.
+    -   CJ Dropshipping scraper is blocked.
+    -   Supabase authentication is prone to rate-limiting on the user's current plan.
+-   **Mocked:** None. The app is running on live credentials.
 -   **Needs Improvement:**
-    -   Running all data scrapers simultaneously can cause a gateway timeout.
-    -   Resend integration is limited to sending emails to the account owner until the user verifies their domain.
+    -   The production deployment is out of sync with recent changes (4-tier pricing, admin system). A re-deployment is needed.
+    -   Simultaneous data scraping can cause gateway timeouts.
 
 **3rd Party Integrations**
--   **Supabase:** User authentication (Live, but rate-limited on free tier).
+-   **Stripe:** Payments (Live, fully configured with live keys and 4 price plans).
+-   **Supabase:** Authentication (Live, configured with production JWT secret).
+-   **Resend:** Transactional Emails (Live, configured with a verified domain ).
 -   **MongoDB:** Database.
--   **APScheduler:** Backend background job processing.
--   ** & :** Web scraping.
--   **:** PDF Generation.
--   **:** Transactional emails.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES. The agent has consistently used the testing agent after completing each major feature.
--   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Testing agent used after significant changes:** YES. All major features (notifications, pricing, onboarding) were verified with the testing agent, with all tests passing.
 -   **Test files created:** None.
 -   **Known regressions:** None.
 
 **What agent forgot to execute**
-The agent has correctly followed all user instructions and shifting priorities. No tasks have been forgotten. Lower-priority items have been correctly placed in the future backlog.</analysis>
+-   The agent correctly identified that a re-deployment was needed to push the latest changes but was blocked by the SSL issue on the custom domain. The core tasks requested by the user were either completed or are in the process of being implemented.</analysis>

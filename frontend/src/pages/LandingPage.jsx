@@ -170,7 +170,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="bg-white rounded-md px-4 py-1 text-xs text-slate-400">
-                    viralscout.app/dashboard
+                    trendscout.click/dashboard
                   </div>
                 </div>
               </div>

@@ -361,7 +361,7 @@ class EmailService:
             watchlist_badge = '<span style="background:#8b5cf6;color:white;padding:4px 8px;border-radius:4px;font-size:12px;margin-left:8px;">📌 Watchlist</span>'
         
         # Product URL - would need frontend URL env var
-        product_url = f"https://scout-feed.preview.emergentagent.com/product/{product_id}"
+        product_url = f"https://product-intel-6.preview.emergentagent.com/product/{product_id}"
         
         html = f"""
         <!DOCTYPE html>
@@ -434,7 +434,7 @@ class EmailService:
                 <div style="background:#f1f5f9;padding:20px;border-radius:0 0 12px 12px;text-align:center;">
                     <p style="margin:0;color:#64748b;font-size:12px;">
                         You're receiving this because you have alert notifications enabled.
-                        <a href="https://scout-feed.preview.emergentagent.com/settings/notifications" style="color:#6366f1;">Manage preferences</a>
+                        <a href="https://product-intel-6.preview.emergentagent.com/settings/notifications" style="color:#6366f1;">Manage preferences</a>
                     </p>
                     <p style="margin:8px 0 0 0;color:#94a3b8;font-size:11px;">
                         © {datetime.now().year} ViralScout. All rights reserved.

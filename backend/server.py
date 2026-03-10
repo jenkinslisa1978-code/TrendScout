@@ -2037,9 +2037,67 @@ async def get_weekly_winners(limit: int = 10):
         "is_partial": True,
         "signup_cta": "Sign up to unlock full insights and build your store",
         "branding": {
-            "name": "ViralScout",
+            "name": "TrendScout",
             "tagline": "Find winning products before they go viral",
         }
+    }
+
+
+@api_router.get("/public/trending-products")
+async def get_trending_products(limit: int = 10):
+    """
+    Public trending products endpoint for SEO page.
+    Returns top products sorted by launch_score.
+    """
+    cursor = db.products.find(
+        {"launch_score": {"$gte": 40}},
+        {"_id": 0}
+    ).sort([("launch_score", -1), ("market_score", -1)]).limit(limit)
+    
+    products = await cursor.to_list(limit)
+    
+    trending = []
+    for product in products:
+        trending.append({
+            "id": product["id"],
+            "product_name": product.get("product_name"),
+            "category": product.get("category"),
+            "image_url": product.get("image_url"),
+            "launch_score": product.get("launch_score", 0),
+            "launch_score_label": product.get("launch_score_label", "risky"),
+            "trend_stage": product.get("trend_stage"),
+            "trend_score": product.get("trend_score"),
+            "market_score": product.get("market_score"),
+            "early_trend_label": product.get("early_trend_label"),
+            "margin_range": _get_margin_range(product.get("estimated_margin", 0)),
+        })
+    
+    # If no products with launch_score >= 40, fallback to top by market_score
+    if not trending:
+        cursor = db.products.find(
+            {},
+            {"_id": 0}
+        ).sort([("market_score", -1)]).limit(limit)
+        products = await cursor.to_list(limit)
+        for product in products:
+            trending.append({
+                "id": product["id"],
+                "product_name": product.get("product_name"),
+                "category": product.get("category"),
+                "image_url": product.get("image_url"),
+                "launch_score": product.get("launch_score", 0),
+                "launch_score_label": product.get("launch_score_label", "risky"),
+                "trend_stage": product.get("trend_stage"),
+                "trend_score": product.get("trend_score"),
+                "market_score": product.get("market_score"),
+                "early_trend_label": product.get("early_trend_label"),
+                "margin_range": _get_margin_range(product.get("estimated_margin", 0)),
+            })
+    
+    return {
+        "products": trending,
+        "count": len(trending),
+        "last_updated": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -2060,11 +2118,11 @@ async def get_share_data(product_id: str):
     
     market_label = product.get("market_label", "competitive")
     
-    share_text = f"🔥 {product['product_name']} - {market_info.get(market_label, 'Strong')}!\n\n"
-    share_text += f"📊 Market Score: {product.get('market_score', 0)}/100\n"
-    share_text += f"📈 Trend: {product.get('trend_stage', 'rising').title()}\n"
-    share_text += f"💰 Margin: {_get_margin_range(product.get('estimated_margin', 0))}\n\n"
-    share_text += "Find more winning products on ViralScout 🚀"
+    share_text = f"Check out {product['product_name']} - {market_info.get(market_label, 'Strong')}!\n\n"
+    share_text += f"Market Score: {product.get('market_score', 0)}/100\n"
+    share_text += f"Trend: {product.get('trend_stage', 'rising').title()}\n"
+    share_text += f"Margin: {_get_margin_range(product.get('estimated_margin', 0))}\n\n"
+    share_text += "Find more winning products on TrendScout"
     
     return {
         "product_id": product_id,
@@ -2084,9 +2142,9 @@ async def get_share_data(product_id: str):
             "early_trend_label": product.get("early_trend_label"),
         },
         "branding": {
-            "name": "ViralScout",
+            "name": "TrendScout",
             "tagline": "Find winning products before they go viral",
-            "url": "viralscout.com",
+            "url": "trendscout.click",
             "color": "#4F46E5",
         }
     }

@@ -18,6 +18,9 @@ import TrendAlertsPage from "@/pages/TrendAlertsPage";
 import StoresPage from "@/pages/StoresPage";
 import StoreDetailPage from "@/pages/StoreDetailPage";
 import StorePreviewPage from "@/pages/StorePreviewPage";
+import TrendingProductsPage from "@/pages/TrendingProductsPage";
+import PublicProductPage from "@/pages/PublicProductPage";
+import ReferralPage from "@/pages/ReferralPage";
 
 // Reports Pages
 import ReportsPage from "@/pages/ReportsPage";
@@ -93,6 +96,8 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/trending-products" element={<TrendingProductsPage />} />
+      <Route path="/p/:id" element={<PublicProductPage />} />
 
       {/* Protected routes */}
       <Route
@@ -180,6 +185,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <NotificationSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/referrals"
+        element={
+          <ProtectedRoute>
+            <ReferralPage />
           </ProtectedRoute>
         }
       />
