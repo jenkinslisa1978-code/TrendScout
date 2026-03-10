@@ -38,8 +38,52 @@ User-facing SaaS platform - reads precomputed data only.
 ### Layer 3: Intelligence & Prediction Layer (NEW)
 Converts raw data into actionable insights.
 - `/app/backend/services/intelligence/` - Analysis modules
+- `/app/backend/services/reports/` - Market Intelligence Reports Engine
 
 ## Core Features (Implemented)
+
+### Market Intelligence Reports Engine (NEW - March 2026)
+**Automated report generation with public SEO pages and premium gated content**
+
+#### API Endpoints (Reports)
+- `GET /api/reports/` - List available reports with latest weekly/monthly refs
+- `GET /api/reports/weekly-winning-products` - Full weekly report (auth-aware, section filtering)
+- `GET /api/reports/monthly-market-trends` - Full monthly report (auth-aware, section filtering)
+- `GET /api/reports/public/weekly-winning-products` - Public SEO preview (top 5 products)
+- `GET /api/reports/public/monthly-market-trends` - Public SEO preview (top 3 categories)
+- `GET /api/reports/history/{report_type}` - Historical reports with access limits
+- `GET /api/reports/by-slug/{slug}` - Get specific report by slug
+- `POST /api/reports/generate/weekly` - Admin trigger for weekly report generation
+- `POST /api/reports/generate/monthly` - Admin trigger for monthly report generation
+
+#### Report Types
+1. **Weekly Winning Products Report** (Mondays at 6 AM UTC)
+   - Top 20 products ranked by success probability
+   - Trend stage analysis
+   - Competition analysis
+   - Opportunity clusters
+   - Margin potential
+   - Saturation warnings
+
+2. **Monthly Market Trends Report** (1st of month at 6 AM UTC)
+   - Emerging product categories
+   - Market opportunity clusters
+   - Demand vs competition analysis
+   - Fastest growing niches
+   - Categories to watch
+   - Saturation warnings
+
+#### Access Control (Subscription Tiers)
+- **Free**: Trend analysis, competition overview, public previews
+- **Pro**: Full products list, margin analysis, clusters
+- **Elite**: Full reports, predictions, saturation warnings, archive access
+
+#### Frontend Pages
+- `/reports` - Protected reports listing page
+- `/reports/weekly-winning-products` - Public SEO weekly preview
+- `/reports/monthly-market-trends` - Public SEO monthly preview
+- `/reports/weekly/:slug` - Protected full weekly report view
+- `/reports/monthly/:slug` - Protected full monthly report view
 
 ### Advanced Dashboard Intelligence (NEW - March 2026)
 **Provides instant product discovery and opportunity monitoring**
@@ -414,6 +458,15 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **Market Intelligence Reports Engine (COMPLETE)**
+  - Added WeeklyWinningProductsReport generator with top 20 products, trend analysis, clusters
+  - Added MonthlyMarketTrendsReport generator with emerging categories, market predictions
+  - Added public SEO pages for weekly and monthly reports with limited data preview
+  - Added subscription-tier gating (Free/Pro/Elite) for report sections
+  - Added scheduled background jobs for automated report generation
+  - Added reports navigation item and full reports listing page
+  - Reports auto-generate on first request if none exist
+
 - **Advanced Dashboard Intelligence (COMPLETE)**
   - Added DailyWinnersPanel component - displays top products by launch potential
   - Added MarketRadar component - shows category-level market opportunity clusters
