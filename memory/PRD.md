@@ -458,6 +458,19 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **Weekly Email Reports via Resend (COMPLETE - March 10, 2026)**
+  - Created EmailService (`/app/backend/services/email_service.py`) with Resend API integration
+  - Professional HTML email template with inline CSS for email client compatibility
+  - Features: Weekly digest with stats summary, top 5 products, launch scores, CTA button
+  - API Endpoints:
+    - `POST /api/email/send-test` - Test email sending
+    - `POST /api/email/send-weekly-digest` - Send to specific user
+    - `POST /api/email/send-weekly-digest-all` - Send to all subscribers
+    - `GET/POST /api/email/subscription-status` - Manage preferences
+  - Scheduled task: `send_weekly_email_digest` runs every Monday at 10 AM UTC
+  - All tests passed (100% - 14/14 backend tests)
+  - Note: Resend free tier requires domain verification for arbitrary recipients
+
 - **PDF Export for Reports (COMPLETE - March 10, 2026)**
   - Added ReportLab-based PDF generation service (`/app/backend/services/pdf_generator.py`)
   - Created professional PDF templates with ViralScout branding
