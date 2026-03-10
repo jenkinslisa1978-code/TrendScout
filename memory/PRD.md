@@ -60,6 +60,8 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 - Product of the Week email digest with personalized referral viral loop
 - Product of the Week highlight section on landing page
 - All email templates rebranded from ViralScout to TrendScout
+- Newsletter email capture on landing page (subscribe without account)
+- POTW weekly cron job (Wednesday 11 AM UTC via APScheduler)
 
 ## Known Issues
 - **P0:** SSL certificate error on www.trendscout.click (BLOCKED - external)
