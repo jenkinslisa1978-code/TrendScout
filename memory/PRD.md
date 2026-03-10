@@ -5,6 +5,8 @@ ViralScout is a full-stack SaaS platform for product research and e-commerce sto
 
 **Default Currency: GBP (£)**
 
+**CRITICAL DATA POLICY**: The platform NEVER fabricates numbers. If signals are unavailable, display null, unknown, or a confidence score.
+
 ## Original Problem Statement
 Build a platform that helps dropshippers and e-commerce entrepreneurs:
 1. Find trending products before they go viral
@@ -21,6 +23,52 @@ Build a platform that helps dropshippers and e-commerce entrepreneurs:
 - **Currency**: GBP (British Pound Sterling)
 
 ## Core Features (Implemented)
+
+### Data Integrity System (NEW - March 2026)
+**CRITICAL**: Ensures platform never presents fabricated data as real insights.
+
+#### Backend Services
+- `/app/backend/services/data_integrity.py` - Signal provenance tracking, confidence scoring
+- `/app/backend/services/source_health.py` - Data source health monitoring
+
+#### API Endpoints
+- `GET /api/data-integrity/platform-health` - Overall platform data health
+- `GET /api/data-integrity/source-health` - All data source statuses
+- `GET /api/data-integrity/source-health/{source}` - Single source health
+- `GET /api/data-integrity/product/{id}` - Product data integrity details
+- `GET /api/data-integrity/products/confidence` - Products filtered by confidence
+- `GET /api/data-integrity/data-freshness` - Data freshness report
+- `GET /api/data-integrity/simulated-data-report` - Simulated vs real data breakdown
+
+#### Confidence Score Calculation (0-100)
+- **Completeness (30%)**: Critical fields filled (supplier_cost, retail_price, views, ads, competitors)
+- **Source Quality (40%)**: Live API (100) vs Simulated (20)
+- **Freshness (20%)**: <1hr (100), 1-24hr (60), >24hr (20)
+- **Consistency (10%)**: Signal validation (margin logic, competition vs ads)
+
+#### Confidence Levels
+- **High (80-100)**: Live API data with multiple verified sources
+- **Medium (50-79)**: Single live source or good estimation
+- **Low (25-49)**: Estimation with limited signals
+- **Very Low (0-24)**: Simulated or highly uncertain
+
+#### Data Freshness Categories
+- **Real-time**: < 1 minute old
+- **Fresh**: < 1 hour old
+- **Recent**: 1-24 hours old
+- **Stale**: > 24 hours old
+
+#### Frontend Components
+- `/app/frontend/src/components/data-integrity/` - UI components for data quality
+  - `ConfidenceBadge` - Shows confidence level with color coding
+  - `DataSourceBadge` - Shows data source (live/simulated)
+  - `DataFreshnessBadge` - Shows data age
+  - `DataIntegrityWarning` - Warning banner for low quality data
+  - `DataIntegritySummary` - Full data quality card
+
+#### Enhanced Product API
+- `GET /api/products?include_integrity=true` - Returns products with integrity metadata
+- `GET /api/products/{id}?include_integrity=true` - Single product with data quality info
 
 ### Product Research Platform
 - ✅ Product database with trend scoring

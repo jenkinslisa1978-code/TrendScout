@@ -42,6 +42,12 @@ import {
 } from '@/lib/utils';
 import { toast } from 'sonner';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
+import { 
+  ConfidenceBadge, 
+  DataSourceBadge,
+  DataIntegrityWarning,
+  DataIntegritySummary 
+} from '@/components/data-integrity';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -49,6 +55,8 @@ export default function ProductDetailPage() {
   const { user } = useAuth();
   const [product, setProduct] = useState(null);
   const [competitorData, setCompetitorData] = useState(null);
+  const [dataIntegrity, setDataIntegrity] = useState(null);
+  const [warnings, setWarnings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [showStoreBuilder, setShowStoreBuilder] = useState(false);
@@ -56,7 +64,8 @@ export default function ProductDetailPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
-      const { data, error } = await getProductById(id);
+      // Fetch product WITH data integrity info
+      const { data, dataIntegrity: integrity, warnings: productWarnings, error } = await getProductById(id, true);
       
       if (error || !data) {
         toast.error('Product not found');
@@ -65,6 +74,8 @@ export default function ProductDetailPage() {
       }
 
       setProduct(data);
+      setDataIntegrity(integrity);
+      setWarnings(productWarnings || []);
       
       // Fetch competitor data
       const { data: competitors } = await getProductCompetitors(id);
@@ -157,6 +168,11 @@ export default function ProductDetailPage() {
           Back to products
         </Button>
 
+        {/* Data Integrity Warnings */}
+        {warnings && warnings.length > 0 && (
+          <DataIntegrityWarning warnings={warnings} />
+        )}
+
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div className="flex items-start gap-6">
@@ -188,6 +204,16 @@ export default function ProductDetailPage() {
                 <Badge className={`${getCompetitionColor(product.competition_level)} border text-xs uppercase tracking-wider`}>
                   {product.competition_level} competition
                 </Badge>
+                {/* Data integrity badges */}
+                <ConfidenceBadge 
+                  confidence={product.confidence_score || 0} 
+                  level={dataIntegrity?.confidence_level}
+                  showScore={true}
+                />
+                <DataSourceBadge 
+                  source={product.data_source} 
+                  isSimulated={product.data_source === 'simulated'} 
+                />
               </div>
             </div>
           </div>
@@ -498,6 +524,11 @@ export default function ProductDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Data Quality Card */}
+        {dataIntegrity && (
+          <DataIntegritySummary integrity={dataIntegrity} />
+        )}
       </div>
 
       {/* Store Builder Modal */}

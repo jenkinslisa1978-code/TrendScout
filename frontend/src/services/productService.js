@@ -16,6 +16,7 @@ export const getProducts = async (filters = {}) => {
     if (filters.sortBy) params.append('sort_by', filters.sortBy);
     if (filters.sortOrder) params.append('sort_order', filters.sortOrder);
     if (filters.limit) params.append('limit', filters.limit);
+    if (filters.includeIntegrity) params.append('include_integrity', 'true');
     
     const queryString = params.toString();
     const url = `${API_URL}/api/products${queryString ? `?${queryString}` : ''}`;
@@ -27,17 +28,22 @@ export const getProducts = async (filters = {}) => {
     }
     
     const result = await response.json();
-    return { data: result.data || [], error: null };
+    return { 
+      data: result.data || [], 
+      metadata: result.metadata || null,
+      error: null 
+    };
   } catch (error) {
     console.error('Error fetching products:', error);
-    return { data: [], error: error.message };
+    return { data: [], metadata: null, error: error.message };
   }
 };
 
 // Get single product by ID from backend API
-export const getProductById = async (id) => {
+export const getProductById = async (id, includeIntegrity = false) => {
   try {
-    const response = await fetch(`${API_URL}/api/products/${id}`);
+    const url = `${API_URL}/api/products/${id}${includeIntegrity ? '?include_integrity=true' : ''}`;
+    const response = await fetch(url);
     
     if (!response.ok) {
       if (response.status === 404) {
@@ -47,9 +53,83 @@ export const getProductById = async (id) => {
     }
     
     const result = await response.json();
-    return { data: result.data, error: null };
+    return { 
+      data: result.data, 
+      dataIntegrity: result.data_integrity || null,
+      warnings: result.warnings || [],
+      displayHints: result.display_hints || {},
+      error: null 
+    };
   } catch (error) {
     console.error('Error fetching product:', error);
+    return { data: null, dataIntegrity: null, warnings: [], displayHints: {}, error: error.message };
+  }
+};
+
+// Get product data integrity info
+export const getProductDataIntegrity = async (productId) => {
+  try {
+    const response = await fetch(`${API_URL}/api/data-integrity/product/${productId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch data integrity');
+    }
+    
+    const result = await response.json();
+    return { data: result, error: null };
+  } catch (error) {
+    console.error('Error fetching data integrity:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+// Get platform data health
+export const getPlatformHealth = async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/data-integrity/platform-health`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch platform health');
+    }
+    
+    const result = await response.json();
+    return { data: result, error: null };
+  } catch (error) {
+    console.error('Error fetching platform health:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+// Get source health status
+export const getSourceHealth = async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/data-integrity/source-health`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch source health');
+    }
+    
+    const result = await response.json();
+    return { data: result, error: null };
+  } catch (error) {
+    console.error('Error fetching source health:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+// Get simulated data report
+export const getSimulatedDataReport = async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/data-integrity/simulated-data-report`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch simulated data report');
+    }
+    
+    const result = await response.json();
+    return { data: result, error: null };
+  } catch (error) {
+    console.error('Error fetching simulated data report:', error);
     return { data: null, error: error.message };
   }
 };
