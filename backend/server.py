@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, Header
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -6460,6 +6461,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve React frontend static files in production
+# The frontend build directory is created during deployment
+FRONTEND_BUILD_DIR = Path(__file__).parent.parent / "frontend" / "build"
+
+if FRONTEND_BUILD_DIR.exists():
+    # Serve static assets (JS, CSS, images, etc.)
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "static")), name="static")
+    
+    # Catch-all route for SPA - must be AFTER all API routes
+    @app.get("/{full_path:path}")
+    async def serve_spa(request: Request, full_path: str):
+        """Serve React app for all non-API routes (SPA catch-all)"""
+        # If the request is for a file that exists, serve it
+        file_path = FRONTEND_BUILD_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(str(file_path))
+        # Otherwise serve index.html for client-side routing
+        return FileResponse(str(FRONTEND_BUILD_DIR / "index.html"))
 
 # Configure logging
 logging.basicConfig(
