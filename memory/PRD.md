@@ -22,9 +22,70 @@ Build a platform that helps dropshippers and e-commerce entrepreneurs:
 - **Payments**: Stripe (scaffolded, requires credentials)
 - **Currency**: GBP (British Pound Sterling)
 
+## Architecture (Three-Layer Design)
+
+### Layer 1: Data Pipeline Layer
+Background workers for data collection and processing.
+- `/app/backend/services/data_pipeline/` - External data ingestion
+- `/app/backend/services/data_sources/` - Source connectors
+- Jobs run via APScheduler, write to database
+
+### Layer 2: Application API Layer
+User-facing SaaS platform - reads precomputed data only.
+- `/app/backend/server.py` - Main API routes
+- `/app/backend/routes/` - Modular route handlers
+
+### Layer 3: Intelligence & Prediction Layer (NEW)
+Converts raw data into actionable insights.
+- `/app/backend/services/intelligence/` - Analysis modules
+
 ## Core Features (Implemented)
 
-### Data Integrity System (NEW - March 2026)
+### Product Validation Engine (NEW - March 2026)
+**Answers the key question: "Should I launch this product?"**
+
+#### API Endpoints
+- `GET /api/intelligence/validate/{id}` - Full product validation
+- `GET /api/intelligence/success-prediction/{id}` - Success probability
+- `GET /api/intelligence/trend-analysis/{id}` - Trend analysis
+- `GET /api/intelligence/complete-analysis/{id}` - All-in-one analysis
+- `GET /api/intelligence/opportunities` - Launch opportunities
+- `GET /api/intelligence/early-opportunities` - Early trend opportunities
+
+#### Validation Signals (6-Factor Model)
+1. **Trend Velocity (20%)** - Is demand growing?
+2. **Profit Margin (25%)** - Can you make money?
+3. **Competition (20%)** - Is market saturated?
+4. **Ad Activity (10%)** - How hard to compete?
+5. **Supplier Demand (10%)** - Is supply reliable?
+6. **Engagement (15%)** - Social proof
+
+#### Recommendations
+- `LAUNCH_OPPORTUNITY` (Score ≥70) - Strong signals, go ahead
+- `PROMISING_MONITOR` (Score 50-69) - Watch closely
+- `HIGH_RISK` (Score <50) - Consider alternatives
+- `INSUFFICIENT_DATA` - Need more signals
+
+#### Success Prediction
+- Calculates `success_probability` (0-100%)
+- Outcome classifications: HIGH_SUCCESS | MODERATE_SUCCESS | UNCERTAIN | LIKELY_FAILURE
+- Shows contributing factors with explanations
+
+#### Trend Analysis
+- `trend_velocity` - Rate of change
+- `trend_stage` - exploding | rising | early_trend | stable | declining
+- `is_early_opportunity` - First-mover advantage detection
+- `days_until_saturation` - Market timeline estimate
+
+#### Frontend Components
+- `/app/frontend/src/components/intelligence/` - Validation UI
+  - `LaunchRecommendationBadge` - Visual recommendation
+  - `ProductValidationCard` - Complete analysis display
+  - `SuccessPredictionCard` - Probability visualization
+  - `TrendAnalysisCard` - Trend details
+- ProductDetailPage updated with "Should You Launch?" card
+
+### Data Integrity System
 **CRITICAL**: Ensures platform never presents fabricated data as real insights.
 
 #### Backend Services

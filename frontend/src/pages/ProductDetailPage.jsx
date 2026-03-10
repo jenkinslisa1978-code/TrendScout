@@ -23,9 +23,11 @@ import {
   Users,
   Megaphone,
   PieChart,
-  Activity
+  Activity,
+  Gauge
 } from 'lucide-react';
 import { getProductById, getProductCompetitors } from '@/services/productService';
+import { getCompleteAnalysis } from '@/services/intelligenceService';
 import { toggleSaveProduct, isProductSaved } from '@/services/savedProductService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -48,6 +50,13 @@ import {
   DataIntegrityWarning,
   DataIntegritySummary 
 } from '@/components/data-integrity';
+import {
+  ProductValidationCard,
+  SuccessPredictionCard,
+  TrendAnalysisCard,
+  LaunchRecommendationBadge,
+  QuickValidationSummary
+} from '@/components/intelligence';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -56,6 +65,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [competitorData, setCompetitorData] = useState(null);
   const [dataIntegrity, setDataIntegrity] = useState(null);
+  const [intelligenceData, setIntelligenceData] = useState(null);
   const [warnings, setWarnings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
@@ -81,6 +91,12 @@ export default function ProductDetailPage() {
       const { data: competitors } = await getProductCompetitors(id);
       if (competitors) {
         setCompetitorData(competitors);
+      }
+      
+      // Fetch intelligence analysis (validation + prediction)
+      const { data: analysis } = await getCompleteAnalysis(id);
+      if (analysis) {
+        setIntelligenceData(analysis);
       }
       
       // Check if saved
@@ -256,6 +272,72 @@ export default function ProductDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Launch Recommendation - KEY DECISION CARD */}
+        {intelligenceData && (
+          <Card className="border-2 border-indigo-200 bg-indigo-50/30 shadow-sm" data-testid="launch-recommendation">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Gauge className="h-6 w-6 text-indigo-600" />
+                    <h3 className="text-lg font-semibold text-slate-900">Should You Launch This Product?</h3>
+                  </div>
+                  <p className="text-slate-600 mb-4">{intelligenceData.validation_summary}</p>
+                  <div className="flex flex-wrap gap-3">
+                    <LaunchRecommendationBadge 
+                      recommendation={intelligenceData.recommendation} 
+                      label={intelligenceData.recommendation_label} 
+                    />
+                    <Badge variant="outline" className="bg-white">
+                      <Target className="h-3 w-3 mr-1" />
+                      {Math.round(intelligenceData.overall_score)}/100 Score
+                    </Badge>
+                    <Badge variant="outline" className="bg-white">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      {Math.round(intelligenceData.success_probability)}% Success
+                    </Badge>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-indigo-600">
+                    {Math.round(intelligenceData.success_probability)}%
+                  </div>
+                  <div className="text-sm text-slate-500">Success Probability</div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {intelligenceData.confidence}% confidence
+                  </div>
+                </div>
+              </div>
+              
+              {/* Quick Insights */}
+              {(intelligenceData.strengths?.length > 0 || intelligenceData.weaknesses?.length > 0) && (
+                <div className="mt-4 pt-4 border-t border-indigo-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {intelligenceData.strengths?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-green-700 mb-2">✓ Strengths</h4>
+                      <ul className="text-sm text-slate-600 space-y-1">
+                        {intelligenceData.strengths.slice(0, 2).map((s, i) => (
+                          <li key={i}>• {s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {intelligenceData.weaknesses?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-red-700 mb-2">⚠ Concerns</h4>
+                      <ul className="text-sm text-slate-600 space-y-1">
+                        {intelligenceData.weaknesses.slice(0, 2).map((w, i) => (
+                          <li key={i}>• {w}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="product-stats">
