@@ -30,6 +30,7 @@ api_router = APIRouter(prefix="/api")
 stripe_router = APIRouter(prefix="/api/stripe")
 automation_router = APIRouter(prefix="/api/automation")
 ingestion_router = APIRouter(prefix="/api/ingestion")
+stores_router = APIRouter(prefix="/api/stores")
 
 # =====================
 # MODELS
@@ -123,6 +124,46 @@ class CancelSubscription(BaseModel):
 class RunAutomationRequest(BaseModel):
     job_type: Optional[AutomationJobType] = AutomationJobType.FULL_PIPELINE
     products: Optional[List[Dict[str, Any]]] = None
+
+# Store Models
+class StoreStatus(str, Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    ARCHIVED = "archived"
+
+class StoreCreate(BaseModel):
+    name: str
+    product_id: str  # Product to build store from
+    user_id: str
+    plan: str = "starter"  # User's plan for limit checking
+
+class StoreUpdate(BaseModel):
+    name: Optional[str] = None
+    tagline: Optional[str] = None
+    headline: Optional[str] = None
+    status: Optional[StoreStatus] = None
+    branding: Optional[Dict[str, Any]] = None
+    faqs: Optional[List[Dict[str, str]]] = None
+    policies: Optional[Dict[str, str]] = None
+
+class StoreProductCreate(BaseModel):
+    store_id: str
+    product_id: str
+
+class StoreProductUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    bullet_points: Optional[List[str]] = None
+    price: Optional[float] = None
+    compare_at_price: Optional[float] = None
+    is_featured: Optional[bool] = None
+    status: Optional[str] = None
+
+class GenerateStoreRequest(BaseModel):
+    product_id: str
+    user_id: str
+    plan: str = "starter"
+    store_name: Optional[str] = None  # Optional pre-selected name
 
 # =====================
 # AUTOMATION LOGIC
@@ -1292,11 +1333,382 @@ async def run_automation_on_products(products: List[Dict]) -> Dict:
         "alerts_generated": alerts_generated,
     }
 
+# =====================
+# ROUTES - Stores
+# =====================
+
+from services.store_service import (
+    StoreGenerator, 
+    create_store_document, 
+    create_store_product_document,
+    export_store_for_shopify,
+    can_create_store,
+    get_store_limit,
+    STORE_LIMITS
+)
+
+@stores_router.get("")
+async def get_user_stores(user_id: str, status: Optional[str] = None):
+    """Get all stores for a user"""
+    query = {"owner_id": user_id}
+    if status:
+        query["status"] = status
+    
+    stores = await db.stores.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    # Get product counts for each store
+    for store in stores:
+        product_count = await db.store_products.count_documents({"store_id": store["id"]})
+        store["product_count"] = product_count
+    
+    return {
+        "data": stores,
+        "count": len(stores),
+    }
+
+@stores_router.get("/limits")
+async def get_store_limits(plan: str = "starter"):
+    """Get store limits for a plan"""
+    limit = get_store_limit(plan)
+    return {
+        "plan": plan,
+        "limit": limit if limit != float('inf') else "unlimited",
+        "all_limits": {k: v if v != float('inf') else "unlimited" for k, v in STORE_LIMITS.items()}
+    }
+
+@stores_router.get("/{store_id}")
+async def get_store(store_id: str, user_id: Optional[str] = None):
+    """Get a single store by ID"""
+    store = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
+    
+    # If user_id provided, verify ownership (unless store is published for public preview)
+    if user_id and store["owner_id"] != user_id and store["status"] != "published":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get products for this store
+    products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
+    store["products"] = products
+    
+    return {"data": store}
+
+@stores_router.post("/generate")
+async def generate_store(request: GenerateStoreRequest):
+    """Generate a store draft from a product (AI store builder)"""
+    # Check store limits
+    current_count = await db.stores.count_documents({"owner_id": request.user_id})
+    
+    if not can_create_store(current_count, request.plan):
+        limit = get_store_limit(request.plan)
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Store limit reached. Your {request.plan} plan allows {limit} store(s). Upgrade to create more stores."
+        )
+    
+    # Get the product
+    product = await db.products.find_one({"id": request.product_id}, {"_id": 0})
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Generate store content
+    generator = StoreGenerator()
+    generation_result = generator.generate_full_store(product, request.store_name)
+    
+    return {
+        "success": True,
+        "generation": generation_result,
+        "product": product,
+        "can_create": True,
+        "stores_remaining": get_store_limit(request.plan) - current_count - 1 if get_store_limit(request.plan) != float('inf') else "unlimited",
+    }
+
+@stores_router.post("")
+async def create_store(request: StoreCreate):
+    """Create a new store from generated content"""
+    # Check store limits
+    current_count = await db.stores.count_documents({"owner_id": request.user_id})
+    
+    if not can_create_store(current_count, request.plan):
+        limit = get_store_limit(request.plan)
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Store limit reached. Your {request.plan} plan allows {limit} store(s)."
+        )
+    
+    # Get the product
+    product = await db.products.find_one({"id": request.product_id}, {"_id": 0})
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Generate store content
+    generator = StoreGenerator()
+    generation_result = generator.generate_full_store(product, request.name)
+    
+    # Create store document
+    store_doc = create_store_document(
+        user_id=request.user_id,
+        store_name=request.name,
+        generation_result=generation_result,
+        product=product
+    )
+    
+    # Create store product document
+    store_product_doc = create_store_product_document(
+        store_id=store_doc["id"],
+        product=product,
+        generation_result=generation_result
+    )
+    
+    # Insert into database
+    await db.stores.insert_one(store_doc)
+    await db.store_products.insert_one(store_product_doc)
+    
+    # Remove _id for response
+    store_doc.pop("_id", None)
+    store_product_doc.pop("_id", None)
+    
+    return {
+        "success": True,
+        "store": store_doc,
+        "product": store_product_doc,
+        "stores_remaining": get_store_limit(request.plan) - current_count - 1 if get_store_limit(request.plan) != float('inf') else "unlimited",
+    }
+
+@stores_router.put("/{store_id}")
+async def update_store(store_id: str, request: StoreUpdate, user_id: str):
+    """Update a store"""
+    # Verify ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    # Build update dict
+    update_data = {k: v for k, v in request.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    await db.stores.update_one({"id": store_id}, {"$set": update_data})
+    
+    # Get updated store
+    updated = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    
+    return {"success": True, "store": updated}
+
+@stores_router.delete("/{store_id}")
+async def delete_store(store_id: str, user_id: str):
+    """Delete a store and its products"""
+    # Verify ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    # Delete store products
+    await db.store_products.delete_many({"store_id": store_id})
+    
+    # Delete store
+    await db.stores.delete_one({"id": store_id})
+    
+    return {"success": True, "message": "Store deleted"}
+
+@stores_router.post("/{store_id}/products")
+async def add_product_to_store(store_id: str, request: StoreProductCreate, user_id: str):
+    """Add a product to an existing store"""
+    # Verify store ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    # Get the product
+    product = await db.products.find_one({"id": request.product_id}, {"_id": 0})
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Check if product already in store
+    existing = await db.store_products.find_one({
+        "store_id": store_id,
+        "original_product_id": request.product_id
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Product already in store")
+    
+    # Generate content for this product
+    generator = StoreGenerator()
+    generation_result = generator.generate_full_store(product)
+    
+    # Create store product
+    store_product_doc = create_store_product_document(store_id, product, generation_result)
+    store_product_doc["is_featured"] = False  # Not featured when adding to existing store
+    
+    await db.store_products.insert_one(store_product_doc)
+    store_product_doc.pop("_id", None)
+    
+    return {"success": True, "product": store_product_doc}
+
+@stores_router.get("/{store_id}/products")
+async def get_store_products(store_id: str):
+    """Get all products in a store"""
+    products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
+    
+    return {
+        "data": products,
+        "count": len(products),
+    }
+
+@stores_router.put("/{store_id}/products/{product_id}")
+async def update_store_product(store_id: str, product_id: str, request: StoreProductUpdate, user_id: str):
+    """Update a product in a store"""
+    # Verify store ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    # Build update dict
+    update_data = {k: v for k, v in request.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    result = await db.store_products.update_one(
+        {"id": product_id, "store_id": store_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found in store")
+    
+    updated = await db.store_products.find_one({"id": product_id}, {"_id": 0})
+    
+    return {"success": True, "product": updated}
+
+@stores_router.delete("/{store_id}/products/{product_id}")
+async def delete_store_product(store_id: str, product_id: str, user_id: str):
+    """Remove a product from a store"""
+    # Verify store ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    result = await db.store_products.delete_one({"id": product_id, "store_id": store_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found in store")
+    
+    return {"success": True, "message": "Product removed from store"}
+
+@stores_router.post("/{store_id}/regenerate/{product_id}")
+async def regenerate_product_copy(store_id: str, product_id: str, user_id: str):
+    """Regenerate AI copy for a store product"""
+    # Verify store ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    # Get store product
+    store_product = await db.store_products.find_one({"id": product_id, "store_id": store_id})
+    
+    if not store_product:
+        raise HTTPException(status_code=404, detail="Product not found in store")
+    
+    # Get original product
+    original_product = await db.products.find_one(
+        {"id": store_product["original_product_id"]}, 
+        {"_id": 0}
+    )
+    
+    if not original_product:
+        raise HTTPException(status_code=404, detail="Original product not found")
+    
+    # Regenerate content
+    generator = StoreGenerator()
+    generation_result = generator.generate_full_store(original_product)
+    
+    product_data = generation_result.get("product", {})
+    pricing = product_data.get("pricing", {})
+    
+    # Update store product
+    update_data = {
+        "title": product_data.get("title"),
+        "description": product_data.get("description"),
+        "bullet_points": product_data.get("bullet_points"),
+        "price": pricing.get("suggested_price"),
+        "compare_at_price": pricing.get("compare_at_price"),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    
+    await db.store_products.update_one({"id": product_id}, {"$set": update_data})
+    
+    updated = await db.store_products.find_one({"id": product_id}, {"_id": 0})
+    
+    return {"success": True, "product": updated, "regenerated": True}
+
+@stores_router.get("/{store_id}/export")
+async def export_store(store_id: str, user_id: str, format: str = "shopify"):
+    """Export store data for Shopify or other platforms"""
+    # Verify store ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id}, {"_id": 0})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    # Get products
+    products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
+    
+    if format == "shopify":
+        export_data = export_store_for_shopify(store, products)
+    else:
+        # Raw JSON export
+        export_data = {
+            "store": store,
+            "products": products,
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+        }
+    
+    return export_data
+
+@stores_router.get("/{store_id}/preview")
+async def get_store_preview(store_id: str):
+    """Get store data for public preview page"""
+    store = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
+    
+    # Get featured product
+    featured_product = await db.store_products.find_one(
+        {"store_id": store_id, "is_featured": True}, 
+        {"_id": 0}
+    )
+    
+    # If no featured, get first product
+    if not featured_product:
+        featured_product = await db.store_products.find_one({"store_id": store_id}, {"_id": 0})
+    
+    # Get all products
+    all_products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
+    
+    return {
+        "store": store,
+        "featured_product": featured_product,
+        "all_products": all_products,
+        "is_published": store.get("status") == "published",
+    }
+
+
 # Include routers
 app.include_router(api_router)
 app.include_router(stripe_router)
 app.include_router(automation_router)
 app.include_router(ingestion_router)
+app.include_router(stores_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -1335,6 +1747,14 @@ async def startup_db():
     
     await db.subscriptions.create_index("user_id", unique=True)
     await db.profiles.create_index("id", unique=True)
+    
+    # Store indexes
+    await db.stores.create_index("id", unique=True)
+    await db.stores.create_index("owner_id")
+    await db.stores.create_index("status")
+    await db.store_products.create_index("id", unique=True)
+    await db.store_products.create_index("store_id")
+    await db.store_products.create_index("original_product_id")
     
     logger.info("Database indexes created")
 

@@ -15,6 +15,9 @@ import SavedProductsPage from "@/pages/SavedProductsPage";
 import AdminPage from "@/pages/AdminPage";
 import AdminAutomationPage from "@/pages/AdminAutomationPage";
 import TrendAlertsPage from "@/pages/TrendAlertsPage";
+import StoresPage from "@/pages/StoresPage";
+import StoreDetailPage from "@/pages/StoreDetailPage";
+import StorePreviewPage from "@/pages/StorePreviewPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -133,6 +136,24 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/stores"
+        element={
+          <ProtectedRoute>
+            <StoresPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/stores/:storeId"
+        element={
+          <ProtectedRoute>
+            <StoreDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Public store preview */}
+      <Route path="/preview/:storeId" element={<StorePreviewPage />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

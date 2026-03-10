@@ -1,7 +1,7 @@
 # ViralScout/TrendScout - Product Requirements Document
 
 ## Product Overview
-ViralScout is a SaaS application for product research and trend analysis, designed for dropshippers and e-commerce entrepreneurs. The platform automatically imports products from multiple data sources, scores them, calculates opportunity ratings, assigns trend stages, generates AI-style summaries, and creates alerts for high-potential opportunities.
+ViralScout is a SaaS platform for product research, trend analysis, and **store creation**, designed for dropshippers and e-commerce entrepreneurs. Users can discover trending products, generate AI-powered store concepts, and manage multiple shops from a single dashboard. The platform supports Shopify integration for seamless product export.
 
 ## Tech Stack
 - **Frontend:** React SPA with React Router, TailwindCSS, Shadcn/UI
@@ -10,10 +10,95 @@ ViralScout is a SaaS application for product research and trend analysis, design
 - **State Management:** React Context API
 - **Payments:** Stripe-ready architecture
 - **Data Ingestion:** Modular importer architecture
+- **Store Builder:** AI-powered rules-based generation (LLM-ready)
 
 ---
 
-## Data Ingestion Architecture (NEW)
+## Store-Launch Platform (NEW - March 2026)
+
+### Overview
+Users can create and manage stores directly from trending products. The system generates store names, taglines, product copy, pricing suggestions, and branding automatically.
+
+### Features
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Multi-user stores | ✅ Complete | Each user owns their stores, isolated by owner_id |
+| Plan-based limits | ✅ Complete | Starter: 1, Pro: 5, Elite: unlimited |
+| AI Store Builder | ✅ Complete | Rules-based generation (LLM-ready) |
+| Product-to-Store | ✅ Complete | One-click store creation from any product |
+| Store Preview | ✅ Complete | Public storefront preview page |
+| Store Management | ✅ Complete | Edit, delete, publish stores |
+| Shopify Export | ✅ Complete | Export store/products in Shopify format |
+
+### Database Schema
+
+**stores collection:**
+```json
+{
+  "id": "uuid",
+  "owner_id": "user-id",
+  "name": "Store Name",
+  "tagline": "Generated tagline",
+  "headline": "Homepage headline",
+  "category": "Home Decor",
+  "status": "draft|published|archived",
+  "branding": {
+    "style_name": "Modern Minimal",
+    "primary_color": "#0f172a",
+    "secondary_color": "#3b82f6",
+    "accent_color": "#10b981",
+    "font_family": "Inter"
+  },
+  "faqs": [...],
+  "policies": {...}
+}
+```
+
+**store_products collection:**
+```json
+{
+  "id": "uuid",
+  "store_id": "store-uuid",
+  "original_product_id": "product-uuid",
+  "title": "Generated product title",
+  "description": "Generated description",
+  "bullet_points": ["..."],
+  "price": 34.99,
+  "compare_at_price": 48.99,
+  "is_featured": true
+}
+```
+
+### API Endpoints
+```
+GET    /api/stores              - List user's stores
+GET    /api/stores/:id          - Get store details
+POST   /api/stores              - Create store from product
+PUT    /api/stores/:id          - Update store
+DELETE /api/stores/:id          - Delete store
+POST   /api/stores/generate     - Generate store content (AI)
+GET    /api/stores/:id/products - List store products
+POST   /api/stores/:id/products - Add product to store
+PUT    /api/stores/:id/products/:pid - Update store product
+POST   /api/stores/:id/regenerate/:pid - Regenerate product copy
+GET    /api/stores/:id/export   - Export for Shopify
+GET    /api/stores/:id/preview  - Get store preview data
+GET    /api/stores/limits       - Get plan limits
+```
+
+### User Flow
+1. User discovers trending product
+2. Clicks "Build Shop" button
+3. AI generates store name suggestions + content
+4. User selects/customizes name
+5. Preview store concept
+6. Create store
+7. Edit/manage from My Stores dashboard
+8. Export to Shopify when ready
+
+---
+
+## Data Ingestion Architecture
 
 ### Supported Data Sources
 

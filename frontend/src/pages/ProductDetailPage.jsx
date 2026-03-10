@@ -16,7 +16,9 @@ import {
   Target,
   Sparkles,
   Package,
-  Loader2
+  Loader2,
+  Store,
+  Plus
 } from 'lucide-react';
 import { getProductById } from '@/services/productService';
 import { toggleSaveProduct, isProductSaved } from '@/services/savedProductService';
@@ -30,6 +32,7 @@ import {
   getTrendScoreColor 
 } from '@/lib/utils';
 import { toast } from 'sonner';
+import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -38,6 +41,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
+  const [showStoreBuilder, setShowStoreBuilder] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -165,6 +169,14 @@ export default function ProductDetailPage() {
           {/* Actions */}
           <div className="flex items-center gap-3">
             <Button
+              onClick={() => setShowStoreBuilder(true)}
+              data-testid="build-shop-btn"
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Store className="mr-2 h-4 w-4" />
+              Build Shop
+            </Button>
+            <Button
               variant="outline"
               onClick={handleSaveToggle}
               data-testid="save-product-btn"
@@ -184,7 +196,7 @@ export default function ProductDetailPage() {
             </Button>
             {product.supplier_link && (
               <a href={product.supplier_link} target="_blank" rel="noopener noreferrer">
-                <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="supplier-link-btn">
+                <Button variant="outline" data-testid="supplier-link-btn">
                   View Supplier
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
@@ -305,6 +317,13 @@ export default function ProductDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Store Builder Modal */}
+      <StoreBuilderModal
+        product={product}
+        isOpen={showStoreBuilder}
+        onClose={() => setShowStoreBuilder(false)}
+      />
     </DashboardLayout>
   );
 }
