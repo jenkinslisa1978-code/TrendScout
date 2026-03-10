@@ -53,7 +53,7 @@ export default function StoreBuilderModal({ product, isOpen, onClose }) {
 
   const generateContent = async () => {
     setGenerating(true);
-    const result = await generateStore(product.id, userId, userPlan);
+    const result = await generateStore(product.id, userPlan);
     
     if (result.success !== false) {
       setGeneration(result.generation);
@@ -66,7 +66,7 @@ export default function StoreBuilderModal({ product, isOpen, onClose }) {
 
   const handleRegenerate = async () => {
     setGenerating(true);
-    const result = await generateStore(product.id, userId, userPlan, customName || null);
+    const result = await generateStore(product.id, userPlan, customName || null);
     
     if (result.success !== false) {
       setGeneration(result.generation);
@@ -86,7 +86,7 @@ export default function StoreBuilderModal({ product, isOpen, onClose }) {
     }
     
     setLoading(true);
-    const result = await createStore(storeName, product.id, userId, userPlan);
+    const result = await createStore(storeName, product.id, userPlan);
     
     if (result.success) {
       toast.success('Store created successfully!');

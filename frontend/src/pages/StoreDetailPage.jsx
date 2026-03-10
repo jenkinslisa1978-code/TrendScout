@@ -83,7 +83,7 @@ export default function StoreDetailPage() {
 
   const loadStore = async () => {
     setLoading(true);
-    const { data } = await getStore(storeId, userId);
+    const { data } = await getStore(storeId);
     if (data) {
       setStore(data);
       setEditedStore({
@@ -100,7 +100,7 @@ export default function StoreDetailPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    const result = await updateStore(storeId, editedStore, userId);
+    const result = await updateStore(storeId, editedStore);
     if (result.success) {
       toast.success('Store updated successfully');
       setStore({ ...store, ...editedStore });
@@ -111,7 +111,7 @@ export default function StoreDetailPage() {
   };
 
   const handleStatusChange = async (newStatus) => {
-    const result = await updateStoreStatus(storeId, newStatus, userId);
+    const result = await updateStoreStatus(storeId, newStatus);
     if (result.success) {
       const statusLabels = {
         ready: 'Store marked as ready!',
@@ -128,7 +128,7 @@ export default function StoreDetailPage() {
   };
 
   const handleExport = async () => {
-    const exportData = await exportStore(storeId, userId, 'shopify');
+    const exportData = await exportStore(storeId, 'shopify');
     if (exportData.error) {
       toast.error('Failed to export store');
       return;
@@ -151,7 +151,7 @@ export default function StoreDetailPage() {
   };
 
   const handleRegenerateCopy = async (productId) => {
-    const result = await regenerateProductCopy(storeId, productId, userId);
+    const result = await regenerateProductCopy(storeId, productId);
     if (result.success) {
       toast.success('Product copy regenerated');
       setProducts(products.map(p => p.id === productId ? result.product : p));
@@ -161,7 +161,7 @@ export default function StoreDetailPage() {
   };
 
   const handleDeleteProduct = async (productId) => {
-    const result = await deleteStoreProduct(storeId, productId, userId);
+    const result = await deleteStoreProduct(storeId, productId);
     if (result.success) {
       toast.success('Product removed');
       setProducts(products.filter(p => p.id !== productId));
@@ -169,7 +169,7 @@ export default function StoreDetailPage() {
   };
 
   const handleProductUpdate = async (productId, updates) => {
-    const result = await updateStoreProduct(storeId, productId, updates, userId);
+    const result = await updateStoreProduct(storeId, productId, updates);
     if (result.success) {
       toast.success('Product updated');
       setProducts(products.map(p => p.id === productId ? result.product : p));

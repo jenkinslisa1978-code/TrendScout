@@ -1,156 +1,180 @@
 <analysis>**original_problem_statement:**
-The user wants to build ViralScout, a full-stack SaaS application for product research and launching e-commerce stores. Initial work focused on product research, data ingestion, and trend analysis. The scope has since expanded to include a multi-user store-launch platform.
+The user wants to add viral growth features to the ViralScout application. The specific requirements are:
+1.  A Share Winning Product button on product pages.
+2.  Generation of shareable product insight cards (both downloadable images and HTML cards).
+3.  Public product pages with partial insights for SEO purposes.
+4.  A weekly Winning Products report page.
+5.  A referral system where users get +1 store slot per verified referral, capped at a maximum of +5 bonus slots.
+6.  All shared content must include ViralScout branding and a strong Call-To-Action.
 
-Recent user requests have focused on making the application production-ready for UK users. This involved migrating all currency to GBP, implementing live Supabase authentication, and performing readiness checks. Subsequently, the user requested several major feature additions: an Early Trend Detection system, a Product Success Tracking system, a UX overhaul of the dashboard and landing page to be more outcome-focused, and the implementation of Viral Sharing features. The most recent request, which is currently in progress, is to perform a comprehensive security and architecture audit before a public launch.
+The user has also requested to implement feature gating and pricing plans (Free, Pro, Elite) and to upgrade the application to use real data sources instead of mock data, for which a modular, hybrid architecture was built.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a React frontend and a FastAPI/MongoDB backend. The application features:
--   **Live User Authentication:** Integrated with Supabase for user signup and login. Demo mode is disabled.
--   **Product Research & Analytics:** A Discover page with sortable and filterable product data.
--   **Advanced Scoring Metrics:**
-    -   : Identifies accelerating products with labels like 🔥 Exploding and 📈 Rising.
-    -   : Tracks product success based on stores built and exports.
--   **Outcome-Focused Dashboard:** A simplified dashboard highlighting Winning Products Today, Early Trend Opportunities, and the user's own stores.
--   **Store Builder:** A multi-step wizard allowing users to create an e-commerce store from a selected product.
--   **Store Management:** Users can manage and preview their created stores.
--   **Shopify Integration:** The app can export store data in a Shopify-compatible format, with scaffolded code for direct publishing.
--   **Backend Services:** Data models and services for products, stores, users, and automation, now including the new trend and success metrics. All currency and pricing logic has been updated to use GBP (£).
+A full-stack application (React frontend, FastAPI/MongoDB backend) with a comprehensive product research and store-launch platform. Key systems include:
+-   **Live Data Pipeline:** A modular, hybrid data ingestion system that pulls data from simulated sources (TikTok, Amazon) and real feeds (AliExpress, CJ Dropshipping) to calculate advanced product metrics.
+-   **Advanced Scoring Engine:** Calculates multiple scores (, , , , etc.) to classify products into opportunity levels (Massive, Strong, Competitive, Saturated).
+-   **Background Job System:** Uses  to run all heavy data processing (ingestion, scoring, analysis) in the background, ensuring the API remains fast. Jobs can be triggered automatically on a schedule or manually via API endpoints.
+-   **Feature-Rich UI:** The frontend displays detailed product analytics, including a 5-component score breakdown, competitor lists, and market metrics.
+-   **Supabase Authentication:** Live user authentication is integrated.
+-   **Viral Growth Foundation:** The backend models and API routes for the referral system and public product pages have been created, and initial frontend components (, ) have been scaffolded.
 
 **Last working item**:
-The agent was starting a security and architecture audit requested by the user to ensure the application is secure for a public launch.
+The agent was in the middle of implementing the Viral Growth Features requested by the user.
 
-- **Last item agent was working:** Performing a security and architecture audit of the ViralScout application. The agent had just planned which files to review.
-- **Status:** NOT STARTED
+- **Last item agent was working:** Implementing the viral growth features. The agent had just created the backend models and API router () for referrals and public pages, and started creating the corresponding frontend components. The implementation is incomplete.
+- **Status:** IN PROGRESS
 - **Agent Testing Done:** N
-- **Which testing method agent to use?** Manual code review of key files (), API endpoint testing () to verify authentication and ownership checks, and frontend verification ().
+- **Which testing method agent to use?** both. After completing the implementation, the agent should test the new backend endpoints () with  and verify all new frontend components (, , , public product pages, share buttons) with the . Given the scope, a final verification with the  is recommended.
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: Supabase Rate Limiting on Signup (Priority: P1)**
-  - **Description:** The user signup flow is blocked by a  error from Supabase, likely due to the free tier's strict rate limits being hit during testing. This prevents new users from creating accounts. The frontend code has been fixed to handle this error gracefully without crashing, but the underlying block remains.
-  - **Attempted fixes:** The agent implemented a custom  wrapper in  and improved error handling in . This fix prevents the body stream already read browser error and now correctly displays a user-friendly toast: Too many requests. Please wait a moment and try again.
+- **Issue 1: CRITICAL SECURITY VULNERABILITY (Priority: P0)**
+  - **Description:** During a security audit, the agent discovered that API endpoints were using a  passed as a query parameter from the client, rather than extracting it from a trusted, server-side authenticated session (e.g., a JWT). This allows any authenticated user to potentially access or modify another user's data by simply changing the  in the API call. The agent documented this finding but **did not fix it**.
+  - **Attempted fixes:** None. The agent only identified the issue using .
   - **Next debug checklist:**
-    1.  The agent should first wait for the rate limit to reset (this can take some time) and attempt a single signup to confirm the flow works when not rate-limited.
-    2.  If it continues to fail, inform the user that the Supabase project's rate limits are being hit and they may need to upgrade their Supabase plan for a public launch.
-  - **Status:** BLOCKED
-  - **Is recurring issue?** Y
-  - **Should Test frontend/backend/both after fix?** Frontend (signup flow).
-  - **Blocked on other issue:** Blocked by external Supabase service limits.
+    1.  Refactor all protected API endpoints in  that currently accept  from the query or body.
+    2.  Modify the dependency  to reliably extract the user's ID from the authorization token.
+    3.  Ensure all data access and modification queries (e.g., for stores) use this server-validated .
+    4.  Write a test using  to prove that a user cannot access another user's resources.
+  - **Why fix this issue and what will be achieved with the fix?** This is a critical data security and privacy issue. Fixing it will prevent unauthorized access to user data, which is essential before a public launch.
+  - **Status:** NOT STARTED
+  - **Is recurring issue?** N
+  - **Should Test frontend/backend/both after fix?** Backend.
+  - **Blocked on other issue:** None. This is a blocker for all other work.
+
+- **Issue 2: Supabase Rate Limiting on Signup (Priority: P2)**
+  - **Description:** The user signup flow may be blocked by a  error from Supabase due to the free tier's strict rate limits. The frontend handles the error gracefully, but it prevents new user registration when the limit is hit.
+  - **Status:** BLOCKED (by external service limits). The next agent should inform the user that they may need to upgrade their Supabase plan if this issue persists.
 
 **In progress Task List**:
-- **Task 1: Complete Security and Architecture Audit (Priority: P0)**
-  - **Where to resume:** The agent has identified the key files. The next step is to execute the audit by reviewing the code and testing the endpoints.
-    1.  **Review  and **: Ensure all API endpoints that modify data (stores, products) correctly use  and enforce  checks in database queries to prevent users from accessing or modifying each other's data.
-    2.  **Review **: Verify that the scheduled task endpoint is protected by the  header check.
-    3.  **Review **: Confirm that  is robustly disabled now that live Supabase keys are configured.
-    4.  **Test Endpoints**: Use  to attempt to access/modify a store belonging to another user to confirm the API blocks it.
-  - **What will be achieved with this?** A verified secure application and a final security report for the user, confirming its readiness for public launch.
+- **Task 1: Complete Viral Growth Features Implementation (Priority: P1)**
+  - **Where to resume:** The backend routes and models are partially created. The frontend components are scaffolded but need to be integrated.
+    1.  Finalize the backend logic in  for creating referrals and handling public product data.
+    2.  Create the  to display partial data for SEO.
+    3.  Integrate the  component into , triggered by a new Share button.
+    4.  Add the  component to the  to show users their referral status.
+    5.  Update the  to fetch data from the new public viral endpoints.
+    6.  Ensure all new UI components are correctly styled and functional.
+  - **What will be achieved with this?** A complete set of features designed to drive user acquisition through social sharing and referrals.
   - **Status:** IN PROGRESS
   - **Should Test frontend/backend/both after fix?** Both.
-  - **Blocked on something:** None.
+  - **Blocked on something:** Blocked on **Issue 1: CRITICAL SECURITY VULNERABILITY**. The security fix must be implemented first.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-  - **P1: Implement Viral Sharing Features:** This was requested by the user but paused for the security audit.
-    -   **Features**: Add a Share Winning Product button, generate shareable social media cards, create public product insight pages for SEO, build a weekly Winning Products report page, and implement a referral system to unlock more store builds.
+    - **P1: Implement Pricing Plans & Feature Gating:**
+        - Create ,  (£39/mo), and  (£99/mo) plans.
+        - Add logic to lock/unlock features based on the user's subscription plan (e.g., number of stores, access to trend detection, competitor analysis).
+        - Implement UI prompts for users to upgrade when they hit a feature limit.
 - **Future Tasks:**
-  - **P2: Connect to Live Data Sources:** Replace the placeholder logic in  and  with actual web scraping or API calls.
-  - **P2: Integrate a Real AI Service:** Replace the rules-based store content generator in  with calls to an actual LLM service.
-  - **P3: Implement Live Stripe Integration:** Connect the existing backend Stripe services and webhooks to a live Stripe account to manage paid subscription plans.
+    - **P2: Integrate Live Stripe:** Connect the backend to a live Stripe account to manage subscriptions and payments.
+    - **P2: Connect to More Live Data Sources:** Replace remaining simulated data sources (e.g., TikTok, Amazon) with real data ingestion via APIs or robust scraping (e.g., using SerpAPI).
+    - **P3: Integrate a Real AI Service:** Replace the rules-based content generator with a real LLM for generating store content.
 
 **Completed work in this session**
-- **Security Audit Started:** Planned the files and steps for a full security review.
-- **Body Stream Already Read Bug Fix:** Diagnosed and fixed a critical frontend crash during signup caused by Supabase rate-limit errors. The app now handles the error gracefully.
-- **Live Supabase Authentication:** Configured the application with real Supabase credentials, disabled demo mode, and verified protected routes.
-- **Outcome-Focused UX Overhaul:** Redesigned the  and  to prioritize user actions and outcomes, such as building stores.
-- **Product Success Tracking System:** Implemented a  score, tracked store creation/exports, and added a Proven Winning Products section to the dashboard.
-- **Early Trend Detection System:** Implemented an  metric, and added an Early Trend Opportunities section, new data columns, and filters to the UI.
-- **GBP Currency Migration:** Converted all pricing and currency references from USD to GBP (£) across the entire application stack.
-- **Deployment Checklist Provided:** Generated a comprehensive checklist for the user to deploy the application to production, covering Supabase, MongoDB, and cron jobs.
+- **Security and Architecture Audit:** Performed an audit and **discovered** a critical vulnerability related to user ID handling in API requests. A report was generated.
+- **Live Data Ingestion & Scoring Pipeline:** Built a modular, hybrid architecture to ingest and process data from multiple sources (simulated and real), with an enhanced 5-component scoring engine.
+- **Background Job System:** Implemented a robust background job system using  to handle all heavy processing asynchronously, with support for scheduled and manual job triggers.
+- **Competitor & Market Intelligence System:** Added a , new data fields (, ), and updated the UI with new badges, filters, and a detailed breakdown chart.
 
 **Earlier issues found/mentioned but not fixed**
-- No code-related issues remain unfixed, but the **Supabase rate-limiting** is an external infrastructure issue that continues to block the signup functionality.
+- **Issue 1: CRITICAL SECURITY VULNERABILITY**
+  - **Debug checklist:** See All Pending/In progress Issue list above.
+  - **Why to solve this issue and what will be achieved with this?** To prevent unauthorized access to user data and secure the application for public launch.
+  - **Should Test frontend/backend/both after fix:** Backend.
+  - **Is recurring issue?** N
 
 **Known issue recurrence from previous fork**
 - **Issue:** Supabase Rate Limiting ().
-- **Recurrence count:** High (occurred repeatedly during testing).
-- **Status:** BLOCKED. The code now handles the error, but the root cause (service limits) persists.
+- **Recurrence count:** High.
+- **Status:** BLOCKED. The code handles the error, but the root cause is the external service limit.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend Framework:** React
-- **Backend Framework:** FastAPI (Python)
-- **Database:** MongoDB
-- **Authentication:** Supabase (Live)
-- **Styling:** TailwindCSS
+- **Frontend:** React, TailwindCSS, 
+- **Backend:** FastAPI, MongoDB
+- **Authentication:** Supabase
+- **Background Jobs:** 
 
 **key DB schema**
-- ****: , , , , , , , **** (default: GBP), ****, ****, ****, ****, ****, ****.
-- ****: , , , , .
+- ****: , , , , ****, ****, ****, ****, ****, ****, ****, ****, ****, , , .
+- ****: , , .
+- ****: , uid=0(root) gid=0(root) groups=0(root), ****, ****, ****.
+- ****: , ,  ('pending', 'verified').
+- ****: , , , , , .
 
 **changes in tech stack**
-- No changes to the core stack.
+- **Backend:** Added  for background job processing.
+- **Frontend:** Added  for generating shareable image cards.
 
 **All files of reference**
-- : Primary file for the security audit of API endpoints.
-- : Contains the core authentication logic and error handling for Supabase.
-- : Location of the custom fetch wrapper that fixed the body stream already read bug.
-- : Contains all the new business logic for product scoring.
-- : The new, simplified, outcome-focused dashboard.
+- : **NEEDS REFACTORING** to fix the security vulnerability. Contains routing for all modules.
+- : Core of the new background processing system.
+- : Manages the entire data ingestion and scoring pipeline.
+- : New, in-progress routes for viral features.
+- : Needs to be updated with the Share button and modal.
+- : Needs to be updated with the .
+- : Contains details of the unfixed security issue.
+
+**Areas that need refactoring**:
+The single  file has grown very large (over 2000 lines). It should be broken down. More importantly, all API endpoints that rely on a client-provided  must be refactored immediately to derive the user ID from the server-side authentication session to fix the critical security flaw.
 
 **key api endpoints**
-- : Handles new user creation via Supabase. **(Currently rate-limited)**.
-- : Returns top products based on success metrics for the dashboard.
-- : Creates a new store and now increments the  on the source product.
-- : Exports store data and now increments the  on the source product.
-- : Protected endpoint to run daily data processing.
+- : Manually triggers a background job.
+- : Retrieves the history of all job runs.
+- : (In-progress) Get user's referral code.
+- : (In-progress) Get public data for a product.
+- : (In-progress) Get products for the weekly report.
 
 **Critical Info for New Agent**
-- **Your first task is to complete the security audit.** Do not start any new features until this is done and a report is generated.
-- **New user signup is currently broken due to Supabase rate limiting.** The code handles the error gracefully, but you will not be able to create new test accounts until the external rate limit resets. Your audit should proceed assuming a user is already logged in. You can use the existing demo user flow if needed by temporarily removing Supabase keys from .
-- The user has requested several new features, with Viral Sharing being the next in line after the audit.
+- **Your absolute first priority (P0) is to fix the critical security vulnerability.** The application is not secure for multiple users until you refactor the API endpoints to get the user's ID from the authenticated session, not from query parameters. Review  for details. Do not proceed with any feature work until this is resolved and tested.
+- After fixing the security issue, resume the implementation of the Viral Growth Features, which is currently in progress.
+- To test UI features that require a logged-in state without hitting Supabase rate limits, you may need to temporarily comment out the Supabase keys in  and restart the frontend (frontend: ERROR (not running)
+frontend: started) to activate the built-in demo mode. Remember to restore the keys afterward.
 
 **documents and test reports created in this job**
--  (Updated with all the new features and UX changes).
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requests a security and architecture audit. (In Progress)
-2.  **User:** Requests viral sharing features. (Pending)
-3.  **User:** Requests a UX overhaul of the dashboard and landing page. (Completed)
-4.  **User:** Requests a product success tracking system. (Completed)
-5.  **User:** Requests an early trend detection system. (Completed)
-6.  **User:** Reports a body stream already read error during signup. (Completed)
-7.  **User:** Provides a valid Supabase JWT key. (Completed)
-8.  **User:** Reports the signup bug again. (Completed)
-9.  **User:** Provides Supabase credentials to enable live auth. (Completed)
-10. **User:** Requests the agent to create the  file with placeholder Supabase keys. (Completed)
+1.  **User:** Requests viral growth features (share button, insight cards, public pages, weekly report, referral system). (In Progress)
+2.  **User:** Specifies choices for insight cards (both HTML and image) and referral rewards (+1 store, max +5). (Acknowledged)
+3.  **User:** Requests to refactor heavy processing into background jobs. (Completed)
+4.  **User:** Specifies choices for the job system (automatic schedule + manual trigger). (Completed)
+5.  **User:** Requests to upgrade from mock data to a real data ingestion system. (Completed)
+6.  **User:** Specifies a hybrid approach for the data system: build the full architecture but start with a mix of real and simulated sources. (Completed)
+7.  **User:** Requests pricing plans and feature gating. (Pending)
+8.  **User:** Requests a Competitor & Market Intelligence system. (Completed)
+9.  **User:** Specifies choices for the market score display (badge + breakdown chart). (Completed)
+10. **Agent Acknowledgment:** Agent confirms it has started implementing viral features based on the user's choices. (In Progress)
 
 **Project Health Check:**
 - **Broken:**
-  - New user signup is blocked by external Supabase rate limiting.
+  - **Critical Security Vulnerability:** Endpoints are susceptible to unauthorized data access due to improper user ID handling.
+  - New user signup is potentially blocked by external Supabase rate limiting.
 - **Mocked:**
-  - Data ingestion from TikTok/Amazon still uses mock data ().
-  - AI content generation for stores is rules-based, not connected to a live LLM.
+  - Some data sources (TikTok, Amazon trends) are still simulated, as per the planned hybrid approach.
+  - AI content generation for stores is rules-based.
 
 **3rd Party Integrations**
-- **Supabase:** For user authentication. (Live, but rate-limited).
-- **MongoDB:** Primary database.
-- **FastAPI:** Backend framework.
-- **Shopify:** For store publishing. (Scaffolded, requires credentials).
+- **Supabase:** User authentication (Live, but rate-limited).
+- **MongoDB:** Database.
+- **Shopify:** Store publishing (scaffolded).
+- **APScheduler:** Backend background job processing.
+- **html2canvas:** Frontend library for generating images from HTML.
 
 **Testing status**
-- **Testing agent used after significant changes:** NO (since the store-launch feature was initially verified). Recent work was tested manually.
+- **Testing agent used after significant changes:** NO
 - **Troubleshoot agent used after agent stuck in loop:** NO
 - **Test files created:** None.
-- **Known regressions:** None.
+- **Known regressions:** None, but a critical security issue was introduced/discovered.
 
 **Credentials to test flow:**
-Live Supabase credentials are in . Due to rate limiting, you may need to temporarily remove them and restart the frontend (frontend: ERROR (not running)
-frontend: started) to fall back to the fully functional demo mode for testing UI features.
+Live Supabase credentials are in . For UI testing, you may need to temporarily remove them and restart the frontend to use demo mode, bypassing potential rate-limiting issues.
 
 **What agent forgot to execute**
-The agent was instructed to perform a security audit. It correctly identified the necessary files for review but did not begin the actual process of inspecting the code or testing the endpoints. The next agent must start this task from the beginning of the execution phase.</analysis>
+The agent **failed to fix the critical security vulnerability it discovered**. It correctly identified that passing  as a query parameter is insecure, documented it in a report, and then moved on to the next task without implementing a fix. This is a major oversight that must be corrected immediately.</analysis>

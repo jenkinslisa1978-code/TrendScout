@@ -14,6 +14,9 @@ import uuid
 from datetime import datetime, timezone
 from enum import Enum
 
+# Import authentication module
+from auth import get_current_user, get_optional_user, AuthenticatedUser
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -32,6 +35,7 @@ automation_router = APIRouter(prefix="/api/automation")
 ingestion_router = APIRouter(prefix="/api/ingestion")
 stores_router = APIRouter(prefix="/api/stores")
 jobs_router = APIRouter(prefix="/api/jobs")
+viral_router = APIRouter(prefix="/api/viral")
 
 # =====================
 # MODELS
@@ -156,23 +160,43 @@ class Product(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class CheckoutSessionRequest(BaseModel):
-    user_id: str
     price_id: str
     success_url: str
     cancel_url: str
 
 class PortalSessionRequest(BaseModel):
-    user_id: str
     return_url: str
 
 class SubscriptionUpdate(BaseModel):
-    user_id: str
     new_plan_id: str
     new_price_id: str
 
 class CancelSubscription(BaseModel):
-    user_id: str
     cancel_at_period_end: bool = True
+
+# Referral System Models
+class ReferralCode(BaseModel):
+    code: str
+    user_id: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Referral(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    referrer_id: str  # User who referred
+    referred_id: str  # User who signed up
+    referral_code: str
+    status: str = "pending"  # pending, verified, rejected
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    verified_at: Optional[datetime] = None
+
+class UserReferralStats(BaseModel):
+    user_id: str
+    referral_code: str
+    total_referrals: int = 0
+    verified_referrals: int = 0
+    bonus_store_slots: int = 0
+    max_bonus_slots: int = 5
+    remaining_bonus_capacity: int = 5
 
 class RunAutomationRequest(BaseModel):
     job_type: Optional[AutomationJobType] = AutomationJobType.FULL_PIPELINE
@@ -189,7 +213,6 @@ class StoreStatus(str, Enum):
 class StoreCreate(BaseModel):
     name: str
     product_id: str  # Product to build store from
-    user_id: str
     plan: str = "starter"  # User's plan for limit checking
 
 class StoreUpdate(BaseModel):
@@ -216,7 +239,6 @@ class StoreProductUpdate(BaseModel):
 
 class GenerateStoreRequest(BaseModel):
     product_id: str
-    user_id: str
     plan: str = "starter"
     store_name: Optional[str] = None  # Optional pre-selected name
 
@@ -1608,13 +1630,290 @@ async def resume_scheduled_job(task_name: str):
         logging.error(f"Resume job error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# =====================
+# ROUTES - Viral Growth & Referrals
+# =====================
+
+def generate_referral_code(user_id: str) -> str:
+    """Generate a unique referral code for a user"""
+    import hashlib
+    hash_input = f"{user_id}:{datetime.now(timezone.utc).timestamp()}"
+    return f"VS{hashlib.sha256(hash_input.encode()).hexdigest()[:8].upper()}"
+
+
+@viral_router.get("/referral/stats")
+async def get_referral_stats(current_user: AuthenticatedUser = Depends(get_current_user)):
+    """Get referral statistics for the authenticated user"""
+    user_id = current_user.user_id
+    # Get or create referral code
+    user_referral = await db.user_referrals.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not user_referral:
+        # Create referral code for user
+        referral_code = generate_referral_code(user_id)
+        user_referral = {
+            "user_id": user_id,
+            "referral_code": referral_code,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.user_referrals.insert_one(user_referral)
+    
+    # Count referrals
+    total_referrals = await db.referrals.count_documents({"referrer_id": user_id})
+    verified_referrals = await db.referrals.count_documents({
+        "referrer_id": user_id,
+        "status": "verified"
+    })
+    
+    # Calculate bonus slots (max 5)
+    bonus_slots = min(verified_referrals, 5)
+    
+    return {
+        "user_id": user_id,
+        "referral_code": user_referral.get("referral_code"),
+        "total_referrals": total_referrals,
+        "verified_referrals": verified_referrals,
+        "bonus_store_slots": bonus_slots,
+        "max_bonus_slots": 5,
+        "remaining_bonus_capacity": max(0, 5 - bonus_slots),
+        "referral_link": f"/signup?ref={user_referral.get('referral_code')}",
+    }
+
+
+@viral_router.post("/referral/track")
+async def track_referral(referral_code: str, referred_user_id: str):
+    """Track a new referral when a user signs up with a code"""
+    # Find referrer
+    referrer = await db.user_referrals.find_one({"referral_code": referral_code}, {"_id": 0})
+    
+    if not referrer:
+        raise HTTPException(status_code=404, detail="Invalid referral code")
+    
+    # Prevent self-referral
+    if referrer["user_id"] == referred_user_id:
+        raise HTTPException(status_code=400, detail="Cannot use your own referral code")
+    
+    # Check if this user was already referred
+    existing = await db.referrals.find_one({"referred_id": referred_user_id})
+    if existing:
+        raise HTTPException(status_code=400, detail="User already has a referral")
+    
+    # Create referral record
+    referral = {
+        "id": str(uuid.uuid4()),
+        "referrer_id": referrer["user_id"],
+        "referred_id": referred_user_id,
+        "referral_code": referral_code,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    
+    await db.referrals.insert_one(referral)
+    
+    return {"success": True, "referral_id": referral["id"], "status": "pending"}
+
+
+@viral_router.post("/referral/verify/{referral_id}")
+async def verify_referral(referral_id: str):
+    """Verify a referral (called after user completes signup/action)"""
+    referral = await db.referrals.find_one({"id": referral_id}, {"_id": 0})
+    
+    if not referral:
+        raise HTTPException(status_code=404, detail="Referral not found")
+    
+    if referral["status"] == "verified":
+        return {"success": True, "message": "Already verified"}
+    
+    # Update referral status
+    await db.referrals.update_one(
+        {"id": referral_id},
+        {
+            "$set": {
+                "status": "verified",
+                "verified_at": datetime.now(timezone.utc).isoformat(),
+            }
+        }
+    )
+    
+    return {"success": True, "message": "Referral verified"}
+
+
+@viral_router.get("/referral/history")
+async def get_referral_history(
+    limit: int = 20,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get referral history for the authenticated user"""
+    user_id = current_user.user_id
+    cursor = db.referrals.find(
+        {"referrer_id": user_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit)
+    
+    referrals = await cursor.to_list(limit)
+    
+    return {"referrals": referrals, "count": len(referrals)}
+
+
+@viral_router.get("/public/product/{product_id}")
+async def get_public_product(product_id: str):
+    """
+    Get public product insights (partial data for SEO/sharing).
+    Full insights require authentication.
+    """
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Return partial insights only
+    public_data = {
+        "id": product["id"],
+        "product_name": product.get("product_name"),
+        "category": product.get("category"),
+        "image_url": product.get("image_url"),
+        "trend_stage": product.get("trend_stage"),
+        "trend_score": product.get("trend_score"),
+        "market_label": product.get("market_label"),
+        "market_score": product.get("market_score"),
+        "early_trend_label": product.get("early_trend_label"),
+        "competition_level": product.get("competition_level"),
+        # Blurred/hidden data (shown as ranges or hidden)
+        "margin_range": _get_margin_range(product.get("estimated_margin", 0)),
+        "has_supplier_data": bool(product.get("supplier_cost")),
+        "has_competitor_data": bool(product.get("active_competitor_stores")),
+        # Metadata
+        "is_partial": True,
+        "signup_cta": "Sign up to unlock full insights and build your store",
+    }
+    
+    return public_data
+
+
+def _get_margin_range(margin: float) -> str:
+    """Convert exact margin to a range for public display"""
+    if margin >= 50:
+        return "£50+"
+    elif margin >= 30:
+        return "£30-50"
+    elif margin >= 20:
+        return "£20-30"
+    elif margin >= 10:
+        return "£10-20"
+    else:
+        return "Under £10"
+
+
+@viral_router.get("/public/weekly-winners")
+async def get_weekly_winners(limit: int = 10):
+    """
+    Get weekly winning products (public page for SEO/sharing).
+    Shows partial insights to drive signups.
+    """
+    # Get top products by market score
+    cursor = db.products.find(
+        {"market_score": {"$gte": 60}},
+        {"_id": 0}
+    ).sort([("market_score", -1), ("trend_score", -1)]).limit(limit)
+    
+    products = await cursor.to_list(limit)
+    
+    # Convert to public format
+    public_products = []
+    for idx, product in enumerate(products):
+        public_products.append({
+            "rank": idx + 1,
+            "id": product["id"],
+            "product_name": product.get("product_name"),
+            "category": product.get("category"),
+            "image_url": product.get("image_url"),
+            "trend_stage": product.get("trend_stage"),
+            "trend_score": product.get("trend_score"),
+            "market_label": product.get("market_label"),
+            "market_score": product.get("market_score"),
+            "early_trend_label": product.get("early_trend_label"),
+            "margin_range": _get_margin_range(product.get("estimated_margin", 0)),
+        })
+    
+    # Get week info
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    week_start = now - timedelta(days=now.weekday())
+    
+    return {
+        "week_of": week_start.strftime("%B %d, %Y"),
+        "products": public_products,
+        "count": len(public_products),
+        "is_partial": True,
+        "signup_cta": "Sign up to unlock full insights and build your store",
+        "branding": {
+            "name": "ViralScout",
+            "tagline": "Find winning products before they go viral",
+        }
+    }
+
+
+@viral_router.get("/share/product/{product_id}")
+async def get_share_data(product_id: str):
+    """Get share data for a product (for social sharing)"""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    market_info = {
+        "massive": "Massive Opportunity",
+        "strong": "Strong Opportunity",
+        "competitive": "Competitive",
+        "saturated": "Saturated",
+    }
+    
+    market_label = product.get("market_label", "competitive")
+    
+    share_text = f"🔥 {product['product_name']} - {market_info.get(market_label, 'Strong')}!\n\n"
+    share_text += f"📊 Market Score: {product.get('market_score', 0)}/100\n"
+    share_text += f"📈 Trend: {product.get('trend_stage', 'rising').title()}\n"
+    share_text += f"💰 Margin: {_get_margin_range(product.get('estimated_margin', 0))}\n\n"
+    share_text += "Find more winning products on ViralScout 🚀"
+    
+    return {
+        "product_id": product_id,
+        "product_name": product.get("product_name"),
+        "share_text": share_text,
+        "share_url": f"/discover/product/{product_id}",
+        "card_data": {
+            "title": product.get("product_name"),
+            "market_score": product.get("market_score", 0),
+            "market_label": market_label,
+            "market_label_text": market_info.get(market_label, "Strong Opportunity"),
+            "trend_score": product.get("trend_score", 0),
+            "trend_stage": product.get("trend_stage", "rising"),
+            "margin_range": _get_margin_range(product.get("estimated_margin", 0)),
+            "category": product.get("category"),
+            "image_url": product.get("image_url"),
+            "early_trend_label": product.get("early_trend_label"),
+        },
+        "branding": {
+            "name": "ViralScout",
+            "tagline": "Find winning products before they go viral",
+            "url": "viralscout.com",
+            "color": "#4F46E5",
+        }
+    }
+
+
 # =====================
 # ROUTES - Stripe
 # =====================
 
 @stripe_router.post("/create-checkout-session")
-async def create_checkout_session(request: CheckoutSessionRequest):
-    """Create Stripe checkout session"""
+async def create_checkout_session(
+    request: CheckoutSessionRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Create Stripe checkout session for authenticated user"""
+    user_id = current_user.user_id
     stripe_key = os.environ.get('STRIPE_SECRET_KEY')
     
     if not stripe_key:
@@ -1630,7 +1929,7 @@ async def create_checkout_session(request: CheckoutSessionRequest):
         stripe.api_key = stripe_key
         
         # Get or create customer
-        customer = await get_or_create_stripe_customer(request.user_id)
+        customer = await get_or_create_stripe_customer(user_id)
         
         session = stripe.checkout.Session.create(
             customer=customer['id'],
@@ -1642,7 +1941,7 @@ async def create_checkout_session(request: CheckoutSessionRequest):
             mode='subscription',
             success_url=request.success_url,
             cancel_url=request.cancel_url,
-            metadata={'user_id': request.user_id},
+            metadata={'user_id': user_id},
         )
         
         return {"url": session.url, "session_id": session.id}
@@ -1652,8 +1951,12 @@ async def create_checkout_session(request: CheckoutSessionRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @stripe_router.post("/create-portal-session")
-async def create_portal_session(request: PortalSessionRequest):
-    """Create Stripe customer portal session"""
+async def create_portal_session(
+    request: PortalSessionRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Create Stripe customer portal session for authenticated user"""
+    user_id = current_user.user_id
     stripe_key = os.environ.get('STRIPE_SECRET_KEY')
     
     if not stripe_key:
@@ -1664,7 +1967,7 @@ async def create_portal_session(request: PortalSessionRequest):
         stripe.api_key = stripe_key
         
         # Get customer
-        customer = await get_stripe_customer(request.user_id)
+        customer = await get_stripe_customer(user_id)
         if not customer:
             raise HTTPException(status_code=404, detail="Customer not found")
         
@@ -1723,8 +2026,12 @@ async def stripe_webhook(request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 @stripe_router.post("/cancel-subscription")
-async def cancel_subscription(request: CancelSubscription):
-    """Cancel user subscription"""
+async def cancel_subscription(
+    request: CancelSubscription,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Cancel authenticated user's subscription"""
+    user_id = current_user.user_id
     stripe_key = os.environ.get('STRIPE_SECRET_KEY')
     
     if not stripe_key:
@@ -1736,7 +2043,7 @@ async def cancel_subscription(request: CancelSubscription):
         stripe.api_key = stripe_key
         
         # Get subscription
-        sub = await db.subscriptions.find_one({"user_id": request.user_id}, {"_id": 0})
+        sub = await db.subscriptions.find_one({"user_id": user_id}, {"_id": 0})
         if not sub or not sub.get('stripe_subscription_id'):
             raise HTTPException(status_code=404, detail="Subscription not found")
         
@@ -2488,8 +2795,12 @@ from services.store_service import (
 )
 
 @stores_router.get("")
-async def get_user_stores(user_id: str, status: Optional[str] = None):
-    """Get all stores for a user"""
+async def get_user_stores(
+    status: Optional[str] = None,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get all stores for the authenticated user"""
+    user_id = current_user.user_id
     query = {"owner_id": user_id}
     if status:
         query["status"] = status
@@ -2517,15 +2828,22 @@ async def get_store_limits(plan: str = "starter"):
     }
 
 @stores_router.get("/{store_id}")
-async def get_store(store_id: str, user_id: Optional[str] = None):
-    """Get a single store by ID"""
+async def get_store(
+    store_id: str,
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_user)
+):
+    """Get a single store by ID. Requires ownership unless store is published."""
     store = await db.stores.find_one({"id": store_id}, {"_id": 0})
     
     if not store:
         raise HTTPException(status_code=404, detail="Store not found")
     
-    # If user_id provided, verify ownership (unless store is published for public preview)
-    if user_id and store["owner_id"] != user_id and store["status"] != "published":
+    # Check access: must be owner OR store must be published
+    user_id = current_user.user_id if current_user else None
+    is_owner = user_id and store["owner_id"] == user_id
+    is_published = store.get("status") == "published"
+    
+    if not is_owner and not is_published:
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Get products for this store
@@ -2535,10 +2853,14 @@ async def get_store(store_id: str, user_id: Optional[str] = None):
     return {"data": store}
 
 @stores_router.post("/generate")
-async def generate_store(request: GenerateStoreRequest):
+async def generate_store(
+    request: GenerateStoreRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     """Generate a store draft from a product (AI store builder)"""
+    user_id = current_user.user_id
     # Check store limits
-    current_count = await db.stores.count_documents({"owner_id": request.user_id})
+    current_count = await db.stores.count_documents({"owner_id": user_id})
     
     if not can_create_store(current_count, request.plan):
         limit = get_store_limit(request.plan)
@@ -2566,10 +2888,14 @@ async def generate_store(request: GenerateStoreRequest):
     }
 
 @stores_router.post("")
-async def create_store(request: StoreCreate):
+async def create_store(
+    request: StoreCreate,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     """Create a new store from generated content"""
+    user_id = current_user.user_id
     # Check store limits
-    current_count = await db.stores.count_documents({"owner_id": request.user_id})
+    current_count = await db.stores.count_documents({"owner_id": user_id})
     
     if not can_create_store(current_count, request.plan):
         limit = get_store_limit(request.plan)
@@ -2590,7 +2916,7 @@ async def create_store(request: StoreCreate):
     
     # Create store document
     store_doc = create_store_document(
-        user_id=request.user_id,
+        user_id=user_id,
         store_name=request.name,
         generation_result=generation_result,
         product=product
@@ -2622,8 +2948,13 @@ async def create_store(request: StoreCreate):
     }
 
 @stores_router.put("/{store_id}")
-async def update_store(store_id: str, request: StoreUpdate, user_id: str):
-    """Update a store"""
+async def update_store(
+    store_id: str,
+    request: StoreUpdate,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Update a store owned by the authenticated user"""
+    user_id = current_user.user_id
     # Verify ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
     
@@ -2642,8 +2973,12 @@ async def update_store(store_id: str, request: StoreUpdate, user_id: str):
     return {"success": True, "store": updated}
 
 @stores_router.delete("/{store_id}")
-async def delete_store(store_id: str, user_id: str):
-    """Delete a store and its products"""
+async def delete_store(
+    store_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Delete a store and its products (requires ownership)"""
+    user_id = current_user.user_id
     # Verify ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
     
@@ -2659,8 +2994,13 @@ async def delete_store(store_id: str, user_id: str):
     return {"success": True, "message": "Store deleted"}
 
 @stores_router.post("/{store_id}/products")
-async def add_product_to_store(store_id: str, request: StoreProductCreate, user_id: str):
-    """Add a product to an existing store"""
+async def add_product_to_store(
+    store_id: str,
+    request: StoreProductCreate,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Add a product to an existing store (requires ownership)"""
+    user_id = current_user.user_id
     # Verify store ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
     
@@ -2706,8 +3046,14 @@ async def get_store_products(store_id: str):
     }
 
 @stores_router.put("/{store_id}/products/{product_id}")
-async def update_store_product(store_id: str, product_id: str, request: StoreProductUpdate, user_id: str):
-    """Update a product in a store"""
+async def update_store_product(
+    store_id: str,
+    product_id: str,
+    request: StoreProductUpdate,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Update a product in a store (requires ownership)"""
+    user_id = current_user.user_id
     # Verify store ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
     
@@ -2731,8 +3077,13 @@ async def update_store_product(store_id: str, product_id: str, request: StorePro
     return {"success": True, "product": updated}
 
 @stores_router.delete("/{store_id}/products/{product_id}")
-async def delete_store_product(store_id: str, product_id: str, user_id: str):
-    """Remove a product from a store"""
+async def delete_store_product(
+    store_id: str,
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Remove a product from a store (requires ownership)"""
+    user_id = current_user.user_id
     # Verify store ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
     
@@ -2747,8 +3098,13 @@ async def delete_store_product(store_id: str, product_id: str, user_id: str):
     return {"success": True, "message": "Product removed from store"}
 
 @stores_router.post("/{store_id}/regenerate/{product_id}")
-async def regenerate_product_copy(store_id: str, product_id: str, user_id: str):
-    """Regenerate AI copy for a store product"""
+async def regenerate_product_copy(
+    store_id: str,
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Regenerate AI copy for a store product (requires ownership)"""
+    user_id = current_user.user_id
     # Verify store ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
     
@@ -2794,10 +3150,15 @@ async def regenerate_product_copy(store_id: str, product_id: str, user_id: str):
     return {"success": True, "product": updated, "regenerated": True}
 
 @stores_router.get("/{store_id}/export")
-async def export_store(store_id: str, user_id: str, format: str = "shopify"):
-    """Export store data for Shopify or other platforms"""
+async def export_store(
+    store_id: str,
+    format: str = "shopify",
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Export store data for Shopify or other platforms (requires ownership)"""
     from services.shopify_service import format_store_for_export
     
+    user_id = current_user.user_id
     # Verify store ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id}, {"_id": 0})
     
@@ -2833,8 +3194,13 @@ async def export_store(store_id: str, user_id: str, format: str = "shopify"):
     return export_data
 
 @stores_router.put("/{store_id}/status")
-async def update_store_status(store_id: str, request: UpdateStoreStatusRequest, user_id: str):
+async def update_store_status(
+    store_id: str,
+    request: UpdateStoreStatusRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     """Update store status (draft -> ready -> exported -> published)"""
+    user_id = current_user.user_id
     # Verify store ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id})
     
@@ -2920,12 +3286,17 @@ async def shopify_status():
     }
 
 @shopify_integration_router.post("/connect/init")
-async def init_shopify_connection(shop_domain: str, user_id: str, redirect_uri: str):
+async def init_shopify_connection(
+    shop_domain: str,
+    redirect_uri: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     """
-    Initialize Shopify OAuth connection
+    Initialize Shopify OAuth connection for authenticated user
     
     Returns URL to redirect user to for authorization
     """
+    user_id = current_user.user_id
     if not is_shopify_configured():
         raise HTTPException(
             status_code=503, 
@@ -2992,9 +3363,12 @@ async def shopify_oauth_callback(shop_domain: str, code: str, state: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@shopify_integration_router.get("/connection/{user_id}")
-async def get_user_shopify_status(user_id: str):
-    """Get Shopify connection status for a user"""
+@shopify_integration_router.get("/connection")
+async def get_user_shopify_status(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get Shopify connection status for authenticated user"""
+    user_id = current_user.user_id
     profile = await db.profiles.find_one({"id": user_id}, {"_id": 0})
     
     if not profile:
@@ -3003,12 +3377,16 @@ async def get_user_shopify_status(user_id: str):
     return get_connection_status(profile)
 
 @shopify_integration_router.post("/publish/{store_id}")
-async def publish_to_shopify(store_id: str, user_id: str):
+async def publish_to_shopify(
+    store_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     """
     Publish store products directly to Shopify
     
     Requires user to have connected Shopify account
     """
+    user_id = current_user.user_id
     # Get user's Shopify credentials
     profile = await db.profiles.find_one({"id": user_id}, {"_id": 0})
     shopify_data = profile.get('shopify', {}) if profile else {}
@@ -3058,9 +3436,12 @@ async def publish_to_shopify(store_id: str, user_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Publish failed: {str(e)}")
 
-@shopify_integration_router.delete("/disconnect/{user_id}")
-async def disconnect_shopify(user_id: str):
-    """Disconnect Shopify from user account"""
+@shopify_integration_router.delete("/disconnect")
+async def disconnect_shopify(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Disconnect Shopify from authenticated user's account"""
+    user_id = current_user.user_id
     await db.profiles.update_one(
         {"id": user_id},
         {"$unset": {"shopify": ""}}
@@ -3076,6 +3457,7 @@ app.include_router(automation_router)
 app.include_router(ingestion_router)
 app.include_router(stores_router)
 app.include_router(jobs_router)
+app.include_router(viral_router)
 app.include_router(shopify_integration_router)
 
 app.add_middleware(

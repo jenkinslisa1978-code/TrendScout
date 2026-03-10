@@ -12,25 +12,24 @@ import {
   Rocket,
   Share2,
   Sparkles,
-  Download
+  Lock,
+  PieChart
 } from 'lucide-react';
-import { formatCurrency, formatNumber, getEarlyTrendInfo } from '@/lib/utils';
+import { formatNumber, getEarlyTrendInfo, getMarketOpportunityInfo } from '@/lib/utils';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 export default function WeeklyWinnersPage() {
-  const [winners, setWinners] = useState([]);
-  const [stats, setStats] = useState({});
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchWeeklyWinners = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/reports/weekly-winners`);
+        const response = await fetch(`${API_URL}/api/viral/public/weekly-winners?limit=10`);
         if (response.ok) {
-          const data = await response.json();
-          setWinners(data.products || []);
-          setStats(data.stats || {});
+          const result = await response.json();
+          setData(result);
         }
       } catch (err) {
         console.error('Error fetching weekly winners:', err);
@@ -42,16 +41,9 @@ export default function WeeklyWinnersPage() {
     fetchWeeklyWinners();
   }, []);
 
-  const currentWeek = () => {
-    const now = new Date();
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-    const endOfWeek = new Date(now.setDate(now.getDate() + 6));
-    return `${startOfWeek.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - ${endOfWeek.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-  };
-
   const handleShare = () => {
     const shareUrl = window.location.href;
-    const shareText = `🏆 This Week's Winning Products on ViralScout\n\nTop trending products with the highest win scores.\n\nCheck it out 👇`;
+    const shareText = `🏆 This Week's Winning Products on ViralScout\n\nTop trending products with the highest market scores.\n\nCheck it out 👇`;
     
     if (navigator.share) {
       navigator.share({
@@ -64,6 +56,9 @@ export default function WeeklyWinnersPage() {
     }
   };
 
+  const winners = data?.products || [];
+  const branding = data?.branding || { name: 'ViralScout', tagline: 'Find winning products before they go viral' };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -73,15 +68,15 @@ export default function WeeklyWinnersPage() {
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <span className="font-manrope font-bold text-xl text-slate-900">ViralScout</span>
+            <span className="font-manrope font-bold text-xl text-slate-900">{branding.name}</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={handleShare}>
+            <Button variant="outline" onClick={handleShare} data-testid="share-weekly-winners">
               <Share2 className="mr-2 h-4 w-4" />
               Share Report
             </Button>
             <Link to="/signup">
-              <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="weekly-winners-signup-cta">
                 <Rocket className="mr-2 h-4 w-4" />
                 Join Free
               </Button>
@@ -95,13 +90,13 @@ export default function WeeklyWinnersPage() {
         <div className="max-w-5xl mx-auto px-6 py-16 text-center">
           <Badge className="bg-white/20 text-white border-white/30 mb-4">
             <Calendar className="h-3 w-3 mr-1" />
-            {currentWeek()}
+            Week of {data?.week_of || 'This Week'}
           </Badge>
           <h1 className="font-manrope text-4xl md:text-5xl font-bold mb-4">
             Weekly Winning Products
           </h1>
           <p className="text-indigo-100 text-lg max-w-2xl mx-auto">
-            The top trending products this week, ranked by our proprietary Win Score algorithm combining trend momentum, early detection signals, and proven success data.
+            {branding.tagline}. Top trending products this week, ranked by our Market Score algorithm.
           </p>
         </div>
       </div>
@@ -110,10 +105,10 @@ export default function WeeklyWinnersPage() {
       <div className="max-w-5xl mx-auto px-6 -mt-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Products Analyzed', value: stats.total_products || '1,000+', icon: Sparkles, color: 'bg-white' },
-            { label: 'Top Winners', value: winners.length, icon: Trophy, color: 'bg-amber-50' },
-            { label: 'Avg Win Score', value: stats.avg_win_score || 82, icon: TrendingUp, color: 'bg-emerald-50' },
-            { label: 'Exploding Trends', value: stats.exploding_count || 5, icon: Flame, color: 'bg-red-50' },
+            { label: 'Products Ranked', value: winners.length, icon: Trophy, color: 'bg-amber-50' },
+            { label: 'Market Score Avg', value: winners.length > 0 ? Math.round(winners.reduce((a, p) => a + (p.market_score || 0), 0) / winners.length) : 0, icon: PieChart, color: 'bg-indigo-50' },
+            { label: 'Trend Score Avg', value: winners.length > 0 ? Math.round(winners.reduce((a, p) => a + (p.trend_score || 0), 0) / winners.length) : 0, icon: TrendingUp, color: 'bg-emerald-50' },
+            { label: 'Exploding Trends', value: winners.filter(p => p.early_trend_label === 'exploding' || p.early_trend_label === 'rising').length, icon: Flame, color: 'bg-red-50' },
           ].map((stat) => (
             <Card key={stat.label} className={`${stat.color} border-0 shadow-lg`}>
               <CardContent className="p-4 text-center">
@@ -147,52 +142,72 @@ export default function WeeklyWinnersPage() {
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {winners.map((product, index) => {
+                {winners.map((product) => {
                   const earlyTrendInfo = getEarlyTrendInfo(product.early_trend_label);
-                  const winScore = product.win_score || Math.round((product.trend_score + (product.early_trend_score || 0)) / 2);
+                  const marketInfo = getMarketOpportunityInfo(product.market_label);
                   
                   return (
                     <div 
                       key={product.id}
                       className="flex items-center gap-4 p-5 hover:bg-slate-50 transition-colors"
+                      data-testid={`weekly-winner-${product.id}`}
                     >
                       {/* Rank */}
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl font-bold text-lg shrink-0 ${
-                        index === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white' :
-                        index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white' :
-                        index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
+                        product.rank === 1 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white' :
+                        product.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white' :
+                        product.rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
                         'bg-slate-100 text-slate-600'
                       }`}>
-                        #{index + 1}
+                        #{product.rank}
                       </div>
+                      
+                      {/* Product Image */}
+                      {product.image_url && (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.product_name}
+                          className="w-12 h-12 rounded-lg object-cover shrink-0"
+                        />
+                      )}
                       
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-semibold text-slate-900 truncate">{product.product_name}</h3>
+                          <Badge className={`${marketInfo.color} border text-xs shrink-0`}>
+                            {marketInfo.shortText}
+                          </Badge>
                           {product.early_trend_label && product.early_trend_label !== 'stable' && (
                             <Badge className={`${earlyTrendInfo.color} border text-xs shrink-0`}>
-                              {earlyTrendInfo.icon} {product.early_trend_label}
+                              {earlyTrendInfo.text}
                             </Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-3 text-sm text-slate-500">
                           <span>{product.category}</span>
                           <span className="text-slate-300">•</span>
-                          <span className="text-emerald-600 font-medium">{formatCurrency(product.estimated_margin)} margin</span>
+                          <span className="text-emerald-600 font-medium flex items-center gap-1">
+                            <Lock className="h-3 w-3" />
+                            {product.margin_range} margin
+                          </span>
                           <span className="text-slate-300">•</span>
-                          <span>{formatNumber(product.tiktok_views)} views</span>
+                          <span>{product.trend_stage}</span>
                         </div>
                       </div>
                       
                       {/* Scores */}
                       <div className="flex items-center gap-4 shrink-0">
                         <div className="text-center hidden sm:block">
-                          <p className="font-mono text-xl font-bold text-amber-600">{winScore}</p>
-                          <p className="text-xs text-slate-400">Win Score</p>
+                          <p className="font-mono text-xl font-bold text-indigo-600">{product.market_score}</p>
+                          <p className="text-xs text-slate-400">Market</p>
                         </div>
-                        <Link to={`/insights/${product.id}`}>
-                          <Button variant="outline" size="sm">
+                        <div className="text-center hidden sm:block">
+                          <p className="font-mono text-xl font-bold text-emerald-600">{product.trend_score}</p>
+                          <p className="text-xs text-slate-400">Trend</p>
+                        </div>
+                        <Link to={`/discover/product/${product.id}`}>
+                          <Button variant="outline" size="sm" data-testid={`view-winner-${product.id}`}>
                             View
                             <ArrowRight className="ml-1 h-4 w-4" />
                           </Button>
@@ -209,13 +224,13 @@ export default function WeeklyWinnersPage() {
         {/* CTA */}
         <div className="mt-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-center text-white">
           <h2 className="font-manrope text-2xl font-bold mb-2">
-            Want to Build Stores with These Products?
+            Want Full Insights & Build Stores?
           </h2>
           <p className="text-indigo-100 mb-6">
-            Sign up to unlock full product insights, AI-powered store generation, and Shopify export.
+            {data?.signup_cta || 'Sign up to unlock full insights and build your store'}
           </p>
           <Link to="/signup">
-            <Button size="lg" className="bg-white text-indigo-600 hover:bg-indigo-50 font-semibold">
+            <Button size="lg" className="bg-white text-indigo-600 hover:bg-indigo-50 font-semibold" data-testid="weekly-winners-bottom-cta">
               <Rocket className="mr-2 h-5 w-5" />
               Start Building Free
             </Button>
@@ -227,7 +242,7 @@ export default function WeeklyWinnersPage() {
       <footer className="border-t border-slate-200 bg-white">
         <div className="max-w-5xl mx-auto px-6 py-8 text-center text-sm text-slate-500">
           <p className="mb-2">
-            <strong className="text-slate-700">ViralScout</strong> - Find winning products and launch ecommerce stores fast
+            <strong className="text-slate-700">{branding.name}</strong> - {branding.tagline}
           </p>
           <p>
             Updated weekly • Powered by AI-driven trend detection

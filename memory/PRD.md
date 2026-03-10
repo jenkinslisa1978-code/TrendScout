@@ -415,24 +415,44 @@ Header: X-API-Key: <AUTOMATION_API_KEY>
 3. 🔑 Stripe - Paid subscriptions
 
 ### Security Audit (December 2025) ✅
-**Status:** COMPLETED
+**Status:** COMPLETED - CRITICAL VULNERABILITY FIXED (March 2026)
 
-**Key Findings:**
-1. ✅ All store endpoints have ownership verification (`owner_id` checks)
-2. ✅ Automation API protected with API key header
-3. ✅ Demo mode correctly disabled when Supabase configured
-4. ✅ MongoDB ObjectId properly excluded from responses
-5. ⚠️ User ID from query params (design limitation - documented)
+**Previous Issue (FIXED):**
+- API endpoints were accepting `user_id` from query parameters/request body, allowing any user to potentially access another user's data by manipulating the user_id parameter.
 
-**Recommendations:**
-- P0: Set strong `AUTOMATION_API_KEY` in production
-- P0: Configure specific `CORS_ORIGINS` for production
-- P1: Consider server-side JWT verification for highest security
+**Security Fix Implementation (March 2026):**
+1. ✅ Created `/app/backend/auth.py` - JWT verification module for Supabase tokens
+2. ✅ Refactored ALL protected endpoints to use `Depends(get_current_user)` 
+3. ✅ User ID now extracted exclusively from JWT token (server-side validated)
+4. ✅ Created `/app/frontend/src/lib/api.js` - Centralized API client with auth headers
+5. ✅ Updated all frontend services to use authenticated API calls
+6. ✅ Proper HTTP status codes: 401 (unauthenticated), 403 (unauthorized)
 
-**Report Location:** `/app/SECURITY_AUDIT_REPORT.md`
+**Protected Endpoints (Refactored):**
+- `GET/POST /api/stores` - User's stores
+- `GET/PUT/DELETE /api/stores/{id}` - Store CRUD with ownership check
+- `POST /api/stores/generate` - AI store generation
+- `POST/PUT/DELETE /api/stores/{id}/products` - Store products
+- `GET /api/stores/{id}/export` - Store export
+- `PUT /api/stores/{id}/status` - Status updates
+- `GET /api/viral/referral/stats` - Referral stats
+- `GET /api/viral/referral/history` - Referral history
+- `POST /api/stripe/*` - Stripe endpoints
+- `GET/POST/DELETE /api/shopify/*` - Shopify integration
+
+**Verification Tests Passed:**
+1. ✅ Unauthenticated requests return 401
+2. ✅ Demo mode authentication works (Bearer demo_{user_id})
+3. ✅ Cross-user access blocked with 403
+4. ✅ Old query param pattern rejected with 401
+5. ✅ Public endpoints still accessible without auth
+
+**Configuration Required for Production:**
+- Add `SUPABASE_JWT_SECRET` to `/app/backend/.env`
+- Get JWT secret from: Supabase Dashboard → Project Settings → API → JWT Secret
 
 ### Future Enhancements (Backlog)
-- P0: Implement Viral Sharing Features (share buttons, social cards, referrals)
+- P0: Complete Viral Sharing Features (share buttons, social cards, referrals)
 - P1: Connect live data sources (TikTok, Amazon scrapers)
 - P2: Integrate real LLM for content generation
 - P2: Implement live Stripe payments

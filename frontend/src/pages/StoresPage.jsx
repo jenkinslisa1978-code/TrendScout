@@ -132,7 +132,7 @@ export default function StoresPage() {
 
   const loadStores = async () => {
     setLoading(true);
-    const { data } = await getUserStores(userId);
+    const { data } = await getUserStores();
     setStores(data);
     setLoading(false);
   };
@@ -143,7 +143,7 @@ export default function StoresPage() {
   };
 
   const handleDelete = async (storeId) => {
-    const result = await deleteStore(storeId, userId);
+    const result = await deleteStore(storeId);
     if (result.success) {
       toast.success('Store deleted successfully');
       setStores(stores.filter(s => s.id !== storeId));

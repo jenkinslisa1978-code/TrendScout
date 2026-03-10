@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { apiPost } from '@/lib/api';
 
 /**
  * Stripe Subscription Service
@@ -197,21 +198,16 @@ export const createCheckoutSession = async (userId, planId, successUrl, cancelUr
   // In production, call your backend API to create a Stripe checkout session
   // The backend should use stripe.checkout.sessions.create()
   try {
-    const response = await fetch('/api/stripe/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        price_id: plan.priceId,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-      }),
+    const response = await apiPost('/api/stripe/create-checkout-session', {
+      price_id: plan.priceId,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      return { error: data.message || 'Failed to create checkout session' };
+      return { error: data.detail || data.message || 'Failed to create checkout session' };
     }
 
     return { data, error: null };
@@ -231,19 +227,14 @@ export const createPortalSession = async (userId, returnUrl) => {
   }
 
   try {
-    const response = await fetch('/api/stripe/create-portal-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        return_url: returnUrl,
-      }),
+    const response = await apiPost('/api/stripe/create-portal-session', {
+      return_url: returnUrl,
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      return { error: data.message || 'Failed to create portal session' };
+      return { error: data.detail || data.message || 'Failed to create portal session' };
     }
 
     return { data, error: null };
@@ -266,19 +257,14 @@ export const cancelSubscription = async (userId, cancelAtPeriodEnd = true) => {
   }
 
   try {
-    const response = await fetch('/api/stripe/cancel-subscription', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        cancel_at_period_end: cancelAtPeriodEnd,
-      }),
+    const response = await apiPost('/api/stripe/cancel-subscription', {
+      cancel_at_period_end: cancelAtPeriodEnd,
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      return { error: data.message || 'Failed to cancel subscription' };
+      return { error: data.detail || data.message || 'Failed to cancel subscription' };
     }
 
     return { error: null };
@@ -301,20 +287,15 @@ export const updateSubscription = async (userId, newPlanId) => {
   }
 
   try {
-    const response = await fetch('/api/stripe/update-subscription', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        new_plan_id: newPlanId,
-        new_price_id: PLANS[newPlanId]?.priceId,
-      }),
+    const response = await apiPost('/api/stripe/update-subscription', {
+      new_plan_id: newPlanId,
+      new_price_id: PLANS[newPlanId]?.priceId,
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      return { error: data.message || 'Failed to update subscription' };
+      return { error: data.detail || data.message || 'Failed to update subscription' };
     }
 
     return { error: null };

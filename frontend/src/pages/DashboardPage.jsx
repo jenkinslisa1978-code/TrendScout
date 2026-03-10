@@ -80,7 +80,7 @@ export default function DashboardPage() {
 
         // Fetch user's stores
         if (user?.id) {
-          const storesResult = await getUserStores(user.id);
+          const storesResult = await getUserStores();
           if (storesResult.data) {
             setUserStores(storesResult.data.slice(0, 5));
           }

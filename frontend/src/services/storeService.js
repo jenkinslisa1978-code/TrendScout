@@ -1,11 +1,14 @@
 /**
  * Store Service - API calls for store management
+ * Uses authenticated API client for secure requests
  */
+
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 /**
- * Get store limits for a plan
+ * Get store limits for a plan (public endpoint)
  */
 export const getStoreLimits = async (plan = 'starter') => {
   try {
@@ -19,15 +22,18 @@ export const getStoreLimits = async (plan = 'starter') => {
 };
 
 /**
- * Get all stores for a user
+ * Get all stores for the authenticated user
  */
-export const getUserStores = async (userId, status = null) => {
+export const getUserStores = async (status = null) => {
   try {
-    let url = `${API_URL}/api/stores?user_id=${userId}`;
-    if (status) url += `&status=${status}`;
+    let url = `/api/stores`;
+    if (status) url += `?status=${status}`;
     
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch stores');
+    const response = await apiGet(url);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to fetch stores');
+    }
     
     const result = await response.json();
     return { data: result.data || [], error: null };
@@ -40,13 +46,13 @@ export const getUserStores = async (userId, status = null) => {
 /**
  * Get a single store by ID
  */
-export const getStore = async (storeId, userId = null) => {
+export const getStore = async (storeId) => {
   try {
-    let url = `${API_URL}/api/stores/${storeId}`;
-    if (userId) url += `?user_id=${userId}`;
-    
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch store');
+    const response = await apiGet(`/api/stores/${storeId}`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to fetch store');
+    }
     
     const result = await response.json();
     return { data: result.data, error: null };
@@ -59,21 +65,16 @@ export const getStore = async (storeId, userId = null) => {
 /**
  * Generate store content from a product (AI store builder)
  */
-export const generateStore = async (productId, userId, plan = 'starter', storeName = null) => {
+export const generateStore = async (productId, plan = 'starter', storeName = null) => {
   try {
-    const response = await fetch(`${API_URL}/api/stores/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        product_id: productId,
-        user_id: userId,
-        plan,
-        store_name: storeName,
-      }),
+    const response = await apiPost(`/api/stores/generate`, {
+      product_id: productId,
+      plan,
+      store_name: storeName,
     });
     
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.detail || 'Failed to generate store');
     }
     
@@ -87,21 +88,16 @@ export const generateStore = async (productId, userId, plan = 'starter', storeNa
 /**
  * Create a new store
  */
-export const createStore = async (name, productId, userId, plan = 'starter') => {
+export const createStore = async (name, productId, plan = 'starter') => {
   try {
-    const response = await fetch(`${API_URL}/api/stores`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        product_id: productId,
-        user_id: userId,
-        plan,
-      }),
+    const response = await apiPost(`/api/stores`, {
+      name,
+      product_id: productId,
+      plan,
     });
     
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.detail || 'Failed to create store');
     }
     
@@ -115,15 +111,14 @@ export const createStore = async (name, productId, userId, plan = 'starter') => 
 /**
  * Update a store
  */
-export const updateStore = async (storeId, updates, userId) => {
+export const updateStore = async (storeId, updates) => {
   try {
-    const response = await fetch(`${API_URL}/api/stores/${storeId}?user_id=${userId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+    const response = await apiPut(`/api/stores/${storeId}`, updates);
     
-    if (!response.ok) throw new Error('Failed to update store');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to update store');
+    }
     
     return await response.json();
   } catch (error) {
@@ -135,13 +130,14 @@ export const updateStore = async (storeId, updates, userId) => {
 /**
  * Delete a store
  */
-export const deleteStore = async (storeId, userId) => {
+export const deleteStore = async (storeId) => {
   try {
-    const response = await fetch(`${API_URL}/api/stores/${storeId}?user_id=${userId}`, {
-      method: 'DELETE',
-    });
+    const response = await apiDelete(`/api/stores/${storeId}`);
     
-    if (!response.ok) throw new Error('Failed to delete store');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to delete store');
+    }
     
     return { success: true };
   } catch (error) {
@@ -153,19 +149,15 @@ export const deleteStore = async (storeId, userId) => {
 /**
  * Add product to store
  */
-export const addProductToStore = async (storeId, productId, userId) => {
+export const addProductToStore = async (storeId, productId) => {
   try {
-    const response = await fetch(`${API_URL}/api/stores/${storeId}/products?user_id=${userId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        store_id: storeId,
-        product_id: productId,
-      }),
+    const response = await apiPost(`/api/stores/${storeId}/products`, {
+      store_id: storeId,
+      product_id: productId,
     });
     
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.detail || 'Failed to add product');
     }
     
@@ -177,7 +169,7 @@ export const addProductToStore = async (storeId, productId, userId) => {
 };
 
 /**
- * Get store products
+ * Get store products (public if store is published)
  */
 export const getStoreProducts = async (storeId) => {
   try {
@@ -195,18 +187,14 @@ export const getStoreProducts = async (storeId) => {
 /**
  * Update store product
  */
-export const updateStoreProduct = async (storeId, productId, updates, userId) => {
+export const updateStoreProduct = async (storeId, productId, updates) => {
   try {
-    const response = await fetch(
-      `${API_URL}/api/stores/${storeId}/products/${productId}?user_id=${userId}`,
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      }
-    );
+    const response = await apiPut(`/api/stores/${storeId}/products/${productId}`, updates);
     
-    if (!response.ok) throw new Error('Failed to update product');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to update product');
+    }
     
     return await response.json();
   } catch (error) {
@@ -218,14 +206,14 @@ export const updateStoreProduct = async (storeId, productId, updates, userId) =>
 /**
  * Regenerate product copy
  */
-export const regenerateProductCopy = async (storeId, productId, userId) => {
+export const regenerateProductCopy = async (storeId, productId) => {
   try {
-    const response = await fetch(
-      `${API_URL}/api/stores/${storeId}/regenerate/${productId}?user_id=${userId}`,
-      { method: 'POST' }
-    );
+    const response = await apiPost(`/api/stores/${storeId}/regenerate/${productId}`);
     
-    if (!response.ok) throw new Error('Failed to regenerate copy');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to regenerate copy');
+    }
     
     return await response.json();
   } catch (error) {
@@ -237,14 +225,14 @@ export const regenerateProductCopy = async (storeId, productId, userId) => {
 /**
  * Delete store product
  */
-export const deleteStoreProduct = async (storeId, productId, userId) => {
+export const deleteStoreProduct = async (storeId, productId) => {
   try {
-    const response = await fetch(
-      `${API_URL}/api/stores/${storeId}/products/${productId}?user_id=${userId}`,
-      { method: 'DELETE' }
-    );
+    const response = await apiDelete(`/api/stores/${storeId}/products/${productId}`);
     
-    if (!response.ok) throw new Error('Failed to delete product');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to delete product');
+    }
     
     return { success: true };
   } catch (error) {
@@ -256,13 +244,14 @@ export const deleteStoreProduct = async (storeId, productId, userId) => {
 /**
  * Export store for Shopify
  */
-export const exportStore = async (storeId, userId, format = 'shopify') => {
+export const exportStore = async (storeId, format = 'shopify') => {
   try {
-    const response = await fetch(
-      `${API_URL}/api/stores/${storeId}/export?user_id=${userId}&format=${format}`
-    );
+    const response = await apiGet(`/api/stores/${storeId}/export?format=${format}`);
     
-    if (!response.ok) throw new Error('Failed to export store');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to export store');
+    }
     
     return await response.json();
   } catch (error) {
@@ -274,15 +263,14 @@ export const exportStore = async (storeId, userId, format = 'shopify') => {
 /**
  * Update store status
  */
-export const updateStoreStatus = async (storeId, status, userId) => {
+export const updateStoreStatus = async (storeId, status) => {
   try {
-    const response = await fetch(`${API_URL}/api/stores/${storeId}/status?user_id=${userId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
+    const response = await apiPut(`/api/stores/${storeId}/status`, { status });
     
-    if (!response.ok) throw new Error('Failed to update status');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Failed to update status');
+    }
     
     return await response.json();
   } catch (error) {
@@ -292,7 +280,7 @@ export const updateStoreStatus = async (storeId, status, userId) => {
 };
 
 /**
- * Get store preview data
+ * Get store preview data (public endpoint)
  */
 export const getStorePreview = async (storeId) => {
   try {
