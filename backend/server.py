@@ -4396,6 +4396,21 @@ async def get_feature_access(
     # Check if admin - admins get Elite features
     is_admin = profile.get("is_admin", False) if profile else False
     
+    # Also check admin by email (for newly logged in admins)
+    if not is_admin and current_user.email:
+        admin_by_email = await db.profiles.find_one(
+            {"email": current_user.email, "is_admin": True}, 
+            {"_id": 0}
+        )
+        if admin_by_email:
+            is_admin = True
+            # Update the user's profile with admin status
+            await db.profiles.update_one(
+                {"id": current_user.user_id},
+                {"$set": {"is_admin": True, "plan": "elite"}},
+                upsert=True
+            )
+    
     if is_admin:
         plan = "elite"
     else:
