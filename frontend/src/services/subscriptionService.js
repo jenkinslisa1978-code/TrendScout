@@ -15,11 +15,11 @@ const SUBSCRIPTION_STORAGE_KEY = 'trendscout_subscription';
 
 // Plan definitions
 export const PLANS = {
-  starter: {
-    id: 'starter',
-    name: 'Starter',
+  free: {
+    id: 'free',
+    name: 'Free',
     price: 0,
-    priceId: '', // Stripe price ID - set in env
+    priceId: '', // No Stripe for free tier
     features: {
       maxProducts: 10,
       maxSavedProducts: 5,
@@ -29,12 +29,12 @@ export const PLANS = {
       advancedFilters: false,
       exportData: false,
     },
-    description: 'Perfect for getting started',
+    description: 'Get started with product research',
   },
   pro: {
     id: 'pro',
     name: 'Pro',
-    price: 49,
+    price: 39,
     priceId: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || '',
     features: {
       maxProducts: 100,
@@ -45,7 +45,7 @@ export const PLANS = {
       advancedFilters: true,
       exportData: true,
     },
-    description: 'For serious product researchers',
+    description: 'Full access for serious sellers',
   },
   elite: {
     id: 'elite',
@@ -128,7 +128,7 @@ export const getSubscription = async (userId) => {
  * Get plan details
  */
 export const getPlanDetails = (planId) => {
-  return PLANS[planId] || PLANS.starter;
+  return PLANS[planId] || PLANS.free;
 };
 
 /**

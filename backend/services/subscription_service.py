@@ -25,6 +25,7 @@ except ImportError:
 class SubscriptionPlan(str, Enum):
     """Available subscription plans"""
     FREE = "free"
+    STARTER = "starter"
     PRO = "pro"
     ELITE = "elite"
 
@@ -61,6 +62,29 @@ PLANS = {
             "1 store",
             "Limited watchlist access",
             "Limited alerts"
+        ]
+    },
+    SubscriptionPlan.STARTER: {
+        "name": "Starter",
+        "price_monthly": 19,
+        "currency": "gbp",
+        "stripe_price_id": os.environ.get("STRIPE_STARTER_PRICE_ID"),
+        "features": {
+            "product_insights": "full",
+            "reports_access": "full",
+            "max_stores": 1,
+            "watchlist_access": "full",
+            "alerts_access": "limited",
+            "early_trend_access": False,
+            "automation_insights": False,
+            "advanced_opportunities": False,
+        },
+        "feature_descriptions": [
+            "Full product insights",
+            "Complete reports access",
+            "1 store",
+            "Full watchlist access",
+            "Email support"
         ]
     },
     SubscriptionPlan.PRO: {

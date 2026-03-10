@@ -122,7 +122,7 @@ export default function StoresPage() {
   const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [limits, setLimits] = useState({ limit: 1, plan: 'starter' });
+  const [limits, setLimits] = useState({ limit: 1, plan: 'free' });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   const userId = profile?.id || 'demo-user-id';

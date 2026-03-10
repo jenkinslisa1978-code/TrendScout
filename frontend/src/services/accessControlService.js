@@ -35,42 +35,42 @@ export const Permissions = {
  */
 const PERMISSION_MAP = {
   [Permissions.VIEW_PRODUCTS]: {
-    starter: true,
+    free: true,
     pro: true,
     elite: true,
   },
   [Permissions.VIEW_PREMIUM_PRODUCTS]: {
-    starter: false,
+    free: false,
     pro: true,
     elite: true,
   },
   [Permissions.SAVE_PRODUCTS]: {
-    starter: true,
+    free: true,
     pro: true,
     elite: true,
   },
   [Permissions.VIEW_ALERTS]: {
-    starter: false,
-    pro: false,
+    free: false,
+    pro: true,
     elite: true,
   },
   [Permissions.EXPORT_DATA]: {
-    starter: false,
+    free: false,
     pro: true,
     elite: true,
   },
   [Permissions.API_ACCESS]: {
-    starter: false,
+    free: false,
     pro: false,
     elite: true,
   },
   [Permissions.ADMIN_PANEL]: {
-    starter: 'admin_only',
+    free: 'admin_only',
     pro: 'admin_only',
     elite: 'admin_only',
   },
   [Permissions.AUTOMATION_CENTER]: {
-    starter: 'admin_only',
+    free: 'admin_only',
     pro: 'admin_only',
     elite: 'admin_only',
   },
@@ -91,7 +91,7 @@ export const hasPermission = (user, profile, permission, isDemoMode = false) => 
   // No user = no access
   if (!user) return false;
   
-  const plan = profile?.plan || 'starter';
+  const plan = profile?.plan || 'free';
   const role = profile?.role || 'user';
   
   const permissionRule = PERMISSION_MAP[permission];
@@ -128,7 +128,7 @@ export const canSaveMoreProducts = (user, profile, currentSavedCount, isDemoMode
   if (isDemoMode) return true;
   if (!user) return false;
   
-  const plan = PLANS[profile?.plan || 'starter'];
+  const plan = PLANS[profile?.plan || 'free'];
   const limit = plan.features.maxSavedProducts;
   
   // -1 means unlimited
@@ -143,7 +143,7 @@ export const canSaveMoreProducts = (user, profile, currentSavedCount, isDemoMode
 export const getProductViewLimit = (profile, isDemoMode = false) => {
   if (isDemoMode) return -1; // Unlimited
   
-  const plan = PLANS[profile?.plan || 'starter'];
+  const plan = PLANS[profile?.plan || 'free'];
   return plan.features.maxProducts;
 };
 
@@ -153,7 +153,7 @@ export const getProductViewLimit = (profile, isDemoMode = false) => {
 export const getSavedProductLimit = (profile, isDemoMode = false) => {
   if (isDemoMode) return -1; // Unlimited
   
-  const plan = PLANS[profile?.plan || 'starter'];
+  const plan = PLANS[profile?.plan || 'free'];
   return plan.features.maxSavedProducts;
 };
 
@@ -179,10 +179,10 @@ export const isElitePlan = (profile, isDemoMode = false) => {
 export const getRestrictedFeatures = (profile, isDemoMode = false) => {
   if (isDemoMode) return [];
   
-  const plan = profile?.plan || 'starter';
+  const plan = profile?.plan || 'free';
   const restricted = [];
   
-  if (plan === 'starter') {
+  if (plan === 'free') {
     restricted.push('Premium Products', 'Trend Alerts', 'Export Data', 'API Access', 'Advanced Filters');
   } else if (plan === 'pro') {
     restricted.push('Trend Alerts', 'API Access');
@@ -194,7 +194,7 @@ export const getRestrictedFeatures = (profile, isDemoMode = false) => {
 /**
  * Get upgrade path for a feature
  */
-export const getUpgradePathForFeature = (feature, currentPlan = 'starter') => {
+export const getUpgradePathForFeature = (feature, currentPlan = 'free') => {
   const featureRequirements = {
     [Permissions.VIEW_PREMIUM_PRODUCTS]: 'pro',
     [Permissions.VIEW_ALERTS]: 'elite',
@@ -206,7 +206,7 @@ export const getUpgradePathForFeature = (feature, currentPlan = 'starter') => {
   
   if (!requiredPlan) return null;
   
-  const planOrder = ['starter', 'pro', 'elite'];
+  const planOrder = ['free', 'pro', 'elite'];
   const currentIndex = planOrder.indexOf(currentPlan);
   const requiredIndex = planOrder.indexOf(requiredPlan);
   

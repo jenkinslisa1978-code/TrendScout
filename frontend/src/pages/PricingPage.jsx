@@ -34,7 +34,7 @@ const PLANS = [
     id: 'free',
     name: 'Free',
     price: 0,
-    description: 'Get started with basic product research',
+    description: 'Get started with product research',
     icon: Zap,
     color: 'slate',
     features: [
@@ -43,19 +43,39 @@ const PLANS = [
       { text: '1 store', included: true },
       { text: 'Limited watchlist access', included: true },
       { text: 'Limited alerts', included: true },
+      { text: 'Full reports access', included: false },
       { text: 'Early trend detection', included: false },
-      { text: 'Advanced opportunity insights', included: false },
-      { text: 'Automation insights', included: false },
+      { text: 'Advanced opportunities', included: false },
     ],
     cta: 'Current Plan',
+    popular: false
+  },
+  {
+    id: 'starter',
+    name: 'Starter',
+    price: 19,
+    description: 'Launch your first winning store',
+    icon: Rocket,
+    color: 'emerald',
+    features: [
+      { text: 'Full product insights', included: true },
+      { text: 'Complete reports access', included: true },
+      { text: '1 store', included: true },
+      { text: 'Full watchlist access', included: true },
+      { text: 'Email support', included: true },
+      { text: 'Multiple stores', included: false },
+      { text: 'Early trend detection', included: false },
+      { text: 'Advanced opportunities', included: false },
+    ],
+    cta: 'Get Starter',
     popular: false
   },
   {
     id: 'pro',
     name: 'Pro',
     price: 39,
-    description: 'Full access for serious sellers',
-    icon: Rocket,
+    description: 'Scale with multiple stores',
+    icon: TrendingUp,
     color: 'indigo',
     features: [
       { text: 'Full product insights', included: true },
@@ -63,9 +83,9 @@ const PLANS = [
       { text: 'Up to 5 stores', included: true },
       { text: 'Full watchlist access', included: true },
       { text: 'Full alerts access', included: true },
+      { text: 'Priority support', included: true },
       { text: 'Early trend detection', included: false },
-      { text: 'Advanced opportunity insights', included: false },
-      { text: 'Automation insights', included: false },
+      { text: 'Advanced opportunities', included: false },
     ],
     cta: 'Upgrade to Pro',
     popular: true
@@ -85,7 +105,7 @@ const PLANS = [
       { text: 'Unlimited stores', included: true },
       { text: 'Priority opportunity alerts', included: true },
       { text: 'Premium market analysis', included: true },
-      { text: 'Full Live Feed access', included: true },
+      { text: 'Dedicated support', included: true },
     ],
     cta: 'Go Elite',
     popular: false
@@ -94,12 +114,14 @@ const PLANS = [
 
 function PlanCard({ plan, currentPlan, onSelect, loading }) {
   const isCurrentPlan = currentPlan === plan.id;
-  const canUpgrade = !isCurrentPlan && (
-    (currentPlan === 'free' && (plan.id === 'pro' || plan.id === 'elite')) ||
-    (currentPlan === 'pro' && plan.id === 'elite')
-  );
-  const isDowngrade = (currentPlan === 'elite' && (plan.id === 'pro' || plan.id === 'free')) ||
-                      (currentPlan === 'pro' && plan.id === 'free');
+  
+  // Define plan hierarchy
+  const planOrder = ['free', 'starter', 'pro', 'elite'];
+  const currentIndex = planOrder.indexOf(currentPlan);
+  const planIndex = planOrder.indexOf(plan.id);
+  
+  const canUpgrade = !isCurrentPlan && planIndex > currentIndex;
+  const isDowngrade = planIndex < currentIndex;
   
   const Icon = plan.icon;
   
@@ -110,6 +132,13 @@ function PlanCard({ plan, currentPlan, onSelect, loading }) {
       badge: 'bg-slate-100 text-slate-700',
       button: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
       icon: 'text-slate-500'
+    },
+    emerald: {
+      border: 'border-emerald-200',
+      bg: 'bg-emerald-50',
+      badge: 'bg-emerald-100 text-emerald-700',
+      button: 'bg-emerald-600 text-white hover:bg-emerald-700',
+      icon: 'text-emerald-500'
     },
     indigo: {
       border: 'border-indigo-200 ring-2 ring-indigo-500',
@@ -297,7 +326,7 @@ export default function PricingPage() {
       
       {/* Pricing Cards */}
       <div className="max-w-6xl mx-auto px-4 pb-16">
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {PLANS.map(plan => (
             <PlanCard
               key={plan.id}

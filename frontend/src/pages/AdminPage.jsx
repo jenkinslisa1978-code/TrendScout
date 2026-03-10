@@ -67,13 +67,13 @@ const INITIAL_PRODUCT = {
 const MOCK_USERS = [
   { id: '1', email: 'john@example.com', full_name: 'John Smith', plan: 'pro', status: 'active', created_at: '2024-01-15' },
   { id: '2', email: 'sarah@example.com', full_name: 'Sarah Johnson', plan: 'elite', status: 'active', created_at: '2024-02-20' },
-  { id: '3', email: 'mike@example.com', full_name: 'Mike Wilson', plan: 'starter', status: 'active', created_at: '2024-03-10' },
+  { id: '3', email: 'mike@example.com', full_name: 'Mike Wilson', plan: 'free', status: 'active', created_at: '2024-03-10' },
 ];
 
 const MOCK_SUBSCRIPTIONS = [
   { id: '1', user_email: 'john@example.com', plan_name: 'pro', status: 'active', amount: '£39/mo', current_period_end: '2024-04-15' },
   { id: '2', user_email: 'sarah@example.com', plan_name: 'elite', amount: '£79/mo', status: 'active', current_period_end: '2024-05-20' },
-  { id: '3', user_email: 'mike@example.com', plan_name: 'starter', amount: '£0/mo', status: 'active', current_period_end: '2024-03-25' },
+  { id: '3', user_email: 'mike@example.com', plan_name: 'free', amount: '£0/mo', status: 'active', current_period_end: '2024-03-25' },
 ];
 
 export default function AdminPage() {

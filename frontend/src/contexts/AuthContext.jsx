@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
           full_name: userData?.user?.user_metadata?.full_name || 'User',
           email: userData?.user?.email || '',
           role: 'user',
-          plan: 'starter'
+          plan: 'free'
         };
         
         const { data: created, error: createError } = await supabase

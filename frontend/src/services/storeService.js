@@ -10,7 +10,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 /**
  * Get store limits for a plan (public endpoint)
  */
-export const getStoreLimits = async (plan = 'starter') => {
+export const getStoreLimits = async (plan = 'free') => {
   try {
     const response = await fetch(`${API_URL}/api/stores/limits?plan=${plan}`);
     if (!response.ok) throw new Error('Failed to fetch store limits');
@@ -65,7 +65,7 @@ export const getStore = async (storeId) => {
 /**
  * Generate store content from a product (AI store builder)
  */
-export const generateStore = async (productId, plan = 'starter', storeName = null) => {
+export const generateStore = async (productId, plan = 'free', storeName = null) => {
   try {
     const response = await apiPost(`/api/stores/generate`, {
       product_id: productId,
@@ -88,7 +88,7 @@ export const generateStore = async (productId, plan = 'starter', storeName = nul
 /**
  * Create a new store
  */
-export const createStore = async (name, productId, plan = 'starter') => {
+export const createStore = async (name, productId, plan = 'free') => {
   try {
     const response = await apiPost(`/api/stores`, {
       name,

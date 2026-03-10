@@ -49,17 +49,31 @@ const features = [
 
 const pricingPlans = [
   {
+    name: 'Free',
+    price: '0',
+    description: 'Get started with product research',
+    features: [
+      'Limited product insights',
+      'Report previews',
+      '1 store',
+      'Limited watchlist',
+      'Community support'
+    ],
+    cta: 'Get Started',
+    popular: false
+  },
+  {
     name: 'Starter',
     price: '19',
     description: 'Launch your first winning store',
     features: [
-      'Access to winning products',
-      'Win score rankings',
-      '1 store creation',
-      'Shopify export',
+      'Full product insights',
+      'Complete reports access',
+      '1 store',
+      'Full watchlist access',
       'Email support'
     ],
-    cta: 'Start Free Trial',
+    cta: 'Get Starter',
     popular: false
   },
   {
@@ -67,29 +81,27 @@ const pricingPlans = [
     price: '39',
     description: 'Scale with multiple stores',
     features: [
-      'Unlimited product access',
-      'Early trend alerts',
-      '5 store creations',
-      'AI-powered content',
-      'Success tracking',
-      'Priority support'
+      'Everything in Starter',
+      'Up to 5 stores',
+      'Full alerts access',
+      'Priority support',
+      'Advanced filters'
     ],
-    cta: 'Start Free Trial',
+    cta: 'Upgrade to Pro',
     popular: true
   },
   {
     name: 'Elite',
-    price: '79',
+    price: '99',
     description: 'For serious sellers',
     features: [
       'Everything in Pro',
       'Unlimited stores',
-      'Direct Shopify publish',
-      'White-label exports',
-      'Dedicated support',
-      'API access'
+      'Early trend detection',
+      'Automation insights',
+      'Dedicated support'
     ],
-    cta: 'Start Free Trial',
+    cta: 'Go Elite',
     popular: false
   }
 ];
@@ -254,7 +266,7 @@ export default function LandingPage() {
               Choose the plan that fits your business. Cancel anytime.
             </p>
           </div>
-          <div className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {pricingPlans.map((plan) => (
               <div
                 key={plan.name}
