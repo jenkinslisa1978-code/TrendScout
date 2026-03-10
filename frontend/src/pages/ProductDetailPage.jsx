@@ -24,7 +24,11 @@ import {
   Megaphone,
   PieChart,
   Activity,
-  Gauge
+  Gauge,
+  Rocket,
+  AlertTriangle,
+  XCircle,
+  Info
 } from 'lucide-react';
 import { getProductById, getProductCompetitors } from '@/services/productService';
 import { getCompleteAnalysis } from '@/services/intelligenceService';
@@ -40,7 +44,9 @@ import {
   getMarketOpportunityInfo,
   getMarketScoreColor,
   getMarketSaturationColor,
-  getMarketSaturationLabel
+  getMarketSaturationLabel,
+  getLaunchScoreInfo,
+  getLaunchScoreLabel
 } from '@/lib/utils';
 import { toast } from 'sonner';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
@@ -57,6 +63,7 @@ import {
   LaunchRecommendationBadge,
   QuickValidationSummary
 } from '@/components/intelligence';
+import { ExplainScoreButton } from '@/components/LaunchScoreExplainerModal';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -133,12 +140,20 @@ export default function ProductDetailPage() {
 
   if (!product) return null;
 
+  // Get launch score info
+  const launchInfo = getLaunchScoreInfo(product.launch_score || 0, product.launch_score_label);
+  const LaunchIcon = product.launch_score >= 80 ? Rocket : 
+                     product.launch_score >= 60 ? TrendingUp : 
+                     product.launch_score >= 40 ? AlertTriangle : XCircle;
+
   const stats = [
     {
-      label: 'Market Score',
-      value: product.market_score || 0,
-      icon: PieChart,
-      color: getMarketScoreColor(product.market_score || 0)
+      label: 'Launch Score',
+      value: product.launch_score || 0,
+      icon: LaunchIcon,
+      color: launchInfo.textColor,
+      isPrimary: true,
+      showExplain: true
     },
     {
       label: 'Trend Score',
@@ -342,17 +357,32 @@ export default function ProductDetailPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="product-stats">
           {stats.map((stat) => (
-            <Card key={stat.label} className="border-slate-200 shadow-sm">
+            <Card key={stat.label} className={`border-slate-200 shadow-sm ${stat.isPrimary ? 'ring-2 ring-indigo-100' : ''}`}>
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-slate-500">{stat.label}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-slate-500">{stat.label}</p>
+                      {stat.showExplain && (
+                        <ExplainScoreButton 
+                          productId={product.id}
+                          productName={product.product_name}
+                          launchScore={product.launch_score || 0}
+                          variant="icon"
+                        />
+                      )}
+                    </div>
                     <p className={`mt-1 font-mono text-2xl font-bold ${stat.color}`}>
                       {stat.value}
                     </p>
+                    {stat.isPrimary && (
+                      <Badge className={`${getLaunchScoreInfo(product.launch_score || 0).color} border text-xs mt-1`}>
+                        {getLaunchScoreLabel(product.launch_score || 0)}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-50">
-                    <stat.icon className="h-5 w-5 text-slate-400" />
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.isPrimary ? getLaunchScoreInfo(product.launch_score || 0).bgColor : 'bg-slate-50'}`}>
+                    <stat.icon className={`h-5 w-5 ${stat.isPrimary ? 'text-white' : 'text-slate-400'}`} />
                   </div>
                 </div>
               </CardContent>

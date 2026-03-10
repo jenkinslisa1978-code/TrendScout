@@ -3814,6 +3814,190 @@ async def get_product(product_id: str, include_integrity: bool = False):
     return response
 
 
+@api_router.get("/products/{product_id}/launch-score-breakdown")
+async def get_launch_score_breakdown(product_id: str):
+    """
+    Get detailed Launch Score breakdown for a product.
+    Returns component scores, weights, contributions, and plain-English explanations.
+    """
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Get raw scores (0-100)
+    trend_score = product.get('trend_score', 0)
+    margin_score = product.get('margin_score', 0)
+    competition_score = product.get('competition_score', 0)
+    ad_activity_score = product.get('ad_activity_score', 0)
+    supplier_demand_score = product.get('supplier_demand_score', 0)
+    
+    # Weights as per formula
+    weights = {
+        'trend': 0.30,
+        'margin': 0.25,
+        'competition': 0.20,
+        'ad_activity': 0.15,
+        'supplier_demand': 0.10
+    }
+    
+    # Calculate weighted contributions
+    trend_contribution = round(trend_score * weights['trend'], 1)
+    margin_contribution = round(margin_score * weights['margin'], 1)
+    competition_contribution = round(competition_score * weights['competition'], 1)
+    ad_activity_contribution = round(ad_activity_score * weights['ad_activity'], 1)
+    supplier_contribution = round(supplier_demand_score * weights['supplier_demand'], 1)
+    
+    # Final launch score
+    launch_score = product.get('launch_score', 0)
+    launch_label = product.get('launch_score_label', 'risky')
+    
+    # Generate plain-English explanations for each component
+    def get_component_explanation(name: str, score: int) -> dict:
+        explanations = {
+            'trend': {
+                'high': "Strong trend momentum - this product is gaining significant attention",
+                'medium': "Moderate trend activity - steady but not explosive growth",
+                'low': "Limited trend momentum - market interest is low"
+            },
+            'margin': {
+                'high': "Excellent profit margins - healthy pricing vs supplier costs",
+                'medium': "Decent margins - reasonable profitability potential",
+                'low': "Thin margins - pricing or costs need attention"
+            },
+            'competition': {
+                'high': "Low market saturation - good opportunity to establish presence",
+                'medium': "Moderate competition - room to differentiate",
+                'low': "High competition - difficult to stand out"
+            },
+            'ad_activity': {
+                'high': "Active advertising market - proven demand and ROI potential",
+                'medium': "Some ad activity - moderate validation from advertisers",
+                'low': "Limited ad presence - unproven or declining interest"
+            },
+            'supplier_demand': {
+                'high': "Strong supplier reliability - consistent fulfillment confidence",
+                'medium': "Adequate supplier support - manageable fulfillment",
+                'low': "Supplier concerns - potential fulfillment risks"
+            }
+        }
+        
+        level = 'high' if score >= 70 else ('medium' if score >= 40 else 'low')
+        impact = 'positive' if score >= 60 else ('neutral' if score >= 40 else 'negative')
+        
+        return {
+            'level': level,
+            'impact': impact,
+            'explanation': explanations[name][level]
+        }
+    
+    # Build component breakdown
+    components = [
+        {
+            'name': 'Trend Momentum',
+            'key': 'trend',
+            'raw_score': trend_score,
+            'weight': weights['trend'],
+            'weight_percent': f"{int(weights['trend'] * 100)}%",
+            'contribution': trend_contribution,
+            **get_component_explanation('trend', trend_score)
+        },
+        {
+            'name': 'Profit Margins',
+            'key': 'margin',
+            'raw_score': margin_score,
+            'weight': weights['margin'],
+            'weight_percent': f"{int(weights['margin'] * 100)}%",
+            'contribution': margin_contribution,
+            **get_component_explanation('margin', margin_score)
+        },
+        {
+            'name': 'Market Accessibility',
+            'key': 'competition',
+            'raw_score': competition_score,
+            'weight': weights['competition'],
+            'weight_percent': f"{int(weights['competition'] * 100)}%",
+            'contribution': competition_contribution,
+            **get_component_explanation('competition', competition_score)
+        },
+        {
+            'name': 'Advertiser Validation',
+            'key': 'ad_activity',
+            'raw_score': ad_activity_score,
+            'weight': weights['ad_activity'],
+            'weight_percent': f"{int(weights['ad_activity'] * 100)}%",
+            'contribution': ad_activity_contribution,
+            **get_component_explanation('ad_activity', ad_activity_score)
+        },
+        {
+            'name': 'Supplier Reliability',
+            'key': 'supplier_demand',
+            'raw_score': supplier_demand_score,
+            'weight': weights['supplier_demand'],
+            'weight_percent': f"{int(weights['supplier_demand'] * 100)}%",
+            'contribution': supplier_contribution,
+            **get_component_explanation('supplier_demand', supplier_demand_score)
+        }
+    ]
+    
+    # Sort by contribution (highest first)
+    components_sorted = sorted(components, key=lambda x: x['contribution'], reverse=True)
+    
+    # Generate summary
+    def get_rating_summary(label: str, score: int) -> str:
+        summaries = {
+            'strong_launch': f"With a score of {score}, this product shows excellent conditions across multiple factors. It's well-positioned for a successful launch.",
+            'promising': f"Scoring {score}, this product has good potential with manageable risks. Consider testing with a small initial order.",
+            'risky': f"At {score}, this product has notable weaknesses. Proceed with caution and validate demand before committing.",
+            'avoid': f"With only {score} points, this product carries significant risk. Consider alternative products with better fundamentals."
+        }
+        return summaries.get(label, summaries['risky'])
+    
+    # Find improvement opportunities
+    def get_improvement_suggestions(components: list) -> list:
+        suggestions = []
+        weakest = sorted(components, key=lambda x: x['raw_score'])[:2]
+        
+        improvement_tips = {
+            'trend': "Monitor social media trends and consider products with rising hashtag activity",
+            'margin': "Look for suppliers with lower costs or products that can command higher retail prices",
+            'competition': "Focus on niches with fewer established stores or find unique angles",
+            'ad_activity': "Products with active ad campaigns often have proven market demand",
+            'supplier_demand': "Choose suppliers with strong reviews and reliable shipping times"
+        }
+        
+        for comp in weakest:
+            if comp['raw_score'] < 60:
+                suggestions.append({
+                    'component': comp['name'],
+                    'current_score': comp['raw_score'],
+                    'suggestion': improvement_tips.get(comp['key'], "Improve this metric to boost overall score")
+                })
+        
+        return suggestions
+    
+    # Identify strengths and weaknesses
+    strengths = [c for c in components_sorted if c['raw_score'] >= 70][:2]
+    weaknesses = [c for c in sorted(components, key=lambda x: x['raw_score']) if c['raw_score'] < 50][:2]
+    
+    return {
+        'product_id': product_id,
+        'product_name': product.get('product_name'),
+        'launch_score': launch_score,
+        'launch_label': launch_label,
+        'components': components_sorted,
+        'formula': {
+            'description': 'Launch Score = (Trend × 30%) + (Margin × 25%) + (Competition × 20%) + (Ad Activity × 15%) + (Supplier × 10%)',
+            'breakdown': f"{trend_contribution} + {margin_contribution} + {competition_contribution} + {ad_activity_contribution} + {supplier_contribution} = {launch_score}"
+        },
+        'summary': {
+            'rating_explanation': get_rating_summary(launch_label, launch_score),
+            'strengths': [{'name': s['name'], 'score': s['raw_score'], 'explanation': s['explanation']} for s in strengths],
+            'weaknesses': [{'name': w['name'], 'score': w['raw_score'], 'explanation': w['explanation']} for w in weaknesses],
+            'improvements': get_improvement_suggestions(components)
+        }
+    }
+
+
 @api_router.get("/products/proven-winners/list")
 async def get_proven_winners(limit: int = 10):
     """Get proven winning products based on success tracking"""

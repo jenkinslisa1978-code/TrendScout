@@ -40,21 +40,16 @@ import {
   formatCurrency, 
   formatNumber, 
   getTrendStageColor, 
-  getOpportunityColor, 
   getCompetitionColor,
   getTrendScoreColor,
   getEarlyTrendInfo,
-  getEarlyTrendScoreColor,
-  getSuccessProbabilityColor,
-  getMarketOpportunityInfo,
-  getMarketScoreColor,
-  getLaunchScoreColor,
   getLaunchScoreLabel,
   getLaunchScoreBadgeColor,
   getLaunchScoreInfo
 } from '@/lib/utils';
 import { toast } from 'sonner';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
+import { ExplainScoreButton } from '@/components/LaunchScoreExplainerModal';
 
 export default function DiscoverPage() {
   const { user } = useAuth();
@@ -329,39 +324,33 @@ export default function DiscoverPage() {
                       {/* Stats - Launch Score as PRIMARY */}
                       <div className="flex items-center justify-between">
                         {/* Launch Score - PRIMARY METRIC */}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-help">
-                                <div className="flex items-center gap-1.5">
-                                  {(() => {
-                                    const info = getLaunchScoreInfo(product.launch_score || 0, product.launch_score_label);
-                                    const IconComponent = product.launch_score >= 80 ? Rocket : 
-                                                         product.launch_score >= 60 ? TrendingUp : 
-                                                         product.launch_score >= 40 ? AlertTriangle : XCircle;
-                                    return (
-                                      <>
-                                        <div className={`p-1 rounded ${info.bgColor}`}>
-                                          <IconComponent className="h-3 w-3 text-white" />
-                                        </div>
-                                        <p className={`font-mono text-2xl font-bold ${info.textColor}`}>
-                                          {product.launch_score || 0}
-                                        </p>
-                                      </>
-                                    );
-                                  })()}
-                                </div>
-                                <p className="text-xs text-slate-400">Launch Score</p>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-[200px]">
-                              <p className="font-medium">{getLaunchScoreLabel(product.launch_score || 0)}</p>
-                              {product.launch_score_reasoning && (
-                                <p className="text-xs mt-1 text-slate-600">{product.launch_score_reasoning}</p>
-                              )}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            {(() => {
+                              const info = getLaunchScoreInfo(product.launch_score || 0, product.launch_score_label);
+                              const IconComponent = product.launch_score >= 80 ? Rocket : 
+                                                   product.launch_score >= 60 ? TrendingUp : 
+                                                   product.launch_score >= 40 ? AlertTriangle : XCircle;
+                              return (
+                                <>
+                                  <div className={`p-1 rounded ${info.bgColor}`}>
+                                    <IconComponent className="h-3 w-3 text-white" />
+                                  </div>
+                                  <p className={`font-mono text-2xl font-bold ${info.textColor}`}>
+                                    {product.launch_score || 0}
+                                  </p>
+                                  <ExplainScoreButton 
+                                    productId={product.id}
+                                    productName={product.product_name}
+                                    launchScore={product.launch_score || 0}
+                                    variant="icon"
+                                  />
+                                </>
+                              );
+                            })()}
+                          </div>
+                          <p className="text-xs text-slate-400">Launch Score</p>
+                        </div>
                         <div className="text-center">
                           <p className={`font-mono text-lg font-semibold ${getTrendScoreColor(product.trend_score)}`}>
                             {product.trend_score}

@@ -21,23 +21,15 @@ import {
   Package,
   Trash2,
   Clock,
-  Target,
-  AlertCircle,
   AlertTriangle,
-  CheckCircle,
   ArrowUpRight,
   ArrowDownRight,
   Rocket,
   XCircle
 } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { getWatchlist, removeFromWatchlist } from '@/services/dashboardService';
 import { useAuth } from '@/contexts/AuthContext';
+import { ExplainScoreButton } from '@/components/LaunchScoreExplainerModal';
 
 export default function OpportunityWatchlist({ limit = 5 }) {
   const { user } = useAuth();
@@ -200,32 +192,26 @@ export default function OpportunityWatchlist({ limit = 5 }) {
                   
                   {/* Launch Score - PRIMARY METRIC */}
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="text-center cursor-help">
-                            <div className="flex items-center gap-1.5">
-                              <div className={`p-1 rounded ${launchStyle.bg}`}>
-                                <LaunchIcon className="h-3 w-3 text-white" />
-                              </div>
-                              <span className={`font-mono font-bold text-lg ${launchStyle.text}`}>
-                                {Math.round(launchScore)}
-                              </span>
-                              {getSignalIcon(item.signals?.success)}
-                            </div>
-                            <Badge className={`${launchStyle.badge} border text-xs mt-1`}>
-                              {launchStyle.label}
-                            </Badge>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-[200px]">
-                          <p className="font-medium">Launch Score: {Math.round(launchScore)}</p>
-                          {item.launch_score_reasoning && (
-                            <p className="text-xs mt-1 text-slate-600">{item.launch_score_reasoning}</p>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="text-center">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`p-1 rounded ${launchStyle.bg}`}>
+                          <LaunchIcon className="h-3 w-3 text-white" />
+                        </div>
+                        <span className={`font-mono font-bold text-lg ${launchStyle.text}`}>
+                          {Math.round(launchScore)}
+                        </span>
+                        {getSignalIcon(item.signals?.success)}
+                        <ExplainScoreButton 
+                          productId={item.product_id}
+                          productName={item.product_name}
+                          launchScore={Math.round(launchScore)}
+                          variant="icon"
+                        />
+                      </div>
+                      <Badge className={`${launchStyle.badge} border text-xs mt-1`}>
+                        {launchStyle.label}
+                      </Badge>
+                    </div>
                     
                     {/* Remove Button */}
                     <Button

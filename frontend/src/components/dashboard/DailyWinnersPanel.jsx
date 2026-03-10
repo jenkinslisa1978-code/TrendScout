@@ -15,15 +15,12 @@ import {
   TrendingUp, 
   TrendingDown,
   Rocket,
-  Eye,
   AlertTriangle,
   XCircle,
-  Sparkles,
   ChevronRight,
   Star,
   Package,
-  Loader2,
-  Info
+  Loader2
 } from 'lucide-react';
 import {
   Tooltip,
@@ -32,6 +29,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { getDailyWinners } from '@/services/dashboardService';
+import { ExplainScoreButton } from '@/components/LaunchScoreExplainerModal';
 
 export default function DailyWinnersPanel({ limit = 5 }) {
   const [winners, setWinners] = useState([]);
@@ -146,26 +144,20 @@ export default function DailyWinnersPanel({ limit = 5 }) {
                   
                   {/* Launch Score - PRIMARY METRIC */}
                   <div className="text-right flex-shrink-0">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center gap-2 justify-end cursor-help">
-                            <div className={`p-1 rounded ${launchStyle.bg}`}>
-                              <LaunchIcon className="h-4 w-4 text-white" />
-                            </div>
-                            <span className={`font-mono font-bold text-xl ${launchStyle.text}`}>
-                              {launchScore}
-                            </span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-[220px]">
-                          <p className="font-medium">{launchStyle.label}</p>
-                          {product.launch_score_reasoning && (
-                            <p className="text-xs mt-1 text-slate-600">{product.launch_score_reasoning}</p>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex items-center gap-2 justify-end">
+                      <div className={`p-1 rounded ${launchStyle.bg}`}>
+                        <LaunchIcon className="h-4 w-4 text-white" />
+                      </div>
+                      <span className={`font-mono font-bold text-xl ${launchStyle.text}`}>
+                        {launchScore}
+                      </span>
+                      <ExplainScoreButton 
+                        productId={product.product_id}
+                        productName={product.product_name}
+                        launchScore={launchScore}
+                        variant="icon"
+                      />
+                    </div>
                     <Badge className={`${launchStyle.badge} border text-xs mt-1`}>
                       {launchStyle.label}
                     </Badge>
