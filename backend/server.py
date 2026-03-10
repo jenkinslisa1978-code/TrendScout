@@ -1,8 +1,10 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, Header
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import io
 import logging
 import json
 import hmac
@@ -3435,6 +3437,161 @@ async def generate_monthly_report(
         "slug": report.metadata.slug,
         "title": report.metadata.title
     }
+
+
+@reports_router.get("/weekly-winning-products/pdf")
+async def download_weekly_report_pdf():
+    """
+    Download weekly winning products report as PDF.
+    Returns a professionally formatted PDF document.
+    """
+    from services.pdf_generator import pdf_generator
+    import traceback
+    
+    try:
+        # Get latest weekly report
+        report = await db.reports.find_one(
+            {
+                "metadata.report_type": "weekly_winning_products",
+                "metadata.is_latest": True,
+                "metadata.status": "completed"
+            },
+            {"_id": 0}
+        )
+        
+        if not report:
+            raise HTTPException(status_code=404, detail="No weekly report available")
+        
+        logging.info(f"Generating PDF for report: {report.get('metadata', {}).get('title', 'Unknown')}")
+        
+        # Generate PDF
+        pdf_bytes = pdf_generator.generate_weekly_report_pdf(report)
+        
+        # Generate filename
+        week_num = report.get('metadata', {}).get('week_number', datetime.now(timezone.utc).isocalendar()[1])
+        year = datetime.now(timezone.utc).year
+        filename = f"viralscout_weekly_report_week{week_num}_{year}.pdf"
+        
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Length": str(len(pdf_bytes))
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"PDF generation error: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
+
+
+@reports_router.get("/monthly-market-trends/pdf")
+async def download_monthly_report_pdf():
+    """
+    Download monthly market trends report as PDF.
+    Returns a professionally formatted PDF document.
+    """
+    from services.pdf_generator import pdf_generator
+    
+    try:
+        # Get latest monthly report
+        report = await db.reports.find_one(
+            {
+                "metadata.report_type": "monthly_market_trends",
+                "metadata.is_latest": True,
+                "metadata.status": "completed"
+            },
+            {"_id": 0}
+        )
+        
+        if not report:
+            raise HTTPException(status_code=404, detail="No monthly report available")
+        
+        # Generate PDF
+        pdf_bytes = pdf_generator.generate_monthly_report_pdf(report)
+        
+        # Generate filename
+        month_name = datetime.now(timezone.utc).strftime("%B")
+        year = datetime.now(timezone.utc).year
+        filename = f"viralscout_monthly_report_{month_name}_{year}.pdf"
+        
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Length": str(len(pdf_bytes))
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"PDF generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
+
+
+@reports_router.get("/public/weekly-winning-products/pdf")
+async def download_public_weekly_report_pdf():
+    """
+    Download public preview of weekly report as PDF.
+    Available without authentication.
+    """
+    from services.pdf_generator import pdf_generator
+    
+    try:
+        # Get latest weekly report
+        report = await db.reports.find_one(
+            {
+                "metadata.report_type": "weekly_winning_products",
+                "metadata.is_latest": True,
+                "metadata.status": "completed"
+            },
+            {"_id": 0, "public_preview": 1, "metadata": 1, "summary": 1}
+        )
+        
+        if not report:
+            raise HTTPException(status_code=404, detail="No weekly report available")
+        
+        # Build limited report for public PDF
+        public_report = {
+            'metadata': report.get('metadata', {}),
+            'summary': report.get('summary', {}),
+            'sections': [],
+            'public_preview': report.get('public_preview', {})
+        }
+        
+        # Add public preview as a section
+        preview = report.get('public_preview', {})
+        if preview.get('top_5_products'):
+            public_report['sections'].append({
+                'title': 'Top 5 Products Preview',
+                'data': preview.get('top_5_products', [])
+            })
+        
+        # Generate PDF
+        pdf_bytes = pdf_generator.generate_weekly_report_pdf(public_report)
+        
+        week_num = report.get('metadata', {}).get('week_number', datetime.now(timezone.utc).isocalendar()[1])
+        year = datetime.now(timezone.utc).year
+        filename = f"viralscout_weekly_preview_week{week_num}_{year}.pdf"
+        
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Length": str(len(pdf_bytes))
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"PDF generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
+
 
 @stripe_router.post("/create-checkout-session")
 async def create_checkout_session(

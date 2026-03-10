@@ -24,8 +24,9 @@ import {
   BarChart3,
   Loader2
 } from 'lucide-react';
-import { getReportsList, getReportHistory } from '@/services/reportsService';
+import { getReportsList, getReportHistory, downloadReportPDF } from '@/services/reportsService';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function ReportsPage() {
   const { profile } = useAuth();
@@ -33,6 +34,7 @@ export default function ReportsPage() {
   const [weeklyHistory, setWeeklyHistory] = useState([]);
   const [monthlyHistory, setMonthlyHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingPDF, setDownloadingPDF] = useState(null);
   
   const userPlan = profile?.plan || 'free';
 
@@ -54,6 +56,19 @@ export default function ReportsPage() {
     
     fetchData();
   }, []);
+
+  const handleDownloadPDF = async (reportType) => {
+    setDownloadingPDF(reportType);
+    try {
+      await downloadReportPDF(reportType);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download PDF');
+      console.error('PDF download error:', error);
+    } finally {
+      setDownloadingPDF(null);
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -131,6 +146,19 @@ export default function ReportsPage() {
                         <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </Link>
+                    <Button 
+                      variant="outline" 
+                      className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                      onClick={() => handleDownloadPDF('weekly')}
+                      disabled={downloadingPDF === 'weekly'}
+                      data-testid="download-weekly-pdf"
+                    >
+                      {downloadingPDF === 'weekly' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 </>
               ) : (
@@ -174,6 +202,19 @@ export default function ReportsPage() {
                         <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </Link>
+                    <Button 
+                      variant="outline" 
+                      className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                      onClick={() => handleDownloadPDF('monthly')}
+                      disabled={downloadingPDF === 'monthly'}
+                      data-testid="download-monthly-pdf"
+                    >
+                      {downloadingPDF === 'monthly' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 </>
               ) : (

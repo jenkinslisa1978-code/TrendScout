@@ -118,6 +118,64 @@ export const getReportBySlug = async (slug) => {
   }
 };
 
+/**
+ * Download report as PDF
+ * @param {string} reportType - 'weekly' or 'monthly'
+ * @param {boolean} isPublic - whether to download public preview version
+ */
+export const downloadReportPDF = async (reportType, isPublic = false) => {
+  try {
+    let endpoint;
+    
+    if (reportType === 'weekly') {
+      endpoint = isPublic 
+        ? '/api/reports/public/weekly-winning-products/pdf'
+        : '/api/reports/weekly-winning-products/pdf';
+    } else if (reportType === 'monthly') {
+      endpoint = '/api/reports/monthly-market-trends/pdf';
+    } else {
+      throw new Error('Invalid report type');
+    }
+    
+    const response = await fetch(`${API_URL}${endpoint}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to download PDF');
+    }
+    
+    // Get the blob data
+    const blob = await response.blob();
+    
+    // Extract filename from Content-Disposition header or use default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = `viralscout_${reportType}_report.pdf`;
+    
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename=([^;]+)/);
+      if (match) {
+        filename = match[1].replace(/"/g, '');
+      }
+    }
+    
+    // Create download link and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    return { success: true, filename };
+  } catch (error) {
+    console.error('Error downloading PDF:', error);
+    throw error;
+  }
+};
+
 export default {
   getReportsList,
   getWeeklyReport,
@@ -126,4 +184,5 @@ export default {
   getPublicMonthlyReport,
   getReportHistory,
   getReportBySlug,
+  downloadReportPDF,
 };

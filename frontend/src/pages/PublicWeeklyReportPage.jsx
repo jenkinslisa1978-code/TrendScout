@@ -21,13 +21,16 @@ import {
   Zap,
   ChevronRight,
   Calendar,
-  Users
+  Users,
+  Download
 } from 'lucide-react';
-import { getPublicWeeklyReport } from '@/services/reportsService';
+import { getPublicWeeklyReport, downloadReportPDF } from '@/services/reportsService';
+import { toast } from 'sonner';
 
 export default function PublicWeeklyReportPage() {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -39,6 +42,18 @@ export default function PublicWeeklyReportPage() {
     
     fetchReport();
   }, []);
+
+  const handleDownloadPDF = async () => {
+    setDownloadingPDF(true);
+    try {
+      await downloadReportPDF('weekly', true);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download PDF');
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
 
   const report = reportData?.report;
   const cta = reportData?.cta;
@@ -95,6 +110,23 @@ export default function PublicWeeklyReportPage() {
               <Package className="h-4 w-4" />
               {preview.total_products || 20} products analyzed
             </span>
+          </div>
+          {/* Download PDF Button */}
+          <div className="mt-6">
+            <Button 
+              variant="outline" 
+              className="border-amber-300 text-amber-700 hover:bg-amber-100"
+              onClick={handleDownloadPDF}
+              disabled={downloadingPDF}
+              data-testid="download-public-weekly-pdf"
+            >
+              {downloadingPDF ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              Download Preview PDF
+            </Button>
           </div>
         </header>
 
