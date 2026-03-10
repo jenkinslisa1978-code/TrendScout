@@ -20,6 +20,7 @@ from .data_sources import (
     AdActivityAnalyzer,
 )
 from .scoring import ScoringEngine
+from .opportunity_feed_service import create_feed_service
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,7 @@ class DataPipeline:
         self.competitor_analyzer = CompetitorIntelligence(db)
         self.ad_analyzer = AdActivityAnalyzer(db)
         self.scoring_engine = ScoringEngine(db)
+        self.feed_service = create_feed_service(db)
     
     async def run_full_pipeline(self, options: Dict[str, Any] = None) -> PipelineResult:
         """
@@ -115,6 +117,11 @@ class DataPipeline:
             if not options.get('skip_alerts'):
                 logger.info("Step 6: Generating opportunity alerts...")
                 await self._generate_alerts(result, options)
+            
+            # Step 7: Generate opportunity feed events
+            if not options.get('skip_feed'):
+                logger.info("Step 7: Generating opportunity feed events...")
+                await self._generate_feed_events(result, options)
             
             result.success = True
             
@@ -356,6 +363,89 @@ class DataPipeline:
             parts.append(f"Trend: {product['early_trend_label'].title()}")
         
         return " | ".join(parts)
+    
+    async def _generate_feed_events(self, result: PipelineResult, options: Dict):
+        """
+        Generate opportunity feed events for products with significant signal changes.
+        Creates meaningful events for the live dashboard feed.
+        """
+        from .opportunity_feed_service import FeedEventType
+        
+        try:
+            events_created = 0
+            
+            # Get products with strong launch scores (for new high score events)
+            strong_products = await self.db.products.find({
+                "launch_score": {"$gte": 75}
+            }, {"_id": 0}).sort("launch_score", -1).limit(15).to_list(15)
+            
+            for product in strong_products:
+                # Check for strong launch opportunity (score >= 80)
+                if product.get("launch_score", 0) >= 80:
+                    event = await self.feed_service.create_event(
+                        FeedEventType.ENTERED_STRONG_LAUNCH,
+                        product,
+                        reason=f"Launch Score of {product.get('launch_score')} - excellent conditions for launch",
+                        change_data={"launch_score": product.get("launch_score")},
+                        confidence=0.9
+                    )
+                    if event:
+                        events_created += 1
+                
+                # New high score products (75-79)
+                elif product.get("launch_score", 0) >= 75:
+                    event = await self.feed_service.create_event(
+                        FeedEventType.NEW_HIGH_SCORE,
+                        product,
+                        reason=f"Promising product with Launch Score {product.get('launch_score')} detected",
+                        change_data={"launch_score": product.get("launch_score")},
+                        confidence=0.85
+                    )
+                    if event:
+                        events_created += 1
+            
+            # Get products with early trend signals
+            trending_products = await self.db.products.find({
+                "early_trend_label": {"$in": ["exploding", "rising"]}
+            }, {"_id": 0}).sort("early_trend_score", -1).limit(10).to_list(10)
+            
+            for product in trending_products:
+                if product.get("early_trend_label") == "exploding":
+                    event = await self.feed_service.create_event(
+                        FeedEventType.TREND_SPIKE,
+                        product,
+                        reason=f"Exploding trend detected with {product.get('view_growth_rate', 0):.0f}% growth velocity",
+                        change_data={
+                            "early_trend_label": product.get("early_trend_label"),
+                            "view_growth_rate": product.get("view_growth_rate", 0)
+                        },
+                        confidence=0.85
+                    )
+                    if event:
+                        events_created += 1
+            
+            # Check for approaching saturation
+            saturating_products = await self.db.products.find({
+                "market_saturation": {"$gte": 70}
+            }, {"_id": 0}).limit(5).to_list(5)
+            
+            for product in saturating_products:
+                event = await self.feed_service.create_event(
+                    FeedEventType.APPROACHING_SATURATION,
+                    product,
+                    reason=f"Market saturation at {product.get('market_saturation', 70)}% - opportunity window narrowing",
+                    change_data={"market_saturation": product.get("market_saturation")},
+                    confidence=0.75
+                )
+                if event:
+                    events_created += 1
+            
+            result.source_results['feed_events'] = {'created': events_created}
+            logger.info(f"Generated {events_created} feed events")
+            
+        except Exception as e:
+            logger.error(f"Feed event generation error: {e}")
+            result.errors.append(f"feed_events: {str(e)}")
     
     async def _log_pipeline_run(self, result: PipelineResult):
         """Log pipeline run to database"""

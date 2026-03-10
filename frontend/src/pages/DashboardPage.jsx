@@ -21,7 +21,8 @@ import {
   Users,
   Radar,
   Bell,
-  LayoutDashboard
+  LayoutDashboard,
+  Activity
 } from 'lucide-react';
 import { getProducts, getProvenWinners, getMarketOpportunities } from '@/services/productService';
 import { getUserStores } from '@/services/storeService';
@@ -29,6 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatNumber, formatCurrency, getEarlyTrendInfo, getEarlyTrendScoreColor, getSuccessProbabilityColor, getMarketOpportunityInfo, getMarketScoreColor } from '@/lib/utils';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
+import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
@@ -504,8 +506,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <Tabs defaultValue="winners" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
+          <Tabs defaultValue="feed" className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsTrigger value="feed" className="flex items-center gap-2" data-testid="tab-feed">
+                <Activity className="h-4 w-4" />
+                <span className="hidden sm:inline">Feed</span>
+              </TabsTrigger>
               <TabsTrigger value="winners" className="flex items-center gap-2" data-testid="tab-winners">
                 <Trophy className="h-4 w-4" />
                 <span className="hidden sm:inline">Winners</span>
@@ -523,6 +529,10 @@ export default function DashboardPage() {
                 <span className="hidden sm:inline">Alerts</span>
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="feed">
+              <OpportunityFeedPanel limit={10} refreshInterval={60000} />
+            </TabsContent>
 
             <TabsContent value="winners">
               <DailyWinnersPanel limit={5} />

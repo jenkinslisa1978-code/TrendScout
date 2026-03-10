@@ -2646,6 +2646,150 @@ async def get_daily_winning_products(limit: int = 10):
     }
 
 
+# =====================================================
+# LIVE OPPORTUNITY FEED ENDPOINTS
+# =====================================================
+
+@dashboard_router.get("/opportunity-feed")
+async def get_opportunity_feed(
+    limit: int = 20,
+    hours: int = 24,
+    event_types: Optional[str] = None
+):
+    """
+    Get live opportunity feed with recent product signal changes.
+    
+    Returns events sorted by priority and recency:
+    1. entered_strong_launch (highest priority)
+    2. new_high_score
+    3. trend_spike
+    4. competition_increase
+    5. approaching_saturation
+    
+    Args:
+        limit: Maximum events to return (default 20)
+        hours: Only get events from last N hours (default 24)
+        event_types: Comma-separated list of event types to filter
+    """
+    from services.opportunity_feed_service import create_feed_service
+    
+    feed_service = create_feed_service(db)
+    
+    # Parse event types if provided
+    types_list = None
+    if event_types:
+        types_list = [t.strip() for t in event_types.split(",")]
+    
+    events = await feed_service.get_feed(
+        limit=limit,
+        event_types=types_list,
+        hours=hours
+    )
+    
+    return {
+        "events": events,
+        "count": len(events),
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@dashboard_router.get("/opportunity-feed/stats")
+async def get_feed_stats():
+    """Get statistics about the opportunity feed"""
+    from services.opportunity_feed_service import create_feed_service
+    
+    feed_service = create_feed_service(db)
+    stats = await feed_service.get_feed_stats()
+    
+    return stats
+
+
+@dashboard_router.post("/opportunity-feed/generate-sample")
+async def generate_sample_feed_events(
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """
+    Generate sample feed events from current products (admin only).
+    Useful for testing and demo purposes.
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    from services.opportunity_feed_service import create_feed_service, FeedEventType
+    
+    feed_service = create_feed_service(db)
+    
+    # Get products with high launch scores
+    high_score_products = await db.products.find(
+        {"launch_score": {"$gte": 75}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(10).to_list(10)
+    
+    events_created = []
+    
+    for product in high_score_products[:5]:
+        launch_score = product.get("launch_score", 0)
+        
+        # Determine event type based on score
+        if launch_score >= 80:
+            event = await feed_service.create_event(
+                FeedEventType.ENTERED_STRONG_LAUNCH,
+                product,
+                reason=f"Launch Score of {launch_score} qualifies for Strong Launch category",
+                change_data={"launch_score": launch_score},
+                confidence=0.9
+            )
+        else:
+            event = await feed_service.create_event(
+                FeedEventType.NEW_HIGH_SCORE,
+                product,
+                reason=f"High potential product detected with score {launch_score}",
+                change_data={"launch_score": launch_score},
+                confidence=0.85
+            )
+        
+        if event:
+            events_created.append(event)
+    
+    # Add a trend spike event
+    trending_products = await db.products.find(
+        {"trend_score": {"$gte": 70}},
+        {"_id": 0}
+    ).sort("trend_score", -1).limit(3).to_list(3)
+    
+    for product in trending_products[:2]:
+        event = await feed_service.create_event(
+            FeedEventType.TREND_SPIKE,
+            product,
+            reason=f"Strong trend momentum detected - score increased to {product.get('trend_score', 0)}",
+            change_data={"trend_score": product.get("trend_score", 0), "change_percent": 25},
+            confidence=0.8
+        )
+        if event:
+            events_created.append(event)
+    
+    return {
+        "success": True,
+        "events_created": len(events_created),
+        "events": events_created
+    }
+
+
+@dashboard_router.post("/opportunity-feed/mark-read")
+async def mark_feed_events_read(
+    event_ids: List[str],
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Mark specific feed events as read"""
+    from services.opportunity_feed_service import create_feed_service
+    
+    feed_service = create_feed_service(db)
+    await feed_service.mark_as_read(event_ids, current_user.user_id)
+    
+    return {"success": True, "marked_count": len(event_ids)}
+
+
 @dashboard_router.get("/watchlist")
 async def get_user_watchlist(
     current_user: AuthenticatedUser = Depends(get_current_user)
