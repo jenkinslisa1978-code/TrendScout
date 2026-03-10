@@ -32,8 +32,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { formatCurrency } from '@/lib/utils';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 // Event type configurations
 const EVENT_CONFIG = {

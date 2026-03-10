@@ -21,7 +21,7 @@ import {
 import { toast } from 'sonner';
 import { apiGet } from '@/lib/api';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 export default function ReferralPage() {
   const [stats, setStats] = useState(null);

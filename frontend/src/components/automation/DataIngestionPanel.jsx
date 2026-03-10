@@ -21,8 +21,7 @@ import {
   Database
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 const DATA_SOURCES = [
   {

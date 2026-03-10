@@ -15,8 +15,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { formatNumber, getEarlyTrendInfo } from '@/lib/utils';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 export default function PublicProductInsightPage() {
   const { productId } = useParams();

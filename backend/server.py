@@ -6466,7 +6466,7 @@ app.add_middleware(
 # The frontend build directory is created during deployment
 FRONTEND_BUILD_DIR = Path(__file__).parent.parent / "frontend" / "build"
 
-if FRONTEND_BUILD_DIR.exists():
+if FRONTEND_BUILD_DIR.exists() and (FRONTEND_BUILD_DIR / "static").exists():
     # Serve static assets (JS, CSS, images, etc.)
     app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "static")), name="static")
     

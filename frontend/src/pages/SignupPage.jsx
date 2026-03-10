@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { TrendingUp, Eye, EyeOff, Loader2, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');

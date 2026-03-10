@@ -16,8 +16,7 @@ import {
   PieChart
 } from 'lucide-react';
 import { formatNumber, getEarlyTrendInfo, getMarketOpportunityInfo } from '@/lib/utils';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 export default function WeeklyWinnersPage() {
   const [data, setData] = useState(null);

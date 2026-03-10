@@ -33,8 +33,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 // Component icons mapping
 const COMPONENT_ICONS = {

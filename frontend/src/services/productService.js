@@ -1,6 +1,5 @@
 import { runFullAutomation, batchRunAutomation } from '@/lib/automation';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 // Get all products from backend API
 export const getProducts = async (filters = {}) => {

@@ -22,7 +22,7 @@ import {
 import { toast } from 'sonner';
 import api from '@/lib/api';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 function getMarketInfo(label) {
   const map = {

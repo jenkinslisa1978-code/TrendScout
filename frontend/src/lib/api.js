@@ -6,8 +6,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 // Demo mode token prefix
 const DEMO_TOKEN_PREFIX = 'demo_';

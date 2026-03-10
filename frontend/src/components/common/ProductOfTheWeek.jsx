@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, TrendingUp, ArrowRight, Flame, Zap, BarChart3 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 function getTrendIcon(label) {
   if (label === 'exploding') return Flame;

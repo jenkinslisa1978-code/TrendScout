@@ -5,8 +5,7 @@
  */
 
 import { apiGet } from '@/lib/api';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 /**
  * Get list of all reports

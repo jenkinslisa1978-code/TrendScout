@@ -4,8 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 /**
  * Get store limits for a plan (public endpoint)

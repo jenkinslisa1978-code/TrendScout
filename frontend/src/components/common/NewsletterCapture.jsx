@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Mail, Check, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import { API_URL } from '@/lib/config';
 
 export default function NewsletterCapture() {
   const [email, setEmail] = useState('');
