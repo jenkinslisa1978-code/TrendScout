@@ -31,6 +31,7 @@ stripe_router = APIRouter(prefix="/api/stripe")
 automation_router = APIRouter(prefix="/api/automation")
 ingestion_router = APIRouter(prefix="/api/ingestion")
 stores_router = APIRouter(prefix="/api/stores")
+jobs_router = APIRouter(prefix="/api/jobs")
 
 # =====================
 # MODELS
@@ -1374,6 +1375,238 @@ async def get_pipeline_status():
             "ad_activity": {"status": "estimated", "description": "Ad spend estimates"},
         }
     }
+
+
+# =====================
+# ROUTES - Background Jobs
+# =====================
+
+@jobs_router.get("/status")
+async def get_jobs_status():
+    """
+    Get overall status of the background job system.
+    Shows worker status, scheduler status, and queue statistics.
+    """
+    try:
+        from services.jobs.queue import JobQueue
+        from services.jobs.worker import WorkerManager
+        from services.jobs.scheduler import SchedulerManager
+        from services.jobs.tasks import TaskRegistry
+        
+        queue = JobQueue(db)
+        queue_stats = await queue.get_queue_stats()
+        
+        worker_manager = WorkerManager.get_instance()
+        scheduler_manager = SchedulerManager.get_instance()
+        
+        return {
+            "worker": worker_manager.get_status(),
+            "scheduler": scheduler_manager.get_status(),
+            "queue": queue_stats,
+            "available_tasks": TaskRegistry.get_all_tasks(),
+        }
+    except Exception as e:
+        logging.error(f"Jobs status error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jobs_router.get("/history")
+async def get_job_history(
+    job_type: Optional[str] = None,
+    limit: int = 50
+):
+    """
+    Get job execution history.
+    Shows completed, failed, and running jobs.
+    """
+    try:
+        from services.jobs.queue import JobQueue
+        
+        queue = JobQueue(db)
+        jobs = await queue.get_job_history(job_type=job_type, limit=limit)
+        
+        return {
+            "jobs": [j.to_dict() for j in jobs],
+            "count": len(jobs),
+        }
+    except Exception as e:
+        logging.error(f"Job history error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jobs_router.get("/running")
+async def get_running_jobs():
+    """Get currently running jobs"""
+    try:
+        from services.jobs.queue import JobQueue
+        
+        queue = JobQueue(db)
+        running = await queue.get_running_jobs()
+        pending = await queue.get_pending_jobs(limit=20)
+        
+        return {
+            "running": [j.to_dict() for j in running],
+            "pending": [j.to_dict() for j in pending],
+            "running_count": len(running),
+            "pending_count": len(pending),
+        }
+    except Exception as e:
+        logging.error(f"Running jobs error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jobs_router.get("/{job_id}")
+async def get_job_details(job_id: str):
+    """Get details of a specific job"""
+    try:
+        from services.jobs.queue import JobQueue
+        
+        queue = JobQueue(db)
+        job = await queue.get_job(job_id)
+        
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        return job.to_dict()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Job details error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jobs_router.post("/trigger/{task_name}")
+async def trigger_job(
+    task_name: str,
+    params: Optional[Dict[str, Any]] = None
+):
+    """
+    Manually trigger a background job.
+    
+    Available tasks:
+    - ingest_trending_products
+    - update_market_scores
+    - update_competitor_data
+    - update_ad_activity
+    - update_supplier_data
+    - generate_alerts
+    - full_pipeline
+    - cleanup_stale_jobs
+    """
+    try:
+        from services.jobs.queue import JobQueue, TriggerSource
+        from services.jobs.tasks import TaskRegistry
+        
+        # Validate task exists
+        available_tasks = TaskRegistry.get_all_tasks()
+        if task_name not in available_tasks:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown task: {task_name}. Available: {list(available_tasks.keys())}"
+            )
+        
+        queue = JobQueue(db)
+        job = await queue.enqueue(
+            job_type=task_name,
+            trigger_source=TriggerSource.MANUAL,
+            params=params or {},
+            allow_duplicate=False
+        )
+        
+        if job:
+            return {
+                "success": True,
+                "message": f"Job {task_name} enqueued",
+                "job_id": job.id,
+                "status": job.status.value,
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Job {task_name} already running or pending",
+                "job_id": None,
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Trigger job error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jobs_router.post("/{job_id}/cancel")
+async def cancel_job(job_id: str):
+    """Cancel a pending job"""
+    try:
+        from services.jobs.queue import JobQueue
+        
+        queue = JobQueue(db)
+        cancelled = await queue.cancel(job_id)
+        
+        if cancelled:
+            return {"success": True, "message": "Job cancelled"}
+        else:
+            return {"success": False, "message": "Job not found or already running"}
+    except Exception as e:
+        logging.error(f"Cancel job error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jobs_router.get("/scheduled/list")
+async def get_scheduled_jobs():
+    """Get all scheduled jobs with their next run times"""
+    try:
+        from services.jobs.scheduler import SchedulerManager
+        
+        scheduler_manager = SchedulerManager.get_instance()
+        if scheduler_manager.scheduler:
+            return {
+                "scheduled_jobs": scheduler_manager.scheduler.get_scheduled_jobs(),
+                "scheduler_running": scheduler_manager.get_status()['running'],
+            }
+        else:
+            return {
+                "scheduled_jobs": [],
+                "scheduler_running": False,
+            }
+    except Exception as e:
+        logging.error(f"Scheduled jobs error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jobs_router.post("/scheduled/{task_name}/pause")
+async def pause_scheduled_job(task_name: str):
+    """Pause a scheduled job"""
+    try:
+        from services.jobs.scheduler import SchedulerManager
+        
+        scheduler_manager = SchedulerManager.get_instance()
+        if scheduler_manager.scheduler:
+            paused = scheduler_manager.scheduler.pause_job(task_name)
+            if paused:
+                return {"success": True, "message": f"Scheduled job {task_name} paused"}
+        
+        return {"success": False, "message": f"Scheduled job {task_name} not found"}
+    except Exception as e:
+        logging.error(f"Pause job error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@jobs_router.post("/scheduled/{task_name}/resume")
+async def resume_scheduled_job(task_name: str):
+    """Resume a paused scheduled job"""
+    try:
+        from services.jobs.scheduler import SchedulerManager
+        
+        scheduler_manager = SchedulerManager.get_instance()
+        if scheduler_manager.scheduler:
+            resumed = scheduler_manager.scheduler.resume_job(task_name)
+            if resumed:
+                return {"success": True, "message": f"Scheduled job {task_name} resumed"}
+        
+        return {"success": False, "message": f"Scheduled job {task_name} not found"}
+    except Exception as e:
+        logging.error(f"Resume job error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # =====================
 # ROUTES - Stripe
@@ -2842,6 +3075,7 @@ app.include_router(stripe_router)
 app.include_router(automation_router)
 app.include_router(ingestion_router)
 app.include_router(stores_router)
+app.include_router(jobs_router)
 app.include_router(shopify_integration_router)
 
 app.add_middleware(
@@ -2861,7 +3095,7 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def startup_db():
-    """Initialize database collections and indexes"""
+    """Initialize database collections, indexes, and background services"""
     # Create indexes
     await db.products.create_index("id", unique=True)
     await db.products.create_index("category")
@@ -2870,6 +3104,8 @@ async def startup_db():
     await db.products.create_index("source")
     await db.products.create_index("fingerprint")
     await db.products.create_index("source_id")
+    await db.products.create_index("market_score")
+    await db.products.create_index("market_label")
     
     await db.trend_alerts.create_index("id", unique=True)
     await db.trend_alerts.create_index("product_id")
@@ -2890,8 +3126,48 @@ async def startup_db():
     await db.store_products.create_index("store_id")
     await db.store_products.create_index("original_product_id")
     
+    # Alert indexes
+    await db.alerts.create_index("id", unique=True)
+    await db.alerts.create_index("product_id")
+    await db.alerts.create_index([("created_at", -1)])
+    
     logger.info("Database indexes created")
+    
+    # Start background worker and scheduler
+    try:
+        from services.jobs.worker import WorkerManager
+        from services.jobs.scheduler import SchedulerManager
+        
+        # Initialize and start the worker
+        worker_manager = WorkerManager.get_instance()
+        worker_manager.initialize(db)
+        await worker_manager.start()
+        
+        # Initialize and start the scheduler
+        scheduler_manager = SchedulerManager.get_instance()
+        scheduler_manager.initialize(db)
+        await scheduler_manager.start()
+        
+        logger.info("Background worker and scheduler started")
+    except Exception as e:
+        logger.error(f"Failed to start background services: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    """Cleanup on shutdown"""
+    # Stop background services
+    try:
+        from services.jobs.worker import WorkerManager
+        from services.jobs.scheduler import SchedulerManager
+        
+        scheduler_manager = SchedulerManager.get_instance()
+        await scheduler_manager.stop()
+        
+        worker_manager = WorkerManager.get_instance()
+        await worker_manager.stop()
+        
+        logger.info("Background services stopped")
+    except Exception as e:
+        logger.error(f"Error stopping background services: {e}")
+    
     client.close()

@@ -48,8 +48,47 @@ The system now uses a **modular hybrid architecture** supporting both simulated 
 │   └── ad_signals.py        # Ad activity estimation
 ├── scoring/
 │   └── __init__.py          # 5-component scoring engine
+├── jobs/
+│   ├── queue.py             # MongoDB-backed job queue
+│   ├── worker.py            # Background async worker
+│   ├── scheduler.py         # APScheduler cron scheduling
+│   └── tasks.py             # Task definitions
 └── pipeline.py              # Orchestrator for all sources
 ```
+
+### Background Job System (Dec 2025)
+
+Heavy processing now runs in background jobs instead of blocking API requests.
+
+#### Scheduled Jobs
+| Job | Schedule | Description |
+|-----|----------|-------------|
+| `ingest_trending_products` | Every 4 hours | Fetch TikTok, Amazon trends |
+| `update_market_scores` | Every 2 hours | Recalculate all product scores |
+| `update_competitor_data` | Every 6 hours | Refresh competitor intelligence |
+| `update_ad_activity` | Every 4 hours | Update ad activity signals |
+| `update_supplier_data` | Every 6 hours | Merge supplier pricing |
+| `generate_alerts` | Every hour | Create opportunity alerts |
+| `cleanup_stale_jobs` | Every 15 min | Clean up stuck jobs |
+
+#### Job Features
+- **Automatic scheduling** via APScheduler (cron-style)
+- **Manual trigger** via API for testing/debugging
+- **Duplicate prevention**: Same job type cannot run concurrently
+- **Comprehensive logging**: start/end time, status, records processed, errors
+- **Trigger source tracking**: "scheduled" or "manual"
+- **Stale job cleanup**: Auto-fail jobs running >30 minutes
+
+#### Job API Endpoints
+- `GET /api/jobs/status` - Worker, scheduler, queue status
+- `GET /api/jobs/history` - Job execution history
+- `GET /api/jobs/running` - Currently running/pending jobs
+- `GET /api/jobs/{job_id}` - Specific job details
+- `POST /api/jobs/trigger/{task_name}` - Manual trigger
+- `POST /api/jobs/{job_id}/cancel` - Cancel pending job
+- `GET /api/jobs/scheduled/list` - Scheduled jobs with next run times
+- `POST /api/jobs/scheduled/{task_name}/pause` - Pause scheduled job
+- `POST /api/jobs/scheduled/{task_name}/resume` - Resume paused job
 
 #### Data Sources
 | Source | Status | Data Provided |
