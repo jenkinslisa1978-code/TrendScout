@@ -247,7 +247,20 @@ class SubscriptionService:
             return {
                 "plan": "free",
                 "status": "active",
-                "features": PLANS[SubscriptionPlan.FREE]["features"]
+                "features": PLANS[SubscriptionPlan.FREE]["features"],
+                "is_admin": False
+            }
+        
+        # Check if user is admin - admins get Elite access without Stripe
+        is_admin = profile.get("is_admin", False)
+        
+        if is_admin:
+            return {
+                "plan": "elite",
+                "status": "active",
+                "is_admin": True,
+                "admin_bypass": True,
+                "features": PLANS[SubscriptionPlan.ELITE]["features"]
             }
         
         plan = profile.get("plan", "free").lower()
@@ -266,7 +279,8 @@ class SubscriptionService:
             "stripe_customer_id": profile.get("stripe_customer_id"),
             "stripe_subscription_id": profile.get("stripe_subscription_id"),
             "current_period_end": profile.get("subscription_period_end"),
-            "features": features
+            "features": features,
+            "is_admin": False
         }
     
     async def create_checkout_session(
@@ -278,6 +292,14 @@ class SubscriptionService:
         cancel_url: str
     ) -> Dict[str, Any]:
         """Create Stripe checkout session for subscription"""
+        
+        # Check if user is admin - admins don't need checkout
+        profile = await self.db.profiles.find_one({"id": user_id}, {"_id": 0})
+        if profile and profile.get("is_admin"):
+            return {
+                "success": False, 
+                "error": "Admin accounts have full access and don't require subscription"
+            }
         
         if not self.is_stripe_configured:
             # Demo mode - return mock session

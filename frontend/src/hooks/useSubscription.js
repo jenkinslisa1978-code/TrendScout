@@ -77,7 +77,9 @@ export function SubscriptionProvider({ children }) {
         setSubscription({
           plan: response.data.plan || 'free',
           status: 'active',
-          features: response.data.features || DEFAULT_FEATURES
+          features: response.data.features || DEFAULT_FEATURES,
+          isAdmin: response.data.is_admin || false,
+          adminBypass: response.data.admin_bypass || false
         });
       }
     } catch (error) {
@@ -104,10 +106,15 @@ export function SubscriptionProvider({ children }) {
     loading,
     refresh: refreshSubscription,
     
+    // Admin status
+    isAdmin: subscription.isAdmin || false,
+    adminBypass: subscription.adminBypass || false,
+    
     // Convenience methods
     isPro: subscription.plan === 'pro' || subscription.plan === 'elite',
     isElite: subscription.plan === 'elite',
     isFree: subscription.plan === 'free',
+    isStarter: subscription.plan === 'starter',
     
     // Feature checks
     canAccessFullReports: subscription.features.full_reports,

@@ -4193,6 +4193,63 @@ async def reset_onboarding(
     return {"status": "success", "onboarding_completed": False}
 
 
+@user_router.get("/admin-status")
+async def get_admin_status(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Check if current user is an admin"""
+    profile = await db.profiles.find_one(
+        {"id": current_user.user_id},
+        {"_id": 0, "is_admin": 1, "email": 1}
+    )
+    
+    is_admin = profile.get("is_admin", False) if profile else False
+    
+    return {
+        "is_admin": is_admin,
+        "user_id": current_user.user_id
+    }
+
+
+@user_router.post("/set-admin")
+async def set_admin_status(
+    email: str,
+    is_admin: bool = True,
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """
+    Set admin status for a user by email.
+    Requires API key for security.
+    """
+    # Verify API key
+    valid_key = os.environ.get('ADMIN_API_KEY', 'vs_admin_key_2024')
+    if api_key != valid_key:
+        raise HTTPException(status_code=403, detail="Invalid API key")
+    
+    # Find user by email
+    profile = await db.profiles.find_one({"email": email}, {"_id": 0})
+    
+    if not profile:
+        raise HTTPException(status_code=404, detail=f"User with email {email} not found")
+    
+    # Update admin status
+    await db.profiles.update_one(
+        {"email": email},
+        {"$set": {
+            "is_admin": is_admin,
+            "admin_set_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "status": "success",
+        "email": email,
+        "is_admin": is_admin
+    }
+
+
+
+
 
 
 @stripe_router.post("/create-checkout-session")
@@ -4335,13 +4392,22 @@ async def get_feature_access(
     
     # Get user's plan
     profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0})
-    plan = profile.get("plan", "free") if profile else "free"
+    
+    # Check if admin - admins get Elite features
+    is_admin = profile.get("is_admin", False) if profile else False
+    
+    if is_admin:
+        plan = "elite"
+    else:
+        plan = profile.get("plan", "free") if profile else "free"
     
     # Get store count
     store_count = await db.stores.count_documents({"user_id": current_user.user_id})
     
     return {
         "plan": plan,
+        "is_admin": is_admin,
+        "admin_bypass": is_admin,
         "features": {
             "full_reports": FeatureGate.can_access_full_reports(plan),
             "full_insights": FeatureGate.can_access_full_insights(plan),
