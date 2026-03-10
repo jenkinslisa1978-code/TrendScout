@@ -8,7 +8,7 @@ import os
 import json
 from datetime import datetime
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://trend-shop-builder.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://scout-security-test.preview.emergentagent.com').rstrip('/')
 
 # Test user constants
 TEST_USER_ID = "test-user-store-api"

@@ -1,89 +1,82 @@
 <analysis>**original_problem_statement:**
-The user's goal is to build a full-stack SaaS application, ViralScout, for product research and trend analysis. The project's scope has recently expanded significantly to include a multi-user store-launch platform. Users should be able to discover trending products, use an AI-powered builder to create a store concept around a product, manage their stores, and prepare them for launch on Shopify. The most recent request is to complete the final three steps for a live launch (live auth, product images, Shopify direct publish readiness) and provide a final report on the app's readiness for real users.
+The user wants to build ViralScout, a full-stack SaaS application for product research and launching e-commerce stores. Initial work focused on product research, data ingestion, and trend analysis. The scope has since expanded to include a multi-user store-launch platform.
+
+Recent user requests have focused on making the application production-ready for UK users. This involved migrating all currency to GBP, implementing live Supabase authentication, and performing readiness checks. Subsequently, the user requested several major feature additions: an Early Trend Detection system, a Product Success Tracking system, a UX overhaul of the dashboard and landing page to be more outcome-focused, and the implementation of Viral Sharing features. The most recent request, which is currently in progress, is to perform a comprehensive security and architecture audit before a public launch.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a React frontend and a FastAPI/MongoDB backend. The app has two main functional domains:
-1.  **Product Research**: A robust system for data ingestion (currently using mock data), automated trend scoring, opportunity rating, and alert generation. The dashboard and admin panels for this are fully functional.
-2.  **Store-Launch Platform**: A newly built, end-to-end feature allowing authenticated users to create and manage e-commerce stores. This includes:
-    *   A product-to-store workflow.
-    *   A rules-based AI generator for store names, branding, product descriptions, and other content.
-    *   A multi-step store builder wizard.
-    *   A store management dashboard where users can view and manage their own stores.
-    *   Plan-based store creation limits (e.g., 'starter' plan gets 1 store).
-    *   A visual launch-progress tracker (, , , ).
-    *   A public store preview page that displays the generated storefront with real product images.
-    *   A Shopify-compatible data export and a scaffolded, OAuth-ready architecture for direct publishing.
-
-The critical frontend/backend data disconnection has been fixed; the UI now fetches all data directly from the backend APIs, and the legacy Demo Mode that relied on  is being phased out, pending live credentials.
+A full-stack application with a React frontend and a FastAPI/MongoDB backend. The application features:
+-   **Live User Authentication:** Integrated with Supabase for user signup and login. Demo mode is disabled.
+-   **Product Research & Analytics:** A Discover page with sortable and filterable product data.
+-   **Advanced Scoring Metrics:**
+    -   : Identifies accelerating products with labels like 🔥 Exploding and 📈 Rising.
+    -   : Tracks product success based on stores built and exports.
+-   **Outcome-Focused Dashboard:** A simplified dashboard highlighting Winning Products Today, Early Trend Opportunities, and the user's own stores.
+-   **Store Builder:** A multi-step wizard allowing users to create an e-commerce store from a selected product.
+-   **Store Management:** Users can manage and preview their created stores.
+-   **Shopify Integration:** The app can export store data in a Shopify-compatible format, with scaffolded code for direct publishing.
+-   **Backend Services:** Data models and services for products, stores, users, and automation, now including the new trend and success metrics. All currency and pricing logic has been updated to use GBP (£).
 
 **Last working item**:
-The agent was in the process of implementing and verifying the final three steps required to make ViralScout a live, multi-user platform. This involved adding product images, preparing for live Supabase authentication, and building out the Shopify direct publish readiness. The agent had just finished the implementation and was about to run a final comprehensive check and create a report for the user.
+The agent was starting a security and architecture audit requested by the user to ensure the application is secure for a public launch.
 
-- **Last item agent was working:** Finalizing the implementation of product images, live auth readiness, and Shopify direct-publish architecture, and preparing to run a final verification of the entire platform.
-- **Status:** IN PROGRESS
-- **Agent Testing Done:** Y
-- **Which testing method agent to use?** A combination of manual testing ( for APIs,  for UI flows) and invoking the  for a full regression test to ensure stability before handing off to the user.
+- **Last item agent was working:** Performing a security and architecture audit of the ViralScout application. The agent had just planned which files to review.
+- **Status:** NOT STARTED
+- **Agent Testing Done:** N
+- **Which testing method agent to use?** Manual code review of key files (), API endpoint testing () to verify authentication and ownership checks, and frontend verification ().
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: Complete Final Verification and Report (Priority: P0)**
-  - **Description:** The user has requested a final check of the entire application and a report detailing: A) what is fully working, B) what requires credentials, C) what requires deployment setup, and D) whether the app is ready for real users. This was the active task when the last session ended.
-  - **Attempted fixes:** N/A. The agent was implementing the prerequisites for this verification.
+- **Issue 1: Supabase Rate Limiting on Signup (Priority: P1)**
+  - **Description:** The user signup flow is blocked by a  error from Supabase, likely due to the free tier's strict rate limits being hit during testing. This prevents new users from creating accounts. The frontend code has been fixed to handle this error gracefully without crashing, but the underlying block remains.
+  - **Attempted fixes:** The agent implemented a custom  wrapper in  and improved error handling in . This fix prevents the body stream already read browser error and now correctly displays a user-friendly toast: Too many requests. Please wait a moment and try again.
   - **Next debug checklist:**
-    1.  Verify the live authentication flow (signup, login, logout) works seamlessly once Supabase credentials are provided.
-    2.  Confirm user data isolation: log in as one user, create a store, log out, log in as another user, and confirm the first user's store is not visible.
-    3.  Test the full end-to-end Build Shop flow: select a product, generate a store, preview it (verifying the product image appears), move it through the status workflow ( ->  -> ).
-    4.  Verify the Shopify export function generates the correct JSON structure.
-    5.  Review the scaffolded Shopify direct-publish code () to confirm it's ready for credentials.
-    6.  Confirm the scheduled automation endpoint () is secure and functional.
-    7.  Compile the final report for the user based on these findings.
-  - **Why fix this issue and what will be achieved with the fix?** This will confirm the platform's stability and readiness for a live beta launch, providing the user with clear next steps for deployment.
-  - **Status:** IN PROGRESS
-  - **Is recurring issue?** N
-  - **Should Test frontend/backend/both after fix?** Both.
-  - **Blocked on other issue:** None.
+    1.  The agent should first wait for the rate limit to reset (this can take some time) and attempt a single signup to confirm the flow works when not rate-limited.
+    2.  If it continues to fail, inform the user that the Supabase project's rate limits are being hit and they may need to upgrade their Supabase plan for a public launch.
+  - **Status:** BLOCKED
+  - **Is recurring issue?** Y
+  - **Should Test frontend/backend/both after fix?** Frontend (signup flow).
+  - **Blocked on other issue:** Blocked by external Supabase service limits.
 
 **In progress Task List**:
-- **Task 1: Final Live-Readiness Verification**
-  - **Where to resume:** Begin the systematic check outlined in Issue 1 above. The code implementation is complete; the task is now to test and report.
-  - **What will be achieved with this?** A fully verified platform and a final status report for the user, confirming readiness for live deployment.
+- **Task 1: Complete Security and Architecture Audit (Priority: P0)**
+  - **Where to resume:** The agent has identified the key files. The next step is to execute the audit by reviewing the code and testing the endpoints.
+    1.  **Review  and **: Ensure all API endpoints that modify data (stores, products) correctly use  and enforce  checks in database queries to prevent users from accessing or modifying each other's data.
+    2.  **Review **: Verify that the scheduled task endpoint is protected by the  header check.
+    3.  **Review **: Confirm that  is robustly disabled now that live Supabase keys are configured.
+    4.  **Test Endpoints**: Use  to attempt to access/modify a store belonging to another user to confirm the API blocks it.
+  - **What will be achieved with this?** A verified secure application and a final security report for the user, confirming its readiness for public launch.
   - **Status:** IN PROGRESS
   - **Should Test frontend/backend/both after fix?** Both.
-  - **Blocked on something:** No.
+  - **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-  - **P0: User-side Deployment:** The user needs to provide credentials and set up the cron job. The next agent should provide the final, consolidated list of required environment variables and setup steps.
-    -   , 
-    -   , 
-    -   Cron job configuration for the daily automation endpoint.
-  - **P1: Connect to Live Data Sources:** Replace the placeholder logic in  and  with actual web scraping or API calls.
-  - **P2: Integrate a Real AI Service:** Replace the rules-based store content generator in  with calls to an actual LLM service (e.g., OpenAI, Gemini). The architecture is already designed for this swap.
+  - **P1: Implement Viral Sharing Features:** This was requested by the user but paused for the security audit.
+    -   **Features**: Add a Share Winning Product button, generate shareable social media cards, create public product insight pages for SEO, build a weekly Winning Products report page, and implement a referral system to unlock more store builds.
 - **Future Tasks:**
-  - **P2: Implement Live Stripe Integration:** Connect the existing backend Stripe services and webhooks to a live Stripe account to manage paid subscription plans.
+  - **P2: Connect to Live Data Sources:** Replace the placeholder logic in  and  with actual web scraping or API calls.
+  - **P2: Integrate a Real AI Service:** Replace the rules-based store content generator in  with calls to an actual LLM service.
+  - **P3: Implement Live Stripe Integration:** Connect the existing backend Stripe services and webhooks to a live Stripe account to manage paid subscription plans.
 
 **Completed work in this session**
-- **Full Factual Audit:** Conducted a comprehensive 14-point audit to establish a baseline of the application's status.
-- **Frontend/Backend Integration:** Fixed the critical data disconnect by refactoring all frontend services (, , ) to fetch data from the FastAPI backend instead of .
-- **Store-Launch Platform (End-to-End):**
-    - Implemented a complete multi-user store creation and management system.
-    - Created backend models, services, and APIs for stores, products, and plan-based limits.
-    - Built frontend pages (, , ) and a  wizard.
-    - Implemented a visual 4-step launch progress indicator (, , , ).
-- **Product Images:** Updated the data model, importers, and store preview page to include and display real product images.
-- **Live Auth Readiness:** Prepared the  to automatically switch from demo mode to live Supabase authentication once credentials are provided.
-- **Shopify Direct Publish Readiness:** Created a  with OAuth-ready and publish-ready functions, preparing the app for direct Shopify integration.
-- **Testing:** Successfully used the testing agent and performed extensive manual E2E tests to verify all new functionality.
+- **Security Audit Started:** Planned the files and steps for a full security review.
+- **Body Stream Already Read Bug Fix:** Diagnosed and fixed a critical frontend crash during signup caused by Supabase rate-limit errors. The app now handles the error gracefully.
+- **Live Supabase Authentication:** Configured the application with real Supabase credentials, disabled demo mode, and verified protected routes.
+- **Outcome-Focused UX Overhaul:** Redesigned the  and  to prioritize user actions and outcomes, such as building stores.
+- **Product Success Tracking System:** Implemented a  score, tracked store creation/exports, and added a Proven Winning Products section to the dashboard.
+- **Early Trend Detection System:** Implemented an  metric, and added an Early Trend Opportunities section, new data columns, and filters to the UI.
+- **GBP Currency Migration:** Converted all pricing and currency references from USD to GBP (£) across the entire application stack.
+- **Deployment Checklist Provided:** Generated a comprehensive checklist for the user to deploy the application to production, covering Supabase, MongoDB, and cron jobs.
 
 **Earlier issues found/mentioned but not fixed**
-- All major issues identified in the initial audit (e.g., frontend-backend data disconnect) have been resolved. The remaining issues are planned transitions from mock data/scaffolding to live integrations.
+- No code-related issues remain unfixed, but the **Supabase rate-limiting** is an external infrastructure issue that continues to block the signup functionality.
 
 **Known issue recurrence from previous fork**
-- **Issue:** MongoDB  serialization error.
-- **Recurrence count:** 0 in this session.
-- **Status:** RESOLVED (but requires vigilance). The agent must remember to exclude  or convert  to a string for any new endpoints returning data from MongoDB.
+- **Issue:** Supabase Rate Limiting ().
+- **Recurrence count:** High (occurred repeatedly during testing).
+- **Status:** BLOCKED. The code now handles the error, but the root cause (service limits) persists.
 
 **Code Architecture**
 
@@ -92,78 +85,72 @@ The agent was in the process of implementing and verifying the final three steps
 - **Frontend Framework:** React
 - **Backend Framework:** FastAPI (Python)
 - **Database:** MongoDB
-- **Authentication:** Supabase (ready for live credentials)
+- **Authentication:** Supabase (Live)
 - **Styling:** TailwindCSS
-- **Key Architecture:** Dual-domain SaaS platform (Product Research + Store Launching) with a Shopify-ready integration path.
 
 **key DB schema**
-- ****: Stores core product data, now includes .
-- ****: Records history of automation and data ingestion runs.
-- ****: Stores user-created shops. (Fields: , ,  (, , etc.), , ).
-- ****: Links products from the main  collection to a user's store.
+- ****: , , , , , , , **** (default: GBP), ****, ****, ****, ****, ****, ****.
+- ****: , , , , .
 
 **changes in tech stack**
-- No changes to the core stack, but the application architecture was significantly expanded to support the new store-launch platform.
+- No changes to the core stack.
 
 **All files of reference**
-- : Core logic for the entire store-launch feature.
-- : Contains the new data models (, ) and API routes for stores.
-- : The main dashboard for users to manage their stores.
-- : The public-facing storefront preview.
-- : The multi-step wizard for creating a store from a product.
-- : Manages authentication and is ready to switch from demo mode to live Supabase.
-- : Contains the scaffolded code for direct Shopify integration.
+- : Primary file for the security audit of API endpoints.
+- : Contains the core authentication logic and error handling for Supabase.
+- : Location of the custom fetch wrapper that fixed the body stream already read bug.
+- : Contains all the new business logic for product scoring.
+- : The new, simplified, outcome-focused dashboard.
 
 **key api endpoints**
-- : GET (list user's stores), POST (create new store).
-- : GET, PUT, DELETE (manage a specific store).
-- : PUT (update store launch status).
-- : GET (export store data in Shopify-compatible format).
-- : POST (runs the full data sync, requires API key).
-- , , : Scaffolded endpoints for direct Shopify integration.
+- : Handles new user creation via Supabase. **(Currently rate-limited)**.
+- : Returns top products based on success metrics for the dashboard.
+- : Creates a new store and now increments the  on the source product.
+- : Exports store data and now increments the  on the source product.
+- : Protected endpoint to run daily data processing.
 
 **Critical Info for New Agent**
-- **Your primary task is to complete the final verification** requested by the user and deliver the summary report. The implementation phase is done.
-- The application is feature-complete for a beta launch. The only things preventing a live deployment are external credentials (Supabase, Shopify) and a deployment setup (cron job).
-- **Verify user data isolation rigorously.** This is critical for a multi-user platform.
-- The application defaults to Demo Mode until Supabase credentials are added to . This allows for full testing without needing any keys.
+- **Your first task is to complete the security audit.** Do not start any new features until this is done and a report is generated.
+- **New user signup is currently broken due to Supabase rate limiting.** The code handles the error gracefully, but you will not be able to create new test accounts until the external rate limit resets. Your audit should proceed assuming a user is already logged in. You can use the existing demo user flow if needed by temporarily removing Supabase keys from .
+- The user has requested several new features, with Viral Sharing being the next in line after the audit.
 
 **documents and test reports created in this job**
--  (updated with store-launch features)
-- Test reports in  (including a successful run for the store-launch feature)
+-  (Updated with all the new features and UX changes).
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks agent to verify and complete the full end-to-end store-launch flow. (Completed)
-2.  **User:** Adds a requirement for a  model and launch progress indicators. (Completed)
-3.  **User:** Provides choices for implementing the store-launch feature (use plan limits, rules-based AI, include a preview). (Completed)
-4.  **User:** Requests a major expansion: a multi-user store-launch platform. (Completed)
-5.  **User:** Acknowledges the readiness plan and asks the agent to proceed with preparing the app for launch. (Completed)
-6.  **User:** Asks for a launch-readiness sequencing plan. (Completed)
-7.  **User:** Asks to fix all issues that don't require external credentials. (Completed)
-8.  **User:** Asks to verify and complete final steps for a live launch (auth, images, Shopify). (In Progress)
-9.  **User:** Clarifies to keep the existing progress indicators and focus on the final live steps. (In Progress)
-10. **User:** Proceed with the plan. (The agent is currently acting on this.)
+1.  **User:** Requests a security and architecture audit. (In Progress)
+2.  **User:** Requests viral sharing features. (Pending)
+3.  **User:** Requests a UX overhaul of the dashboard and landing page. (Completed)
+4.  **User:** Requests a product success tracking system. (Completed)
+5.  **User:** Requests an early trend detection system. (Completed)
+6.  **User:** Reports a body stream already read error during signup. (Completed)
+7.  **User:** Provides a valid Supabase JWT key. (Completed)
+8.  **User:** Reports the signup bug again. (Completed)
+9.  **User:** Provides Supabase credentials to enable live auth. (Completed)
+10. **User:** Requests the agent to create the  file with placeholder Supabase keys. (Completed)
 
 **Project Health Check:**
-- **Broken:** None.
+- **Broken:**
+  - New user signup is blocked by external Supabase rate limiting.
 - **Mocked:**
-  - Data ingestion from TikTok, Amazon, and suppliers still uses curated mock data.
-  - The AI content generation is rules-based, not connected to a live LLM.
+  - Data ingestion from TikTok/Amazon still uses mock data ().
+  - AI content generation for stores is rules-based, not connected to a live LLM.
 
 **3rd Party Integrations**
-- **Supabase:** For user authentication. (Ready for live credentials).
+- **Supabase:** For user authentication. (Live, but rate-limited).
 - **MongoDB:** Primary database.
 - **FastAPI:** Backend framework.
-- **Shopify:** For store publishing. (Scaffolded, OAuth-ready, requires credentials for activation).
+- **Shopify:** For store publishing. (Scaffolded, requires credentials).
 
 **Testing status**
-- **Testing agent used after significant changes:** YES, successfully verified the store-launch feature.
+- **Testing agent used after significant changes:** NO (since the store-launch feature was initially verified). Recent work was tested manually.
 - **Troubleshoot agent used after agent stuck in loop:** NO
 - **Test files created:** None.
 - **Known regressions:** None.
 
 **Credentials to test flow:**
-No credentials are required. The application's Demo Mode is fully functional and uses a hardcoded demo user. Real user signup/login will be enabled once Supabase credentials are provided by the user.
+Live Supabase credentials are in . Due to rate limiting, you may need to temporarily remove them and restart the frontend (frontend: ERROR (not running)
+frontend: started) to fall back to the fully functional demo mode for testing UI features.
 
 **What agent forgot to execute**
-The agent has not forgotten anything but was in the middle of executing the user's latest and most critical request: to perform a final, comprehensive verification of the entire platform's live-readiness and to provide a concluding report. The next agent must complete this task.</analysis>
+The agent was instructed to perform a security audit. It correctly identified the necessary files for review but did not begin the actual process of inspecting the code or testing the endpoints. The next agent must start this task from the beginning of the execution phase.</analysis>
