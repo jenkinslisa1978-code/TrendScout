@@ -1346,7 +1346,6 @@ from services.store_service import (
     StoreGenerator, 
     create_store_document, 
     create_store_product_document,
-    export_store_for_shopify,
     can_create_store,
     get_store_limit,
     STORE_LIMITS
@@ -1658,6 +1657,8 @@ async def regenerate_product_copy(store_id: str, product_id: str, user_id: str):
 @stores_router.get("/{store_id}/export")
 async def export_store(store_id: str, user_id: str, format: str = "shopify"):
     """Export store data for Shopify or other platforms"""
+    from services.shopify_service import format_store_for_export
+    
     # Verify store ownership
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id}, {"_id": 0})
     
@@ -1668,7 +1669,7 @@ async def export_store(store_id: str, user_id: str, format: str = "shopify"):
     products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
     
     if format == "shopify":
-        export_data = export_store_for_shopify(store, products)
+        export_data = format_store_for_export(store, products)
     else:
         # Raw JSON export
         export_data = {
@@ -1743,12 +1744,193 @@ async def get_store_preview(store_id: str):
     }
 
 
+# =====================
+# ROUTES - Shopify Integration
+# =====================
+
+from services.shopify_service import (
+    is_shopify_configured,
+    get_oauth_url,
+    exchange_code_for_token,
+    ShopifyPublisher,
+    format_store_for_export,
+    get_connection_status,
+    test_connection
+)
+import secrets
+
+shopify_integration_router = APIRouter(prefix="/api/shopify")
+
+@shopify_integration_router.get("/status")
+async def shopify_status():
+    """Check if Shopify integration is configured"""
+    return {
+        "configured": is_shopify_configured(),
+        "features": {
+            "export": True,  # Always available
+            "direct_publish": is_shopify_configured(),
+            "oauth_connect": is_shopify_configured(),
+        },
+        "message": "Shopify API configured" if is_shopify_configured() else "Export-only mode (Shopify credentials not configured)"
+    }
+
+@shopify_integration_router.post("/connect/init")
+async def init_shopify_connection(shop_domain: str, user_id: str, redirect_uri: str):
+    """
+    Initialize Shopify OAuth connection
+    
+    Returns URL to redirect user to for authorization
+    """
+    if not is_shopify_configured():
+        raise HTTPException(
+            status_code=503, 
+            detail="Shopify integration not configured. Contact admin to set up SHOPIFY_API_KEY and SHOPIFY_API_SECRET."
+        )
+    
+    # Generate state for CSRF protection
+    state = secrets.token_urlsafe(32)
+    
+    # Store state temporarily (in production, use Redis or DB)
+    # For now, we'll encode user_id in state
+    state_data = f"{state}:{user_id}"
+    
+    oauth_url = get_oauth_url(shop_domain, redirect_uri, state_data)
+    
+    return {
+        "oauth_url": oauth_url,
+        "state": state,
+        "message": "Redirect user to oauth_url to authorize Shopify access"
+    }
+
+@shopify_integration_router.post("/connect/callback")
+async def shopify_oauth_callback(shop_domain: str, code: str, state: str):
+    """
+    Handle Shopify OAuth callback
+    
+    Exchange authorization code for access token
+    """
+    if not is_shopify_configured():
+        raise HTTPException(status_code=503, detail="Shopify integration not configured")
+    
+    try:
+        # Extract user_id from state
+        state_parts = state.split(':')
+        user_id = state_parts[1] if len(state_parts) > 1 else None
+        
+        # Exchange code for token
+        token_data = await exchange_code_for_token(shop_domain, code)
+        access_token = token_data.get('access_token')
+        
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Failed to obtain access token")
+        
+        # Store in user profile
+        shopify_data = {
+            "shop_domain": shop_domain,
+            "access_token": access_token,
+            "scope": token_data.get('scope'),
+            "connected_at": datetime.now(timezone.utc).isoformat(),
+        }
+        
+        if user_id:
+            await db.profiles.update_one(
+                {"id": user_id},
+                {"$set": {"shopify": shopify_data}}
+            )
+        
+        return {
+            "success": True,
+            "shop_domain": shop_domain,
+            "message": "Shopify connected successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@shopify_integration_router.get("/connection/{user_id}")
+async def get_user_shopify_status(user_id: str):
+    """Get Shopify connection status for a user"""
+    profile = await db.profiles.find_one({"id": user_id}, {"_id": 0})
+    
+    if not profile:
+        return get_connection_status({})
+    
+    return get_connection_status(profile)
+
+@shopify_integration_router.post("/publish/{store_id}")
+async def publish_to_shopify(store_id: str, user_id: str):
+    """
+    Publish store products directly to Shopify
+    
+    Requires user to have connected Shopify account
+    """
+    # Get user's Shopify credentials
+    profile = await db.profiles.find_one({"id": user_id}, {"_id": 0})
+    shopify_data = profile.get('shopify', {}) if profile else {}
+    
+    if not shopify_data.get('access_token'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Shopify not connected. Please connect your Shopify store first."
+        )
+    
+    # Verify store ownership
+    store = await db.stores.find_one({"id": store_id, "owner_id": user_id}, {"_id": 0})
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found or access denied")
+    
+    # Get store products
+    products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
+    
+    if not products:
+        raise HTTPException(status_code=400, detail="No products to publish")
+    
+    # Initialize publisher and publish
+    publisher = ShopifyPublisher(
+        shopify_data['shop_domain'],
+        shopify_data['access_token']
+    )
+    
+    try:
+        results = await publisher.publish_store_products(products)
+        
+        # Update store status
+        await db.stores.update_one(
+            {"id": store_id},
+            {"$set": {
+                "status": "published",
+                "published_at": datetime.now(timezone.utc),
+                "shopify_publish_results": results,
+            }}
+        )
+        
+        return {
+            "success": True,
+            "results": results,
+            "message": f"Published {len(results['success'])} products to Shopify"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Publish failed: {str(e)}")
+
+@shopify_integration_router.delete("/disconnect/{user_id}")
+async def disconnect_shopify(user_id: str):
+    """Disconnect Shopify from user account"""
+    await db.profiles.update_one(
+        {"id": user_id},
+        {"$unset": {"shopify": ""}}
+    )
+    
+    return {"success": True, "message": "Shopify disconnected"}
+
+
 # Include routers
 app.include_router(api_router)
 app.include_router(stripe_router)
 app.include_router(automation_router)
 app.include_router(ingestion_router)
 app.include_router(stores_router)
+app.include_router(shopify_integration_router)
 
 app.add_middleware(
     CORSMiddleware,

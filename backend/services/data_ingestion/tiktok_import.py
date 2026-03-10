@@ -25,6 +25,7 @@ TIKTOK_TREND_CATEGORIES = [
 
 # Curated trending products based on TikTok viral patterns (updated regularly)
 # This serves as fallback data and demo functionality
+# Images are from Unsplash (free stock photos for demonstration)
 TIKTOK_TRENDING_PRODUCTS = [
     {
         'product_name': 'LED Sunset Lamp',
@@ -36,6 +37,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 32.99,
         'cost': 8.50,
         'trend_hashtags': ['#sunsetlamp', '#roomdecor', '#aesthetic'],
+        'image_url': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Cloud Slides',
@@ -47,6 +49,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 24.99,
         'cost': 4.20,
         'trend_hashtags': ['#cloudslides', '#comfyshoes', '#tiktokmademebuyit'],
+        'image_url': 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Portable Neck Fan',
@@ -58,6 +61,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 29.99,
         'cost': 9.00,
         'trend_hashtags': ['#neckfan', '#summermustahve', '#staycool'],
+        'image_url': 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Ice Roller Face Massager',
@@ -69,6 +73,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 14.99,
         'cost': 2.80,
         'trend_hashtags': ['#iceroller', '#skincare', '#morningroutine'],
+        'image_url': 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Star Projector Galaxy Light',
@@ -80,6 +85,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 49.99,
         'cost': 15.00,
         'trend_hashtags': ['#galaxyprojector', '#roomtour', '#ledlights'],
+        'image_url': 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Scalp Massager Shampoo Brush',
@@ -91,6 +97,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 8.99,
         'cost': 1.20,
         'trend_hashtags': ['#scalpmassager', '#hairgrowth', '#selfcare'],
+        'image_url': 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Mini Portable Projector',
@@ -102,6 +109,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 129.99,
         'cost': 45.00,
         'trend_hashtags': ['#miniprojector', '#movienight', '#hometheater'],
+        'image_url': 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Magnetic Phone Mount',
@@ -113,6 +121,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 24.99,
         'cost': 5.50,
         'trend_hashtags': ['#phonemount', '#cardecor', '#magsafe'],
+        'image_url': 'https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Acrylic Desk Organizer',
@@ -124,6 +133,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 34.99,
         'cost': 8.00,
         'trend_hashtags': ['#desksetup', '#organization', '#aesthetic'],
+        'image_url': 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Wireless Earbuds Pro',
@@ -135,6 +145,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 49.99,
         'cost': 14.00,
         'trend_hashtags': ['#wirelessearbuds', '#techreview', '#musthave'],
+        'image_url': 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Posture Corrector Belt',
@@ -146,6 +157,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 24.99,
         'cost': 6.00,
         'trend_hashtags': ['#posturecorrector', '#backpain', '#wellness'],
+        'image_url': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Pet Hair Remover Roller',
@@ -157,6 +169,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 16.99,
         'cost': 3.50,
         'trend_hashtags': ['#pethairremover', '#petowners', '#cleaninghacks'],
+        'image_url': 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Portable Blender Cup',
@@ -168,6 +181,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 34.99,
         'cost': 11.00,
         'trend_hashtags': ['#portableblender', '#smoothie', '#healthylifestyle'],
+        'image_url': 'https://images.unsplash.com/photo-1570197571499-166b36435e9f?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'LED Strip Lights 50ft',
@@ -179,6 +193,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 19.99,
         'cost': 5.00,
         'trend_hashtags': ['#ledlights', '#roomtransformation', '#aesthetic'],
+        'image_url': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Electric Lunch Box',
@@ -190,6 +205,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 39.99,
         'cost': 12.00,
         'trend_hashtags': ['#lunchbox', '#mealprep', '#officelife'],
+        'image_url': 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&h=600&fit=crop',
     },
 ]
 
@@ -330,6 +346,7 @@ class TikTokImporter(BaseDataImporter):
                 'cost': item['cost'],
                 'source_id': f"tt-{item['product_name'].lower().replace(' ', '-')}",
                 'trend_hashtags': item.get('trend_hashtags', []),
+                'image_url': item.get('image_url'),
             }
             products.append(product)
             

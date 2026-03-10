@@ -33,6 +33,7 @@ AMAZON_CATEGORIES = {
 }
 
 # Curated Amazon trending products (based on Movers & Shakers patterns)
+# Images are from Unsplash (free stock photos for demonstration)
 AMAZON_TRENDING_PRODUCTS = [
     {
         'product_name': 'Wireless Charging Pad 3-in-1',
@@ -45,6 +46,7 @@ AMAZON_TRENDING_PRODUCTS = [
         'rating': 4.5,
         'reviews': 2847,
         'asin': 'B0DEMO001',
+        'image_url': 'https://images.unsplash.com/photo-1586816879360-004f5b0c51e3?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Smart Water Bottle with Temperature Display',
@@ -57,6 +59,7 @@ AMAZON_TRENDING_PRODUCTS = [
         'rating': 4.3,
         'reviews': 1523,
         'asin': 'B0DEMO002',
+        'image_url': 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Cordless Handheld Vacuum',
@@ -69,6 +72,7 @@ AMAZON_TRENDING_PRODUCTS = [
         'rating': 4.6,
         'reviews': 5678,
         'asin': 'B0DEMO003',
+        'image_url': 'https://images.unsplash.com/photo-1558317374-067fb5f30001?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Ring Light with Phone Holder',
@@ -81,6 +85,7 @@ AMAZON_TRENDING_PRODUCTS = [
         'rating': 4.4,
         'reviews': 8934,
         'asin': 'B0DEMO004',
+        'image_url': 'https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Electric Milk Frother',
@@ -93,6 +98,7 @@ AMAZON_TRENDING_PRODUCTS = [
         'rating': 4.7,
         'reviews': 12456,
         'asin': 'B0DEMO005',
+        'image_url': 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Laptop Stand Adjustable',
@@ -105,6 +111,7 @@ AMAZON_TRENDING_PRODUCTS = [
         'rating': 4.5,
         'reviews': 3421,
         'asin': 'B0DEMO006',
+        'image_url': 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Resistance Bands Set',
@@ -117,6 +124,7 @@ AMAZON_TRENDING_PRODUCTS = [
         'rating': 4.6,
         'reviews': 7823,
         'asin': 'B0DEMO007',
+        'image_url': 'https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Silicone Kitchen Utensil Set',
