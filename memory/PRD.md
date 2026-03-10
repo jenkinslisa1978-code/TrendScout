@@ -458,6 +458,18 @@ success_probability = (
 ## Changelog
 
 ### March 2026
+- **PDF Export for Reports (COMPLETE - March 10, 2026)**
+  - Added ReportLab-based PDF generation service (`/app/backend/services/pdf_generator.py`)
+  - Created professional PDF templates with ViralScout branding
+  - Features: Executive summary, color-coded launch scores, product tables, market insights
+  - Three API endpoints:
+    - `GET /api/reports/weekly-winning-products/pdf` (4275 bytes)
+    - `GET /api/reports/monthly-market-trends/pdf` (2527 bytes)
+    - `GET /api/reports/public/weekly-winning-products/pdf` (3067 bytes, no auth)
+  - Added "Download PDF" buttons to Reports page and Public Weekly Report page
+  - Added `downloadReportPDF()` function to reportsService.js
+  - All tests passed (100% - 10/10 backend tests)
+
 - **Launch Score Explainer Modal (COMPLETE - March 10, 2026)**
   - Added `/api/products/{id}/launch-score-breakdown` API endpoint
   - Returns detailed breakdown with 5 components (trend momentum, profit margins, market accessibility, advertiser validation, supplier reliability)
