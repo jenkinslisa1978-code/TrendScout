@@ -18,7 +18,37 @@ export const isSupabaseConfigured = () => {
   return hasValidUrl && hasValidKey;
 };
 
+// Custom fetch wrapper that handles body stream issues
+const customFetch = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, options);
+    
+    // Handle rate limiting gracefully
+    if (response.status === 429) {
+      const errorBody = { error: 'rate_limit_exceeded', message: 'Too many requests. Please wait a moment and try again.' };
+      return new Response(JSON.stringify(errorBody), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    return response;
+  } catch (err) {
+    console.error('Fetch error:', err);
+    throw err;
+  }
+};
+
 // Only create client if properly configured
 export const supabase = isSupabaseConfigured() 
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      },
+      global: {
+        fetch: customFetch
+      }
+    })
   : null;

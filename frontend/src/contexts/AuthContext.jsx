@@ -119,15 +119,28 @@ export const AuthProvider = ({ children }) => {
       return { data: { user: DEMO_USER }, error: null };
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName }
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName }
+        }
+      });
+      
+      return { data, error };
+    } catch (err) {
+      console.error('Signup error:', err);
+      // Handle common error cases with user-friendly messages
+      const errorMessage = err.message || '';
+      if (errorMessage.includes('body stream already read') || errorMessage.includes('fetch')) {
+        return { data: null, error: { message: 'Unable to connect to authentication service. Please try again.' } };
       }
-    });
-    
-    return { data, error };
+      if (errorMessage.includes('rate') || errorMessage.includes('429') || errorMessage.includes('Too many')) {
+        return { data: null, error: { message: 'Too many attempts. Please wait a moment and try again.' } };
+      }
+      return { data: null, error: { message: err.message || 'Signup failed. Please try again.' } };
+    }
   };
 
   const signIn = async (email, password) => {
@@ -138,12 +151,25 @@ export const AuthProvider = ({ children }) => {
       return { data: { user: DEMO_USER }, error: null };
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      return { data, error };
+    } catch (err) {
+      console.error('SignIn error:', err);
+      // Handle common error cases with user-friendly messages
+      const errorMessage = err.message || '';
+      if (errorMessage.includes('body stream already read') || errorMessage.includes('fetch')) {
+        return { data: null, error: { message: 'Unable to connect to authentication service. Please try again.' } };
+      }
+      if (errorMessage.includes('rate') || errorMessage.includes('429') || errorMessage.includes('Too many')) {
+        return { data: null, error: { message: 'Too many attempts. Please wait a moment and try again.' } };
+      }
+      return { data: null, error: { message: err.message || 'Login failed. Please try again.' } };
+    }
   };
 
   const signOut = async () => {
