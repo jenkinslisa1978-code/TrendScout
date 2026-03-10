@@ -12,16 +12,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [showResend, setShowResend] = useState(false);
   const { signIn, isDemoMode } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setShowResend(false);
 
     const { error } = await signIn(email, password);
 
     if (error) {
+      const msg = error.message || '';
+      // Show resend option if email not confirmed
+      if (msg.toLowerCase().includes('not confirmed') || msg.toLowerCase().includes('not verified')) {
+        setShowResend(true);
+      }
       toast.error(error.message || 'Failed to sign in');
       setLoading(false);
       return;
@@ -29,6 +37,31 @@ export default function LoginPage() {
 
     toast.success('Welcome back!');
     navigate('/dashboard');
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+    setResending(true);
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      if (supabase) {
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: email,
+        });
+        if (error) {
+          toast.error(error.message || 'Failed to resend. Please wait a minute and try again.');
+        } else {
+          toast.success('Verification email sent! Check your inbox and spam folder.');
+        }
+      }
+    } catch (err) {
+      toast.error('Failed to resend. Please wait a minute and try again.');
+    }
+    setResending(false);
   };
 
   return (
@@ -117,6 +150,31 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          {showResend && (
+            <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3" data-testid="resend-verification-section">
+              <p className="text-sm text-amber-700 mb-2">
+                Your email hasn't been verified yet. Check your inbox and spam folder.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResendVerification}
+                disabled={resending}
+                data-testid="resend-verification-btn"
+                className="w-full"
+              >
+                {resending ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Resend verification email'
+                )}
+              </Button>
+            </div>
+          )}
 
           <p className="mt-6 text-center text-sm text-slate-600">
             Don't have an account?{' '}

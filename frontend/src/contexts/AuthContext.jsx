@@ -128,16 +128,26 @@ export const AuthProvider = ({ children }) => {
         }
       });
       
+      if (error) {
+        // Normalize error messages
+        const msg = error.message || '';
+        if (msg.includes('body stream') || msg.includes('already read') || msg.includes('JSON')) {
+          return { data: null, error: { message: 'Connection issue. Please try again in a moment.' } };
+        }
+        if (msg.includes('rate') || msg.includes('429') || msg.includes('Too many')) {
+          return { data: null, error: { message: 'Too many attempts. Please wait 60 seconds and try again.' } };
+        }
+      }
+      
       return { data, error };
     } catch (err) {
       console.error('Signup error:', err);
-      // Handle common error cases with user-friendly messages
       const errorMessage = err.message || '';
-      if (errorMessage.includes('body stream already read') || errorMessage.includes('fetch')) {
-        return { data: null, error: { message: 'Unable to connect to authentication service. Please try again.' } };
+      if (errorMessage.includes('body stream') || errorMessage.includes('already read') || errorMessage.includes('JSON') || errorMessage.includes('fetch')) {
+        return { data: null, error: { message: 'Connection issue. Please try again in a moment.' } };
       }
       if (errorMessage.includes('rate') || errorMessage.includes('429') || errorMessage.includes('Too many')) {
-        return { data: null, error: { message: 'Too many attempts. Please wait a moment and try again.' } };
+        return { data: null, error: { message: 'Too many attempts. Please wait 60 seconds and try again.' } };
       }
       return { data: null, error: { message: err.message || 'Signup failed. Please try again.' } };
     }
@@ -157,16 +167,28 @@ export const AuthProvider = ({ children }) => {
         password
       });
       
+      if (error) {
+        const msg = error.message || '';
+        if (msg.includes('body stream') || msg.includes('already read') || msg.includes('JSON')) {
+          return { data: null, error: { message: 'Connection issue. Please try again in a moment.' } };
+        }
+        if (msg.includes('Email not confirmed')) {
+          return { data: null, error: { message: 'Please confirm your email first. Check your inbox (and spam folder) for the verification link.' } };
+        }
+        if (msg.includes('Invalid login credentials')) {
+          return { data: null, error: { message: 'Invalid email or password. Please try again or sign up for a new account.' } };
+        }
+      }
+      
       return { data, error };
     } catch (err) {
       console.error('SignIn error:', err);
-      // Handle common error cases with user-friendly messages
       const errorMessage = err.message || '';
-      if (errorMessage.includes('body stream already read') || errorMessage.includes('fetch')) {
-        return { data: null, error: { message: 'Unable to connect to authentication service. Please try again.' } };
+      if (errorMessage.includes('body stream') || errorMessage.includes('already read') || errorMessage.includes('JSON') || errorMessage.includes('fetch')) {
+        return { data: null, error: { message: 'Connection issue. Please try again in a moment.' } };
       }
       if (errorMessage.includes('rate') || errorMessage.includes('429') || errorMessage.includes('Too many')) {
-        return { data: null, error: { message: 'Too many attempts. Please wait a moment and try again.' } };
+        return { data: null, error: { message: 'Too many attempts. Please wait 60 seconds and try again.' } };
       }
       return { data: null, error: { message: err.message || 'Login failed. Please try again.' } };
     }
