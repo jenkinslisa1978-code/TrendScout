@@ -57,6 +57,9 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 - Referral System with code generation, tracking, and bonus store slots (up to 5)
 - Referral dashboard page (/referrals)
 - Signup referral tracking (/signup?ref=CODE)
+- Product of the Week email digest with personalized referral viral loop
+- Product of the Week highlight section on landing page
+- All email templates rebranded from ViralScout to TrendScout
 
 ## Known Issues
 - **P0:** SSL certificate error on www.trendscout.click (BLOCKED - external)
