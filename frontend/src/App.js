@@ -29,6 +29,10 @@ import PublicMonthlyReportPage from "@/pages/PublicMonthlyReportPage";
 // Settings Pages
 import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
 
+// Subscription
+import PricingPage from "@/pages/PricingPage";
+import { SubscriptionProvider } from "@/hooks/useSubscription";
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, isDemoMode } = useAuth();
@@ -88,6 +92,7 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
 
       {/* Protected routes */}
       <Route
@@ -214,19 +219,21 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-        <Toaster 
-          position="top-right" 
-          richColors 
-          closeButton
-          toastOptions={{
-            style: {
-              fontFamily: 'Inter, sans-serif',
-            },
-          }}
-        />
-      </BrowserRouter>
+      <SubscriptionProvider>
+        <BrowserRouter>
+          <AppRoutes />
+          <Toaster 
+            position="top-right" 
+            richColors 
+            closeButton
+            toastOptions={{
+              style: {
+                fontFamily: 'Inter, sans-serif',
+              },
+            }}
+          />
+        </BrowserRouter>
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

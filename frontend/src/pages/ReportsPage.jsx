@@ -26,10 +26,13 @@ import {
 } from 'lucide-react';
 import { getReportsList, getReportHistory, downloadReportPDF } from '@/services/reportsService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import { ReportUpgradePrompt } from '@/components/common/UpgradePrompts';
 import { toast } from 'sonner';
 
 export default function ReportsPage() {
   const { profile } = useAuth();
+  const { canAccessFullReports, isFree } = useSubscription();
   const [reportsData, setReportsData] = useState({ reports: [], latest: {} });
   const [weeklyHistory, setWeeklyHistory] = useState([]);
   const [monthlyHistory, setMonthlyHistory] = useState([]);
@@ -116,6 +119,11 @@ export default function ReportsPage() {
             {userPlan} Plan
           </Badge>
         </div>
+
+        {/* Upgrade Prompt for Free Users */}
+        {isFree && (
+          <ReportUpgradePrompt />
+        )}
 
         {/* Latest Reports */}
         <div className="grid md:grid-cols-2 gap-6">

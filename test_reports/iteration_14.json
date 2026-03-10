@@ -1,0 +1,107 @@
+{
+  "summary": "Completed testing of Stripe Pricing Plans & Feature Gating implementation. Backend: 20/20 API tests passed. Frontend: PricingPage displays correctly with 3 plans (Free £0, Pro £39, Elite £99) in GBP. Feature gating integrated into ReportsPage and StoresPage.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "GET /api/stripe/plans returns 200",
+    "GET /api/stripe/plans returns 3 plans (free, pro, elite)",
+    "Plans use GBP currency",
+    "Free plan is £0/month",
+    "Pro plan is £39/month",
+    "Elite plan is £99/month",
+    "All plans have features and feature_descriptions",
+    "Elite plan has all premium features enabled (early_trend_access, automation_insights, advanced_opportunities, unlimited stores)",
+    "GET /api/stripe/subscription requires authentication (401/422)",
+    "GET /api/stripe/feature-access requires authentication (401/422)",
+    "POST /api/stripe/create-checkout-session requires authentication (401/422)",
+    "POST /api/stripe/create-portal-session requires authentication (401/422)",
+    "POST /api/stripe/cancel-subscription requires authentication (401/422)",
+    "POST /api/stripe/webhook accepts POST requests",
+    "Webhook handles checkout.session.completed event format",
+    "Free plan has correct limits (preview reports, 1 store, no early_trend_access)",
+    "Pro plan has correct limits (full reports, 5 stores, no early_trend_access)",
+    "Elite unlocks all features",
+    "Plans response includes all required fields",
+    "Response format is consistent",
+    "PricingPage loads and displays correctly",
+    "All 3 plans visible with correct GBP prices",
+    "Most Popular badge on Pro plan",
+    "Upgrade button redirects to login when not authenticated",
+    "Compare Features table displays correctly"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_stripe_subscription.py",
+    "/app/test_reports/pytest/stripe_subscription_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SubscriptionService properly implements Stripe checkout session creation with GBP currency",
+    "FeatureGate utility class provides consistent feature access checks",
+    "Webhook handler processes subscription events and updates user profiles",
+    "PricingPage frontend matches backend plan configuration",
+    "useSubscription hook provides subscription context throughout the app",
+    "UpgradePrompts components (LockedContent, UpgradeBadge, UpgradeCard, StoreLimitPrompt, ReportUpgradePrompt, etc.) properly exported",
+    "ReportsPage shows ReportUpgradePrompt for free users",
+    "StoresPage shows StoreLimitPrompt when store limit reached"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_stripe_subscription.py"
+  ],
+  "success_rate": {
+    "backend": "100% (20/20 tests passed)",
+    "frontend": "100% (PricingPage and feature gating verified)"
+  },
+  "test_credentials": "None required for public endpoints. Auth endpoints correctly return 401/422",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Stripe subscription system fully implemented. Backend endpoints: GET /api/stripe/plans (public), GET /api/stripe/subscription (auth required), GET /api/stripe/feature-access (auth required), POST /api/stripe/create-checkout-session (auth required), POST /api/stripe/create-portal-session (auth required), POST /api/stripe/webhook (public but requires proper event format), POST /api/stripe/cancel-subscription (auth required). Plans: Free (£0, 1 store, limited), Pro (£39, 5 stores, full reports), Elite (£99, unlimited stores, all features). Frontend: PricingPage at /pricing, useSubscription hook, UpgradePrompts components for feature gating.",
+  "api_test_results": {
+    "plans_endpoint": {
+      "endpoint": "GET /api/stripe/plans",
+      "status": "WORKING",
+      "plans": [
+        {"id": "free", "price": 0, "currency": "gbp"},
+        {"id": "pro", "price": 39, "currency": "gbp"},
+        {"id": "elite", "price": 99, "currency": "gbp"}
+      ]
+    },
+    "auth_required_endpoints": {
+      "subscription": "GET /api/stripe/subscription - returns 401/422 without auth",
+      "feature_access": "GET /api/stripe/feature-access - returns 401/422 without auth",
+      "checkout": "POST /api/stripe/create-checkout-session - returns 401/422 without auth",
+      "portal": "POST /api/stripe/create-portal-session - returns 401/422 without auth",
+      "cancel": "POST /api/stripe/cancel-subscription - returns 401/422 without auth"
+    },
+    "webhook": {
+      "endpoint": "POST /api/stripe/webhook",
+      "status": "WORKING",
+      "accepts_events": true
+    }
+  },
+  "frontend_verification": {
+    "pricing_page": {
+      "path": "/pricing",
+      "component": "/app/frontend/src/pages/PricingPage.jsx",
+      "status": "WORKING",
+      "displays_all_plans": true,
+      "correct_gbp_prices": true,
+      "upgrade_redirects_to_login": true
+    },
+    "feature_gating": {
+      "reports_page": "Uses useSubscription and ReportUpgradePrompt for free users",
+      "stores_page": "Uses useSubscription and StoreLimitPrompt when limit reached"
+    },
+    "subscription_hook": {
+      "path": "/app/frontend/src/hooks/useSubscription.js",
+      "provides": ["plan", "features", "canAccessFullReports", "canAccessEarlyTrends", "canCreateStore", "maxStores"]
+    }
+  }
+}

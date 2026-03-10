@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { StoreLimitPrompt } from '@/components/common/UpgradePrompts';
 import { 
   Store, 
   Plus, 
@@ -116,6 +118,7 @@ const LaunchProgress = ({ currentStatus }) => {
 
 export default function StoresPage() {
   const { profile, isDemoMode } = useAuth();
+  const { canCreateStore, maxStores, storeCount } = useSubscription();
   const navigate = useNavigate();
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -202,19 +205,8 @@ export default function StoresPage() {
         </div>
 
         {/* Limit Warning */}
-        {!canCreateMore() && (
-          <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
-            <div className="flex items-start gap-3">
-              <Lock className="h-5 w-5 text-amber-600 mt-0.5" />
-              <div>
-                <p className="font-medium text-amber-800">Store limit reached</p>
-                <p className="text-sm text-amber-700 mt-1">
-                  Your {userPlan} plan allows {limits.limit} store{limits.limit !== 1 ? 's' : ''}. 
-                  Upgrade to Pro (5 stores) or Elite (unlimited) to create more.
-                </p>
-              </div>
-            </div>
-          </div>
+        {!canCreateStore && (
+          <StoreLimitPrompt currentCount={stores.length} maxCount={maxStores === -1 ? 'unlimited' : maxStores} />
         )}
 
         {/* Loading State */}
