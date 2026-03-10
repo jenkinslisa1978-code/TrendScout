@@ -91,9 +91,9 @@ class ReportGenerator:
         return await cursor.to_list(limit)
     
     async def get_all_products(self, limit: int = 500) -> List[Dict[str, Any]]:
-        """Get all products sorted by win score"""
+        """Get all canonical products sorted by win score"""
         cursor = self.db.products.find(
-            {},
+            {"is_canonical": {"$ne": False}},  # Only canonical products
             {"_id": 0}
         ).sort("win_score", -1).limit(limit)
         
@@ -104,9 +104,12 @@ class ReportGenerator:
         limit: int = 20,
         min_score: int = 50
     ) -> List[Dict[str, Any]]:
-        """Get top products by opportunity score"""
+        """Get top canonical products by opportunity score"""
         cursor = self.db.products.find(
-            {"win_score": {"$gte": min_score}},
+            {
+                "win_score": {"$gte": min_score},
+                "is_canonical": {"$ne": False}
+            },
             {"_id": 0}
         ).sort("win_score", -1).limit(limit)
         
@@ -115,7 +118,7 @@ class ReportGenerator:
         # If not enough high-score products, get more
         if len(products) < limit:
             cursor = self.db.products.find(
-                {},
+                {"is_canonical": {"$ne": False}},
                 {"_id": 0}
             ).sort("trend_score", -1).limit(limit)
             products = await cursor.to_list(limit)
@@ -123,9 +126,10 @@ class ReportGenerator:
         return products
     
     async def get_saturating_products(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get products showing saturation signals"""
+        """Get canonical products showing saturation signals"""
         cursor = self.db.products.find(
             {
+                "is_canonical": {"$ne": False},
                 "$or": [
                     {"market_saturation": {"$gte": 70}},
                     {"competition_level": "high"},

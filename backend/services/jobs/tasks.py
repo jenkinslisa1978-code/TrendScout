@@ -625,3 +625,31 @@ async def scrape_real_data(db, params: Dict[str, Any]) -> Dict[str, Any]:
         },
     }
 
+
+@TaskRegistry.register(
+    name="run_deduplication",
+    description="Run product deduplication to merge duplicates into canonical records",
+    default_schedule="0 8 * * *"  # Daily at 8 AM UTC
+)
+async def run_deduplication(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Run product deduplication process.
+    
+    Merges duplicate products from multiple sources into canonical records.
+    """
+    from services.product_identity import ProductIdentityService
+    
+    service = ProductIdentityService(db)
+    result = await service.run_deduplication(dry_run=False)
+    
+    return {
+        'records_processed': result.total_products_processed,
+        'details': {
+            'duplicate_groups_found': result.duplicate_groups_found,
+            'products_merged': result.products_merged,
+            'canonical_created': result.canonical_products_created,
+            'canonical_updated': result.canonical_products_updated,
+            'success': result.success
+        },
+    }
+

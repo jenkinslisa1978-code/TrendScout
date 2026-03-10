@@ -3583,10 +3583,15 @@ async def get_products(
     sort_by: str = "trend_score",
     sort_order: str = "desc",
     limit: int = 100,
-    include_integrity: bool = False  # Include data integrity metadata
+    include_integrity: bool = False,  # Include data integrity metadata
+    canonical_only: bool = True  # Only return canonical products (not merged duplicates)
 ):
     """Get products with filtering and optional data integrity metadata"""
     query = {}
+    
+    # Filter to canonical products only (excludes merged duplicates)
+    if canonical_only:
+        query["is_canonical"] = {"$ne": False}
     
     if category:
         query["category"] = category
@@ -3622,12 +3627,16 @@ async def get_products(
     
     # Calculate data source stats for response metadata
     simulated_count = len([p for p in products if p.get("data_source") == "simulated"])
-    avg_confidence = sum(p.get("confidence_score", 0) for p in products) / len(products) if products else 0
+    canonical_count = len([p for p in products if p.get("is_canonical") is not False])
+    multi_source_count = len([p for p in products if len(p.get("contributing_sources", [])) > 1])
+    avg_confidence = sum(p.get("canonical_confidence", p.get("confidence_score", 0)) for p in products) / len(products) if products else 0
     
     return {
         "data": products,
         "metadata": {
             "total_count": len(products),
+            "canonical_count": canonical_count,
+            "multi_source_count": multi_source_count,
             "simulated_count": simulated_count,
             "live_data_count": len(products) - simulated_count,
             "avg_confidence_score": round(avg_confidence, 1),
@@ -4277,6 +4286,73 @@ async def get_data_quality():
     """Get data quality report (real vs simulated breakdown)"""
     orchestrator = DataIngestionOrchestrator(db)
     return await orchestrator.get_data_quality_report()
+
+
+# =====================
+# ROUTES - Product Identity & Deduplication
+# =====================
+
+from services.product_identity import ProductIdentityService
+
+
+@ingestion_router.post("/dedup/run")
+async def run_deduplication(
+    dry_run: bool = False,
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """
+    Run product deduplication process.
+    
+    Args:
+        dry_run: If True, only report duplicates without merging
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    service = ProductIdentityService(db)
+    result = await service.run_deduplication(dry_run=dry_run)
+    
+    return {
+        "success": result.success,
+        "started_at": result.started_at,
+        "completed_at": result.completed_at,
+        "duration_seconds": result.duration_seconds,
+        "total_products_processed": result.total_products_processed,
+        "duplicate_groups_found": result.duplicate_groups_found,
+        "products_merged": result.products_merged,
+        "canonical_products_created": result.canonical_products_created,
+        "canonical_products_updated": result.canonical_products_updated,
+        "errors": result.errors
+    }
+
+
+@ingestion_router.get("/dedup/stats")
+async def get_dedup_stats():
+    """Get statistics about canonical products"""
+    service = ProductIdentityService(db)
+    return await service.get_canonical_stats()
+
+
+@ingestion_router.get("/dedup/history")
+async def get_dedup_history(limit: int = 10):
+    """Get deduplication run history"""
+    service = ProductIdentityService(db)
+    return await service.get_dedup_history(limit)
+
+
+@ingestion_router.get("/dedup/find/{product_id}")
+async def find_product_duplicates(product_id: str):
+    """Find potential duplicates for a specific product"""
+    service = ProductIdentityService(db)
+    duplicates = await service.find_duplicates_for_product(product_id)
+    
+    return {
+        "product_id": product_id,
+        "potential_duplicates": duplicates,
+        "count": len(duplicates)
+    }
 
 
 # =====================
