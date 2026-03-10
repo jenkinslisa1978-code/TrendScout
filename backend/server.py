@@ -4130,10 +4130,55 @@ async def send_product_of_the_week_email(
     return results
 
 
+@api_router.post("/newsletter/subscribe")
+async def subscribe_newsletter(request: Request):
+    """
+    Subscribe an email to the Product of the Week newsletter.
+    Public endpoint - no auth required.
+    """
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
 
-# =====================
-# ROUTES - Notifications
-# =====================
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Valid email is required")
+
+    # Check if already subscribed
+    existing = await db.newsletter_subscribers.find_one({"email": email})
+    if existing:
+        if existing.get("status") == "active":
+            return {"status": "already_subscribed", "email": email}
+        # Reactivate
+        await db.newsletter_subscribers.update_one(
+            {"email": email},
+            {"$set": {"status": "active", "resubscribed_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        return {"status": "resubscribed", "email": email}
+
+    await db.newsletter_subscribers.insert_one({
+        "email": email,
+        "status": "active",
+        "subscribed_at": datetime.now(timezone.utc).isoformat(),
+        "source": "landing_page",
+    })
+
+    return {"status": "subscribed", "email": email}
+
+
+@api_router.post("/newsletter/unsubscribe")
+async def unsubscribe_newsletter(request: Request):
+    """Unsubscribe from the newsletter."""
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    result = await db.newsletter_subscribers.update_one(
+        {"email": email},
+        {"$set": {"status": "unsubscribed", "unsubscribed_at": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    return {"status": "unsubscribed", "email": email}
 
 @notifications_router.get("/")
 async def get_notifications(

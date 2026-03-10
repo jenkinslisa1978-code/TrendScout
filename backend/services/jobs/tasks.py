@@ -747,3 +747,124 @@ async def send_weekly_email_digest(db, params: Dict[str, Any] = None) -> Dict[st
             'errors': errors[:5]  # Only keep first 5 errors
         }
     }
+
+
+
+# =====================================================
+# PRODUCT OF THE WEEK EMAIL TASK
+# =====================================================
+
+@TaskRegistry.register(
+    name="send_product_of_the_week",
+    description="Send Product of the Week email with referral links to all subscribers",
+    default_schedule="0 11 * * 3"  # Every Wednesday at 11:00 AM UTC
+)
+async def send_product_of_the_week(db, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Send Product of the Week email to all subscribed users.
+    Includes personalized referral links for viral sharing.
+    Runs every Wednesday at 11 AM UTC.
+    """
+    from services.email_service import email_service
+
+    logger.info("Starting Product of the Week email send...")
+
+    # Get top product by launch score
+    cursor = db.products.find(
+        {"launch_score": {"$gte": 60}},
+        {"_id": 0}
+    ).sort([("launch_score", -1), ("market_score", -1)]).limit(4)
+    products = await cursor.to_list(4)
+
+    if not products:
+        logger.warning("No qualifying products for POTW email")
+        return {
+            'records_processed': 0,
+            'details': {'status': 'skipped', 'reason': 'No qualifying products'}
+        }
+
+    featured = products[0]
+    runners_up = products[1:4]
+
+    def _get_margin_range(margin):
+        if margin >= 50: return "£50+"
+        elif margin >= 30: return "£30-50"
+        elif margin >= 20: return "£20-30"
+        elif margin >= 10: return "£10-20"
+        return "Under £10"
+
+    product_data = {
+        "id": featured["id"],
+        "product_name": featured.get("product_name"),
+        "category": featured.get("category"),
+        "launch_score": featured.get("launch_score", 0),
+        "trend_stage": featured.get("trend_stage"),
+        "margin_range": _get_margin_range(featured.get("estimated_margin", 0)),
+        "_runners_up": [
+            {
+                "product_name": p.get("product_name"),
+                "category": p.get("category"),
+                "launch_score": p.get("launch_score", 0),
+            }
+            for p in runners_up
+        ],
+    }
+
+    # Get all users with emails (from profiles and newsletter subscribers)
+    recipients = []
+
+    # Registered users
+    profile_users = await db.profiles.find(
+        {"email": {"$exists": True, "$ne": None}},
+        {"_id": 0, "id": 1, "email": 1, "name": 1}
+    ).to_list(200)
+    for u in profile_users:
+        recipients.append(u)
+
+    # Newsletter subscribers (not yet registered users)
+    newsletter_subs = await db.newsletter_subscribers.find(
+        {"status": "active"},
+        {"_id": 0, "email": 1}
+    ).to_list(500)
+    existing_emails = {r.get("email") for r in recipients}
+    for sub in newsletter_subs:
+        if sub.get("email") not in existing_emails:
+            recipients.append({"email": sub["email"], "name": sub["email"].split("@")[0]})
+
+    sent_count = 0
+    failed_count = 0
+
+    for user in recipients:
+        # Get referral code for personalized viral link
+        referral = await db.user_referrals.find_one(
+            {"user_id": user.get("id")}, {"_id": 0, "referral_code": 1}
+        ) if user.get("id") else None
+        referral_code = referral.get("referral_code") if referral else None
+
+        try:
+            result = await email_service.send_product_of_the_week(
+                to_email=user.get("email"),
+                user_name=user.get("name", user.get("email", "").split("@")[0]),
+                product=product_data,
+                referral_code=referral_code,
+            )
+            if result.get("status") == "success":
+                sent_count += 1
+            else:
+                failed_count += 1
+        except Exception as e:
+            failed_count += 1
+            logger.error(f"POTW email error for {user.get('email')}: {e}")
+
+    logger.info(f"POTW email completed: {sent_count} sent, {failed_count} failed")
+
+    return {
+        'records_processed': sent_count + failed_count,
+        'details': {
+            'status': 'completed',
+            'product': featured.get("product_name"),
+            'total_recipients': len(recipients),
+            'sent': sent_count,
+            'failed': failed_count,
+        }
+    }
