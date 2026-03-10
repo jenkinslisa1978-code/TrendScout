@@ -88,6 +88,41 @@ early_trend_score = (
 ### Alerts
 - Now includes early trend alerts (exploding_trend, rising_early_trend, early_trend_detected)
 
+## Dashboard Design
+
+### Simplified 3-Section Layout
+1. **Winning Products Today** - Top products by win_score with "Build Store" buttons
+2. **Early Trend Opportunities** - Products with exploding/rising momentum
+3. **Your Stores** - User's created stores with status badges
+
+### Win Score Calculation
+```
+win_score = (
+  trend_score * 0.30 +
+  early_trend_score * 0.30 +
+  success_probability * 0.40
+)
+```
+
+### Product Cards (Discover Page)
+- Trend Score, Early Score, Success %, Est. Margin
+- "X stores built" indicator
+- Early trend badges
+- Full-width "Build Store" button
+
+## Landing Page
+
+### Outcome-Focused Messaging
+- Headline: "Launch your next winning ecommerce store in minutes"
+- Badge: "Launch Stores in Minutes"
+- CTA: "Start Building Free"
+- Subtext: "No credit card required • Launch your first store today"
+
+### Dashboard Preview
+- Shows "Winning Products Today" section
+- Stats: Winning Products, Avg Win Score, Stores Launched, Early Trends
+- "Build Store" buttons on products
+
 ## Product Success Tracking System
 
 ### Calculation Formula

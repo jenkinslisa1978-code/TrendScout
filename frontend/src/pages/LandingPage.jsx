@@ -4,45 +4,46 @@ import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, 
-  Search, 
-  BarChart3, 
+  Rocket, 
+  Store, 
   Zap, 
-  Shield, 
   Clock,
   Check,
-  ArrowRight
+  ArrowRight,
+  Trophy,
+  Package
 } from 'lucide-react';
 
 const features = [
   {
+    icon: Trophy,
+    title: 'Find Winning Products',
+    description: 'Our AI identifies products with the highest win scores based on trends, momentum, and proven success data.'
+  },
+  {
+    icon: Rocket,
+    title: 'Launch in Minutes',
+    description: 'Generate your complete store with product descriptions, pricing, and branding - ready for Shopify.'
+  },
+  {
     icon: TrendingUp,
-    title: 'Trend Detection',
-    description: 'Identify rising products before they go viral with our AI-powered trend scoring system.'
+    title: 'Early Trend Detection',
+    description: 'Get in before saturation. Spot exploding products before your competition does.'
   },
   {
-    icon: Search,
-    title: 'Product Discovery',
-    description: 'Browse thousands of trending products across multiple categories with detailed analytics.'
+    icon: Store,
+    title: 'Store Builder',
+    description: 'One-click store creation with AI-generated content, branding, and Shopify-ready export.'
   },
   {
-    icon: BarChart3,
-    title: 'Market Analysis',
-    description: 'Understand competition levels, margin potential, and market saturation at a glance.'
-  },
-  {
-    icon: Zap,
-    title: 'AI Insights',
-    description: 'Get intelligent summaries and recommendations for each product opportunity.'
-  },
-  {
-    icon: Shield,
-    title: 'Verified Suppliers',
-    description: 'Access pre-vetted supplier links with competitive pricing and reliable shipping.'
+    icon: Package,
+    title: 'Proven Winners',
+    description: 'See which products are already working for other sellers with real success tracking data.'
   },
   {
     icon: Clock,
-    title: 'Real-Time Updates',
-    description: 'Stay ahead with daily updates on trending products and market changes.'
+    title: 'Daily Updates',
+    description: 'Fresh winning products every day. Never miss the next big opportunity.'
   }
 ];
 
@@ -50,12 +51,12 @@ const pricingPlans = [
   {
     name: 'Starter',
     price: '19',
-    description: 'Perfect for beginners exploring dropshipping',
+    description: 'Launch your first winning store',
     features: [
-      'Access to 50 trending products',
-      'Basic trend scores',
-      'Category filtering',
-      'Save up to 10 products',
+      'Access to winning products',
+      'Win score rankings',
+      '1 store creation',
+      'Shopify export',
       'Email support'
     ],
     cta: 'Start Free Trial',
@@ -63,34 +64,32 @@ const pricingPlans = [
   },
   {
     name: 'Pro',
-    price: '49',
-    description: 'For serious dropshippers scaling their business',
+    price: '39',
+    description: 'Scale with multiple stores',
     features: [
       'Unlimited product access',
-      'Advanced trend analytics',
-      'AI-powered insights',
-      'Unlimited saved products',
-      'Supplier links',
-      'Priority support',
-      'Export to CSV'
+      'Early trend alerts',
+      '5 store creations',
+      'AI-powered content',
+      'Success tracking',
+      'Priority support'
     ],
     cta: 'Start Free Trial',
     popular: true
   },
   {
     name: 'Elite',
-    price: '99',
-    description: 'For agencies and power sellers',
+    price: '79',
+    description: 'For serious sellers',
     features: [
       'Everything in Pro',
-      'Early trend alerts',
-      'API access',
-      'White-label reports',
-      'Dedicated account manager',
-      'Custom integrations',
-      'Team collaboration'
+      'Unlimited stores',
+      'Direct Shopify publish',
+      'White-label exports',
+      'Dedicated support',
+      'API access'
     ],
-    cta: 'Contact Sales',
+    cta: 'Start Free Trial',
     popular: false
   }
 ];
@@ -107,17 +106,18 @@ export default function LandingPage() {
         
         <div className="mx-auto max-w-7xl px-6 pt-24 pb-20 lg:px-8 lg:pt-32">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-700">
-              <Zap className="h-4 w-4" />
-              AI-Powered Product Research
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-1.5 text-sm font-medium text-emerald-700">
+              <Rocket className="h-4 w-4" />
+              Launch Stores in Minutes
             </div>
             <h1 className="font-manrope text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              Find winning products{' '}
-              <span className="text-indigo-600">before they go viral</span>
+              Launch your next winning{' '}
+              <span className="text-indigo-600">ecommerce store</span>{' '}
+              in minutes
             </h1>
             <p className="mt-6 text-lg text-slate-600 leading-relaxed">
-              TrendScout analyzes millions of data points to surface the most promising 
-              dropshipping opportunities. Stop guessing, start winning.
+              Find proven winning products, generate your store with AI, and export to Shopify. 
+              Stop researching endlessly. Start selling today.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/signup">
@@ -126,22 +126,23 @@ export default function LandingPage() {
                   data-testid="hero-cta-btn"
                   className="bg-indigo-600 hover:bg-indigo-700 text-base px-8 h-12 font-semibold"
                 >
-                  Start Free Trial
+                  <Rocket className="mr-2 h-5 w-5" />
+                  Start Building Free
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <a href="#features">
+              <Link to="/login">
                 <Button 
                   variant="outline" 
                   size="lg"
                   className="text-base px-8 h-12"
                 >
-                  See How It Works
+                  Sign In
                 </Button>
-              </a>
+              </Link>
             </div>
             <p className="mt-4 text-sm text-slate-500">
-              No credit card required • 7-day free trial
+              No credit card required • Launch your first store today
             </p>
           </div>
 
@@ -157,43 +158,48 @@ export default function LandingPage() {
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="bg-white rounded-md px-4 py-1 text-xs text-slate-400">
-                    trendscout.app/dashboard
+                    viralscout.app/dashboard
                   </div>
                 </div>
               </div>
               <div className="p-6 bg-[#F8FAFC]">
                 {/* Mock dashboard */}
                 <div className="grid grid-cols-4 gap-4 mb-6">
-                  {['Total Products', 'Avg Trend Score', 'High Opportunity', 'Rising Trends'].map((label, i) => (
+                  {['Winning Products', 'Avg Win Score', 'Stores Launched', 'Early Trends'].map((label, i) => (
                     <div key={label} className="bg-white rounded-xl border border-slate-200 p-4">
                       <p className="text-xs text-slate-500 uppercase tracking-wider">{label}</p>
                       <p className="mt-1 font-mono text-2xl font-semibold text-slate-900">
-                        {['2,847', '76', '342', '89'][i]}
+                        {['847', '82', '156', '34'][i]}
                       </p>
                     </div>
                   ))}
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                  <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                    <p className="text-sm font-semibold text-slate-700">Trending Products</p>
+                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 border-b border-slate-200">
+                    <p className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                      <Trophy className="h-4 w-4 text-amber-500" />
+                      Winning Products Today
+                    </p>
                   </div>
                   <div className="divide-y divide-slate-100">
-                    {['Portable Neck Fan', 'Sunset Projection Lamp', 'Smart Water Bottle'].map((name, i) => (
+                    {['Sunset Projection Lamp', 'Smart Water Bottle', 'Portable Neck Fan'].map((name, i) => (
                       <div key={name} className="px-4 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-slate-100" />
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center font-bold text-amber-700">
+                            #{i + 1}
+                          </div>
                           <div>
                             <p className="text-sm font-medium text-slate-900">{name}</p>
-                            <p className="text-xs text-slate-500">Electronics</p>
+                            <p className="text-xs text-slate-500">£{[26, 30, 21][i]} margin</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="font-mono text-sm font-semibold text-emerald-600">
-                            {[87, 94, 76][i]}
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-sm font-semibold text-amber-600">
+                            {[89, 85, 82][i]}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            {['rising', 'early', 'rising'][i]}
-                          </span>
+                          <button className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                            Build Store
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -210,10 +216,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-manrope text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Everything you need to find winning products
+              From product discovery to store launch
             </h2>
             <p className="mt-4 text-lg text-slate-600">
-              Powerful tools and insights to help you make data-driven decisions
+              Everything you need to launch a winning ecommerce store, fast
             </p>
           </div>
           <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -303,12 +309,12 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-24 bg-white">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="rounded-3xl bg-indigo-600 px-8 py-16 sm:px-16 text-center">
+          <div className="rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-16 sm:px-16 text-center">
             <h2 className="font-manrope text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Ready to find your next winning product?
+              Ready to launch your winning store?
             </h2>
             <p className="mt-4 text-lg text-indigo-100">
-              Join thousands of successful dropshippers using TrendScout
+              Find a product. Build your store. Launch to Shopify. All in minutes.
             </p>
             <div className="mt-8">
               <Link to="/signup">
@@ -317,7 +323,8 @@ export default function LandingPage() {
                   className="bg-white text-indigo-600 hover:bg-indigo-50 text-base px-8 h-12 font-semibold"
                   data-testid="final-cta-btn"
                 >
-                  Start Your Free Trial
+                  <Rocket className="mr-2 h-5 w-5" />
+                  Start Building Free
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>

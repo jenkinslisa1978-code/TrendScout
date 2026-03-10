@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,8 @@ import {
   Bookmark,
   BookmarkCheck,
   Eye,
-  Loader2
+  Loader2,
+  Rocket
 } from 'lucide-react';
 import { getProducts, getCategories } from '@/services/productService';
 import { toggleSaveProduct, isProductSaved } from '@/services/savedProductService';
@@ -38,13 +39,19 @@ import {
   getSuccessProbabilityColor
 } from '@/lib/utils';
 import { toast } from 'sonner';
+import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 
 export default function DiscoverPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savedProductIds, setSavedProductIds] = useState(new Set());
+  
+  // Store builder modal
+  const [showStoreBuilder, setShowStoreBuilder] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   
   // Filters
   const [search, setSearch] = useState('');
@@ -113,13 +120,24 @@ export default function DiscoverPage() {
     setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
   };
 
+  const handleBuildStore = (product) => {
+    setSelectedProduct(product);
+    setShowStoreBuilder(true);
+  };
+
+  const handleStoreCreated = (newStore) => {
+    setShowStoreBuilder(false);
+    setSelectedProduct(null);
+    navigate(`/stores/${newStore.id}`);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div>
           <h1 className="font-manrope text-2xl font-bold text-slate-900">Discover Products</h1>
-          <p className="mt-1 text-slate-500">Find trending products across all categories</p>
+          <p className="mt-1 text-slate-500">Find winning products and launch your store</p>
         </div>
 
         {/* Filters */}
@@ -339,6 +357,20 @@ export default function DiscoverPage() {
                           {product.competition_level} comp.
                         </Badge>
                       </div>
+
+                      {/* Build Store Button */}
+                      <Button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleBuildStore(product);
+                        }}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2"
+                        data-testid={`build-store-btn-${product.id}`}
+                      >
+                        <Rocket className="mr-2 h-4 w-4" />
+                        Build Store
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -347,6 +379,19 @@ export default function DiscoverPage() {
           </div>
         )}
       </div>
+
+      {/* Store Builder Modal */}
+      {showStoreBuilder && selectedProduct && (
+        <StoreBuilderModal
+          product={selectedProduct}
+          isOpen={showStoreBuilder}
+          onClose={() => {
+            setShowStoreBuilder(false);
+            setSelectedProduct(null);
+          }}
+          onSuccess={handleStoreCreated}
+        />
+      )}
     </DashboardLayout>
   );
 }
