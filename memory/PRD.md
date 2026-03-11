@@ -27,8 +27,13 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 ### AI Product Images (Complete - Mar 2026)
 - Generated unique product-specific images for all 79 products using Imagen 4.0
 - Images displayed on: Dashboard (all 3 sections), Discover, Saved Products, Product Detail
+- Fixed 4 mismatched images (protein powder, cooling gel, TV remotes)
 - Public pages (Trending, Product Page) already supported image_url
-- Graceful fallback to icon when image fails
+
+### Supplier Links Fix (Complete - Mar 2026)
+- Replaced all fake placeholder URLs (alibaba.com/example1) with real search URLs
+- Links now go to Alibaba, AliExpress, or CJ Dropshipping search pages with product name
+- "View Supplier" button opens real product search results
 
 ### Auth System (Complete - Mar 2026)
 - Custom JWT auth replaces Supabase entirely
@@ -48,8 +53,10 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 
 ## Resolved Issues
 - SSL certificate on www.trendscout.click - RESOLVED
-- Blank pages on navigation - RESOLVED (formatNumber fix + ErrorBoundary)
-- Login/auth failures - RESOLVED (custom JWT replaced Supabase)
+- Blank pages on navigation - RESOLVED
+- Login/auth failures - RESOLVED (custom JWT)
+- Supplier links showing "product missing" - RESOLVED (real search URLs)
+- Mismatched product images - RESOLVED (regenerated)
 
 ## Backlog
 - P1: Re-deploy to production with all fixes
