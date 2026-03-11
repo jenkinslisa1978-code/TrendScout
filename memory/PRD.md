@@ -17,7 +17,7 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 ## Implemented Features
 
 ### Core (Complete)
-- Product intelligence dashboard with Daily Winners
+- Product intelligence dashboard with Daily Winners, product images
 - Discover page with AI-generated product images, filters, sorting
 - Watchlist, saved products, trend alerts
 - Store builder with Shopify export
@@ -25,13 +25,13 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 - Weekly/Monthly reports with PDF export
 
 ### AI Product Images (Complete - Mar 2026)
-- Generated product-specific images for all 79 products using AI (Imagen 4.0)
-- Images match individual product names, not just categories
-- Updated DiscoverPage, SavedProductsPage, ProductDetailPage with image support
-- Graceful fallback to Package icon when image fails to load
+- Generated unique product-specific images for all 79 products using Imagen 4.0
+- Images displayed on: Dashboard (all 3 sections), Discover, Saved Products, Product Detail
+- Public pages (Trending, Product Page) already supported image_url
+- Graceful fallback to icon when image fails
 
 ### Auth System (Complete - Mar 2026)
-- Custom JWT auth replaces Supabase
+- Custom JWT auth replaces Supabase entirely
 - /api/auth/register, /api/auth/login, /api/auth/profile endpoints
 - Error Boundary prevents blank pages from crashes
 
@@ -46,14 +46,15 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 - Public Trending Products Page, Referral System
 - Product of the Week email digest, Newsletter capture
 
-## Known Issues
-- **P0:** SSL certificate error on www.trendscout.click (external)
-- **P1:** Re-deployment needed to push fixes to production
-- **P3:** CJ Dropshipping scraper blocked
-- **P3:** Gateway timeout on full scrape
+## Resolved Issues
+- SSL certificate on www.trendscout.click - RESOLVED
+- Blank pages on navigation - RESOLVED (formatNumber fix + ErrorBoundary)
+- Login/auth failures - RESOLVED (custom JWT replaced Supabase)
 
 ## Backlog
-- P1: Re-deploy to production
+- P1: Re-deploy to production with all fixes
+- P3: CJ Dropshipping scraper blocked
+- P3: Gateway timeout on full scrape
 - P3: Product Outcome Learning System
 - P3: Architecture refactor (break down server.py)
 - P3: Forgot Password flow via Resend

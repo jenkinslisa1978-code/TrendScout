@@ -184,8 +184,13 @@ export default function DashboardPage() {
                     data-testid={`winning-product-${product.id}`}
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 font-bold text-amber-700 text-lg shrink-0">
-                        #{index + 1}
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gradient-to-br from-amber-100 to-orange-100 shrink-0">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                        ) : null}
+                        <div className={`${product.image_url ? 'hidden' : 'flex'} w-full h-full items-center justify-center font-bold text-amber-700 text-lg`}>
+                          #{index + 1}
+                        </div>
                       </div>
                       <div className="min-w-0 flex-1">
                         <Link 
@@ -274,8 +279,13 @@ export default function DashboardPage() {
                       data-testid={`early-trend-${product.id}`}
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-red-50 to-orange-50 text-2xl shrink-0">
-                          {earlyTrendInfo.icon}
+                        <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gradient-to-br from-red-50 to-orange-50 shrink-0">
+                          {product.image_url ? (
+                            <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                          ) : null}
+                          <div className={`${product.image_url ? 'hidden' : 'flex'} w-full h-full items-center justify-center text-2xl`}>
+                            {earlyTrendInfo.icon}
+                          </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <Link 
@@ -368,8 +378,13 @@ export default function DashboardPage() {
                       data-testid={`market-opportunity-${product.id}`}
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 font-bold text-emerald-700 text-lg shrink-0">
-                          #{index + 1}
+                        <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-100 to-teal-100 shrink-0">
+                          {product.image_url ? (
+                            <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                          ) : null}
+                          <div className={`${product.image_url ? 'hidden' : 'flex'} w-full h-full items-center justify-center font-bold text-emerald-700 text-lg`}>
+                            #{index + 1}
+                          </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <Link 
