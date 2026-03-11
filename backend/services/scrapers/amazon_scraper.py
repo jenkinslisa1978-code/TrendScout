@@ -38,8 +38,29 @@ class AmazonMoversScraper(BaseScraper):
         'sports': '/gp/movers-and-shakers/sports',
         'garden': '/gp/movers-and-shakers/outdoors',
         'pet_supplies': '/gp/movers-and-shakers/pet-supplies',
-        'toys': '/gp/movers-and-shakers/toys',
-        'office': '/gp/movers-and-shakers/office-products',
+        'toys': '/gp/movers-and-shakers/kids',
+        'office': '/gp/movers-and-shakers/officeproduct',
+        'fashion': '/gp/movers-and-shakers/fashion',
+        'baby': '/gp/movers-and-shakers/baby',
+        'diy': '/gp/movers-and-shakers/diy',
+        'automotive': '/gp/movers-and-shakers/automotive',
+    }
+    
+    CATEGORY_MAP = {
+        'all': 'General',
+        'home_kitchen': 'Home & Kitchen',
+        'electronics': 'Electronics',
+        'beauty': 'Beauty',
+        'health': 'Health & Personal Care',
+        'sports': 'Sports & Outdoors',
+        'garden': 'Garden & Outdoors',
+        'pet_supplies': 'Pet Supplies',
+        'toys': 'Toys & Games',
+        'office': 'Office Supplies',
+        'fashion': 'Fashion',
+        'baby': 'Baby Products',
+        'diy': 'DIY & Tools',
+        'automotive': 'Automotive',
     }
     
     def __init__(self, db):
@@ -72,23 +93,26 @@ class AmazonMoversScraper(BaseScraper):
         products = []
         
         if category and category in self.CATEGORY_URLS:
-            # Scrape specific category
             cat_products = await self._scrape_category(category, max_products)
             products.extend(cat_products)
         else:
-            # Scrape main movers page and top categories
-            main_products = await self._scrape_category('all', max_products // 3)
-            products.extend(main_products)
-            
-            # Add from specific categories
-            priority_categories = ['electronics', 'home_kitchen', 'beauty', 'health']
-            products_per_cat = max(5, (max_products - len(products)) // len(priority_categories))
+            # Scrape all categories sequentially
+            priority_categories = [
+                'home_kitchen', 'electronics', 'beauty', 'health',
+                'sports', 'garden', 'pet_supplies', 'toys', 'fashion',
+                'baby', 'diy', 'automotive'
+            ]
+            products_per_cat = max(5, max_products // len(priority_categories))
             
             for cat in priority_categories:
                 if len(products) >= max_products:
                     break
-                cat_products = await self._scrape_category(cat, products_per_cat)
-                products.extend(cat_products)
+                try:
+                    cat_products = await self._scrape_category(cat, products_per_cat)
+                    products.extend(cat_products)
+                    self.logger.info(f"  {cat}: {len(cat_products)} products")
+                except Exception as e:
+                    self.logger.warning(f"  {cat}: failed - {e}")
         
         return products[:max_products]
     
@@ -152,16 +176,15 @@ class AmazonMoversScraper(BaseScraper):
     
     def _parse_product_item(self, item, category: str) -> Optional[Dict[str, Any]]:
         """Parse a single product item"""
-        # Extract ASIN
         asin = item.get('data-asin', '')
         
-        # Extract product name
+        # Extract product name - try multiple selectors
         title_selectors = [
+            '._cDEzb_p13n-sc-css-line-clamp-3_g3dy1',
             '.p13n-sc-truncate',
             '.p13n-sc-truncate-desktop-type2',
-            '[class*="a-link-normal"] span',
-            '.a-size-base',
-            'a.a-link-normal',
+            'a.a-link-normal span div',
+            'a.a-link-normal[href*="/dp/"]',
         ]
         
         product_name = ''
@@ -169,7 +192,7 @@ class AmazonMoversScraper(BaseScraper):
             elem = item.select_one(selector)
             if elem:
                 text = elem.get_text(strip=True)
-                if len(text) > 10 and not text.startswith('£'):
+                if len(text) > 10 and not text.startswith('£') and not text.startswith('#'):
                     product_name = text
                     break
         
@@ -181,10 +204,9 @@ class AmazonMoversScraper(BaseScraper):
         price_selectors = [
             '.p13n-sc-price',
             '.a-price .a-offscreen',
-            '[class*="a-price"]',
+            'span.a-price span',
             '.a-color-price',
         ]
-        
         for selector in price_selectors:
             elem = item.select_one(selector)
             if elem:
@@ -192,21 +214,19 @@ class AmazonMoversScraper(BaseScraper):
                 if price > 0:
                     break
         
-        # Extract BSR change (rank movement)
-        bsr_change = 0
-        rank_selectors = [
-            '.zg-bdg-text',
-            '[class*="a-badge-text"]',
-            '.a-icon-alt',
-        ]
+        # Also try finding price from text content like "1 offer from £18.99" 
+        if price == 0:
+            all_text = item.get_text()
+            price_match = re.search(r'£(\d+(?:\.\d{2})?)', all_text)
+            if price_match:
+                price = float(price_match.group(1))
         
-        for selector in rank_selectors:
-            elem = item.select_one(selector)
-            if elem:
-                text = elem.get_text(strip=True)
-                if '%' in text:
-                    bsr_change = self._parse_percentage(text)
-                    break
+        # Extract BSR change (rank movement percentage)
+        bsr_change = 0
+        rank_text = item.get_text()
+        pct_match = re.search(r'(\d{1,5})\s*%', rank_text)
+        if pct_match:
+            bsr_change = int(pct_match.group(1))
         
         # Extract rating
         rating = 0
@@ -219,31 +239,36 @@ class AmazonMoversScraper(BaseScraper):
         
         # Extract reviews count
         reviews = 0
-        reviews_elem = item.select_one('[class*="a-size-small"]:has([href*="customerReviews"])')
-        if reviews_elem:
-            reviews = self._parse_number(reviews_elem.get_text(strip=True))
+        reviews_link = item.select_one('a[href*="product-reviews"], a[href*="customerReviews"]')
+        if reviews_link:
+            reviews = self._parse_number(reviews_link.get_text(strip=True))
         
         # Extract image
         image_url = ''
-        img_elem = item.select_one('img')
+        img_elem = item.select_one('img[src*="images-eu"], img[src*="images-na"], img[src*="media-amazon"]')
         if img_elem:
-            image_url = img_elem.get('src', '') or img_elem.get('data-src', '')
+            src = img_elem.get('src', '') or img_elem.get('data-src', '')
+            # Skip tiny placeholder/tracking pixels
+            if src and '.gif' not in src and 'pixel' not in src and len(src) > 30:
+                image_url = src
         
-        # Calculate estimated metrics
-        category_name = category.replace('_', ' ').title()
-        if category == 'all':
-            category_name = 'General'
+        # Generate supplier URL from product name
+        search_term = re.sub(r'[^\w\s]', '', product_name[:60]).strip()
+        supplier_url = f"https://www.aliexpress.com/wholesale?SearchText={search_term.replace(' ', '+')}"
+        
+        category_name = self.CATEGORY_MAP.get(category, category.replace('_', ' ').title())
         
         return {
-            'product_name': product_name[:200],  # Truncate long names
+            'product_name': product_name[:200],
             'amazon_asin': asin,
             'category': category_name,
-            'supplier_cost': round(price * 0.4, 2) if price > 0 else 0,  # Estimate supplier cost
+            'supplier_cost': round(price * 0.35, 2) if price > 0 else 0,
             'estimated_retail_price': price,
             'amazon_bsr_change': bsr_change,
             'amazon_rating': rating,
             'amazon_reviews': reviews,
             'image_url': image_url,
+            'supplier_link': supplier_url,
             'data_source': 'amazon_movers',
             'data_source_type': 'scraped',
             'is_real_data': True,
@@ -358,29 +383,41 @@ class AmazonMoversScraper(BaseScraper):
             existing = await self.db.products.find_one({"amazon_asin": product['amazon_asin']})
         
         if not existing:
-            # Try matching by name
             existing = await self.db.products.find_one({
                 "product_name": {"$regex": f"^{re.escape(product['product_name'][:40])}.*$", "$options": "i"}
             })
         
+        now = datetime.now(timezone.utc).isoformat()
+        
         if existing:
-            # Update existing product with Amazon data
             update_fields = {
                 'amazon_asin': product.get('amazon_asin') or existing.get('amazon_asin'),
                 'amazon_bsr_change': product.get('amazon_bsr_change', 0),
                 'amazon_rating': product.get('amazon_rating', 0),
                 'amazon_reviews': product.get('amazon_reviews', 0),
                 'estimated_retail_price': product.get('estimated_retail_price') or existing.get('estimated_retail_price', 0),
-                'last_updated': datetime.now(timezone.utc).isoformat(),
-                'is_real_data': True
+                'last_updated': now,
+                'updated_at': now,
+                'is_real_data': True,
+                'supplier_link': product.get('supplier_link') or existing.get('supplier_link', ''),
             }
-            
-            # Update supplier cost if we have a better estimate
-            if product.get('supplier_cost', 0) > 0 and existing.get('supplier_cost', 0) == 0:
+            if product.get('supplier_cost', 0) > 0:
                 update_fields['supplier_cost'] = product['supplier_cost']
+            # Only update image if we have a real one and existing doesn't have an AI-generated one
+            new_img = product.get('image_url', '')
+            existing_img = existing.get('image_url', '')
+            if new_img and 'oaidalleapiprodscus' not in existing_img and 'images.unsplash' not in existing_img:
+                update_fields['image_url'] = new_img
             
-            # Recalculate confidence
-            update_fields['confidence_score'] = self._calculate_confidence(product, existing)
+            # Recalculate trend scores from live data
+            bsr = product.get('amazon_bsr_change', 0)
+            reviews = product.get('amazon_reviews', 0)
+            rating = product.get('amazon_rating', 0)
+            price = product.get('estimated_retail_price', 0)
+            
+            trend_score = min(100, 30 + int(bsr * 0.15) + min(20, reviews // 200) + int(rating * 4))
+            update_fields['trend_score'] = trend_score
+            update_fields['trend_stage'] = 'exploding' if bsr > 300 else ('rising' if bsr > 100 else 'emerging')
             
             await self.db.products.update_one(
                 {"id": existing['id']},
@@ -388,17 +425,36 @@ class AmazonMoversScraper(BaseScraper):
             )
             result.products_updated += 1
         else:
-            # Create new product
-            product['id'] = str(uuid.uuid4())
-            product['created_at'] = datetime.now(timezone.utc).isoformat()
-            product['updated_at'] = product['created_at']
-            product['stores_created'] = 0
-            product['exports_count'] = 0
-            product['confidence_score'] = self._calculate_confidence(product)
+            # Create new product with all required fields
+            bsr = product.get('amazon_bsr_change', 0)
+            reviews = product.get('amazon_reviews', 0)
+            rating = product.get('amazon_rating', 0)
+            price = product.get('estimated_retail_price', 0)
+            cost = product.get('supplier_cost', 0)
             
-            # Estimate margin
-            if product.get('supplier_cost', 0) > 0 and product.get('estimated_retail_price', 0) > 0:
-                product['estimated_margin'] = product['estimated_retail_price'] - product['supplier_cost']
+            trend_score = min(100, 30 + int(bsr * 0.15) + min(20, reviews // 200) + int(rating * 4))
+            trend_stage = 'exploding' if bsr > 300 else ('rising' if bsr > 100 else 'emerging')
+            margin = round(price - cost, 2) if price > 0 and cost > 0 else 0
+            comp_level = 'low' if reviews < 500 else ('medium' if reviews < 5000 else 'high')
+            
+            product.update({
+                'id': str(uuid.uuid4()),
+                'created_at': now,
+                'updated_at': now,
+                'trend_score': trend_score,
+                'trend_stage': trend_stage,
+                'opportunity_rating': 'high' if trend_score > 70 else ('medium' if trend_score > 40 else 'low'),
+                'estimated_margin': margin,
+                'competition_level': comp_level,
+                'is_premium': False,
+                'stores_created': 0,
+                'exports_count': 0,
+                'tiktok_views': 0,
+                'ad_count': 0,
+                'view_growth_rate': float(bsr) if bsr > 0 else 0,
+                'engagement_rate': rating,
+                'short_description': product['product_name'][:120],
+            })
             
             await self.db.products.insert_one(product)
             result.products_created += 1

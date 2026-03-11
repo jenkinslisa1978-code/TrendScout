@@ -47,6 +47,7 @@ export default function DashboardPage() {
   // Store builder modal
   const [showStoreBuilder, setShowStoreBuilder] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [dataFreshness, setDataFreshness] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,6 +60,12 @@ export default function DashboardPage() {
         ]);
 
         if (productsResult.data) {
+          // Find most recent last_updated across all products
+          const latestUpdate = productsResult.data.reduce((latest, p) => {
+            const d = p.last_updated || p.updated_at;
+            return d && d > (latest || '') ? d : latest;
+          }, null);
+          setDataFreshness(latestUpdate);
           // Calculate win_score for each product
           const productsWithWinScore = productsResult.data.map(p => ({
             ...p,
@@ -135,6 +142,12 @@ export default function DashboardPage() {
               Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
             </h1>
             <p className="text-slate-500 mt-1">Find winning products and launch your next store</p>
+            {dataFreshness && (
+              <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1" data-testid="data-freshness">
+                <Activity className="h-3 w-3" />
+                Live data &middot; Last updated {new Date(dataFreshness).toLocaleString()}
+              </p>
+            )}
           </div>
           <Link to="/discover">
             <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="browse-products-btn">

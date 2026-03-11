@@ -1,0 +1,127 @@
+{
+  "summary": "Scraping pipeline and live data features tested successfully. Backend: 16/16 tests passed covering scraping APIs, product data quality, and supplier links. Frontend: All key features working - Dashboard shows live data freshness indicator, Discover page displays real scraped products with images/prices/categories, Product detail page shows View Supplier button with valid AliExpress search URLs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/ingestion/scrape/full",
+        "issue": "FIXED: Was returning 500 due to MongoDB ObjectId serialization. Fixed by copying summary dict before insert_one in orchestrator._save_ingestion_run()",
+        "priority": "FIXED"
+      },
+      {
+        "endpoint": "aliexpress, cj_dropshipping scrapers",
+        "issue": "These scrapers fail with HTTP 404 - blocked by anti-bot. Expected behavior per main agent notes.",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Notifications API",
+        "issue": "Mixed Content error for /api/notifications - appears to be Emergent preview environment script issue (emergent-main.js), not application code",
+        "affected_selectors": ["NotificationCenter component"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Dashboard",
+        "issues": ["Onboarding modal blocks first-time user interaction (has Skip button)"]
+      }
+    ]
+  },
+  "passed_tests": [
+    "Backend: API health check",
+    "Backend: POST /api/ingestion/scrape/amazon_movers returns scraped products",
+    "Backend: GET /api/ingestion/scrape/health returns source status",
+    "Backend: GET /api/ingestion/scrape/history returns ingestion runs",
+    "Backend: GET /api/ingestion/scrape/quality returns data quality report",
+    "Backend: GET /api/products returns products list",
+    "Backend: Products have is_real_data=true flag",
+    "Backend: Products have supplier_link URLs",
+    "Backend: Supplier links are valid AliExpress search URLs",
+    "Backend: Products have trend_score > 0",
+    "Backend: Products have last_updated timestamps",
+    "Backend: Products span multiple diverse categories",
+    "Backend: API metadata includes live_data_count statistics",
+    "Backend: Product detail includes supplier_link field",
+    "Backend: POST /api/ingestion/scrape/full requires API key",
+    "Backend: POST /api/ingestion/scrape/full returns aggregated results",
+    "Frontend: Dashboard shows 'Live data' freshness indicator with timestamp",
+    "Frontend: Discover page shows real products with images, prices, categories",
+    "Frontend: Product detail page shows View Supplier button",
+    "Frontend: View Supplier links to valid AliExpress search URL",
+    "Frontend: Launch Score, Trend Score, Margin, Competitors displayed correctly",
+    "Frontend: Launch recommendation card shows strengths/concerns"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_scraping.py",
+    "/app/test_reports/pytest/scraping_tests_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Scraping implementation using curl_cffi with chrome impersonation works well for Amazon UK Movers & Shakers",
+    "AliExpress supplier links are correctly auto-generated from product names in amazon_scraper._parse_product_item()",
+    "Data freshness indicator pulls from product last_updated timestamps - correctly shows live data status",
+    "Full scrape endpoint had ObjectId serialization bug - FIXED in orchestrator.py"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_scraping.py",
+    "/app/backend/services/scrapers/orchestrator.py"
+  ],
+  "success_rate": {
+    "backend": "100% (16/16 tests passed)",
+    "frontend": "100% (all scraping/live data features verified)"
+  },
+  "test_credentials": {
+    "api_key": "vs_automation_key_2024 (X-API-Key header)",
+    "admin_login": {
+      "email": "jenkinslisa1978@gmail.com",
+      "password": "admin123456"
+    }
+  },
+  "seed_data_creation": "None - tests use existing scraped product data",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Scraping pipeline fully tested. Key endpoints: POST /api/ingestion/scrape/amazon_movers (works), POST /api/ingestion/scrape/full (works, 2/4 sources succeed). Amazon movers scraper successfully fetches real products with names, prices, images, BSR changes. Supplier links auto-generated as AliExpress search URLs. Frontend correctly displays live data indicator, product images, View Supplier button. Full scrape ObjectId bug has been fixed.",
+  "features_verified": {
+    "backend_scraping": {
+      "POST /api/ingestion/scrape/amazon_movers": "PASS - returns scraped products with is_real_data=true",
+      "POST /api/ingestion/scrape/full": "PASS - aggregates results from all sources (2/4 succeed: tiktok_trends, amazon_movers)",
+      "GET /api/ingestion/scrape/health": "PASS - returns source health status",
+      "GET /api/ingestion/scrape/quality": "PASS - returns real vs simulated data breakdown"
+    },
+    "products_api": {
+      "GET /api/products": "PASS - returns products with is_real_data, supplier_link, trend_score, last_updated",
+      "supplier_link format": "PASS - valid AliExpress wholesale search URLs",
+      "product categories": "PASS - diverse categories: Kitchen, Electronics, Fashion, Audio, Home Office, etc."
+    },
+    "frontend": {
+      "dashboard_data_freshness": "PASS - shows 'Live data · Last updated [timestamp]'",
+      "discover_page_products": "PASS - real product names, images, prices displayed",
+      "product_detail_supplier_btn": "PASS - View Supplier button links to AliExpress search URL"
+    }
+  },
+  "sample_scraped_products": [
+    {
+      "name": "Electric Heated Lunch Box",
+      "category": "Kitchen",
+      "supplier_link": "https://www.aliexpress.com/w/wholesale-Electric-Heated-Lunch-Box.html",
+      "launch_score": 84,
+      "margin": "£27.80"
+    },
+    {
+      "name": "Premium ANC Wireless Earbuds",
+      "category": "Electronics",
+      "launch_score": 80,
+      "trend_score": 95
+    },
+    {
+      "name": "Cloud Pillow Slides",
+      "category": "Fashion",
+      "launch_score": 78,
+      "tiktok_views": "80.2M"
+    }
+  ]
+}

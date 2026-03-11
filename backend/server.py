@@ -1535,12 +1535,10 @@ async def get_pipeline_status():
         },
         "data_freshness": latest_product.get("last_updated") if latest_product else None,
         "sources": {
-            "tiktok_trends": {"status": "simulated", "description": "Curated trending products"},
-            "amazon_trends": {"status": "simulated", "description": "BSR movers data"},
-            "aliexpress_products": {"status": "simulated", "description": "Supplier pricing"},
-            "cj_dropshipping": {"status": "simulated", "description": "Fast shipping suppliers"},
-            "competitor_intelligence": {"status": "estimated", "description": "Store count estimates"},
-            "ad_activity": {"status": "estimated", "description": "Ad spend estimates"},
+            "amazon_movers": {"status": "live", "description": "Amazon Movers & Shakers - real-time trending products"},
+            "aliexpress_search": {"status": "generated", "description": "AliExpress supplier links auto-generated from product names"},
+            "tiktok_trends": {"status": "pending", "description": "TikTok Creative Center - blocked by anti-bot"},
+            "cj_dropshipping": {"status": "pending", "description": "CJ Dropshipping - blocked by anti-bot"},
         }
     }
 

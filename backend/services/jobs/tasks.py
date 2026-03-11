@@ -594,7 +594,7 @@ async def generate_monthly_report(db, params: Dict[str, Any]) -> Dict[str, Any]:
 @TaskRegistry.register(
     name="scrape_real_data",
     description="Scrape real product data from live sources",
-    default_schedule="0 */6 * * *"  # Every 6 hours
+    default_schedule="0 */4 * * *"  # Every 4 hours
 )
 async def scrape_real_data(db, params: Dict[str, Any]) -> Dict[str, Any]:
     """

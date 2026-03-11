@@ -10,7 +10,6 @@ Base utilities for web scraping with:
 """
 
 import asyncio
-import aiohttp
 import hashlib
 import logging
 import random
@@ -19,6 +18,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass, field
 from enum import Enum
+from curl_cffi import requests as curl_requests
 
 logger = logging.getLogger(__name__)
 
@@ -144,22 +144,18 @@ class BaseScraper(ABC):
                 
                 return html, True
                 
-            except aiohttp.ClientResponseError as e:
-                if e.status == 429:  # Rate limited
+            except Exception as e:
+                err_str = str(e)
+                if '429' in err_str:
                     self._health.status = SourceHealthStatus.RATE_LIMITED
                     self.logger.warning(f"Rate limited on {self.config.name}, waiting longer...")
                     delay = min(delay * 3, self.config.max_retry_delay)
+                elif 'timeout' in err_str.lower() or 'timed out' in err_str.lower():
+                    last_error = "Request timeout"
+                    self.logger.warning(f"Attempt {attempt + 1} timed out for {url}")
                 else:
-                    last_error = f"HTTP {e.status}: {e.message}"
+                    last_error = err_str
                     self.logger.warning(f"Attempt {attempt + 1} failed: {last_error}")
-                    
-            except asyncio.TimeoutError:
-                last_error = "Request timeout"
-                self.logger.warning(f"Attempt {attempt + 1} timed out for {url}")
-                
-            except Exception as e:
-                last_error = str(e)
-                self.logger.warning(f"Attempt {attempt + 1} failed: {last_error}")
             
             # Wait before retry (exponential backoff)
             if attempt < self.config.retry_attempts - 1:
@@ -174,27 +170,19 @@ class BaseScraper(ABC):
         return None, False
     
     async def _make_request(self, url: str, **kwargs) -> str:
-        """Make HTTP request with proper headers"""
-        headers = {
-            'User-Agent': random.choice(USER_AGENTS),
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-GB,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Cache-Control': 'max-age=0',
-        }
+        """Make HTTP request using curl_cffi with browser TLS impersonation"""
+        loop = asyncio.get_event_loop()
         
-        # Merge any custom headers
-        if 'headers' in kwargs:
-            headers.update(kwargs.pop('headers'))
+        def _sync_request():
+            response = curl_requests.get(
+                url,
+                impersonate="chrome",
+                timeout=self.config.timeout_seconds,
+            )
+            response.raise_for_status()
+            return response.text
         
-        timeout = aiohttp.ClientTimeout(total=self.config.timeout_seconds)
-        
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(url, headers=headers, **kwargs) as response:
-                response.raise_for_status()
-                return await response.text()
+        return await loop.run_in_executor(None, _sync_request)
     
     async def _apply_rate_limit(self):
         """Apply rate limiting between requests"""

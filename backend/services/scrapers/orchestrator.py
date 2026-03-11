@@ -226,7 +226,9 @@ class DataIngestionOrchestrator:
     
     async def _save_ingestion_run(self, summary: Dict[str, Any]):
         """Save ingestion run to database"""
-        await self.db.ingestion_runs.insert_one(summary)
+        # Create a copy to avoid mutating the original with _id
+        run_doc = {**summary}
+        await self.db.ingestion_runs.insert_one(run_doc)
     
     async def get_data_quality_report(self) -> Dict[str, Any]:
         """
