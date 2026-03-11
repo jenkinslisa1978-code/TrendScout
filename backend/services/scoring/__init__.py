@@ -27,13 +27,13 @@ class ScoringEngine:
     Designed for easy adjustment of weights and thresholds.
     """
     
-    # Scoring weights (must sum to 1.0)
+    # Scoring weights (must sum to 1.0) — exact formula from product spec
     WEIGHTS = {
-        'trend': 0.25,
+        'trend': 0.30,
         'margin': 0.25,
         'competition': 0.20,
         'ad_activity': 0.15,
-        'supplier_demand': 0.15,
+        'supplier_demand': 0.10,
     }
     
     # Market opportunity labels
@@ -52,29 +52,65 @@ class ScoringEngine:
         Calculate all scores for a product.
         
         Returns dict with all score fields ready for database update.
+        Each component includes transparent reasoning.
         """
-        # Calculate individual component scores
-        trend_score = self.calculate_trend_score(product)
-        margin_score = self.calculate_margin_score(product)
-        competition_score = self.calculate_competition_score(product)
-        ad_activity_score = self.calculate_ad_activity_score(product)
-        supplier_demand_score = self.calculate_supplier_demand_score(product)
+        # Calculate individual component scores with reasoning
+        trend_score, trend_reasoning = self.calculate_trend_score(product)
+        margin_score, margin_reasoning = self.calculate_margin_score(product)
+        competition_score, competition_reasoning = self.calculate_competition_score(product)
+        ad_activity_score, ad_reasoning = self.calculate_ad_activity_score(product)
+        supplier_demand_score, supplier_reasoning = self.calculate_supplier_demand_score(product)
         
-        # Calculate combined market score
-        market_score = self.calculate_market_score(
-            trend_score,
-            margin_score,
-            competition_score,
-            ad_activity_score,
-            supplier_demand_score
+        # Calculate launch_score using exact formula
+        launch_score = round(
+            trend_score * self.WEIGHTS['trend'] +
+            margin_score * self.WEIGHTS['margin'] +
+            competition_score * self.WEIGHTS['competition'] +
+            ad_activity_score * self.WEIGHTS['ad_activity'] +
+            supplier_demand_score * self.WEIGHTS['supplier_demand']
         )
+        launch_score = min(100, max(0, launch_score))
         
         # Get market label
-        market_label, market_description = self.get_market_label(market_score)
+        market_label, market_description = self.get_market_label(launch_score)
         
         # Additional derived scores
         early_trend_score, early_trend_label = self.calculate_early_trend_score(product)
-        success_probability = self.calculate_success_probability(product, market_score)
+        success_probability = self.calculate_success_probability(product, launch_score)
+        
+        # Build transparent score breakdown
+        score_breakdown = {
+            'trend': {
+                'score': trend_score,
+                'weight': self.WEIGHTS['trend'],
+                'weighted': round(trend_score * self.WEIGHTS['trend'], 1),
+                'reasoning': trend_reasoning,
+            },
+            'margin': {
+                'score': margin_score,
+                'weight': self.WEIGHTS['margin'],
+                'weighted': round(margin_score * self.WEIGHTS['margin'], 1),
+                'reasoning': margin_reasoning,
+            },
+            'competition': {
+                'score': competition_score,
+                'weight': self.WEIGHTS['competition'],
+                'weighted': round(competition_score * self.WEIGHTS['competition'], 1),
+                'reasoning': competition_reasoning,
+            },
+            'ad_activity': {
+                'score': ad_activity_score,
+                'weight': self.WEIGHTS['ad_activity'],
+                'weighted': round(ad_activity_score * self.WEIGHTS['ad_activity'], 1),
+                'reasoning': ad_reasoning,
+            },
+            'supplier_demand': {
+                'score': supplier_demand_score,
+                'weight': self.WEIGHTS['supplier_demand'],
+                'weighted': round(supplier_demand_score * self.WEIGHTS['supplier_demand'], 1),
+                'reasoning': supplier_reasoning,
+            },
+        }
         
         return {
             # Component scores
@@ -84,10 +120,14 @@ class ScoringEngine:
             'ad_activity_score': ad_activity_score,
             'supplier_demand_score': supplier_demand_score,
             
-            # Combined market score
-            'market_score': market_score,
+            # Launch score (PRIMARY metric)
+            'launch_score': launch_score,
+            'launch_score_breakdown': score_breakdown,
             'market_label': market_label,
             'market_description': market_description,
+            
+            # Legacy market_score = launch_score
+            'market_score': launch_score,
             'market_score_breakdown': {
                 'trend': trend_score,
                 'margin': margin_score,
@@ -105,81 +145,89 @@ class ScoringEngine:
             'scores_updated_at': datetime.now(timezone.utc).isoformat(),
         }
     
-    def calculate_trend_score(self, product: Dict[str, Any]) -> int:
+    def calculate_trend_score(self, product: Dict[str, Any]) -> tuple:
         """
         Calculate trend score (0-100) based on viral signals.
-        
-        Signals:
-        - TikTok views (primary indicator)
-        - View growth rate
-        - Engagement rate
-        - Trend stage
+        Returns (score, reasoning).
         """
         tiktok_views = product.get('tiktok_views', 0)
         view_growth = product.get('view_growth_rate', 0)
-        engagement = product.get('engagement_rate', 0)
-        trend_stage = product.get('trend_stage', 'rising')
+        trend_velocity = product.get('trend_velocity', 0)
+        amazon_bsr = product.get('amazon_bsr_change', 0)
+        trend_stage = product.get('trend_stage', '')
         
         score = 0
+        reasons = []
         
-        # TikTok views (50% of trend score)
-        if tiktok_views >= 50000000:
-            score += 50
-        elif tiktok_views >= 25000000:
-            score += 43
-        elif tiktok_views >= 10000000:
-            score += 36
-        elif tiktok_views >= 5000000:
-            score += 28
-        elif tiktok_views >= 1000000:
-            score += 20
-        elif tiktok_views >= 100000:
-            score += 12
+        # Amazon BSR change (strongest real signal)
+        if amazon_bsr and amazon_bsr > 0:
+            if amazon_bsr >= 1000:
+                score += 40
+                reasons.append(f"Explosive Amazon rank movement (+{amazon_bsr}%)")
+            elif amazon_bsr >= 300:
+                score += 32
+                reasons.append(f"Strong Amazon rank surge (+{amazon_bsr}%)")
+            elif amazon_bsr >= 100:
+                score += 24
+                reasons.append(f"Rising Amazon demand (+{amazon_bsr}%)")
+            else:
+                score += 15
+                reasons.append(f"Moderate Amazon movement (+{amazon_bsr}%)")
         else:
-            score += min(12, int(tiktok_views / 10000))
+            reasons.append("Amazon trend data unavailable")
         
-        # View growth rate (25%)
-        if view_growth >= 40:
-            score += 25
-        elif view_growth >= 25:
-            score += 20
-        elif view_growth >= 15:
-            score += 15
-        elif view_growth >= 5:
-            score += 10
-        else:
-            score += 5
+        # Google Trends velocity (real data)
+        if trend_velocity and trend_velocity != 0:
+            if trend_velocity > 50:
+                score += 25
+                reasons.append(f"Google Trends surging (+{trend_velocity:.0f}%)")
+            elif trend_velocity > 20:
+                score += 20
+                reasons.append(f"Google Trends rising (+{trend_velocity:.0f}%)")
+            elif trend_velocity > 0:
+                score += 12
+                reasons.append(f"Google Trends stable (+{trend_velocity:.0f}%)")
+            elif trend_velocity > -20:
+                score += 6
+                reasons.append(f"Google Trends flat ({trend_velocity:.0f}%)")
+            else:
+                score += 2
+                reasons.append(f"Google Trends declining ({trend_velocity:.0f}%)")
         
-        # Engagement rate (15%)
-        if engagement >= 8:
-            score += 15
-        elif engagement >= 5:
-            score += 12
-        elif engagement >= 3:
-            score += 8
-        else:
-            score += 4
+        # TikTok views (if available)
+        if tiktok_views and tiktok_views > 0:
+            if tiktok_views >= 10000000:
+                score += 20
+                reasons.append(f"Viral on TikTok ({tiktok_views/1000000:.1f}M views)")
+            elif tiktok_views >= 1000000:
+                score += 15
+                reasons.append(f"Strong TikTok presence ({tiktok_views/1000000:.1f}M views)")
+            elif tiktok_views >= 100000:
+                score += 10
+            else:
+                score += 5
         
-        # Trend stage bonus (10%)
-        stage_scores = {'early': 10, 'rising': 8, 'peak': 5, 'saturated': 2}
-        score += stage_scores.get(trend_stage, 5)
+        # View growth rate
+        if view_growth and view_growth > 0:
+            score += min(15, int(view_growth / 3))
         
-        return min(100, max(0, score))
+        score = min(100, max(0, score))
+        
+        if not reasons:
+            reasons.append("Trend data unavailable")
+        
+        return score, ". ".join(reasons)
     
-    def calculate_margin_score(self, product: Dict[str, Any]) -> int:
+    def calculate_margin_score(self, product: Dict[str, Any]) -> tuple:
         """
         Calculate margin score (0-100) based on profit potential.
-        
-        Signals:
-        - Absolute margin (GBP)
-        - Margin percentage
-        - Price point viability
+        Returns (score, reasoning).
         """
         supplier_cost = product.get('supplier_cost', 0)
         retail_price = product.get('estimated_retail_price', 0)
         
-        if retail_price <= 0 or supplier_cost <= 0:
-            return 30  # Default for missing data
+        if not retail_price or retail_price <= 0 or not supplier_cost or supplier_cost <= 0:
+            return 0, "Price or cost data unavailable — cannot calculate margin"
         
         margin = retail_price - supplier_cost
         margin_percent = (margin / retail_price) * 100
@@ -216,183 +264,185 @@ class ScoringEngine:
         else:
             score += 10
         
-        return min(100, max(0, score))
+        score = min(100, max(0, score))
+        reasoning = f"{margin_percent:.0f}% margin (£{margin:.2f} profit on £{retail_price:.2f} retail)"
+        
+        if margin_percent >= 50:
+            reasoning += " — healthy margins"
+        elif margin_percent >= 30:
+            reasoning += " — acceptable margins"
+        else:
+            reasoning += " — tight margins, ad costs may erode profit"
+        
+        return score, reasoning
     
-    def calculate_competition_score(self, product: Dict[str, Any]) -> int:
+    def calculate_competition_score(self, product: Dict[str, Any]) -> tuple:
         """
         Calculate competition score (0-100). Higher = LESS competition = better.
-        
-        Signals:
-        - Active competitor stores
-        - Competition level
-        - Market saturation
-        - New stores this week
+        Returns (score, reasoning).
         """
-        competitor_stores = product.get('active_competitor_stores', 0)
-        competition_level = product.get('competition_level', 'medium')
-        saturation = product.get('market_saturation', 50)
-        new_stores = product.get('new_competitor_stores_week', 0)
+        competition_level = product.get('competition_level', 'unknown')
+        amazon_reviews = product.get('amazon_reviews', 0)
         
         score = 0
+        reasons = []
         
-        # Competitor store count (45%) - INVERSE: fewer stores = higher score
-        if competitor_stores == 0:
-            score += 38  # No validation
-        elif competitor_stores < 15:
-            score += 45  # Sweet spot - some validation, low competition
-        elif competitor_stores < 35:
-            score += 38
-        elif competitor_stores < 60:
-            score += 28
-        elif competitor_stores < 100:
-            score += 18
+        # Competition level
+        if competition_level == 'low':
+            score += 45
+            reasons.append("Low competition — good entry window")
+        elif competition_level == 'medium':
+            score += 30
+            reasons.append("Moderate competition — differentiation needed")
+        elif competition_level == 'high':
+            score += 12
+            reasons.append("High competition — saturated market")
         else:
-            score += 8
+            score += 25
+            reasons.append("Competition data unavailable")
         
-        # Competition level (30%)
-        level_scores = {'low': 30, 'medium': 18, 'high': 8}
-        score += level_scores.get(competition_level, 15)
-        
-        # Market saturation (25%) - INVERSE: lower saturation = higher score
-        saturation_score = max(0, 25 - int(saturation * 0.25))
-        score += saturation_score
-        
-        # New stores penalty (if many new entrants)
-        if new_stores > 15:
-            score = max(0, score - 10)
-        elif new_stores > 8:
-            score = max(0, score - 5)
-        
-        return min(100, max(0, score))
-    
-    def calculate_ad_activity_score(self, product: Dict[str, Any]) -> int:
-        """
-        Calculate ad activity score (0-100).
-        
-        Moderate ad activity = validated market (good)
-        Very high ad activity = saturated market (less good)
-        Very low ad activity = unvalidated market (risky)
-        
-        Sweet spot: 50-150 active ads
-        """
-        ad_count = product.get('ad_count', 0)
-        ad_growth = product.get('recent_ad_growth', 0)
-        validation_level = product.get('ad_validation_level', 'unknown')
-        
-        score = 0
-        
-        # Ad count - sweet spot scoring (60%)
-        if ad_count == 0:
-            score += 25  # Unvalidated
-        elif ad_count < 30:
-            score += 40  # Early stage
-        elif ad_count < 75:
-            score += 55  # Growing validation
-        elif ad_count < 150:
-            score += 60  # Sweet spot
-        elif ad_count < 250:
-            score += 50  # Getting crowded
-        elif ad_count < 400:
-            score += 35  # High competition
-        else:
-            score += 20  # Saturated
-        
-        # Ad growth trend (25%)
-        if 10 <= ad_growth <= 30:
-            score += 25  # Healthy growth
-        elif 5 <= ad_growth < 10:
-            score += 20
-        elif 30 < ad_growth <= 50:
-            score += 18  # Very fast growth
-        elif ad_growth > 50:
-            score += 12  # Too fast (saturating)
-        elif ad_growth < 0:
-            score += 8  # Declining
+        # Amazon review count as competition proxy
+        if amazon_reviews and amazon_reviews > 0:
+            if amazon_reviews < 100:
+                score += 35
+                reasons.append(f"Few reviews ({amazon_reviews}) — new market")
+            elif amazon_reviews < 500:
+                score += 28
+                reasons.append(f"{amazon_reviews} reviews — growing market")
+            elif amazon_reviews < 2000:
+                score += 18
+                reasons.append(f"{amazon_reviews} reviews — established market")
+            else:
+                score += 8
+                reasons.append(f"{amazon_reviews} reviews — very established market")
         else:
             score += 15
         
-        # Validation level bonus (15%)
-        validation_scores = {
-            'highly_validated': 15,
-            'validated': 12,
-            'emerging': 10,
-            'early': 8,
-            'unvalidated': 5,
-        }
-        score += validation_scores.get(validation_level, 8)
+        # Rating-based quality bar
+        rating = product.get('amazon_rating', 0)
+        if rating and rating >= 4.5:
+            score += 10
+            reasons.append(f"High quality bar ({rating} stars)")
+        elif rating and rating >= 4.0:
+            score += 15
+            reasons.append(f"Good quality bar ({rating} stars)")
+        elif rating and rating > 0:
+            score += 20
+            reasons.append(f"Low quality bar ({rating} stars) — room to compete")
         
-        return min(100, max(0, score))
+        score = min(100, max(0, score))
+        return score, ". ".join(reasons)
     
-    def calculate_supplier_demand_score(self, product: Dict[str, Any]) -> int:
+    def calculate_ad_activity_score(self, product: Dict[str, Any]) -> tuple:
         """
-        Calculate supplier demand score (0-100) based on supply chain signals.
+        Calculate ad activity score (0-100).
+        Sweet spot: some ads = validated market, too many = saturated.
+        Returns (score, reasoning).
+        """
+        ad_count = product.get('ad_count', 0)
         
-        Signals:
-        - Supplier order velocity (orders/week)
-        - Supplier rating
-        - Processing/shipping time
-        - Total 30-day orders
+        if not ad_count:
+            return 40, "Ad activity data unavailable"
+        
+        if ad_count < 10:
+            score = 55
+            reasoning = f"{ad_count} active ads — early opportunity, unvalidated"
+        elif ad_count < 30:
+            score = 75
+            reasoning = f"{ad_count} active ads — validated market, low competition"
+        elif ad_count < 75:
+            score = 85
+            reasoning = f"{ad_count} active ads — sweet spot: proven demand, manageable competition"
+        elif ad_count < 150:
+            score = 65
+            reasoning = f"{ad_count} active ads — getting crowded"
+        elif ad_count < 300:
+            score = 40
+            reasoning = f"{ad_count} active ads — high ad competition, expect costly CPA"
+        else:
+            score = 20
+            reasoning = f"{ad_count} active ads — saturated, very expensive to compete"
+        
+        return min(100, max(0, score)), reasoning
+    
+    def calculate_supplier_demand_score(self, product: Dict[str, Any]) -> tuple:
+        """
+        Calculate supplier demand score (0-100).
+        Returns (score, reasoning).
         """
         order_velocity = product.get('supplier_order_velocity', 0)
         orders_30d = product.get('supplier_orders_30d', 0)
         supplier_rating = product.get('supplier_rating', 0)
-        processing_days = product.get('supplier_processing_days', 5)
-        shipping_days = product.get('supplier_shipping_days', 15)
+        processing_days = product.get('supplier_processing_days', 0)
+        shipping_days = product.get('supplier_shipping_days', 0)
+        supplier_cost = product.get('supplier_cost', 0)
+        
+        # If we have no supplier data at all, mark as unavailable
+        has_data = any([order_velocity, orders_30d, supplier_rating, supplier_cost])
+        if not has_data:
+            return 0, "Supplier data unavailable"
         
         score = 0
+        reasons = []
         
         # Order velocity (40%)
         if order_velocity >= 3000:
             score += 40
-        elif order_velocity >= 1500:
-            score += 35
-        elif order_velocity >= 800:
-            score += 30
+            reasons.append(f"Very high demand ({order_velocity} orders/week)")
+        elif order_velocity >= 1000:
+            score += 32
+            reasons.append(f"Strong demand ({order_velocity} orders/week)")
         elif order_velocity >= 400:
             score += 24
-        elif order_velocity >= 150:
-            score += 18
-        elif order_velocity >= 50:
-            score += 12
-        else:
-            score += 6
+        elif order_velocity >= 100:
+            score += 16
+        elif order_velocity > 0:
+            score += 8
         
         # 30-day orders (25%)
         if orders_30d >= 10000:
             score += 25
         elif orders_30d >= 5000:
-            score += 22
-        elif orders_30d >= 2000:
-            score += 18
-        elif orders_30d >= 500:
-            score += 12
-        else:
-            score += 6
+            score += 20
+        elif orders_30d >= 1000:
+            score += 15
+        elif orders_30d > 0:
+            score += 8
         
         # Supplier rating (20%)
         if supplier_rating >= 4.7:
             score += 20
-        elif supplier_rating >= 4.5:
-            score += 17
-        elif supplier_rating >= 4.2:
-            score += 13
+            reasons.append(f"Top-rated supplier ({supplier_rating} stars)")
+        elif supplier_rating >= 4.3:
+            score += 15
         elif supplier_rating >= 4.0:
-            score += 9
-        else:
+            score += 10
+        elif supplier_rating > 0:
             score += 5
         
         # Fulfillment speed (15%)
-        total_days = processing_days + shipping_days
-        if total_days <= 10:
-            score += 15
-        elif total_days <= 14:
-            score += 12
-        elif total_days <= 20:
-            score += 8
-        else:
-            score += 4
+        total_days = (processing_days or 0) + (shipping_days or 0)
+        if total_days > 0:
+            if total_days <= 10:
+                score += 15
+                reasons.append(f"Fast fulfillment ({total_days} days)")
+            elif total_days <= 14:
+                score += 10
+            elif total_days <= 21:
+                score += 6
+            else:
+                score += 2
+                reasons.append(f"Slow shipping ({total_days} days)")
         
-        return min(100, max(0, score))
+        # If supplier_cost exists, give some base score
+        if supplier_cost > 0 and score < 20:
+            score = max(score, 20)
+            if not reasons:
+                reasons.append(f"Supplier found at £{supplier_cost:.2f}")
+        
+        score = min(100, max(0, score))
+        reasoning = ". ".join(reasons) if reasons else "Limited supplier data"
+        return score, reasoning
     
     def calculate_market_score(
         self,

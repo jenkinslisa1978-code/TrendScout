@@ -413,6 +413,16 @@ export default function DiscoverPage() {
                         <Badge className={`${getCompetitionColor(product.competition_level)} border text-xs`}>
                           {product.competition_level} comp.
                         </Badge>
+                        {product.is_real_data && (
+                          <Badge variant="outline" className="text-emerald-600 border-emerald-200 text-xs">
+                            Live
+                          </Badge>
+                        )}
+                        {product.confidence_score > 0 && (
+                          <Badge variant="outline" className="text-slate-400 border-slate-200 text-xs">
+                            {product.confidence_score}% conf.
+                          </Badge>
+                        )}
                       </div>
 
                       {/* Build Store Button */}

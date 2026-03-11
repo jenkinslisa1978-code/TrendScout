@@ -626,6 +626,45 @@ async def scrape_real_data(db, params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+
+@TaskRegistry.register(
+    name="enrich_google_trends",
+    description="Enrich products with Google Trends velocity data",
+    default_schedule="0 */6 * * *"  # Every 6 hours
+)
+async def enrich_google_trends(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """Enrich products with Google Trends keyword velocity data."""
+    from services.scrapers.google_trends_scraper import GoogleTrendsScraper
+    
+    scraper = GoogleTrendsScraper(db)
+    max_products = params.get('max_products', 30)
+    result = await scraper.enrich_products(max_products=max_products)
+    
+    return {
+        'records_processed': result.get('enriched', 0),
+        'details': result,
+    }
+
+
+@TaskRegistry.register(
+    name="recompute_scores",
+    description="Recompute all product scores using transparent scoring engine",
+    default_schedule="0 */4 * * *"  # Every 4 hours (after scraping)
+)
+async def recompute_scores(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """Recompute all scores with transparent reasoning."""
+    from services.scoring import ScoringEngine
+    
+    engine = ScoringEngine(db)
+    stats = await engine.batch_update_scores(limit=500)
+    
+    return {
+        'records_processed': stats.get('updated', 0),
+        'details': stats,
+    }
+
+
+
 @TaskRegistry.register(
     name="run_deduplication",
     description="Run product deduplication to merge duplicates into canonical records",

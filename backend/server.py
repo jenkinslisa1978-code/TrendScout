@@ -5180,8 +5180,16 @@ async def get_launch_score_breakdown(product_id: str):
         'launch_label': launch_label,
         'components': components_sorted,
         'formula': {
-            'description': 'Launch Score = (Trend × 30%) + (Margin × 25%) + (Competition × 20%) + (Ad Activity × 15%) + (Supplier × 10%)',
+            'description': 'Launch Score = (Trend x 30%) + (Margin x 25%) + (Competition x 20%) + (Ad Activity x 15%) + (Supplier x 10%)',
             'breakdown': f"{trend_contribution} + {margin_contribution} + {competition_contribution} + {ad_activity_contribution} + {supplier_contribution} = {launch_score}"
+        },
+        'score_reasoning': product.get('launch_score_breakdown', {}),
+        'data_transparency': {
+            'data_sources': product.get('data_sources', [product.get('data_source', 'unknown')]),
+            'confidence_score': product.get('confidence_score', 0),
+            'last_updated': product.get('last_updated'),
+            'is_real_data': product.get('is_real_data', False),
+            'scores_updated_at': product.get('scores_updated_at'),
         },
         'summary': {
             'rating_explanation': get_rating_summary(launch_label, launch_score),
@@ -5767,6 +5775,37 @@ async def run_full_scrape(
     return result
 
 
+@ingestion_router.post("/scrape/google-trends")
+async def run_google_trends_enrichment(
+    max_products: int = 20,
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """Enrich products with Google Trends velocity data."""
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    from services.scrapers.google_trends_scraper import GoogleTrendsScraper
+    scraper = GoogleTrendsScraper(db)
+    result = await scraper.enrich_products(max_products=max_products)
+    return result
+
+
+@ingestion_router.post("/scores/recompute")
+async def recompute_all_scores(
+    api_key: Optional[str] = Header(None, alias="X-API-Key")
+):
+    """Recompute all product scores using transparent scoring engine."""
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    from services.scoring import ScoringEngine
+    engine = ScoringEngine(db)
+    stats = await engine.batch_update_scores(limit=500)
+    return stats
+
+
 @ingestion_router.post("/scrape/{source_name}")
 async def run_source_scrape(
     source_name: str,
@@ -5815,6 +5854,7 @@ async def get_data_quality():
     """Get data quality report (real vs simulated breakdown)"""
     orchestrator = DataIngestionOrchestrator(db)
     return await orchestrator.get_data_quality_report()
+
 
 
 # =====================
