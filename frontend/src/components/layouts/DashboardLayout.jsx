@@ -174,7 +174,7 @@ export default function DashboardLayout({ children }) {
                 <Sparkles className="h-3.5 w-3.5" />
                 Demo Mode Active
               </div>
-              <p className="text-amber-600/80 text-[10px] mt-0.5">Connect Supabase for full features</p>
+              <p className="text-amber-600/80 text-[10px] mt-0.5">Sign in for full features</p>
             </div>
           )}
           

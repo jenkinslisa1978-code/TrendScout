@@ -1,11 +1,9 @@
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { apiPost } from '@/lib/api';
 
 /**
  * Stripe Subscription Service
  * 
  * Handles subscription management, plan changes, and billing integration.
- * Works with both demo mode and live Supabase/Stripe.
  * 
  * STRIPE-READY: All endpoints structured for Stripe webhook integration.
  */
@@ -92,36 +90,26 @@ const setDemoSubscription = (subscription) => {
  * Get current user's subscription
  */
 export const getSubscription = async (userId) => {
-  if (!isSupabaseConfigured()) {
-    const subscription = getDemoSubscription();
-    if (subscription) {
-      return { data: subscription, error: null };
-    }
-    
-    // Default to elite in demo mode
-    const defaultSub = {
-      id: 'demo-sub-id',
-      user_id: userId,
-      plan_name: 'elite',
-      status: 'active',
-      stripe_subscription_id: null,
-      stripe_customer_id: null,
-      current_period_start: new Date().toISOString(),
-      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      cancel_at_period_end: false,
-      created_at: new Date().toISOString(),
-    };
-    setDemoSubscription(defaultSub);
-    return { data: defaultSub, error: null };
+  const subscription = getDemoSubscription();
+  if (subscription) {
+    return { data: subscription, error: null };
   }
-
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
-  return { data, error };
+  
+  // Default to elite in demo mode
+  const defaultSub = {
+    id: 'demo-sub-id',
+    user_id: userId,
+    plan_name: 'elite',
+    status: 'active',
+    stripe_subscription_id: null,
+    stripe_customer_id: null,
+    current_period_start: new Date().toISOString(),
+    current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    cancel_at_period_end: false,
+    created_at: new Date().toISOString(),
+  };
+  setDemoSubscription(defaultSub);
+  return { data: defaultSub, error: null };
 };
 
 /**
@@ -176,27 +164,6 @@ export const createCheckoutSession = async (userId, planId, successUrl, cancelUr
     return { error: 'Invalid plan or missing Stripe price ID' };
   }
 
-  if (!isSupabaseConfigured()) {
-    // Demo mode - simulate instant upgrade
-    const newSub = {
-      id: `demo-sub-${Date.now()}`,
-      user_id: userId,
-      plan_name: planId,
-      status: 'active',
-      stripe_subscription_id: `sub_demo_${Date.now()}`,
-      stripe_customer_id: `cus_demo_${userId}`,
-      current_period_start: new Date().toISOString(),
-      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      cancel_at_period_end: false,
-      created_at: new Date().toISOString(),
-    };
-    setDemoSubscription(newSub);
-    return { data: { url: successUrl }, error: null };
-  }
-
-  // STRIPE INTEGRATION POINT
-  // In production, call your backend API to create a Stripe checkout session
-  // The backend should use stripe.checkout.sessions.create()
   try {
     const response = await apiPost('/api/stripe/create-checkout-session', {
       price_id: plan.priceId,
@@ -221,11 +188,6 @@ export const createCheckoutSession = async (userId, planId, successUrl, cancelUr
  * STRIPE-READY: For managing existing subscriptions
  */
 export const createPortalSession = async (userId, returnUrl) => {
-  if (!isSupabaseConfigured()) {
-    // Demo mode - just return to the app
-    return { data: { url: returnUrl }, error: null };
-  }
-
   try {
     const response = await apiPost('/api/stripe/create-portal-session', {
       return_url: returnUrl,
@@ -247,15 +209,6 @@ export const createPortalSession = async (userId, returnUrl) => {
  * Cancel subscription
  */
 export const cancelSubscription = async (userId, cancelAtPeriodEnd = true) => {
-  if (!isSupabaseConfigured()) {
-    const subscription = getDemoSubscription();
-    if (subscription) {
-      subscription.cancel_at_period_end = cancelAtPeriodEnd;
-      setDemoSubscription(subscription);
-    }
-    return { error: null };
-  }
-
   try {
     const response = await apiPost('/api/stripe/cancel-subscription', {
       cancel_at_period_end: cancelAtPeriodEnd,
@@ -277,15 +230,6 @@ export const cancelSubscription = async (userId, cancelAtPeriodEnd = true) => {
  * Update subscription (change plan)
  */
 export const updateSubscription = async (userId, newPlanId) => {
-  if (!isSupabaseConfigured()) {
-    const subscription = getDemoSubscription();
-    if (subscription) {
-      subscription.plan_name = newPlanId;
-      setDemoSubscription(subscription);
-    }
-    return { error: null };
-  }
-
   try {
     const response = await apiPost('/api/stripe/update-subscription', {
       new_plan_id: newPlanId,
