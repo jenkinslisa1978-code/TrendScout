@@ -46,6 +46,7 @@ intelligence_router = APIRouter(prefix="/api/intelligence")
 dashboard_router = APIRouter(prefix="/api/dashboard")
 supplier_router = APIRouter(prefix="/api/suppliers")
 ad_creative_router = APIRouter(prefix="/api/ad-creatives")
+ad_discovery_router = APIRouter(prefix="/api/ad-discovery")
 reports_router = APIRouter(prefix="/api/reports")
 email_router = APIRouter(prefix="/api/email")
 notifications_router = APIRouter(prefix="/api/notifications")
@@ -6789,6 +6790,72 @@ async def get_ad_creatives(
     return creatives
 
 
+# =====================
+# AD DISCOVERY ROUTES
+# =====================
+
+@ad_discovery_router.post("/discover/{product_id}")
+async def discover_ads_for_product(
+    product_id: str,
+    force_refresh: bool = False,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Discover active ads across TikTok, Meta, and Google Shopping for a product."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    from services.ad_discovery_service import AdDiscoveryService
+    service = AdDiscoveryService(db)
+    result = await service.discover_ads(
+        product_id=product_id,
+        product_name=product.get("product_name", ""),
+        category=product.get("category", ""),
+        force_refresh=force_refresh,
+    )
+    return result
+
+
+@ad_discovery_router.get("/{product_id}")
+async def get_discovered_ads(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get cached ad discovery results for a product."""
+    from services.ad_discovery_service import AdDiscoveryService
+    service = AdDiscoveryService(db)
+    result = await service.get_ads_for_product(product_id)
+    if not result:
+        return {
+            "product_id": product_id,
+            "total_ads": 0,
+            "platforms": {},
+            "summary": None,
+            "message": "No ads discovered yet. Use POST /discover to start discovery.",
+        }
+    return result
+
+
+@ad_discovery_router.get("/{product_id}/{platform}")
+async def get_platform_ads(
+    product_id: str,
+    platform: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get ads for a specific platform (tiktok, meta, google_shopping)."""
+    valid_platforms = ["tiktok", "meta", "google_shopping"]
+    if platform not in valid_platforms:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid platform. Must be one of: {', '.join(valid_platforms)}"
+        )
+
+    from services.ad_discovery_service import AdDiscoveryService
+    service = AdDiscoveryService(db)
+    ads = await service.get_platform_ads(product_id, platform)
+    return {"product_id": product_id, "platform": platform, "ads": ads, "count": len(ads)}
+
+
 # Include routers
 app.include_router(api_router)
 app.include_router(stripe_router)
@@ -6807,6 +6874,7 @@ app.include_router(notifications_router)
 app.include_router(user_router)
 app.include_router(supplier_router)
 app.include_router(ad_creative_router)
+app.include_router(ad_discovery_router)
 app.include_router(auth_router)
 
 app.add_middleware(

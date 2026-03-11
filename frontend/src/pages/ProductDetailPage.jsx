@@ -36,6 +36,7 @@ import { toggleSaveProduct, isProductSaved } from '@/services/savedProductServic
 import { useAuth } from '@/contexts/AuthContext';
 import SupplierSection from '@/components/SupplierSection';
 import AdCreativeSection from '@/components/AdCreativeSection';
+import AdDiscoverySection from '@/components/AdDiscoverySection';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -519,6 +520,9 @@ export default function ProductDetailPage() {
 
         {/* AI Ad Creatives */}
         <AdCreativeSection productId={id} />
+
+        {/* Ad Discovery */}
+        <AdDiscoverySection productId={id} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pricing */}
