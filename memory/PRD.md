@@ -40,25 +40,61 @@ Discover winning products → Validate market opportunity → Create a store ins
 - Product angles with target audiences, headline variations
 - Video storyboard (6 scenes), shot list (5 shots), voiceover script
 - Provider: Emergent LLM Key → OpenAI GPT-4.1-mini
-- Abstraction layer supports OpenAI/Anthropic/Gemini switch
 
 ### Phase 6: Opportunity Feed (DONE)
 - Real-time dashboard feed with 30-second auto-refresh
 - Event types: new_strong_launch, trend_spike, competition_drop, supplier_price_drop, new_ad_activity
-- 38+ real events from product data analysis
-- Color-coded badges: green (opportunity), blue (trend), purple (ad activity), amber (competition), red (saturation)
+- Color-coded badges
+
+### Phase 7: Referral & Viral Growth System (DONE - March 2026)
+- Unique referral codes per user (auto-generated on first access)
+- Referral tracking: pending → verified status flow
+- Reward: bonus store slots (up to 5) for verified referrals
+- Social sharing: Twitter, Facebook, WhatsApp one-click share
+- Signup integration: /signup?ref=CODE shows badge, tracks referral on registration
+- Frontend: Full ReferralPage with stats, link, history
+
+### Phase 8: Automated Reports (DONE - March 2026)
+- Weekly Winning Products reports (top 20 products, trend analysis, competition, margins, saturation warnings)
+- Monthly Market Trends reports (emerging categories, demand vs competition, growth metrics, predictions)
+- PDF export for both report types via /api/reports/*/pdf
+- Email delivery via Resend (weekly digest, product of the week alerts)
+- Report archive with history browsing
+- Access-gated sections (Free, Pro, Elite tiers)
+- Scheduled generation: weekly on Mondays, monthly on 1st
+
+### Phase 9: Ad Discovery (DONE - March 2026)
+- Multi-platform ad scanning: TikTok Creative Center, Meta Ad Library, Google Shopping
+- Real scraping with curl_cffi, falls back to direct links when blocked
+- Cached results in MongoDB (12-hour TTL)
+- Activity level scoring (none → low → moderate → high → very_high)
+- Platform breakdown with ad counts
+- External links to live ad library search results
+- Frontend: AdDiscoverySection on ProductDetailPage with Discover/Refresh buttons
+
+### Phase 10: Shopify Direct Publish (DONE - March 2026)
+- Shopify OAuth connection flow endpoints
+- Direct publish to connected Shopify store
+- Export-only fallback when credentials not configured
+- Backend: /api/shopify/status, /connect/init, /connect/callback, /publish, /disconnect
 
 ## Key API Endpoints
-- Products: GET /api/products, GET /api/products/{id}, GET /api/products/{id}/launch-score-breakdown
+- Products: GET /api/products, GET /api/products/{id}
 - Suppliers: GET /api/suppliers/{id}, POST select, POST find
-- Stores: POST /api/stores/launch, GET /api/stores/{id}/export?format=shopify|shopify_csv|woocommerce
+- Stores: POST /api/stores/launch, GET /api/stores/{id}/export
 - Ad Creatives: POST /api/ad-creatives/generate/{id}, GET /api/ad-creatives/{id}
-- Ingestion: POST /api/ingestion/scrape/amazon_movers, google-trends, scores/recompute
+- Ad Discovery: POST /api/ad-discovery/discover/{id}, GET /api/ad-discovery/{id}
+- Reports: GET /api/reports/, GET /api/reports/weekly-winning-products, GET /api/reports/monthly-market-trends, GET /api/reports/*/pdf
+- Referrals: GET /api/viral/referral/stats, POST /api/viral/referral/track, GET /api/viral/referral/history
+- Shopify: GET /api/shopify/status, POST /api/shopify/connect/init, POST /api/shopify/publish/{store_id}
 - Dashboard: GET /api/dashboard/opportunity-feed
+- Ingestion: POST /api/ingestion/scrape/amazon_movers, google-trends, scores/recompute
 
 ## Remaining/Backlog
-- Ad Discovery (TikTok/Meta ad library monitoring)
-- Enhanced reports with PDF export & email delivery
-- Referral rewards system enhancement
-- Feature gating per subscription tier
+- Stripe subscription tiers with feature gating (P0)
+- CJ Dropshipping & Zendrop direct API supplier integration
+- TikTok Creative Center API integration (when available)
+- Meta Ad Library API integration (requires App credentials)
+- Image/video quality improvements (deduplication, scoring)
 - Additional data sources as anti-bot solutions become available
+- server.py refactoring into modular route files
