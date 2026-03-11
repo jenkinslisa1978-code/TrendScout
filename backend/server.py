@@ -44,6 +44,7 @@ viral_router = APIRouter(prefix="/api/viral")
 data_integrity_router = APIRouter(prefix="/api/data-integrity")
 intelligence_router = APIRouter(prefix="/api/intelligence")
 dashboard_router = APIRouter(prefix="/api/dashboard")
+supplier_router = APIRouter(prefix="/api/suppliers")
 reports_router = APIRouter(prefix="/api/reports")
 email_router = APIRouter(prefix="/api/email")
 notifications_router = APIRouter(prefix="/api/notifications")
@@ -6592,6 +6593,53 @@ async def disconnect_shopify(
     return {"success": True, "message": "Shopify disconnected"}
 
 
+# ===================== SUPPLIER ENDPOINTS =====================
+
+@supplier_router.get("/{product_id}")
+async def get_product_suppliers(product_id: str):
+    """Get all supplier listings for a product. Auto-discovers if none exist."""
+    from services.supplier_service import SupplierService
+    service = SupplierService(db)
+    result = await service.find_suppliers(product_id)
+    return result
+
+
+@supplier_router.post("/{product_id}/find")
+async def find_suppliers(product_id: str):
+    """Trigger supplier discovery for a product."""
+    from services.supplier_service import SupplierService
+    service = SupplierService(db)
+    
+    # Delete existing to force refresh
+    await db.product_suppliers.delete_many({"product_id": product_id})
+    result = await service.find_suppliers(product_id)
+    return result
+
+
+@supplier_router.post("/{product_id}/select/{supplier_id}")
+async def select_supplier(
+    product_id: str,
+    supplier_id: str,
+    authorization: Optional[str] = Header(None),
+):
+    """Select a supplier for a product."""
+    user_id = "anonymous"
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            import jwt
+            token = authorization.split(" ")[1]
+            payload = jwt.decode(token, os.environ.get('JWT_SECRET', ''), algorithms=["HS256"])
+            user_id = payload.get("sub", "anonymous")
+        except Exception:
+            pass
+    
+    from services.supplier_service import SupplierService
+    service = SupplierService(db)
+    result = await service.select_supplier(product_id, supplier_id, user_id)
+    return result
+
+
+
 # Include routers
 app.include_router(api_router)
 app.include_router(stripe_router)
@@ -6608,6 +6656,7 @@ app.include_router(reports_router)
 app.include_router(email_router)
 app.include_router(notifications_router)
 app.include_router(user_router)
+app.include_router(supplier_router)
 app.include_router(auth_router)
 
 app.add_middleware(

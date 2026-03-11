@@ -34,6 +34,7 @@ import { getProductById, getProductCompetitors } from '@/services/productService
 import { getCompleteAnalysis } from '@/services/intelligenceService';
 import { toggleSaveProduct, isProductSaved } from '@/services/savedProductService';
 import { useAuth } from '@/contexts/AuthContext';
+import SupplierSection from '@/components/SupplierSection';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -472,6 +473,9 @@ export default function ProductDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Supplier Section */}
+        <SupplierSection productId={id} productName={product.product_name} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pricing */}
