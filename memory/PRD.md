@@ -1,67 +1,66 @@
 # TrendScout - Product Requirements Document
 
-## Overview
-TrendScout is a comprehensive e-commerce intelligence SaaS platform providing data-driven insights for product discovery and validation.
+## Original Problem Statement
+Build "TrendScout", a comprehensive e-commerce intelligence SaaS platform that helps entrepreneurs find winning products, generate stores with AI, and export to Shopify.
 
-## Architecture
-- **Frontend:** React, TailwindCSS, Shadcn/UI
-- **Backend:** FastAPI, MongoDB, APScheduler
-- **Auth:** Custom JWT-based authentication (bcrypt + python-jose)
-- **Payments:** Stripe (Live keys configured)
-- **Email:** Resend (verified domain trendscout.click)
-
-## Auth Credentials (Test)
-- Admin: jenkinslisa1978@gmail.com / admin123456
-- Regular: testuser@test.com / test123456
-
-## Implemented Features
-
-### Core (Complete)
-- Product intelligence dashboard with Daily Winners, product images
-- Discover page with AI-generated product images, filters, sorting
-- Watchlist, saved products, trend alerts
+## Core Requirements
+- Real-time product trend data from multiple e-commerce sources
+- AI-powered product scoring (trend score, launch score, market opportunity)
 - Store builder with Shopify export
-- Data scraping pipeline, Launch Score calculation
-- Weekly/Monthly reports with PDF export
+- Supplier link generation (AliExpress search URLs)
+- Subscription plans with Stripe payments
+- Email notifications via Resend
 
-### AI Product Images (Complete - Mar 2026)
-- Generated unique product-specific images for all 79 products using Imagen 4.0
-- Images displayed on: Dashboard (all 3 sections), Discover, Saved Products, Product Detail
-- Fixed 4 mismatched images (protein powder, cooling gel, TV remotes)
-- Public pages (Trending, Product Page) already supported image_url
+## Tech Stack
+- Frontend: React, TailwindCSS, Shadcn/UI
+- Backend: FastAPI, MongoDB
+- Auth: Custom JWT
+- Payments: Stripe
+- Email: Resend
+- Scraping: curl_cffi (browser TLS fingerprint impersonation)
+- Scheduling: APScheduler
 
-### Supplier Links Fix (Complete - Mar 2026)
-- Replaced all fake placeholder URLs (alibaba.com/example1) with real search URLs
-- Links now go to Alibaba, AliExpress, or CJ Dropshipping search pages with product name
-- "View Supplier" button opens real product search results
+## What's Been Implemented
 
-### Auth System (Complete - Mar 2026)
-- Custom JWT auth replaces Supabase entirely
-- /api/auth/register, /api/auth/login, /api/auth/profile endpoints
-- Error Boundary prevents blank pages from crashes
+### Authentication (DONE)
+- Custom JWT auth (replaced Supabase)
+- Login, Register, Profile endpoints
+- Admin role via email whitelist
 
-### Blank Page Bug Fix (Complete - Mar 2026)
-- Fixed formatNumber()/formatCurrency() crashing on undefined values
+### Data Scraping Pipeline (DONE - Mar 2026)
+- Amazon UK Movers & Shakers scraper using curl_cffi
+- Scrapes 12+ categories: Home & Kitchen, Electronics, Beauty, Health, Sports, Garden, Pet Supplies, Toys, Fashion, Baby, DIY, Automotive
+- Extracts: product name, price, BSR change %, rating, reviews, images
+- Auto-generates AliExpress supplier search URLs
+- Computes trend_score, trend_stage, opportunity_rating
+- Scheduler runs every 4 hours (scrape_real_data task)
+- 137+ products in database with real data
 
-### Monetization (Complete)
-- 4-tier Stripe subscription: Free, Starter, Pro, Elite
-- Feature gating by plan, admin bypass
+### UI/Frontend (DONE)
+- Landing page, Dashboard, Discover, Product Detail pages
+- AI-generated product images for original 79 products
+- Data freshness indicator on Dashboard ("Live data · Last updated...")
+- Error Boundary to prevent blank pages
+- Product cards with images, prices, scores
+- View Supplier button links to AliExpress
 
-### Growth & Marketing (Complete)
-- Public Trending Products Page, Referral System
-- Product of the Week email digest, Newsletter capture
+### Other Features (DONE)
+- Store Builder with Shopify export
+- Pricing page with Stripe integration
+- Admin panel for product management
+- Product deduplication system
+- Market scoring and launch score computation
+- Weekly/Monthly report generation
 
-## Resolved Issues
-- SSL certificate on www.trendscout.click - RESOLVED
-- Blank pages on navigation - RESOLVED
-- Login/auth failures - RESOLVED (custom JWT)
-- Supplier links showing "product missing" - RESOLVED (real search URLs)
-- Mismatched product images - RESOLVED (regenerated)
+## Known Limitations
+- AliExpress direct scraping blocked by CAPTCHA (supplier links are generated search URLs)
+- TikTok Creative Center scraping blocked
+- CJ Dropshipping scraping blocked (human verification)
+- Only Amazon UK is scraped as live data source
 
 ## Backlog
-- P1: Re-deploy to production with all fixes
-- P3: CJ Dropshipping scraper blocked
-- P3: Gateway timeout on full scrape
 - P3: Product Outcome Learning System
-- P3: Architecture refactor (break down server.py)
+- P3: Full architecture refactor (break down server.py)
 - P3: Forgot Password flow via Resend
+- P3: Gateway timeout optimization for large batch scrapes
+- P3: Add more scraping sources (when anti-bot solutions available)
