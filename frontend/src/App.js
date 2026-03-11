@@ -3,6 +3,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "sonner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
@@ -231,23 +232,25 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <SubscriptionProvider>
-        <BrowserRouter>
-          <AppRoutes />
-          <Toaster 
-            position="top-right" 
-            richColors 
-            closeButton
-            toastOptions={{
-              style: {
-                fontFamily: 'Inter, sans-serif',
-              },
-            }}
-          />
-        </BrowserRouter>
-      </SubscriptionProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <BrowserRouter>
+            <AppRoutes />
+            <Toaster 
+              position="top-right" 
+              richColors 
+              closeButton
+              toastOptions={{
+                style: {
+                  fontFamily: 'Inter, sans-serif',
+                },
+              }}
+            />
+          </BrowserRouter>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

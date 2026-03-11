@@ -7,6 +7,7 @@ export function cn(...inputs) {
 
 // Format currency
 export function formatCurrency(amount, currency = 'GBP') {
+  if (amount == null || isNaN(amount)) return '£0.00';
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: currency,
@@ -15,6 +16,7 @@ export function formatCurrency(amount, currency = 'GBP') {
 
 // Format large numbers
 export function formatNumber(num) {
+  if (num == null || isNaN(num)) return '0';
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + 'M';
   }

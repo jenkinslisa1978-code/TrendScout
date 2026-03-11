@@ -12,18 +12,12 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 - **Admin System:** Admin role bypasses billing, grants Elite access
 - **Growth & Marketing:** Public trending pages, referral system, shareable product cards
 
-## User Personas
-- **Dropshippers:** Need product discovery and validation tools
-- **E-commerce Entrepreneurs:** Need market intelligence and trend detection
-- **Admin (jenkinslisa1978@gmail.com):** Full access for testing and management
-
 ## Architecture
 - **Frontend:** React, TailwindCSS, Shadcn/UI
 - **Backend:** FastAPI, MongoDB, APScheduler
 - **Auth:** Custom JWT-based authentication (bcrypt + python-jose). Supabase REMOVED.
 - **Payments:** Stripe (Live keys configured)
 - **Email:** Resend (verified domain trendscout.click)
-- **Deployment:** Custom domain trendscout.click (SSL pending)
 
 ## Auth Credentials (Test)
 - Admin: jenkinslisa1978@gmail.com / admin123456
@@ -47,28 +41,24 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 - Feature gating by plan
 - Admin bypass for jenkinslisa1978@gmail.com
 
-### User Management (Complete)
-- Custom JWT authentication (replaced Supabase)
-- Multi-step onboarding
-- Notification system (in-app + email via Resend)
-- User preferences
+### Auth System (Complete - Mar 2026)
+- Custom JWT auth replaces Supabase entirely
+- /api/auth/register, /api/auth/login, /api/auth/profile endpoints
+- Fixed load_dotenv order bug (JWT_SECRET was None)
+- Removed ALL Supabase imports from frontend
+- Upgraded JWT secret to 64-char hex
+- Error Boundary added to prevent blank pages from crashes
 
-### Growth & Marketing (Complete - Feb 2026)
-- Public Trending Products Page (/trending-products) with SEO meta tags
-- Homepage Landing Page (/) with hero, features, pricing
-- Public Product Pages (/p/{id}) with SEO-friendly detail pages
-- Shareable Product Cards with social media sharing
-- Referral System with code generation, tracking, and bonus store slots
-- Product of the Week email digest with personalized referral viral loop
-- Newsletter email capture on landing page
+### Blank Page Bug Fix (Complete - Mar 2026)
+- Root cause: formatNumber() and formatCurrency() crashed on undefined values
+- Fixed null/undefined guards in both utility functions
+- Added global React ErrorBoundary component
+- Verified all major pages work: Dashboard, Discover, Reports, Saved Products
 
-### Auth Migration (Complete - Mar 2026)
-- Replaced Supabase auth with custom JWT auth system
-- Added /api/auth/register, /api/auth/login, /api/auth/profile endpoints
-- Fixed load_dotenv order (was causing JWT_SECRET=None)
-- Removed Supabase imports from AuthContext, savedProductService, subscriptionService
-- Upgraded JWT secret to 64-char hex for proper security
-- All auth tests passing (15/15 backend, full frontend flow)
+### Growth & Marketing (Complete)
+- Public Trending Products Page, Referral System
+- Product of the Week email digest
+- Newsletter capture form
 
 ## Known Issues
 - **P0:** SSL certificate error on www.trendscout.click (BLOCKED - external)
@@ -77,7 +67,7 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 - **P3:** Gateway timeout on full scrape
 
 ## Backlog
-- P1: Re-deploy after SSL fix to production
+- P1: Re-deploy to production (all fixes ready in codebase)
 - P3: Product Outcome Learning System (feedback loop)
 - P3: Full architecture refactor (break down server.py into services)
-- P3: Clean up remaining Supabase references in comments/code
+- P3: Forgot Password flow with email reset via Resend
