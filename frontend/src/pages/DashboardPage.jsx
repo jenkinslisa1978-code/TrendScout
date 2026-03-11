@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSubscription } from '@/hooks/useSubscription';
+import { LockedContent, EarlyTrendUpgradePrompt } from '@/components/common/UpgradePrompts';
 import { 
   Trophy,
   Flame,
@@ -37,6 +39,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { canAccessEarlyTrends, isElite, isFree } = useSubscription();
   const { showOnboarding, closeOnboarding } = useOnboarding();
   const [winningProducts, setWinningProducts] = useState([]);
   const [earlyTrendProducts, setEarlyTrendProducts] = useState([]);
@@ -251,6 +254,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Section 2: Early Trend Opportunities */}
+        {canAccessEarlyTrends ? (
         <Card className="border-0 shadow-lg overflow-hidden">
           <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-red-50 via-orange-50 to-amber-50">
             <div className="flex items-center justify-between">
@@ -348,6 +352,9 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+        ) : (
+          <EarlyTrendUpgradePrompt />
+        )}
 
         {/* Section 3: Market Opportunities */}
         <Card className="border-0 shadow-lg overflow-hidden">

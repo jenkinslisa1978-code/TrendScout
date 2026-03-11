@@ -27,12 +27,12 @@ import {
 import { getReportsList, getReportHistory, downloadReportPDF } from '@/services/reportsService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { ReportUpgradePrompt } from '@/components/common/UpgradePrompts';
+import { ReportUpgradePrompt, LockedContent, UpgradeBadge } from '@/components/common/UpgradePrompts';
 import { toast } from 'sonner';
 
 export default function ReportsPage() {
   const { profile } = useAuth();
-  const { canAccessFullReports, isFree } = useSubscription();
+  const { canAccessFullReports, canExportPdf, isFree, plan } = useSubscription();
   const [reportsData, setReportsData] = useState({ reports: [], latest: {} });
   const [weeklyHistory, setWeeklyHistory] = useState([]);
   const [monthlyHistory, setMonthlyHistory] = useState([]);
@@ -61,12 +61,20 @@ export default function ReportsPage() {
   }, []);
 
   const handleDownloadPDF = async (reportType) => {
+    if (!canExportPdf) {
+      toast.error('Upgrade to Pro to export PDF reports');
+      return;
+    }
     setDownloadingPDF(reportType);
     try {
       await downloadReportPDF(reportType);
       toast.success('PDF downloaded successfully');
     } catch (error) {
-      toast.error('Failed to download PDF');
+      if (error?.response?.status === 403) {
+        toast.error('Upgrade to Pro to export PDF reports');
+      } else {
+        toast.error('Failed to download PDF');
+      }
       console.error('PDF download error:', error);
     } finally {
       setDownloadingPDF(null);
@@ -156,13 +164,16 @@ export default function ReportsPage() {
                     </Link>
                     <Button 
                       variant="outline" 
-                      className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                      className={`border-amber-300 ${canExportPdf ? 'text-amber-700 hover:bg-amber-100' : 'text-slate-400 cursor-not-allowed'}`}
                       onClick={() => handleDownloadPDF('weekly')}
-                      disabled={downloadingPDF === 'weekly'}
+                      disabled={downloadingPDF === 'weekly' || !canExportPdf}
                       data-testid="download-weekly-pdf"
+                      title={canExportPdf ? 'Download PDF' : 'Upgrade to Pro for PDF export'}
                     >
                       {downloadingPDF === 'weekly' ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : !canExportPdf ? (
+                        <Lock className="h-4 w-4" />
                       ) : (
                         <Download className="h-4 w-4" />
                       )}
@@ -212,13 +223,16 @@ export default function ReportsPage() {
                     </Link>
                     <Button 
                       variant="outline" 
-                      className="border-purple-300 text-purple-700 hover:bg-purple-100"
+                      className={`border-purple-300 ${canExportPdf ? 'text-purple-700 hover:bg-purple-100' : 'text-slate-400 cursor-not-allowed'}`}
                       onClick={() => handleDownloadPDF('monthly')}
-                      disabled={downloadingPDF === 'monthly'}
+                      disabled={downloadingPDF === 'monthly' || !canExportPdf}
                       data-testid="download-monthly-pdf"
+                      title={canExportPdf ? 'Download PDF' : 'Upgrade to Pro for PDF export'}
                     >
                       {downloadingPDF === 'monthly' ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : !canExportPdf ? (
+                        <Lock className="h-4 w-4" />
                       ) : (
                         <Download className="h-4 w-4" />
                       )}

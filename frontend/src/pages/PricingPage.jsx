@@ -41,51 +41,31 @@ const PLANS = [
       { text: 'Limited product insights', included: true },
       { text: 'Report previews only', included: true },
       { text: '1 store', included: true },
-      { text: 'Limited watchlist access', included: true },
-      { text: 'Limited alerts', included: true },
-      { text: 'Full reports access', included: false },
+      { text: 'Limited watchlist & alerts', included: true },
+      { text: 'PDF report export', included: false },
       { text: 'Early trend detection', included: false },
-      { text: 'Advanced opportunities', included: false },
+      { text: 'Direct Shopify publish', included: false },
+      { text: 'Automated reports', included: false },
     ],
     cta: 'Current Plan',
-    popular: false
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 19,
-    description: 'Launch your first winning store',
-    icon: Rocket,
-    color: 'emerald',
-    features: [
-      { text: 'Full product insights', included: true },
-      { text: 'Complete reports access', included: true },
-      { text: '1 store', included: true },
-      { text: 'Full watchlist access', included: true },
-      { text: 'Email support', included: true },
-      { text: 'Multiple stores', included: false },
-      { text: 'Early trend detection', included: false },
-      { text: 'Advanced opportunities', included: false },
-    ],
-    cta: 'Get Starter',
     popular: false
   },
   {
     id: 'pro',
     name: 'Pro',
     price: 39,
-    description: 'Scale with multiple stores',
+    description: 'Scale with full insights & multiple stores',
     icon: TrendingUp,
     color: 'indigo',
     features: [
       { text: 'Full product insights', included: true },
-      { text: 'Complete reports access', included: true },
+      { text: 'Complete reports + PDF export', included: true },
       { text: 'Up to 5 stores', included: true },
-      { text: 'Full watchlist access', included: true },
-      { text: 'Full alerts access', included: true },
+      { text: 'Full watchlist & alerts', included: true },
       { text: 'Priority support', included: true },
       { text: 'Early trend detection', included: false },
-      { text: 'Advanced opportunities', included: false },
+      { text: 'Direct Shopify publish', included: false },
+      { text: 'Automated reports', included: false },
     ],
     cta: 'Upgrade to Pro',
     popular: true
@@ -94,17 +74,17 @@ const PLANS = [
     id: 'elite',
     name: 'Elite',
     price: 99,
-    description: 'Everything you need to scale',
+    description: 'Everything you need to dominate',
     icon: Crown,
     color: 'amber',
     features: [
       { text: 'Everything in Pro', included: true },
       { text: 'Early trend detection', included: true },
       { text: 'Advanced opportunity insights', included: true },
-      { text: 'Automation insights', included: true },
+      { text: 'Automated reports & priority alerts', included: true },
       { text: 'Unlimited stores', included: true },
-      { text: 'Priority opportunity alerts', included: true },
-      { text: 'Premium market analysis', included: true },
+      { text: 'Direct Shopify publish', included: true },
+      { text: 'Premium automation features', included: true },
       { text: 'Dedicated support', included: true },
     ],
     cta: 'Go Elite',
@@ -116,7 +96,7 @@ function PlanCard({ plan, currentPlan, onSelect, loading }) {
   const isCurrentPlan = currentPlan === plan.id;
   
   // Define plan hierarchy
-  const planOrder = ['free', 'starter', 'pro', 'elite'];
+  const planOrder = ['free', 'pro', 'elite'];
   const currentIndex = planOrder.indexOf(currentPlan);
   const planIndex = planOrder.indexOf(plan.id);
   
@@ -326,7 +306,7 @@ export default function PricingPage() {
       
       {/* Pricing Cards */}
       <div className="max-w-6xl mx-auto px-4 pb-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {PLANS.map(plan => (
             <PlanCard
               key={plan.id}
@@ -361,79 +341,46 @@ export default function PricingPage() {
           </h2>
           
           <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-            <table className="w-full">
+            <table className="w-full" data-testid="feature-comparison-table">
               <thead>
                 <tr className="border-b bg-slate-50">
                   <th className="text-left p-4 font-medium text-slate-700">Feature</th>
                   <th className="text-center p-4 font-medium text-slate-700">Free</th>
-                  <th className="text-center p-4 font-medium text-indigo-700 bg-indigo-50">Pro</th>
-                  <th className="text-center p-4 font-medium text-amber-700">Elite</th>
+                  <th className="text-center p-4 font-medium text-indigo-700 bg-indigo-50">Pro <span className="text-xs font-normal">(£39/mo)</span></th>
+                  <th className="text-center p-4 font-medium text-amber-700">Elite <span className="text-xs font-normal">(£99/mo)</span></th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="p-4 flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-slate-400" />
-                    Product Insights
-                  </td>
-                  <td className="p-4 text-center text-slate-500">Limited</td>
-                  <td className="p-4 text-center bg-indigo-50/50"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                  <td className="p-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-4 flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-slate-400" />
-                    Market Reports
-                  </td>
-                  <td className="p-4 text-center text-slate-500">Preview</td>
-                  <td className="p-4 text-center bg-indigo-50/50"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                  <td className="p-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-4 flex items-center gap-2">
-                    <Store className="h-4 w-4 text-slate-400" />
-                    Stores
-                  </td>
-                  <td className="p-4 text-center">1</td>
-                  <td className="p-4 text-center bg-indigo-50/50">5</td>
-                  <td className="p-4 text-center">Unlimited</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-4 flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-slate-400" />
-                    Watchlist & Alerts
-                  </td>
-                  <td className="p-4 text-center text-slate-500">Limited</td>
-                  <td className="p-4 text-center bg-indigo-50/50"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                  <td className="p-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-4 flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-slate-400" />
-                    Early Trend Detection
-                  </td>
-                  <td className="p-4 text-center"><div className="h-5 w-5 rounded-full border-2 border-slate-200 mx-auto" /></td>
-                  <td className="p-4 text-center bg-indigo-50/50"><div className="h-5 w-5 rounded-full border-2 border-slate-200 mx-auto" /></td>
-                  <td className="p-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-4 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-slate-400" />
-                    Advanced Opportunities
-                  </td>
-                  <td className="p-4 text-center"><div className="h-5 w-5 rounded-full border-2 border-slate-200 mx-auto" /></td>
-                  <td className="p-4 text-center bg-indigo-50/50"><div className="h-5 w-5 rounded-full border-2 border-slate-200 mx-auto" /></td>
-                  <td className="p-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
-                <tr>
-                  <td className="p-4 flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-slate-400" />
-                    Automation Insights
-                  </td>
-                  <td className="p-4 text-center"><div className="h-5 w-5 rounded-full border-2 border-slate-200 mx-auto" /></td>
-                  <td className="p-4 text-center bg-indigo-50/50"><div className="h-5 w-5 rounded-full border-2 border-slate-200 mx-auto" /></td>
-                  <td className="p-4 text-center"><Check className="h-5 w-5 text-green-500 mx-auto" /></td>
-                </tr>
+                {[
+                  { icon: Eye, label: 'Product Insights', free: 'Limited', pro: true, elite: true },
+                  { icon: FileText, label: 'Market Reports', free: 'Preview', pro: true, elite: true },
+                  { icon: FileText, label: 'PDF Report Export', free: false, pro: true, elite: true },
+                  { icon: Store, label: 'Stores', free: '1', pro: '5', elite: 'Unlimited' },
+                  { icon: Bell, label: 'Watchlist & Alerts', free: 'Limited', pro: true, elite: true },
+                  { icon: Bell, label: 'Priority Alerts', free: false, pro: false, elite: true },
+                  { icon: TrendingUp, label: 'Early Trend Detection', free: false, pro: false, elite: true },
+                  { icon: Sparkles, label: 'Advanced Opportunities', free: false, pro: false, elite: true },
+                  { icon: Zap, label: 'Automated Reports', free: false, pro: false, elite: true },
+                  { icon: Rocket, label: 'Direct Shopify Publish', free: false, pro: false, elite: true },
+                ].map((row, idx) => {
+                  const Icon = row.icon;
+                  const renderCell = (val) => {
+                    if (val === true) return <Check className="h-5 w-5 text-green-500 mx-auto" />;
+                    if (val === false) return <div className="h-5 w-5 rounded-full border-2 border-slate-200 mx-auto" />;
+                    return <span className="text-slate-600 text-sm">{val}</span>;
+                  };
+                  return (
+                    <tr key={idx} className="border-b last:border-0">
+                      <td className="p-4 flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-slate-400" />
+                        {row.label}
+                      </td>
+                      <td className="p-4 text-center">{renderCell(row.free)}</td>
+                      <td className="p-4 text-center bg-indigo-50/50">{renderCell(row.pro)}</td>
+                      <td className="p-4 text-center">{renderCell(row.elite)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

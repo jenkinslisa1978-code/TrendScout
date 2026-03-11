@@ -53,6 +53,31 @@ notifications_router = APIRouter(prefix="/api/notifications")
 user_router = APIRouter(prefix="/api/user")
 auth_router = APIRouter(prefix="/api/auth")
 
+
+# =====================
+# SERVER-SIDE FEATURE GATING
+# =====================
+
+async def get_user_plan(user_id: str) -> str:
+    """Get user's current plan from profile. Admins always get 'elite'."""
+    profile = await db.profiles.find_one({"id": user_id}, {"_id": 0, "plan": 1, "is_admin": 1})
+    if not profile:
+        return "free"
+    if profile.get("is_admin"):
+        return "elite"
+    return profile.get("plan", "free").lower()
+
+
+async def require_plan(user: AuthenticatedUser, minimum_plan: str, feature_name: str = "this feature"):
+    """Raise 403 if user's plan is below the required minimum."""
+    from services.subscription_service import FeatureGate
+    plan = await get_user_plan(user.user_id)
+    if not FeatureGate.requires_at_least(plan, minimum_plan):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Upgrade to {minimum_plan.title()} to access {feature_name}. Your current plan: {plan}."
+        )
+
 # =====================
 # MODELS
 # =====================
@@ -2585,10 +2610,15 @@ async def get_launch_opportunities(
 
 
 @intelligence_router.get("/early-opportunities")
-async def get_early_trend_opportunities(limit: int = 20):
+async def get_early_trend_opportunities(
+    limit: int = 20,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     """
     Get products showing early trend signals - best first-mover opportunities.
+    Elite plan only.
     """
+    await require_plan(current_user, "elite", "early trend detection")
     # Get products with early trend indicators
     products = await db.products.find(
         {
@@ -3651,11 +3681,14 @@ async def generate_monthly_report(
 
 
 @reports_router.get("/weekly-winning-products/pdf")
-async def download_weekly_report_pdf():
+async def download_weekly_report_pdf(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     """
     Download weekly winning products report as PDF.
-    Returns a professionally formatted PDF document.
+    Requires Pro plan or above.
     """
+    await require_plan(current_user, "pro", "PDF report exports")
     from services.pdf_generator import pdf_generator
     import traceback
     
@@ -3700,11 +3733,14 @@ async def download_weekly_report_pdf():
 
 
 @reports_router.get("/monthly-market-trends/pdf")
-async def download_monthly_report_pdf():
+async def download_monthly_report_pdf(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
     """
     Download monthly market trends report as PDF.
-    Returns a professionally formatted PDF document.
+    Requires Pro plan or above.
     """
+    await require_plan(current_user, "pro", "PDF report exports")
     from services.pdf_generator import pdf_generator
     
     try:
@@ -4775,11 +4811,15 @@ async def get_feature_access(
         "features": {
             "full_reports": FeatureGate.can_access_full_reports(plan),
             "full_insights": FeatureGate.can_access_full_insights(plan),
+            "pdf_export": FeatureGate.can_export_pdf(plan),
             "watchlist": FeatureGate.can_access_watchlist(plan),
             "alerts": FeatureGate.can_access_alerts(plan),
             "early_trends": FeatureGate.can_access_early_trends(plan),
             "automation_insights": FeatureGate.can_access_automation_insights(plan),
             "advanced_opportunities": FeatureGate.can_access_advanced_opportunities(plan),
+            "direct_publish": FeatureGate.can_direct_publish(plan),
+            "automated_reports": FeatureGate.can_access_automated_reports(plan),
+            "priority_alerts": FeatureGate.can_access_priority_alerts(plan),
             "max_stores": FeatureGate.get_max_stores(plan),
             "can_create_store": FeatureGate.can_create_store(plan, store_count),
             "current_store_count": store_count
@@ -6542,8 +6582,9 @@ async def publish_to_shopify(
     """
     Publish store products directly to Shopify
     
-    Requires user to have connected Shopify account
+    Requires Elite plan and connected Shopify account
     """
+    await require_plan(current_user, "elite", "direct Shopify publishing")
     user_id = current_user.user_id
     # Get user's Shopify credentials
     profile = await db.profiles.find_one({"id": user_id}, {"_id": 0})
@@ -6631,15 +6672,16 @@ async def launch_store(
     5. Returns complete store ready for export
     """
     user_id = current_user.user_id
-    # Get user plan from database
-    user_record = await db.auth_users.find_one({"id": user_id}, {"_id": 0, "plan": 1})
-    user_plan = (user_record or {}).get('plan', 'elite')
+    # Get user plan from subscription system
+    from services.subscription_service import FeatureGate
+    user_plan = await get_user_plan(user_id)
     
     # Check store limits
     current_count = await db.stores.count_documents({"owner_id": user_id})
-    if not can_create_store(current_count, user_plan):
-        limit = get_store_limit(user_plan)
-        raise HTTPException(status_code=403, detail=f"Store limit reached ({limit} stores on {user_plan} plan)")
+    if not FeatureGate.can_create_store(user_plan, current_count):
+        limit = FeatureGate.get_max_stores(user_plan)
+        limit_text = "unlimited" if limit == -1 else str(limit)
+        raise HTTPException(status_code=403, detail=f"Store limit reached ({limit_text} stores on {user_plan} plan). Upgrade to create more.")
     
     # Get product
     product = await db.products.find_one({"id": request.product_id}, {"_id": 0})

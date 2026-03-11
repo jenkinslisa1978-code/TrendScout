@@ -34,6 +34,8 @@ import { getProductById, getProductCompetitors } from '@/services/productService
 import { getCompleteAnalysis } from '@/services/intelligenceService';
 import { toggleSaveProduct, isProductSaved } from '@/services/savedProductService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import { LockedContent, UpgradeBadge } from '@/components/common/UpgradePrompts';
 import SupplierSection from '@/components/SupplierSection';
 import AdCreativeSection from '@/components/AdCreativeSection';
 import AdDiscoverySection from '@/components/AdDiscoverySection';
@@ -72,6 +74,7 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isFree, canAccessFullInsights, canAccessEarlyTrends, canDirectPublish } = useSubscription();
   const [product, setProduct] = useState(null);
   const [competitorData, setCompetitorData] = useState(null);
   const [dataIntegrity, setDataIntegrity] = useState(null);
@@ -444,6 +447,29 @@ export default function ProductDetailPage() {
 
         {/* Transparent Score Breakdown */}
         {product.launch_score_breakdown && Object.keys(product.launch_score_breakdown).length > 0 && (
+          isFree ? (
+            <LockedContent feature="Score Breakdown" requiredPlan="Pro" blurIntensity="medium">
+              <Card className="border-slate-200 shadow-sm" data-testid="score-breakdown-card">
+                <CardHeader className="border-b border-slate-100 pb-4">
+                  <CardTitle className="font-manrope text-lg font-semibold text-slate-900 flex items-center gap-2">
+                    <PieChart className="h-5 w-5 text-indigo-500" />
+                    Launch Score Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    {['Trend', 'Margin', 'Competition', 'Ad Activity', 'Supplier'].map((label) => (
+                      <div key={label} className="space-y-2 p-3 rounded-lg bg-slate-50">
+                        <span className="text-xs font-semibold text-slate-600">{label}</span>
+                        <div className="font-mono text-2xl font-bold text-slate-400">--</div>
+                        <div className="w-full h-1.5 bg-slate-200 rounded-full" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </LockedContent>
+          ) : (
           <Card className="border-slate-200 shadow-sm" data-testid="score-breakdown-card">
             <CardHeader className="border-b border-slate-100 pb-4">
               <div className="flex items-center justify-between">
@@ -513,6 +539,7 @@ export default function ProductDetailPage() {
               </div>
             </CardContent>
           </Card>
+          )
         )}
 
         {/* Supplier Section */}
@@ -578,6 +605,14 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Market Intelligence Section */}
+        {isFree ? (
+          <LockedContent feature="Market Intelligence" requiredPlan="Pro" blurIntensity="medium">
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><PieChart className="h-5 w-5 text-indigo-600" /> Market Intelligence</CardTitle></CardHeader>
+              <CardContent className="p-6"><div className="h-48 bg-slate-50 rounded-lg" /></CardContent>
+            </Card>
+          </LockedContent>
+        ) : (
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="border-b border-slate-100 pb-4">
             <div className="flex items-center justify-between">
@@ -681,6 +716,7 @@ export default function ProductDetailPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Competitor Stores Section */}
         {competitorData?.competitor_stores && competitorData.competitor_stores.length > 0 && (

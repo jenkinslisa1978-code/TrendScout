@@ -25,7 +25,6 @@ except ImportError:
 class SubscriptionPlan(str, Enum):
     """Available subscription plans"""
     FREE = "free"
-    STARTER = "starter"
     PRO = "pro"
     ELITE = "elite"
 
@@ -45,46 +44,27 @@ PLANS = {
         "name": "Free",
         "price_monthly": 0,
         "currency": "gbp",
-        "stripe_price_id": None,  # No Stripe for free tier
+        "stripe_price_id": None,
         "features": {
             "product_insights": "limited",
             "reports_access": "preview",
+            "pdf_export": False,
             "max_stores": 1,
             "watchlist_access": "limited",
             "alerts_access": "limited",
             "early_trend_access": False,
             "automation_insights": False,
             "advanced_opportunities": False,
+            "direct_publish": False,
+            "automated_reports": False,
+            "priority_alerts": False,
         },
         "feature_descriptions": [
             "Limited product insights",
             "Report previews only",
             "1 store",
-            "Limited watchlist access",
-            "Limited alerts"
-        ]
-    },
-    SubscriptionPlan.STARTER: {
-        "name": "Starter",
-        "price_monthly": 19,
-        "currency": "gbp",
-        "stripe_price_id": os.environ.get("STRIPE_STARTER_PRICE_ID"),
-        "features": {
-            "product_insights": "full",
-            "reports_access": "full",
-            "max_stores": 1,
-            "watchlist_access": "full",
-            "alerts_access": "limited",
-            "early_trend_access": False,
-            "automation_insights": False,
-            "advanced_opportunities": False,
-        },
-        "feature_descriptions": [
-            "Full product insights",
-            "Complete reports access",
-            "1 store",
-            "Full watchlist access",
-            "Email support"
+            "Limited watchlist & alerts",
+            "No PDF export"
         ]
     },
     SubscriptionPlan.PRO: {
@@ -95,19 +75,23 @@ PLANS = {
         "features": {
             "product_insights": "full",
             "reports_access": "full",
+            "pdf_export": True,
             "max_stores": 5,
             "watchlist_access": "full",
             "alerts_access": "full",
             "early_trend_access": False,
             "automation_insights": False,
             "advanced_opportunities": False,
+            "direct_publish": False,
+            "automated_reports": False,
+            "priority_alerts": False,
         },
         "feature_descriptions": [
             "Full product insights",
-            "Complete reports access",
+            "Complete reports + PDF export",
             "Up to 5 stores",
-            "Full watchlist access",
-            "Full alerts access"
+            "Full watchlist & alerts",
+            "Priority support"
         ]
     },
     SubscriptionPlan.ELITE: {
@@ -118,19 +102,23 @@ PLANS = {
         "features": {
             "product_insights": "full",
             "reports_access": "full",
+            "pdf_export": True,
             "max_stores": -1,  # Unlimited
             "watchlist_access": "full",
             "alerts_access": "full",
             "early_trend_access": True,
             "automation_insights": True,
             "advanced_opportunities": True,
+            "direct_publish": True,
+            "automated_reports": True,
+            "priority_alerts": True,
         },
         "feature_descriptions": [
             "Everything in Pro",
             "Early trend detection",
             "Advanced opportunity insights",
-            "Automation insights",
-            "Unlimited stores"
+            "Automated reports & priority alerts",
+            "Unlimited stores & direct publish"
         ]
     }
 }
@@ -138,6 +126,8 @@ PLANS = {
 
 class FeatureGate:
     """Utility class for checking feature access by plan"""
+    
+    PLAN_HIERARCHY = {"free": 0, "pro": 1, "elite": 2}
     
     @staticmethod
     def get_plan_features(plan: str) -> Dict[str, Any]:
@@ -149,58 +139,77 @@ class FeatureGate:
             return PLANS[SubscriptionPlan.FREE]["features"]
     
     @staticmethod
+    def plan_level(plan: str) -> int:
+        return FeatureGate.PLAN_HIERARCHY.get(plan.lower(), 0)
+    
+    @staticmethod
+    def requires_at_least(plan: str, minimum: str) -> bool:
+        return FeatureGate.plan_level(plan) >= FeatureGate.plan_level(minimum)
+    
+    @staticmethod
     def can_access_full_reports(plan: str) -> bool:
-        """Check if user can access full reports"""
         features = FeatureGate.get_plan_features(plan)
         return features.get("reports_access") == "full"
     
     @staticmethod
+    def can_export_pdf(plan: str) -> bool:
+        features = FeatureGate.get_plan_features(plan)
+        return features.get("pdf_export", False)
+    
+    @staticmethod
     def can_access_full_insights(plan: str) -> bool:
-        """Check if user can access full product insights"""
         features = FeatureGate.get_plan_features(plan)
         return features.get("product_insights") == "full"
     
     @staticmethod
     def can_access_watchlist(plan: str) -> bool:
-        """Check if user has full watchlist access"""
         features = FeatureGate.get_plan_features(plan)
         return features.get("watchlist_access") == "full"
     
     @staticmethod
     def can_access_alerts(plan: str) -> bool:
-        """Check if user has full alerts access"""
         features = FeatureGate.get_plan_features(plan)
         return features.get("alerts_access") == "full"
     
     @staticmethod
     def can_access_early_trends(plan: str) -> bool:
-        """Check if user can access early trend features"""
         features = FeatureGate.get_plan_features(plan)
         return features.get("early_trend_access", False)
     
     @staticmethod
     def can_access_automation_insights(plan: str) -> bool:
-        """Check if user can access automation insights"""
         features = FeatureGate.get_plan_features(plan)
         return features.get("automation_insights", False)
     
     @staticmethod
     def can_access_advanced_opportunities(plan: str) -> bool:
-        """Check if user can access advanced opportunity features"""
         features = FeatureGate.get_plan_features(plan)
         return features.get("advanced_opportunities", False)
     
     @staticmethod
+    def can_direct_publish(plan: str) -> bool:
+        features = FeatureGate.get_plan_features(plan)
+        return features.get("direct_publish", False)
+    
+    @staticmethod
+    def can_access_automated_reports(plan: str) -> bool:
+        features = FeatureGate.get_plan_features(plan)
+        return features.get("automated_reports", False)
+    
+    @staticmethod
+    def can_access_priority_alerts(plan: str) -> bool:
+        features = FeatureGate.get_plan_features(plan)
+        return features.get("priority_alerts", False)
+    
+    @staticmethod
     def get_max_stores(plan: str) -> int:
-        """Get maximum stores allowed for plan (-1 = unlimited)"""
         features = FeatureGate.get_plan_features(plan)
         return features.get("max_stores", 1)
     
     @staticmethod
     def can_create_store(plan: str, current_store_count: int) -> bool:
-        """Check if user can create another store"""
         max_stores = FeatureGate.get_max_stores(plan)
-        if max_stores == -1:  # Unlimited
+        if max_stores == -1:
             return True
         return current_store_count < max_stores
 

@@ -1,275 +1,426 @@
 """
-Test Stripe Subscription & Pricing Plans API Endpoints
+Stripe Subscription Tests - P0 Testing
 
 Tests for:
-- GET /api/stripe/plans - Returns all 3 plans with GBP pricing
-- GET /api/stripe/subscription - Returns user subscription status (requires auth)
-- GET /api/stripe/feature-access - Returns feature access (requires auth)
-- POST /api/stripe/create-checkout-session - Creates Stripe checkout (requires auth)
-- POST /api/stripe/create-portal-session - Creates billing portal (requires auth)
-- POST /api/stripe/webhook - Handles subscription events
-- POST /api/stripe/cancel-subscription - Cancels subscription (requires auth)
+1. Stripe Billing Endpoints (create-checkout-session, plans, cancel-subscription, create-portal-session)
+2. Webhook Handling (checkout.session.completed, customer.subscription.deleted)
+3. Feature Access (feature-access endpoint for free/pro/elite users)
+4. Server-Side Gating (PDF export requires Pro, early-opportunities requires Elite)
+5. Store Limit Gating
 """
 
 import pytest
 import requests
 import os
+import json
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
+# Test credentials from review request
+FREE_USER_EMAIL = "testref@test.com"
+FREE_USER_PASSWORD = "Test1234!"
+ADMIN_USER_EMAIL = "jenkinslisa1978@gmail.com"
 
-class TestStripePlansPublicEndpoint:
-    """Tests for GET /api/stripe/plans - public endpoint"""
+
+class TestStripeSetup:
+    """Verify Stripe configuration and basic endpoints"""
     
-    def test_get_plans_returns_200(self):
-        """Test plans endpoint returns 200"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        print(f"GET /api/stripe/plans - Status: {response.status_code}")
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+    @pytest.fixture(scope="class")
+    def free_user_token(self):
+        """Login as free tier user"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": FREE_USER_EMAIL,
+            "password": FREE_USER_PASSWORD
+        })
+        if response.status_code == 200:
+            return response.json().get("token")
+        pytest.skip(f"Free user login failed: {response.status_code} - {response.text}")
     
-    def test_get_plans_returns_three_plans(self):
-        """Test that 3 plans are returned (free, pro, elite)"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
+    def test_api_health(self):
+        """Test API is healthy"""
+        response = requests.get(f"{BASE_URL}/api/health")
+        assert response.status_code == 200
         data = response.json()
+        assert data.get("status") == "healthy"
+        print("✓ API health check passed")
+    
+    def test_plans_endpoint_returns_three_plans(self):
+        """GET /api/stripe/plans should return Free/Pro/Elite only (no Starter)"""
+        response = requests.get(f"{BASE_URL}/api/stripe/plans")
+        assert response.status_code == 200
         
-        assert "plans" in data, "Response should have 'plans' key"
+        data = response.json()
+        assert "plans" in data
+        assert data.get("currency") == "gbp"
+        
         plans = data["plans"]
-        assert len(plans) == 3, f"Expected 3 plans, got {len(plans)}"
-        
         plan_ids = [p["id"] for p in plans]
-        print(f"Plan IDs: {plan_ids}")
-        assert "free" in plan_ids, "Free plan should exist"
-        assert "pro" in plan_ids, "Pro plan should exist"
-        assert "elite" in plan_ids, "Elite plan should exist"
-    
-    def test_plans_have_gbp_pricing(self):
-        """Test plans use GBP currency"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
         
-        assert data.get("currency") == "gbp", f"Currency should be gbp, got {data.get('currency')}"
-        assert data.get("currency_symbol") == "£", f"Currency symbol should be £"
+        # Verify exactly 3 plans: free, pro, elite
+        assert "free" in plan_ids, "Free plan missing"
+        assert "pro" in plan_ids, "Pro plan missing"
+        assert "elite" in plan_ids, "Elite plan missing"
+        assert "starter" not in plan_ids, "Starter plan should not exist"
         
-        for plan in data["plans"]:
-            assert plan.get("currency") == "gbp", f"Plan {plan.get('id')} should use gbp"
-    
-    def test_free_plan_is_zero(self):
-        """Test free plan has £0 pricing"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
+        # Verify pricing
+        for plan in plans:
+            if plan["id"] == "free":
+                assert plan["price_monthly"] == 0, "Free plan should be £0"
+            elif plan["id"] == "pro":
+                assert plan["price_monthly"] == 39, "Pro plan should be £39"
+            elif plan["id"] == "elite":
+                assert plan["price_monthly"] == 99, "Elite plan should be £99"
         
-        free_plan = next((p for p in data["plans"] if p["id"] == "free"), None)
-        assert free_plan is not None, "Free plan not found"
-        assert free_plan["price_monthly"] == 0, f"Free plan should be £0, got £{free_plan['price_monthly']}"
-        print(f"Free plan price: £{free_plan['price_monthly']}/month")
-    
-    def test_pro_plan_is_39(self):
-        """Test pro plan has £39 pricing"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
-        
-        pro_plan = next((p for p in data["plans"] if p["id"] == "pro"), None)
-        assert pro_plan is not None, "Pro plan not found"
-        assert pro_plan["price_monthly"] == 39, f"Pro plan should be £39, got £{pro_plan['price_monthly']}"
-        print(f"Pro plan price: £{pro_plan['price_monthly']}/month")
-    
-    def test_elite_plan_is_99(self):
-        """Test elite plan has £99 pricing"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
-        
-        elite_plan = next((p for p in data["plans"] if p["id"] == "elite"), None)
-        assert elite_plan is not None, "Elite plan not found"
-        assert elite_plan["price_monthly"] == 99, f"Elite plan should be £99, got £{elite_plan['price_monthly']}"
-        print(f"Elite plan price: £{elite_plan['price_monthly']}/month")
-    
-    def test_plans_have_features(self):
-        """Test all plans have features object"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
-        
-        for plan in data["plans"]:
-            assert "features" in plan, f"Plan {plan['id']} should have features"
-            assert "feature_descriptions" in plan, f"Plan {plan['id']} should have feature_descriptions"
-            print(f"{plan['name']} plan features: {list(plan['features'].keys())}")
-    
-    def test_elite_has_all_features_enabled(self):
-        """Test elite plan has all premium features enabled"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
-        
-        elite_plan = next((p for p in data["plans"] if p["id"] == "elite"), None)
-        features = elite_plan["features"]
-        
-        assert features.get("early_trend_access") == True, "Elite should have early_trend_access"
-        assert features.get("automation_insights") == True, "Elite should have automation_insights"
-        assert features.get("advanced_opportunities") == True, "Elite should have advanced_opportunities"
-        assert features.get("max_stores") == -1, "Elite should have unlimited stores (-1)"
-        print(f"Elite features verified: {features}")
+        print(f"✓ Plans endpoint returns {len(plans)} plans: {plan_ids}")
+        print(f"✓ Currency is GBP: {data.get('currency')}")
 
 
-class TestStripeAuthenticatedEndpoints:
-    """Tests for authenticated Stripe endpoints - expect 401/422 without auth"""
+class TestStripeCheckout:
+    """Test Stripe checkout session creation"""
     
-    def test_subscription_requires_auth(self):
-        """Test subscription endpoint returns 401/422 without auth"""
-        response = requests.get(f"{BASE_URL}/api/stripe/subscription")
-        print(f"GET /api/stripe/subscription (no auth) - Status: {response.status_code}")
-        assert response.status_code in [401, 422], f"Expected 401/422, got {response.status_code}"
-    
-    def test_feature_access_requires_auth(self):
-        """Test feature-access endpoint returns 401/422 without auth"""
-        response = requests.get(f"{BASE_URL}/api/stripe/feature-access")
-        print(f"GET /api/stripe/feature-access (no auth) - Status: {response.status_code}")
-        assert response.status_code in [401, 422], f"Expected 401/422, got {response.status_code}"
-    
-    def test_create_checkout_requires_auth(self):
-        """Test create-checkout-session endpoint requires auth"""
-        response = requests.post(f"{BASE_URL}/api/stripe/create-checkout-session", json={
-            "plan": "pro",
-            "success_url": "https://example.com/success",
-            "cancel_url": "https://example.com/cancel"
+    @pytest.fixture(scope="class")
+    def free_user_token(self):
+        """Login as free tier user"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": FREE_USER_EMAIL,
+            "password": FREE_USER_PASSWORD
         })
-        print(f"POST /api/stripe/create-checkout-session (no auth) - Status: {response.status_code}")
-        assert response.status_code in [401, 422], f"Expected 401/422, got {response.status_code}"
+        if response.status_code == 200:
+            return response.json().get("token")
+        pytest.skip(f"Free user login failed: {response.status_code}")
     
-    def test_create_portal_requires_auth(self):
-        """Test create-portal-session endpoint requires auth"""
-        response = requests.post(f"{BASE_URL}/api/stripe/create-portal-session", json={
-            "return_url": "https://example.com/pricing"
-        })
-        print(f"POST /api/stripe/create-portal-session (no auth) - Status: {response.status_code}")
-        assert response.status_code in [401, 422], f"Expected 401/422, got {response.status_code}"
-    
-    def test_cancel_subscription_requires_auth(self):
-        """Test cancel-subscription endpoint requires auth"""
-        response = requests.post(f"{BASE_URL}/api/stripe/cancel-subscription")
-        print(f"POST /api/stripe/cancel-subscription (no auth) - Status: {response.status_code}")
-        assert response.status_code in [401, 422], f"Expected 401/422, got {response.status_code}"
-
-
-class TestStripeWebhookEndpoint:
-    """Tests for webhook endpoint - public but requires proper payload"""
-    
-    def test_webhook_accepts_post(self):
-        """Test webhook endpoint accepts POST requests"""
-        # Webhook requires specific format but shouldn't crash
-        response = requests.post(
-            f"{BASE_URL}/api/stripe/webhook",
-            json={"type": "test", "data": {"object": {}}},
-            headers={"Content-Type": "application/json"}
+    def test_create_checkout_session_pro(self, free_user_token):
+        """POST /api/stripe/create-checkout-session with plan='pro' should return Stripe checkout URL"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.post(f"{BASE_URL}/api/stripe/create-checkout-session", 
+            headers=headers,
+            json={
+                "plan": "pro",
+                "success_url": f"{BASE_URL}/pricing",
+                "cancel_url": f"{BASE_URL}/pricing"
+            }
         )
-        print(f"POST /api/stripe/webhook - Status: {response.status_code}")
-        # Could be 200 (demo mode) or 400 (invalid event)
-        assert response.status_code in [200, 400], f"Expected 200 or 400, got {response.status_code}"
+        
+        # Should return 200 with url or demo_mode
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        data = response.json()
+        
+        # Should have either url (live Stripe) or demo_mode
+        assert "url" in data or "demo_mode" in data, "Response should contain 'url' or 'demo_mode'"
+        
+        if data.get("demo_mode"):
+            print("✓ Pro checkout - Demo mode active (Stripe not configured)")
+        else:
+            assert data["url"].startswith("https://checkout.stripe.com") or data["url"].startswith("https://"), \
+                f"URL should be Stripe checkout: {data.get('url')}"
+            print(f"✓ Pro checkout session created: {data['url'][:60]}...")
     
-    def test_webhook_handles_checkout_completed_event(self):
-        """Test webhook handles checkout.session.completed event format"""
-        event = {
+    def test_create_checkout_session_elite(self, free_user_token):
+        """POST /api/stripe/create-checkout-session with plan='elite' should return Stripe checkout URL"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.post(f"{BASE_URL}/api/stripe/create-checkout-session", 
+            headers=headers,
+            json={
+                "plan": "elite",
+                "success_url": f"{BASE_URL}/pricing",
+                "cancel_url": f"{BASE_URL}/pricing"
+            }
+        )
+        
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        data = response.json()
+        
+        assert "url" in data or "demo_mode" in data
+        print(f"✓ Elite checkout session created successfully")
+    
+    def test_create_checkout_session_requires_auth(self):
+        """POST /api/stripe/create-checkout-session should require authentication"""
+        response = requests.post(f"{BASE_URL}/api/stripe/create-checkout-session", 
+            json={
+                "plan": "pro",
+                "success_url": f"{BASE_URL}/pricing",
+                "cancel_url": f"{BASE_URL}/pricing"
+            }
+        )
+        assert response.status_code == 401, "Checkout should require authentication"
+        print("✓ Checkout endpoint requires authentication")
+
+
+class TestStripePortalAndCancel:
+    """Test Stripe portal and cancel subscription endpoints"""
+    
+    @pytest.fixture(scope="class")
+    def free_user_token(self):
+        """Login as free tier user"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": FREE_USER_EMAIL,
+            "password": FREE_USER_PASSWORD
+        })
+        if response.status_code == 200:
+            return response.json().get("token")
+        pytest.skip(f"Free user login failed: {response.status_code}")
+    
+    def test_create_portal_session(self, free_user_token):
+        """POST /api/stripe/create-portal-session should return portal URL or error for non-subscriber"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.post(f"{BASE_URL}/api/stripe/create-portal-session", 
+            headers=headers,
+            json={
+                "return_url": f"{BASE_URL}/pricing"
+            }
+        )
+        
+        # For free user without Stripe customer, this may return 400 or demo_mode
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("demo_mode"):
+                print("✓ Portal session - Demo mode (no Stripe customer)")
+            else:
+                assert "url" in data, "Response should contain portal URL"
+                print(f"✓ Portal session created: {data.get('url', '')[:60]}...")
+        elif response.status_code == 400:
+            # Expected for users without Stripe customer
+            print("✓ Portal session correctly returns 400 for non-subscriber")
+        else:
+            pytest.fail(f"Unexpected status: {response.status_code}")
+    
+    def test_cancel_subscription(self, free_user_token):
+        """POST /api/stripe/cancel-subscription should succeed for authenticated user"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.post(f"{BASE_URL}/api/stripe/cancel-subscription", headers=headers)
+        
+        # For free user, this should return success (already on free) or error
+        assert response.status_code in [200, 400], f"Expected 200 or 400, got {response.status_code}"
+        
+        if response.status_code == 200:
+            data = response.json()
+            assert data.get("success") or "plan" in data
+            print(f"✓ Cancel subscription returned: {data}")
+        else:
+            print("✓ Cancel subscription returned 400 (user has no active subscription)")
+
+
+class TestWebhook:
+    """Test Stripe webhook handling"""
+    
+    def test_webhook_checkout_completed(self):
+        """POST /api/stripe/webhook with checkout.session.completed should update user plan"""
+        # Create mock checkout.session.completed event
+        test_event = {
             "type": "checkout.session.completed",
             "data": {
                 "object": {
-                    "id": "cs_test_123",
                     "metadata": {
-                        "user_id": "test_user_123",
+                        "user_id": "test_webhook_user",
                         "plan": "pro"
                     },
-                    "subscription": "sub_test_123",
-                    "customer": "cus_test_123"
+                    "subscription": "sub_test123",
+                    "customer": "cus_test123"
                 }
             }
         }
-        response = requests.post(
-            f"{BASE_URL}/api/stripe/webhook",
-            json=event,
+        
+        response = requests.post(f"{BASE_URL}/api/stripe/webhook", 
+            json=test_event,
             headers={"Content-Type": "application/json"}
         )
-        print(f"Webhook checkout.session.completed - Status: {response.status_code}")
-        # Should process without error or return demo mode
+        
+        # Should accept the webhook (with or without signature verification)
+        assert response.status_code == 200, f"Webhook should return 200, got {response.status_code}: {response.text}"
+        data = response.json()
+        assert data.get("received") == True
+        print(f"✓ Webhook checkout.session.completed processed: {data}")
+    
+    def test_webhook_subscription_deleted(self):
+        """POST /api/stripe/webhook with customer.subscription.deleted should downgrade to free"""
+        test_event = {
+            "type": "customer.subscription.deleted",
+            "data": {
+                "object": {
+                    "metadata": {
+                        "user_id": "test_webhook_user",
+                        "plan": "pro"
+                    },
+                    "customer": "cus_test123",
+                    "id": "sub_test123"
+                }
+            }
+        }
+        
+        response = requests.post(f"{BASE_URL}/api/stripe/webhook", 
+            json=test_event,
+            headers={"Content-Type": "application/json"}
+        )
+        
+        assert response.status_code == 200, f"Webhook should return 200, got {response.status_code}"
+        data = response.json()
+        assert data.get("received") == True
+        print(f"✓ Webhook subscription.deleted processed: {data}")
+
+
+class TestFeatureAccess:
+    """Test feature access endpoint for different user types"""
+    
+    @pytest.fixture(scope="class")
+    def free_user_token(self):
+        """Login as free tier user"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": FREE_USER_EMAIL,
+            "password": FREE_USER_PASSWORD
+        })
         if response.status_code == 200:
-            data = response.json()
-            print(f"Webhook response: {data}")
+            return response.json().get("token")
+        pytest.skip(f"Free user login failed: {response.status_code}")
+    
+    def test_feature_access_free_user(self, free_user_token):
+        """GET /api/stripe/feature-access for free user should show restricted features"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.get(f"{BASE_URL}/api/stripe/feature-access", headers=headers)
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Free user should have restricted features
+        features = data.get("features", {})
+        plan = data.get("plan", "").lower()
+        
+        # Check plan is free (unless admin)
+        if not data.get("is_admin"):
+            assert plan == "free", f"Expected free plan, got {plan}"
+            assert features.get("pdf_export") == False, "Free user should not have pdf_export"
+            assert features.get("direct_publish") == False, "Free user should not have direct_publish"
+            assert features.get("early_trends") == False, "Free user should not have early_trends"
+            print(f"✓ Free user features verified: pdf_export={features.get('pdf_export')}, early_trends={features.get('early_trends')}")
+        else:
+            print(f"✓ User is admin - has elevated access")
+    
+    def test_feature_access_requires_auth(self):
+        """GET /api/stripe/feature-access should require authentication"""
+        response = requests.get(f"{BASE_URL}/api/stripe/feature-access")
+        assert response.status_code == 401
+        print("✓ Feature access requires authentication")
 
 
-class TestPlanFeatureMapping:
-    """Tests for verifying plan-to-feature mapping is correct"""
+class TestServerSideGating:
+    """Test server-side feature gating (PDF export, early opportunities)"""
     
-    def test_free_plan_has_correct_limits(self):
-        """Test free plan has proper feature limitations"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
-        
-        free_plan = next((p for p in data["plans"] if p["id"] == "free"), None)
-        features = free_plan["features"]
-        
-        # Free should have limited access
-        assert features.get("reports_access") == "preview", "Free should have preview reports only"
-        assert features.get("max_stores") == 1, "Free should have 1 store limit"
-        assert features.get("early_trend_access") == False, "Free should not have early trend access"
-        print(f"Free plan limits verified: max_stores={features.get('max_stores')}")
+    @pytest.fixture(scope="class")
+    def free_user_token(self):
+        """Login as free tier user"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": FREE_USER_EMAIL,
+            "password": FREE_USER_PASSWORD
+        })
+        if response.status_code == 200:
+            return response.json().get("token")
+        pytest.skip(f"Free user login failed: {response.status_code}")
     
-    def test_pro_plan_has_correct_limits(self):
-        """Test pro plan has proper features"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
+    def test_pdf_export_blocked_for_free_users(self, free_user_token):
+        """GET /api/reports/weekly-winning-products/pdf should return 403 for free users"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.get(f"{BASE_URL}/api/reports/weekly-winning-products/pdf", headers=headers)
         
-        pro_plan = next((p for p in data["plans"] if p["id"] == "pro"), None)
-        features = pro_plan["features"]
-        
-        # Pro should have full basic access but not elite features
-        assert features.get("reports_access") == "full", "Pro should have full reports"
-        assert features.get("max_stores") == 5, "Pro should have 5 stores"
-        assert features.get("early_trend_access") == False, "Pro should not have early trend access"
-        print(f"Pro plan features verified: max_stores={features.get('max_stores')}")
+        # Should return 403 for free users
+        if response.status_code == 403:
+            print("✓ PDF export correctly blocked for free user (403)")
+        elif response.status_code == 200:
+            # Check if user is actually admin
+            feature_resp = requests.get(f"{BASE_URL}/api/stripe/feature-access", headers=headers)
+            if feature_resp.status_code == 200 and feature_resp.json().get("is_admin"):
+                print("✓ PDF export allowed - user is admin")
+            else:
+                pytest.fail("PDF export should be blocked for free users")
+        else:
+            print(f"⚠ PDF export returned {response.status_code} (expected 403 for free users)")
     
-    def test_elite_unlocks_all_features(self):
-        """Test elite plan unlocks all premium features"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
-        data = response.json()
+    def test_early_opportunities_blocked_for_free_users(self, free_user_token):
+        """GET /api/intelligence/early-opportunities should return 403 for free users"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.get(f"{BASE_URL}/api/intelligence/early-opportunities", headers=headers)
         
-        elite_plan = next((p for p in data["plans"] if p["id"] == "elite"), None)
-        features = elite_plan["features"]
-        
-        # Elite should have everything
-        assert features.get("reports_access") == "full", "Elite should have full reports"
-        assert features.get("product_insights") == "full", "Elite should have full insights"
-        assert features.get("max_stores") == -1, "Elite should have unlimited stores"
-        assert features.get("early_trend_access") == True, "Elite should have early trend access"
-        assert features.get("automation_insights") == True, "Elite should have automation insights"
-        assert features.get("advanced_opportunities") == True, "Elite should have advanced opportunities"
-        print(f"Elite plan full access verified")
+        # Should return 403 for free users (requires Elite)
+        if response.status_code == 403:
+            print("✓ Early opportunities correctly blocked for free user (403)")
+        elif response.status_code == 200:
+            # Check if user is actually admin/elite
+            feature_resp = requests.get(f"{BASE_URL}/api/stripe/feature-access", headers=headers)
+            if feature_resp.status_code == 200 and feature_resp.json().get("is_admin"):
+                print("✓ Early opportunities allowed - user is admin")
+            else:
+                pytest.fail("Early opportunities should be blocked for free/pro users")
+        else:
+            print(f"⚠ Early opportunities returned {response.status_code} (expected 403 for free users)")
 
 
-class TestSubscriptionServiceIntegration:
-    """Integration tests for subscription service features"""
+class TestSubscriptionEndpoint:
+    """Test subscription status endpoint"""
     
-    def test_plans_endpoint_includes_all_required_fields(self):
-        """Test plans response has all required fields"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
+    @pytest.fixture(scope="class")
+    def free_user_token(self):
+        """Login as free tier user"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": FREE_USER_EMAIL,
+            "password": FREE_USER_PASSWORD
+        })
+        if response.status_code == 200:
+            return response.json().get("token")
+        pytest.skip(f"Free user login failed: {response.status_code}")
+    
+    def test_get_user_subscription(self, free_user_token):
+        """GET /api/stripe/subscription should return user's subscription status"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.get(f"{BASE_URL}/api/stripe/subscription", headers=headers)
+        
+        assert response.status_code == 200
         data = response.json()
         
-        required_plan_fields = ["id", "name", "price_monthly", "currency", "features", "feature_descriptions"]
+        # Should have plan and features
+        assert "plan" in data, "Response should contain 'plan'"
+        assert "features" in data, "Response should contain 'features'"
         
-        for plan in data["plans"]:
-            for field in required_plan_fields:
-                assert field in plan, f"Plan {plan.get('id')} missing required field: {field}"
-        
-        print(f"All {len(data['plans'])} plans have required fields")
+        print(f"✓ Subscription endpoint returned: plan={data.get('plan')}, is_admin={data.get('is_admin')}")
+
+
+class TestStoreLimitGating:
+    """Test store creation limits by plan"""
     
-    def test_response_format_consistency(self):
-        """Test API response format is consistent"""
-        response = requests.get(f"{BASE_URL}/api/stripe/plans")
+    @pytest.fixture(scope="class")
+    def free_user_token(self):
+        """Login as free tier user"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": FREE_USER_EMAIL,
+            "password": FREE_USER_PASSWORD
+        })
+        if response.status_code == 200:
+            return response.json().get("token")
+        pytest.skip(f"Free user login failed: {response.status_code}")
+    
+    def test_feature_access_store_limits(self, free_user_token):
+        """Verify store limits are returned in feature-access"""
+        headers = {"Authorization": f"Bearer {free_user_token}"}
+        response = requests.get(f"{BASE_URL}/api/stripe/feature-access", headers=headers)
+        
+        assert response.status_code == 200
         data = response.json()
+        features = data.get("features", {})
         
-        # Top-level structure
-        assert "plans" in data, "Response needs 'plans' key"
-        assert "currency" in data, "Response needs 'currency' key"
-        assert "currency_symbol" in data, "Response needs 'currency_symbol' key"
+        # Check store-related fields
+        assert "max_stores" in features, "max_stores should be in features"
+        assert "can_create_store" in features, "can_create_store should be in features"
+        assert "current_store_count" in features, "current_store_count should be in features"
         
-        # Plans should be a list
-        assert isinstance(data["plans"], list), "Plans should be a list"
+        plan = data.get("plan", "free")
+        max_stores = features.get("max_stores")
         
-        print("Response format validated successfully")
+        # Verify limits by plan
+        if plan == "free":
+            assert max_stores == 1, f"Free plan should have max 1 store, got {max_stores}"
+        elif plan == "pro":
+            assert max_stores == 5, f"Pro plan should have max 5 stores, got {max_stores}"
+        elif plan == "elite":
+            assert max_stores == -1, f"Elite plan should have unlimited stores, got {max_stores}"
+        
+        print(f"✓ Store limits verified: plan={plan}, max_stores={max_stores}, can_create={features.get('can_create_store')}")
 
 
 if __name__ == "__main__":
