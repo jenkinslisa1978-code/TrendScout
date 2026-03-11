@@ -291,9 +291,20 @@ export default function DiscoverPage() {
               >
                 <Card className="group border-slate-200 shadow-sm hover:border-indigo-200 hover:shadow-lg transition-all duration-300 h-full">
                   <CardContent className="p-0">
-                    {/* Image placeholder */}
-                    <div className="relative h-40 bg-slate-100 rounded-t-lg flex items-center justify-center">
-                      <Package className="h-12 w-12 text-slate-300" />
+                    {/* Image */}
+                    <div className="relative h-40 bg-slate-100 rounded-t-lg overflow-hidden">
+                      {product.image_url ? (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.product_name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        />
+                      ) : null}
+                      <div className={`${product.image_url ? 'hidden' : 'flex'} w-full h-full items-center justify-center`}>
+                        <Package className="h-12 w-12 text-slate-300" />
+                      </div>
                       {product.is_premium && (
                         <Badge className="absolute top-3 left-3 bg-indigo-600 text-white">
                           Premium

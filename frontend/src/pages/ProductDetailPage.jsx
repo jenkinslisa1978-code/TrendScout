@@ -207,9 +207,19 @@ export default function ProductDetailPage() {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div className="flex items-start gap-6">
-            {/* Product image placeholder */}
-            <div className="flex-shrink-0 h-32 w-32 rounded-xl bg-slate-100 flex items-center justify-center">
-              <Package className="h-12 w-12 text-slate-300" />
+            {/* Product image */}
+            <div className="flex-shrink-0 h-32 w-32 rounded-xl bg-slate-100 overflow-hidden">
+              {product.image_url ? (
+                <img 
+                  src={product.image_url} 
+                  alt={product.product_name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                />
+              ) : null}
+              <div className={`${product.image_url ? 'hidden' : 'flex'} w-full h-full items-center justify-center`}>
+                <Package className="h-12 w-12 text-slate-300" />
+              </div>
             </div>
             
             <div>
