@@ -45,6 +45,7 @@ data_integrity_router = APIRouter(prefix="/api/data-integrity")
 intelligence_router = APIRouter(prefix="/api/intelligence")
 dashboard_router = APIRouter(prefix="/api/dashboard")
 supplier_router = APIRouter(prefix="/api/suppliers")
+ad_creative_router = APIRouter(prefix="/api/ad-creatives")
 reports_router = APIRouter(prefix="/api/reports")
 email_router = APIRouter(prefix="/api/email")
 notifications_router = APIRouter(prefix="/api/notifications")
@@ -6746,6 +6747,48 @@ async def select_supplier(
 
 
 
+
+# ===================== AD CREATIVE ENDPOINTS =====================
+
+@ad_creative_router.post("/generate/{product_id}")
+async def generate_ad_creatives_endpoint(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Generate AI-powered ad creatives for a product."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    from services.ad_creative_service import generate_ad_creatives
+    result = await generate_ad_creatives(product)
+    
+    # Save to database for future retrieval
+    if result.get('success'):
+        result.pop('_id', None)
+        await db.ad_creatives.update_one(
+            {"product_id": product_id},
+            {"$set": result},
+            upsert=True,
+        )
+    
+    return result
+
+
+@ad_creative_router.get("/{product_id}")
+async def get_ad_creatives(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get previously generated ad creatives for a product."""
+    creatives = await db.ad_creatives.find_one(
+        {"product_id": product_id}, {"_id": 0}
+    )
+    if not creatives:
+        return {"product_id": product_id, "creatives": None, "message": "No creatives generated yet. Use POST to generate."}
+    return creatives
+
+
 # Include routers
 app.include_router(api_router)
 app.include_router(stripe_router)
@@ -6763,6 +6806,7 @@ app.include_router(email_router)
 app.include_router(notifications_router)
 app.include_router(user_router)
 app.include_router(supplier_router)
+app.include_router(ad_creative_router)
 app.include_router(auth_router)
 
 app.add_middleware(

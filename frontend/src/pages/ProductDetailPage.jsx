@@ -35,6 +35,7 @@ import { getCompleteAnalysis } from '@/services/intelligenceService';
 import { toggleSaveProduct, isProductSaved } from '@/services/savedProductService';
 import { useAuth } from '@/contexts/AuthContext';
 import SupplierSection from '@/components/SupplierSection';
+import AdCreativeSection from '@/components/AdCreativeSection';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -515,6 +516,9 @@ export default function ProductDetailPage() {
 
         {/* Supplier Section */}
         <SupplierSection productId={id} productName={product.product_name} />
+
+        {/* AI Ad Creatives */}
+        <AdCreativeSection productId={id} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pricing */}
