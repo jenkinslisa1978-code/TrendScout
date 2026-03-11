@@ -19,6 +19,9 @@ class FeedEventType(str, Enum):
     ENTERED_STRONG_LAUNCH = "entered_strong_launch"  # Highest priority
     NEW_HIGH_SCORE = "new_high_score"
     TREND_SPIKE = "trend_spike"
+    COMPETITION_DROP = "competition_drop"
+    SUPPLIER_PRICE_DROP = "supplier_price_drop"
+    NEW_AD_ACTIVITY = "new_ad_activity"
     COMPETITION_INCREASE = "competition_increase"
     APPROACHING_SATURATION = "approaching_saturation"
 
@@ -46,8 +49,29 @@ EVENT_CONFIG = {
         "title": "Trend Velocity Spike",
         "description_template": "trend momentum increased by {change_percent}%"
     },
-    FeedEventType.COMPETITION_INCREASE: {
+    FeedEventType.COMPETITION_DROP: {
+        "priority": 3,
+        "color": "green",
+        "icon": "users",
+        "title": "Competition Dropping",
+        "description_template": "competition level dropped — window opening"
+    },
+    FeedEventType.SUPPLIER_PRICE_DROP: {
         "priority": 4,
+        "color": "blue",
+        "icon": "package",
+        "title": "Supplier Price Drop",
+        "description_template": "supplier cost decreased — margin opportunity"
+    },
+    FeedEventType.NEW_AD_ACTIVITY: {
+        "priority": 4,
+        "color": "purple",
+        "icon": "zap",
+        "title": "New Ad Activity",
+        "description_template": "new ad creatives generated for this product"
+    },
+    FeedEventType.COMPETITION_INCREASE: {
+        "priority": 5,
         "color": "amber",
         "icon": "users",
         "title": "Competition Rising",

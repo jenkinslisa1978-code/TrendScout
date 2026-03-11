@@ -29,7 +29,7 @@ export default function SupplierSection({ productId, productName }) {
   const handleSelect = async (supplierId) => {
     setSelecting(supplierId);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('trendscout_token');
       const res = await fetch(`${API_URL}/api/suppliers/${productId}/select/${supplierId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },

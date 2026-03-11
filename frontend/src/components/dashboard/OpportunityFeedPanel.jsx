@@ -72,6 +72,33 @@ const EVENT_CONFIG = {
     borderColor: 'border-amber-200',
     label: 'Competition'
   },
+  competition_drop: {
+    icon: Users,
+    color: 'bg-green-500',
+    badgeColor: 'bg-green-50 text-green-700 border-green-200',
+    textColor: 'text-green-600',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
+    label: 'Low Competition'
+  },
+  supplier_price_drop: {
+    icon: Package,
+    color: 'bg-blue-500',
+    badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
+    textColor: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    label: 'Price Drop'
+  },
+  new_ad_activity: {
+    icon: Zap,
+    color: 'bg-purple-500',
+    badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
+    textColor: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
+    label: 'Ad Activity'
+  },
   approaching_saturation: {
     icon: AlertTriangle,
     color: 'bg-red-500',

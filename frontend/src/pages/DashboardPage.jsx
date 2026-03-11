@@ -562,7 +562,7 @@ export default function DashboardPage() {
             </TabsList>
 
             <TabsContent value="feed">
-              <OpportunityFeedPanel limit={10} refreshInterval={60000} />
+              <OpportunityFeedPanel limit={10} refreshInterval={30000} />
             </TabsContent>
 
             <TabsContent value="winners">

@@ -134,7 +134,7 @@ export default function ProductDetailPage() {
   const handleLaunchStore = async () => {
     setLaunching(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('trendscout_token');
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/stores/launch`, {
         method: 'POST',
         headers: {

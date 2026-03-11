@@ -154,7 +154,7 @@ export default function StoreDetailPage() {
 
   const handleExportCSV = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('trendscout_token');
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/stores/${storeId}/export?format=shopify_csv`, {
         headers: { Authorization: `Bearer ${token}` },
       });
