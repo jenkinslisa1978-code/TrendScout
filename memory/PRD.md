@@ -18,18 +18,17 @@ TrendScout is a comprehensive e-commerce intelligence SaaS platform providing da
 
 ### Core (Complete)
 - Product intelligence dashboard with Daily Winners
-- Discover page with product images, filters, sorting
+- Discover page with AI-generated product images, filters, sorting
 - Watchlist, saved products, trend alerts
 - Store builder with Shopify export
 - Data scraping pipeline, Launch Score calculation
 - Weekly/Monthly reports with PDF export
 
-### Product Images (Complete - Mar 2026)
-- Added `image_url` field to all 79 products in MongoDB
-- Stock photos from Unsplash mapped by category
-- Updated DiscoverPage, SavedProductsPage, ProductDetailPage to display images
+### AI Product Images (Complete - Mar 2026)
+- Generated product-specific images for all 79 products using AI (Imagen 4.0)
+- Images match individual product names, not just categories
+- Updated DiscoverPage, SavedProductsPage, ProductDetailPage with image support
 - Graceful fallback to Package icon when image fails to load
-- TrendingProductsPage and PublicProductPage already supported image_url
 
 ### Auth System (Complete - Mar 2026)
 - Custom JWT auth replaces Supabase
