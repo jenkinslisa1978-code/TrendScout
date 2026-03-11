@@ -78,6 +78,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [showStoreBuilder, setShowStoreBuilder] = useState(false);
+  const [launching, setLaunching] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -127,6 +128,32 @@ export default function ProductDetailPage() {
 
     setIsSaved(!isSaved);
     toast.success(isSaved ? 'Removed from saved products' : 'Added to saved products');
+  };
+
+  const handleLaunchStore = async () => {
+    setLaunching(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/stores/launch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ product_id: id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Store launched successfully!');
+        navigate(`/stores/${data.store.id}`);
+      } else {
+        toast.error(data.detail || 'Failed to launch store');
+      }
+    } catch (err) {
+      toast.error('Failed to launch store');
+    } finally {
+      setLaunching(false);
+    }
   };
 
   if (loading) {
@@ -263,12 +290,24 @@ export default function ProductDetailPage() {
           {/* Actions */}
           <div className="flex items-center gap-3">
             <Button
+              onClick={handleLaunchStore}
+              disabled={launching}
+              data-testid="launch-store-btn"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {launching ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Launching...</>
+              ) : (
+                <><Rocket className="mr-2 h-4 w-4" /> Launch Store</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setShowStoreBuilder(true)}
               data-testid="build-shop-btn"
-              className="bg-emerald-600 hover:bg-emerald-700"
             >
               <Store className="mr-2 h-4 w-4" />
-              Build Shop
+              Customize
             </Button>
             <Button
               variant="outline"

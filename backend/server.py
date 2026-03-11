@@ -5935,7 +5935,10 @@ from services.store_service import (
     create_store_product_document,
     can_create_store,
     get_store_limit,
-    STORE_LIMITS
+    STORE_LIMITS,
+    export_store_for_shopify,
+    export_store_as_shopify_csv,
+    export_store_for_woocommerce,
 )
 
 @stores_router.get("")
@@ -6312,7 +6315,17 @@ async def export_store(
     products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
     
     if format == "shopify":
-        export_data = format_store_for_export(store, products)
+        export_data = export_store_for_shopify(store, products)
+    elif format == "shopify_csv":
+        csv_content = export_store_as_shopify_csv(store, products)
+        from fastapi.responses import Response
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={store.get('name', 'store').replace(' ', '_')}_shopify.csv"}
+        )
+    elif format == "woocommerce":
+        export_data = export_store_for_woocommerce(store, products)
     else:
         # Raw JSON export
         export_data = {
@@ -6594,6 +6607,99 @@ async def disconnect_shopify(
 
 
 # ===================== SUPPLIER ENDPOINTS =====================
+
+class LaunchStoreRequest(BaseModel):
+    product_id: str
+    store_name: Optional[str] = None
+    supplier_id: Optional[str] = None
+
+@stores_router.post("/launch")
+async def launch_store(
+    request: LaunchStoreRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    ONE-CLICK STORE LAUNCH.
+    
+    Creates a complete store from a product in one API call:
+    1. Fetches product data
+    2. Attaches selected supplier (or auto-selects best)
+    3. Generates store name, branding, product copy, shipping rules, policies
+    4. Creates store + store product in database
+    5. Returns complete store ready for export
+    """
+    user_id = current_user.user_id
+    # Get user plan from database
+    user_record = await db.auth_users.find_one({"id": user_id}, {"_id": 0, "plan": 1})
+    user_plan = (user_record or {}).get('plan', 'elite')
+    
+    # Check store limits
+    current_count = await db.stores.count_documents({"owner_id": user_id})
+    if not can_create_store(current_count, user_plan):
+        limit = get_store_limit(user_plan)
+        raise HTTPException(status_code=403, detail=f"Store limit reached ({limit} stores on {user_plan} plan)")
+    
+    # Get product
+    product = await db.products.find_one({"id": request.product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Get supplier
+    supplier = None
+    if request.supplier_id:
+        supplier = await db.product_suppliers.find_one({"id": request.supplier_id}, {"_id": 0})
+    else:
+        # Auto-select: prefer selected, then cheapest
+        supplier = await db.product_suppliers.find_one(
+            {"product_id": request.product_id, "is_selected": True}, {"_id": 0}
+        )
+        if not supplier:
+            # Find cheapest supplier
+            cursor = db.product_suppliers.find(
+                {"product_id": request.product_id}, {"_id": 0}
+            ).sort("supplier_cost", 1).limit(1)
+            suppliers = await cursor.to_list(1)
+            if suppliers:
+                supplier = suppliers[0]
+            else:
+                # Auto-discover suppliers
+                from services.supplier_service import SupplierService
+                svc = SupplierService(db)
+                result = await svc.find_suppliers(request.product_id)
+                if result.get('suppliers'):
+                    supplier = result['suppliers'][0]
+    
+    # Generate store content
+    generator = StoreGenerator()
+    generation_result = generator.generate_full_store(product, request.store_name, supplier)
+    store_name = request.store_name or generation_result['selected_name']
+    
+    # Create store
+    store_doc = create_store_document(user_id, store_name, generation_result, product)
+    store_product_doc = create_store_product_document(store_doc["id"], product, generation_result)
+    
+    await db.stores.insert_one(store_doc)
+    await db.store_products.insert_one(store_product_doc)
+    
+    # Track
+    await track_product_store_created(request.product_id)
+    
+    store_doc.pop("_id", None)
+    store_product_doc.pop("_id", None)
+    
+    return {
+        "success": True,
+        "store": store_doc,
+        "product": store_product_doc,
+        "generation": generation_result,
+        "supplier_connected": supplier is not None,
+        "next_steps": [
+            f"View your store at /stores/{store_doc['id']}",
+            "Export to Shopify CSV or WooCommerce",
+            "Customize branding and product copy",
+        ],
+    }
+
 
 @supplier_router.get("/{product_id}")
 async def get_product_suppliers(product_id: str):

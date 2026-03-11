@@ -25,7 +25,8 @@ import {
   Rocket,
   Edit3,
   FileDown,
-  CheckCircle2
+  CheckCircle2,
+  Truck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -42,6 +43,7 @@ import {
 const TABS = [
   { id: 'overview', label: 'Overview', icon: Settings },
   { id: 'products', label: 'Products', icon: Package },
+  { id: 'shipping', label: 'Shipping & Supplier', icon: Truck },
   { id: 'branding', label: 'Branding', icon: Palette },
   { id: 'content', label: 'Content', icon: FileText },
 ];
@@ -150,6 +152,45 @@ export default function StoreDetailPage() {
     loadStore();
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/stores/${storeId}/export?format=shopify_csv`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${store?.name?.replace(/\s+/g, '_')}_shopify.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Shopify CSV downloaded');
+    } catch {
+      toast.error('Failed to export CSV');
+    }
+  };
+
+  const handleExportWooCommerce = async () => {
+    const exportData = await exportStore(storeId, 'woocommerce');
+    if (exportData.error) {
+      toast.error('Failed to export');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${store?.name?.replace(/\s+/g, '_')}_woocommerce.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('WooCommerce export downloaded');
+  };
+
   const handleRegenerateCopy = async (productId) => {
     const result = await regenerateProductCopy(storeId, productId);
     if (result.success) {
@@ -227,9 +268,17 @@ export default function StoreDetailPage() {
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline" onClick={handleExport} data-testid="export-shopify-json-btn">
               <Download className="h-4 w-4 mr-2" />
-              Export
+              Shopify JSON
+            </Button>
+            <Button variant="outline" onClick={handleExportCSV} data-testid="export-shopify-csv-btn">
+              <FileDown className="h-4 w-4 mr-2" />
+              Shopify CSV
+            </Button>
+            <Button variant="outline" onClick={handleExportWooCommerce} data-testid="export-woocommerce-btn">
+              <FileDown className="h-4 w-4 mr-2" />
+              WooCommerce
             </Button>
             {/* Dynamic status action button */}
             {STATUS_CONFIG[store.status]?.nextStatus && (
@@ -442,6 +491,65 @@ export default function StoreDetailPage() {
                 <Package className="h-4 w-4 mr-2" />
                 Add More Products
               </Button>
+            </div>
+          )}
+
+          {/* Shipping & Supplier Tab */}
+          {activeTab === 'shipping' && (
+            <div className="space-y-6" data-testid="shipping-tab">
+              {/* Shipping Rules */}
+              <div>
+                <h3 className="text-base font-semibold text-slate-900 mb-3">Shipping Rules</h3>
+                {store.shipping_rules ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {['standard', 'express'].map((type) => {
+                      const rule = store.shipping_rules[type];
+                      if (!rule) return null;
+                      return (
+                        <div key={type} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                          <h4 className="text-sm font-semibold text-slate-900">{rule.name}</h4>
+                          <div className="mt-2 space-y-1 text-sm text-slate-600">
+                            <p>Price: <span className="font-mono font-medium">£{rule.price}</span></p>
+                            <p>Delivery: <span className="font-medium">{rule.estimated_days} days</span></p>
+                            <p>Origin: <span className="font-medium">{rule.origin}</span></p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {store.shipping_rules.note && (
+                      <div className="md:col-span-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
+                        {store.shipping_rules.note}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">Shipping rules not yet configured</p>
+                )}
+              </div>
+
+              {/* Supplier Info */}
+              <div>
+                <h3 className="text-base font-semibold text-slate-900 mb-3">Connected Supplier</h3>
+                {store.supplier_info?.source ? (
+                  <div className="border border-slate-200 rounded-lg p-4 bg-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                        <span className={`font-bold text-xs ${store.supplier_info.source === 'aliexpress' ? 'text-orange-500' : 'text-blue-500'}`}>
+                          {store.supplier_info.source === 'aliexpress' ? 'AE' : 'CJ'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{store.supplier_info.name}</p>
+                        <p className="text-xs text-slate-500">
+                          Cost: ${store.supplier_info.cost?.toFixed(2)} | Origin: {store.supplier_info.shipping_origin || 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">No supplier connected — go to the product page to select one</p>
+                )}
+              </div>
             </div>
           )}
 

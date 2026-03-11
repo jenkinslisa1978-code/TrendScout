@@ -332,7 +332,60 @@ We collect only the information necessary to process your orders and improve you
 For questions about our privacy practices, please contact our support team.""",
         }
     
-    def generate_full_store(self, product: Dict, store_name: Optional[str] = None) -> Dict:
+    def generate_shipping_rules(self, product: Dict, supplier: Optional[Dict] = None) -> Dict:
+        """Generate shipping rules from supplier data."""
+        if supplier:
+            ship_min = supplier.get('shipping_days_min', 7)
+            ship_max = supplier.get('shipping_days_max', 20)
+            ship_cost = supplier.get('estimated_shipping_cost', 0)
+            origin = supplier.get('shipping_origin', 'China')
+        else:
+            ship_min, ship_max, ship_cost, origin = 7, 20, 0, 'Unknown'
+        
+        retail = product.get('estimated_retail_price', 0)
+        free_threshold = round(retail * 1.5, 2) if retail > 20 else 40
+        
+        return {
+            "standard": {
+                "name": "Standard Shipping",
+                "price": round(max(ship_cost, 3.99), 2),
+                "estimated_days": f"{ship_min}-{ship_max}",
+                "origin": origin,
+            },
+            "express": {
+                "name": "Express Shipping",
+                "price": round(max(ship_cost * 2, 7.99), 2),
+                "estimated_days": f"{max(3, ship_min - 4)}-{max(7, ship_max - 7)}",
+                "origin": origin,
+            },
+            "free_shipping_threshold": free_threshold,
+            "note": f"Free standard shipping on orders over £{free_threshold:.2f}",
+        }
+    
+    def generate_product_variants(self, product: Dict) -> list:
+        """Generate common product variants."""
+        category = product.get('category', '').lower()
+        retail = product.get('estimated_retail_price', 0)
+        
+        if 'fashion' in category or 'clothing' in category:
+            return [
+                {"option": "Size", "values": ["S", "M", "L", "XL"]},
+                {"option": "Color", "values": ["Black", "White", "Navy"]},
+            ]
+        elif 'electronics' in category:
+            return [
+                {"option": "Color", "values": ["Black", "White"]},
+            ]
+        elif 'beauty' in category or 'health' in category:
+            return [
+                {"option": "Size", "values": ["Regular", "Large"]},
+            ]
+        else:
+            return [
+                {"option": "Style", "values": ["Standard"]},
+            ]
+    
+    def generate_full_store(self, product: Dict, store_name: Optional[str] = None, supplier: Optional[Dict] = None) -> Dict:
         """
         Generate a complete store draft from a product
         
@@ -357,6 +410,8 @@ For questions about our privacy practices, please contact our support team.""",
         branding = self.generate_branding(product)
         faqs = self.generate_faq(product)
         policies = self.generate_policies(selected_name)
+        shipping_rules = self.generate_shipping_rules(product, supplier)
+        variants = self.generate_product_variants(product)
         
         return {
             "store_name_suggestions": name_suggestions,
@@ -368,6 +423,7 @@ For questions about our privacy practices, please contact our support team.""",
                 "description": product_description,
                 "bullet_points": bullet_points,
                 "pricing": pricing,
+                "variants": variants,
                 "original_product_id": product.get('id'),
                 "original_product_name": product.get('product_name'),
                 "category": product.get('category'),
@@ -377,6 +433,14 @@ For questions about our privacy practices, please contact our support team.""",
             "branding": branding,
             "faqs": faqs,
             "policies": policies,
+            "shipping_rules": shipping_rules,
+            "supplier": {
+                "id": supplier.get('id') if supplier else None,
+                "source": supplier.get('source') if supplier else None,
+                "name": supplier.get('supplier_name') if supplier else None,
+                "cost": supplier.get('supplier_cost') if supplier else product.get('supplier_cost', 0),
+                "shipping_origin": supplier.get('shipping_origin') if supplier else None,
+            },
             "generated_at": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -398,10 +462,12 @@ def create_store_document(
         "tagline": generation_result.get("tagline", ""),
         "headline": generation_result.get("headline", ""),
         "category": product.get("category", "General"),
-        "status": "draft",  # draft, published, archived
+        "status": "draft",
         "branding": generation_result.get("branding", {}),
         "faqs": generation_result.get("faqs", []),
         "policies": generation_result.get("policies", {}),
+        "shipping_rules": generation_result.get("shipping_rules", {}),
+        "supplier_info": generation_result.get("supplier", {}),
         "shopify_connected": False,
         "shopify_store_id": None,
         "created_at": now,
@@ -417,6 +483,7 @@ def create_store_product_document(
     """Create a store product document for MongoDB"""
     product_data = generation_result.get("product", {})
     pricing = product_data.get("pricing", {})
+    supplier = generation_result.get("supplier", {})
     
     return {
         "id": str(uuid.uuid4()),
@@ -425,6 +492,7 @@ def create_store_product_document(
         "title": product_data.get("title", product.get("product_name")),
         "description": product_data.get("description", ""),
         "bullet_points": product_data.get("bullet_points", []),
+        "variants": product_data.get("variants", []),
         "price": pricing.get("suggested_price", 0),
         "compare_at_price": pricing.get("compare_at_price", 0),
         "cost": pricing.get("supplier_cost", 0),
@@ -432,7 +500,11 @@ def create_store_product_document(
         "category": product.get("category", "General"),
         "image_url": product.get("image_url"),
         "supplier_link": product.get("supplier_link"),
-        "is_featured": True,  # First product is featured
+        "supplier_id": supplier.get("id"),
+        "supplier_source": supplier.get("source"),
+        "supplier_cost": supplier.get("cost", 0),
+        "shipping_origin": supplier.get("shipping_origin"),
+        "is_featured": True,
         "status": "active",
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
@@ -473,5 +545,130 @@ def export_store_for_shopify(store: Dict, products: List[Dict]) -> Dict:
         },
         "products": shopify_products,
         "export_format": "shopify_api_v2024_01",
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def export_store_as_shopify_csv(store: Dict, products: List[Dict]) -> str:
+    """
+    Export store data as Shopify CSV format for import.
+    Returns CSV string ready for download.
+    """
+    import csv
+    import io
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Shopify CSV header
+    writer.writerow([
+        'Handle', 'Title', 'Body (HTML)', 'Vendor', 'Product Category', 'Type',
+        'Tags', 'Published', 'Option1 Name', 'Option1 Value',
+        'Variant SKU', 'Variant Grams', 'Variant Inventory Tracker',
+        'Variant Inventory Qty', 'Variant Inventory Policy', 'Variant Fulfillment Service',
+        'Variant Price', 'Variant Compare At Price', 'Variant Requires Shipping',
+        'Variant Taxable', 'Image Src', 'Image Position', 'Image Alt Text',
+        'SEO Title', 'SEO Description', 'Cost per item', 'Status'
+    ])
+    
+    for product in products:
+        handle = product.get('title', '').lower().replace(' ', '-').replace(',', '').replace('.', '')[:80]
+        body_html = product.get('description', '').replace('\n', '<br>')
+        bullets = product.get('bullet_points', [])
+        if bullets:
+            body_html += '<br><ul>' + ''.join(f'<li>{b}</li>' for b in bullets) + '</ul>'
+        
+        # Get variants
+        variants = product.get('variants', [])
+        if not variants or len(variants) == 0:
+            variants = [{"option": "Title", "values": ["Default"]}]
+        
+        first_variant = True
+        for var in variants:
+            for val in var.get('values', ['Default']):
+                row = [
+                    handle if first_variant else '',
+                    product.get('title', '') if first_variant else '',
+                    body_html if first_variant else '',
+                    store.get('name', '') if first_variant else '',
+                    product.get('category', '') if first_variant else '',
+                    product.get('category', '') if first_variant else '',
+                    f"{product.get('category', '')},trending,trendscout" if first_variant else '',
+                    'TRUE' if first_variant else '',
+                    var.get('option', 'Title'),
+                    val,
+                    f'{handle}-{val.lower()}',
+                    '0',
+                    'shopify',
+                    '100',
+                    'continue',
+                    'manual',
+                    str(product.get('price', 0)),
+                    str(product.get('compare_at_price', 0)),
+                    'TRUE',
+                    'TRUE',
+                    product.get('image_url', '') if first_variant else '',
+                    '1' if first_variant else '',
+                    product.get('title', '') if first_variant else '',
+                    product.get('title', '')[:70] if first_variant else '',
+                    (product.get('description', '')[:160]) if first_variant else '',
+                    str(product.get('cost', 0)),
+                    'draft',
+                ]
+                writer.writerow(row)
+                first_variant = False
+    
+    return output.getvalue()
+
+
+def export_store_for_woocommerce(store: Dict, products: List[Dict]) -> Dict:
+    """
+    Export store data in WooCommerce-compatible format.
+    """
+    woo_products = []
+    
+    for product in products:
+        woo_product = {
+            "name": product.get("title", ""),
+            "type": "simple",
+            "regular_price": str(product.get("price", 0)),
+            "sale_price": "",
+            "description": product.get("description", "").replace("\n", "<br>"),
+            "short_description": product.get("bullet_points", [""])[0] if product.get("bullet_points") else "",
+            "categories": [{"name": product.get("category", "Uncategorized")}],
+            "tags": [{"name": "trending"}, {"name": "trendscout"}],
+            "images": [{"src": product.get("image_url")}] if product.get("image_url") else [],
+            "manage_stock": True,
+            "stock_quantity": 100,
+            "status": "draft",
+            "meta_data": [
+                {"key": "_supplier_link", "value": product.get("supplier_link", "")},
+                {"key": "_supplier_cost", "value": str(product.get("cost", 0))},
+                {"key": "_compare_at_price", "value": str(product.get("compare_at_price", 0))},
+            ],
+        }
+        
+        # Add attributes/variants
+        variants = product.get("variants", [])
+        if variants and len(variants) > 0 and variants[0].get("values", ["Default"]) != ["Default"]:
+            woo_product["type"] = "variable"
+            woo_product["attributes"] = []
+            for var in variants:
+                woo_product["attributes"].append({
+                    "name": var.get("option", "Size"),
+                    "visible": True,
+                    "variation": True,
+                    "options": var.get("values", []),
+                })
+        
+        woo_products.append(woo_product)
+    
+    return {
+        "store": {
+            "name": store.get("name", ""),
+            "description": store.get("tagline", ""),
+        },
+        "products": woo_products,
+        "export_format": "woocommerce_rest_api_v3",
         "exported_at": datetime.now(timezone.utc).isoformat(),
     }
