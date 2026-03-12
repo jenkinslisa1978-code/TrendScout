@@ -37,6 +37,7 @@ import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
 import PricingPage from "@/pages/PricingPage";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import ProductLaunchWizard from "@/pages/ProductLaunchWizard";
+import OptimizationPage from "@/pages/OptimizationPage";
 import { ViewModeProvider } from "@/contexts/ViewModeContext";
 import SeoPage from "@/pages/SeoPage";
 import FreeToolsPage from "@/pages/FreeToolsPage";
@@ -140,6 +141,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProductLaunchWizard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/optimization"
+        element={
+          <ProtectedRoute>
+            <OptimizationPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/optimization/:testId"
+        element={
+          <ProtectedRoute>
+            <OptimizationPage />
           </ProtectedRoute>
         }
       />

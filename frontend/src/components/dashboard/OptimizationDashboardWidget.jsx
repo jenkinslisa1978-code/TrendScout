@@ -125,16 +125,28 @@ export default function OptimizationDashboardWidget() {
           </div>
         )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 h-8"
-          onClick={() => navigate('/ad-tests')}
-          data-testid="view-all-tests-btn"
-        >
-          View All Tests
-          <ArrowRight className="ml-1 h-3 w-3" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 h-8"
+            onClick={() => navigate('/optimization')}
+            data-testid="open-optimizer-btn"
+          >
+            <Brain className="mr-1 h-3 w-3" />
+            Open Optimizer
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-8"
+            onClick={() => navigate('/ad-tests')}
+            data-testid="view-all-tests-btn"
+          >
+            View Tests
+            <ArrowRight className="ml-1 h-3 w-3" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

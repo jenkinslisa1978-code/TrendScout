@@ -20,6 +20,7 @@ import {
   Target,
   Activity,
   Wifi,
+  Brain,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,7 @@ const navigation = [
 
 const eliteNavigation = [
   { name: 'Trend Alerts', href: '/alerts', icon: Bell, badge: true },
+  { name: 'Budget Optimizer', href: '/optimization', icon: Brain },
 ];
 
 const adminNavigation = [

@@ -1,28 +1,65 @@
 """
-Smart Budget Optimizer V1 — Rule-Based Recommendation Engine
+Smart Budget Optimizer V2 — Rule-Based Recommendation Engine
 
-Analyzes ad test variation results and generates actionable recommendations:
-  - increase_budget / maintain / pause / kill / needs_more_data
-  - confidence score based on data volume and signal agreement
-  - recommended next budget with scaling logic
-  - reasoning and warning flags
+Features:
+  V1: increase_budget / maintain / pause / kill / needs_more_data
+  V2: Rule Presets (Beginner/Balanced/Aggressive), auto-recommend mode, optimizer alerts
 """
 
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
-# ── Benchmarks ──
-BENCHMARKS = {
-    "ctr_excellent": 2.5,
-    "ctr_good": 1.8,
-    "ctr_poor": 1.0,
-    "cpc_good": 0.50,
-    "cpc_poor": 1.50,
-    "atc_good": 8.0,
-    "atc_poor": 3.0,
-    "min_spend": 10,
-    "min_clicks": 30,
+# ── Rule Presets ──
+RULE_PRESETS = {
+    "beginner": {
+        "name": "Beginner",
+        "description": "Conservative thresholds. Smaller budget steps. Prioritise safety.",
+        "ctr_excellent": 3.0,
+        "ctr_good": 2.0,
+        "ctr_poor": 1.2,
+        "cpc_good": 0.40,
+        "cpc_poor": 1.00,
+        "atc_good": 8.0,
+        "atc_poor": 4.0,
+        "min_spend": 15,
+        "min_clicks": 40,
+        "scale_factor": 1.0,   # conservative
+        "kill_threshold": 2,    # need 2+ signals to kill
+    },
+    "balanced": {
+        "name": "Balanced",
+        "description": "Standard thresholds. Moderate scaling. Good for most users.",
+        "ctr_excellent": 2.5,
+        "ctr_good": 1.8,
+        "ctr_poor": 1.0,
+        "cpc_good": 0.50,
+        "cpc_poor": 1.50,
+        "atc_good": 8.0,
+        "atc_poor": 3.0,
+        "min_spend": 10,
+        "min_clicks": 30,
+        "scale_factor": 1.0,
+        "kill_threshold": 2,
+    },
+    "aggressive": {
+        "name": "Aggressive",
+        "description": "Loose thresholds. Faster scaling. Higher risk, higher reward.",
+        "ctr_excellent": 2.0,
+        "ctr_good": 1.5,
+        "ctr_poor": 0.7,
+        "cpc_good": 0.80,
+        "cpc_poor": 2.00,
+        "atc_good": 6.0,
+        "atc_poor": 2.0,
+        "min_spend": 8,
+        "min_clicks": 20,
+        "scale_factor": 1.3,   # scale faster
+        "kill_threshold": 3,    # need 3 signals to kill (tolerate more)
+    },
 }
+
+# Default benchmarks (balanced)
+BENCHMARKS = RULE_PRESETS["balanced"].copy()
 
 # ── Budget scaling tiers (conservative 20-40% increments) ──
 SCALE_MAP = {
@@ -40,11 +77,10 @@ def _next_budget(current: float, aggressive: bool = False) -> float:
     return round(current * 1.3, 2)
 
 
-def _compute_confidence(metrics: Dict[str, float]) -> float:
-    """
-    Confidence depends on: spend volume, click volume, purchase volume,
-    and whether signals agree with each other.
-    """
+def _compute_confidence(metrics: Dict[str, float], bench: Optional[Dict] = None) -> float:
+    """Confidence depends on spend, clicks, purchases, and signal agreement."""
+    if bench is None:
+        bench = BENCHMARKS
     spend = metrics.get("spend", 0)
     clicks = metrics.get("clicks", 0)
     purchases = metrics.get("purchases", 0)
@@ -80,22 +116,22 @@ def _compute_confidence(metrics: Dict[str, float]) -> float:
     signals_positive = 0
     signals_negative = 0
 
-    if ctr >= BENCHMARKS["ctr_good"]:
+    if ctr >= bench["ctr_good"]:
         signals_positive += 1
-    elif ctr < BENCHMARKS["ctr_poor"]:
+    elif ctr < bench["ctr_poor"]:
         signals_negative += 1
 
     cpc = metrics.get("cpc", 0)
     if cpc > 0:
-        if cpc <= BENCHMARKS["cpc_good"]:
+        if cpc <= bench["cpc_good"]:
             signals_positive += 1
-        elif cpc >= BENCHMARKS["cpc_poor"]:
+        elif cpc >= bench["cpc_poor"]:
             signals_negative += 1
 
     atc_rate = metrics.get("atc_rate", 0)
-    if atc_rate >= BENCHMARKS["atc_good"]:
+    if atc_rate >= bench["atc_good"]:
         signals_positive += 1
-    elif atc_rate < BENCHMARKS["atc_poor"] and atc_rate > 0:
+    elif atc_rate < bench["atc_poor"] and atc_rate > 0:
         signals_negative += 1
 
     if purchases > 0:
@@ -116,17 +152,15 @@ def _compute_confidence(metrics: Dict[str, float]) -> float:
 def recommend_for_variation(
     variation: Dict[str, Any],
     target_cpa: Optional[float] = None,
+    preset: str = "balanced",
 ) -> Dict[str, Any]:
     """
     Generate a recommendation for a single ad variation.
-
-    Returns:
-        action: increase_budget | maintain | pause | kill | needs_more_data
-        confidence: 0-1
-        recommended_budget: float
-        reasoning: list of strings
-        flags: list of warning strings
     """
+    bench = RULE_PRESETS.get(preset, RULE_PRESETS["balanced"])
+    scale_factor = bench.get("scale_factor", 1.0)
+    kill_threshold = bench.get("kill_threshold", 2)
+
     r = variation.get("results", {})
     spend = r.get("spend", 0)
     clicks = r.get("clicks", 0)
@@ -142,13 +176,13 @@ def recommend_for_variation(
     metrics = {"spend": spend, "clicks": clicks, "ctr": ctr, "cpc": cpc,
                "atc_rate": atc_rate, "purchases": purchases, "cpa": cpa}
 
-    confidence = _compute_confidence(metrics)
+    confidence = _compute_confidence(metrics, bench)
     reasoning = []
     flags = []
-    current_budget = spend  # approximate current budget from spend
+    current_budget = spend
 
     # ── Rule 1: Minimum data threshold ──
-    if spend < BENCHMARKS["min_spend"] or clicks < BENCHMARKS["min_clicks"]:
+    if spend < bench["min_spend"] or clicks < bench["min_clicks"]:
         return {
             "variation_id": variation.get("variation_id", ""),
             "label": variation.get("label", ""),
@@ -158,27 +192,28 @@ def recommend_for_variation(
             "current_budget": current_budget,
             "recommended_budget": current_budget,
             "reasoning": [
-                f"Spend £{spend} (need £{BENCHMARKS['min_spend']}+)",
-                f"{clicks} clicks (need {BENCHMARKS['min_clicks']}+)",
+                f"Spend £{spend} (need £{bench['min_spend']}+)",
+                f"{clicks} clicks (need {bench['min_clicks']}+)",
                 "Keep running to collect enough data",
             ],
             "flags": ["Insufficient data for reliable recommendation"],
             "metrics": metrics,
+            "preset": preset,
         }
 
     # ── Rule 2: KILL ──
-    kill = False
-    if ctr < BENCHMARKS["ctr_poor"] and spend >= BENCHMARKS["min_spend"]:
-        reasoning.append(f"CTR {ctr}% is below {BENCHMARKS['ctr_poor']}% threshold")
-        kill = True
-    if cpc > 0 and cpc >= BENCHMARKS["cpc_poor"] and add_to_cart == 0:
+    kill_signals = 0
+    if ctr < bench["ctr_poor"] and spend >= bench["min_spend"]:
+        reasoning.append(f"CTR {ctr}% is below {bench['ctr_poor']}% threshold")
+        kill_signals += 1
+    if cpc > 0 and cpc >= bench["cpc_poor"] and add_to_cart == 0:
         reasoning.append(f"CPC £{cpc} too high with zero add-to-carts")
-        kill = True
+        kill_signals += 1
     if add_to_cart > 0 and purchases == 0 and spend >= 20:
         reasoning.append(f"{add_to_cart} add-to-carts but 0 purchases after £{spend} spend")
-        kill = True
+        kill_signals += 1
 
-    if kill and len(reasoning) >= 2:
+    if kill_signals >= kill_threshold:
         return {
             "variation_id": variation.get("variation_id", ""),
             "label": variation.get("label", ""),
@@ -190,22 +225,23 @@ def recommend_for_variation(
             "reasoning": reasoning,
             "flags": ["Recommend stopping this ad to save budget"],
             "metrics": metrics,
+            "preset": preset,
         }
 
     # ── Rule 3: PAUSE ──
     pause = False
     pause_reasons = []
-    if BENCHMARKS["ctr_poor"] <= ctr < BENCHMARKS["ctr_good"]:
-        pause_reasons.append(f"CTR {ctr}% is below good benchmark ({BENCHMARKS['ctr_good']}%)")
+    if bench["ctr_poor"] <= ctr < bench["ctr_good"]:
+        pause_reasons.append(f"CTR {ctr}% is below good benchmark ({bench['ctr_good']}%)")
         pause = True
-    if 0 < atc_rate < BENCHMARKS["atc_poor"]:
-        pause_reasons.append(f"ATC rate {atc_rate}% is weak (below {BENCHMARKS['atc_poor']}%)")
+    if 0 < atc_rate < bench["atc_poor"]:
+        pause_reasons.append(f"ATC rate {atc_rate}% is weak (below {bench['atc_poor']}%)")
         pause = True
     if target_cpa and cpa > target_cpa and cpa < target_cpa * 2:
         pause_reasons.append(f"CPA £{cpa} above target £{target_cpa} but not disastrous")
         pause = True
 
-    if pause and not kill:
+    if pause and kill_signals == 0:
         return {
             "variation_id": variation.get("variation_id", ""),
             "label": variation.get("label", ""),
@@ -217,13 +253,14 @@ def recommend_for_variation(
             "reasoning": pause_reasons,
             "flags": ["Consider pausing to reallocate budget to better performers"],
             "metrics": metrics,
+            "preset": preset,
         }
 
     # ── Rule 4: INCREASE BUDGET ──
     increase = False
     increase_reasons = []
-    if ctr >= BENCHMARKS["ctr_excellent"]:
-        increase_reasons.append(f"CTR {ctr}% is excellent (above {BENCHMARKS['ctr_excellent']}%)")
+    if ctr >= bench["ctr_excellent"]:
+        increase_reasons.append(f"CTR {ctr}% is excellent (above {bench['ctr_excellent']}%)")
         increase = True
     if target_cpa and cpa > 0 and cpa < target_cpa:
         increase_reasons.append(f"CPA £{cpa} is below target £{target_cpa}")
@@ -235,6 +272,8 @@ def recommend_for_variation(
     if increase and len(increase_reasons) >= 2:
         aggressive = ctr >= 3.5 and purchases >= 3
         next_budget = _next_budget(current_budget, aggressive=aggressive)
+        # Apply scale_factor for aggressive preset
+        next_budget = round(next_budget * scale_factor, 2)
         return {
             "variation_id": variation.get("variation_id", ""),
             "label": variation.get("label", ""),
@@ -246,13 +285,14 @@ def recommend_for_variation(
             "reasoning": increase_reasons,
             "flags": [],
             "metrics": metrics,
+            "preset": preset,
         }
 
     # ── Rule 5: MAINTAIN ──
     maintain_reasons = []
-    if ctr >= BENCHMARKS["ctr_good"]:
+    if ctr >= bench["ctr_good"]:
         maintain_reasons.append(f"CTR {ctr}% is decent")
-    if cpc <= BENCHMARKS["cpc_good"]:
+    if cpc <= bench["cpc_good"]:
         maintain_reasons.append(f"CPC £{cpc} is within range")
     if purchases > 0:
         maintain_reasons.append(f"{purchases} purchase(s) — signal is present but not strong enough to scale")
@@ -270,14 +310,15 @@ def recommend_for_variation(
         "reasoning": maintain_reasons,
         "flags": ["Keep running and monitor for clearer signals"],
         "metrics": metrics,
+        "preset": preset,
     }
 
 
-def recommend_for_test(test: Dict[str, Any], target_cpa: Optional[float] = None) -> Dict[str, Any]:
+def recommend_for_test(test: Dict[str, Any], target_cpa: Optional[float] = None, preset: str = "balanced") -> Dict[str, Any]:
     """Generate recommendations for all variations in an ad test."""
     recommendations = []
     for v in test.get("variations", []):
-        rec = recommend_for_variation(v, target_cpa)
+        rec = recommend_for_variation(v, target_cpa, preset=preset)
         recommendations.append(rec)
 
     # Summary
@@ -316,12 +357,13 @@ def recommend_for_test(test: Dict[str, Any], target_cpa: Optional[float] = None)
     return {
         "recommendations": recommendations,
         "summary": summary,
-        "benchmarks": BENCHMARKS,
+        "benchmarks": RULE_PRESETS.get(preset, BENCHMARKS),
+        "preset": preset,
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
-def generate_dashboard_summary(tests: List[Dict[str, Any]], target_cpa: Optional[float] = None) -> Dict[str, Any]:
+def generate_dashboard_summary(tests: List[Dict[str, Any]], target_cpa: Optional[float] = None, preset: str = "balanced") -> Dict[str, Any]:
     """Generate optimization summary across all active tests."""
     needs_action = []
     candidates_to_scale = []
@@ -329,7 +371,7 @@ def generate_dashboard_summary(tests: List[Dict[str, Any]], target_cpa: Optional
     waiting_data = []
 
     for test in tests:
-        result = recommend_for_test(test, target_cpa)
+        result = recommend_for_test(test, target_cpa, preset=preset)
         for rec in result["recommendations"]:
             entry = {
                 "test_id": test.get("id", ""),
@@ -353,4 +395,12 @@ def generate_dashboard_summary(tests: List[Dict[str, Any]], target_cpa: Optional
         "waiting_data": waiting_data,
         "total_active_tests": len(tests),
         "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def get_presets() -> Dict[str, Any]:
+    """Return all available rule presets."""
+    return {
+        key: {"id": key, "name": p["name"], "description": p["description"]}
+        for key, p in RULE_PRESETS.items()
     }

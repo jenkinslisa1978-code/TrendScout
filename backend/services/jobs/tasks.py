@@ -907,3 +907,140 @@ async def send_product_of_the_week(db, params: Dict[str, Any] = None) -> Dict[st
             'failed': failed_count,
         }
     }
+
+
+@TaskRegistry.register(
+    name="send_weekly_radar_digest",
+    description="Send Weekly Radar Digest email every Monday morning with top 5 radar detections",
+    default_schedule="0 8 * * 1"  # Every Monday at 08:00 AM UTC
+)
+async def send_weekly_radar_digest(db, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Send Weekly Radar Digest to all subscribed users every Monday morning.
+    Includes top 5 radar-detected products from the previous week.
+    """
+    from services.email_service import EmailService
+    from datetime import timedelta
+
+    logger.info("Starting Weekly Radar Digest...")
+
+    # Get radar-detected products from last 7 days
+    one_week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    cursor = db.products.find(
+        {
+            "radar_detected": True,
+            "$or": [
+                {"radar_detected_at": {"$gte": one_week_ago}},
+                {"launch_score": {"$gte": 70}},
+            ]
+        },
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(5)
+    products = await cursor.to_list(5)
+
+    if not products:
+        # Fall back to top products by launch score
+        cursor = db.products.find(
+            {"launch_score": {"$gte": 65}},
+            {"_id": 0}
+        ).sort("launch_score", -1).limit(5)
+        products = await cursor.to_list(5)
+
+    if not products:
+        logger.info("No qualifying products for radar digest")
+        return {'records_processed': 0, 'details': {'status': 'skipped', 'reason': 'No products'}}
+
+    # Build product rows HTML
+    product_rows = ""
+    for p in products:
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        stage = p.get("early_trend_label", p.get("trend_stage", "—"))
+        stage_color = {"exploding": "#dc2626", "rising": "#f59e0b", "emerging": "#3b82f6"}.get(stage, "#64748b")
+        product_rows += f"""
+        <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:14px 10px;font-weight:600;color:#1e293b;font-size:14px;">{p.get('product_name','Unknown')}</td>
+            <td style="padding:14px 10px;text-align:center;">
+                <span style="background:#eef2ff;color:#4f46e5;padding:5px 12px;border-radius:12px;font-weight:700;font-size:15px;">{p.get('launch_score',0)}</span>
+            </td>
+            <td style="padding:14px 10px;text-align:center;">
+                <span style="background:{stage_color}15;color:{stage_color};padding:3px 10px;border-radius:8px;font-size:12px;font-weight:500;text-transform:capitalize;">{stage}</span>
+            </td>
+            <td style="padding:14px 10px;text-align:center;color:#059669;font-weight:600;font-size:14px;">{margin_pct}%</td>
+        </tr>"""
+
+    # Get all users subscribed to email alerts
+    recipients = await db.profiles.find(
+        {"id": {"$exists": True}},
+        {"_id": 0, "id": 1, "full_name": 1}
+    ).to_list(500)
+
+    email_service = EmailService()
+    sent_count = 0
+    failed_count = 0
+    import os
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://trendscout.click')
+
+    for recipient in recipients:
+        user = await db.auth_users.find_one(
+            {"id": recipient["id"]},
+            {"_id": 0, "email": 1}
+        )
+        if not user or not user.get("email"):
+            continue
+
+        user_name = recipient.get("full_name", "there")
+        html = f"""
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
+            <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:36px 32px;text-align:center;border-radius:12px 12px 0 0;">
+                <h1 style="color:white;margin:0;font-size:22px;font-weight:700;">Weekly Radar Digest</h1>
+                <p style="color:#c7d2fe;margin:8px 0 0;font-size:14px;">Your top winning product detections this week</p>
+            </div>
+            <div style="padding:28px 24px;">
+                <p style="color:#475569;font-size:14px;line-height:1.6;">Hi {user_name},</p>
+                <p style="color:#475569;font-size:14px;line-height:1.6;">TrendScout Radar detected <strong style="color:#1e293b;">{len(products)} winning products</strong> this week. Here are the highlights:</p>
+                <table style="width:100%;border-collapse:collapse;margin:20px 0;border-radius:8px;overflow:hidden;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #e2e8f0;background:#f8fafc;">
+                            <th style="padding:10px;text-align:left;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Product</th>
+                            <th style="padding:10px;text-align:center;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Score</th>
+                            <th style="padding:10px;text-align:center;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Stage</th>
+                            <th style="padding:10px;text-align:center;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Margin</th>
+                        </tr>
+                    </thead>
+                    <tbody>{product_rows}</tbody>
+                </table>
+                <div style="text-align:center;margin:28px 0;">
+                    <a href="{frontend_url}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;">View Full Analysis</a>
+                </div>
+                <p style="color:#94a3b8;font-size:11px;text-align:center;margin-top:24px;border-top:1px solid #f1f5f9;padding-top:16px;">
+                    You're receiving this because you have a TrendScout account.
+                </p>
+            </div>
+        </div>"""
+
+        try:
+            result = await email_service.send_email(
+                to_email=user["email"],
+                subject=f"TrendScout Weekly Radar: {len(products)} winning products detected",
+                html_content=html
+            )
+            if result.get("success"):
+                sent_count += 1
+            else:
+                failed_count += 1
+        except Exception as e:
+            logger.error(f"Failed to send radar digest to {user['email']}: {e}")
+            failed_count += 1
+
+    logger.info(f"Weekly Radar Digest complete: {sent_count} sent, {failed_count} failed")
+    return {
+        'records_processed': sent_count + failed_count,
+        'details': {
+            'status': 'completed',
+            'products_featured': len(products),
+            'sent': sent_count,
+            'failed': failed_count,
+        }
+    }
