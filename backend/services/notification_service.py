@@ -20,6 +20,7 @@ class NotificationType(str, Enum):
     EXPLODING_TREND = "exploding_trend"       # Product trend became "exploding"
     WATCHLIST_ALERT = "watchlist_alert"       # Watchlist item has significant change
     SCORE_MILESTONE = "score_milestone"       # Product crossed user's threshold
+    RADAR_DETECTED = "radar_detected"         # Product crossed radar scoring thresholds
 
 
 class NotificationChannel(str, Enum):
@@ -48,7 +49,8 @@ DEFAULT_PREFERENCES = {
         "strong_launch": True,
         "exploding_trend": True,
         "watchlist_alert": True,
-        "score_milestone": True
+        "score_milestone": True,
+        "radar_detected": True
     }
 }
 
@@ -340,7 +342,8 @@ class NotificationService:
             NotificationType.STRONG_LAUNCH: f"🚀 Strong Launch: {product_name} ({launch_score})",
             NotificationType.EXPLODING_TREND: f"🔥 Exploding Trend: {product_name}",
             NotificationType.WATCHLIST_ALERT: f"📌 Watchlist Alert: {product_name}",
-            NotificationType.SCORE_MILESTONE: f"📈 Score Milestone: {product_name} ({launch_score})"
+            NotificationType.SCORE_MILESTONE: f"📈 Score Milestone: {product_name} ({launch_score})",
+            NotificationType.RADAR_DETECTED: f"📡 Radar Detected: {product_name} (Score {launch_score})"
         }
         
         return titles.get(notification_type, f"Alert: {product_name}")

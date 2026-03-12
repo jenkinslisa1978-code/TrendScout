@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
-import { LockedContent, EarlyTrendUpgradePrompt } from '@/components/common/UpgradePrompts';
+import { LockedContent, EarlyTrendUpgradePrompt, LimitHitBanner, InsightLockedNudge } from '@/components/common/UpgradePrompts';
 import { 
   Trophy,
   Flame,
@@ -51,7 +51,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const { canAccessEarlyTrends, isElite, isFree, isStarter } = useSubscription();
+  const { canAccessEarlyTrends, isElite, isFree, isStarter, maxAnalysesDaily, canUseBudgetOptimizer } = useSubscription();
   const { isBeginner, isAdvanced } = useViewMode();
   const { showOnboarding, closeOnboarding } = useOnboarding();
   const [winningProducts, setWinningProducts] = useState([]);
@@ -289,13 +289,24 @@ export default function DashboardPage() {
                       >
                         <Share2 className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        onClick={() => navigate(`/product/${product.id}`)}
-                        className="bg-indigo-600 hover:bg-indigo-700 shrink-0"
-                        data-testid={`analyze-btn-${product.id}`}
-                      >
-                        Analyze
-                      </Button>
+                      {isElite ? (
+                        <Button 
+                          onClick={() => navigate(`/launch/${product.id}`)}
+                          className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shrink-0"
+                          data-testid={`launch-btn-${product.id}`}
+                        >
+                          <Rocket className="mr-1.5 h-4 w-4" />
+                          Launch
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => navigate(`/product/${product.id}`)}
+                          className="bg-indigo-600 hover:bg-indigo-700 shrink-0"
+                          data-testid={`analyze-btn-${product.id}`}
+                        >
+                          Analyze
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -307,11 +318,18 @@ export default function DashboardPage() {
         {/* Missed Opportunities — Free/Starter only */}
         <MissedOpportunities />
 
+        {/* Upgrade nudge for Starter users */}
+        {isStarter && (
+          <InsightLockedNudge feature="Smart Budget Optimizer" upgradeTo="Elite" />
+        )}
+
         {/* Daily Opportunities */}
         <DailyOpportunitiesPanel />
 
-        {/* Budget Optimizer Widget */}
-        <OptimizationDashboardWidget />
+        {/* Budget Optimizer Widget — Elite only with upgrade prompt */}
+        {canUseBudgetOptimizer ? (
+          <OptimizationDashboardWidget />
+        ) : !isFree && !isStarter ? null : null}
 
         {/* Prediction Accuracy + Opportunity Radar — side by side */}
         <div className="grid lg:grid-cols-2 gap-6">

@@ -4571,6 +4571,157 @@ async def send_test_notification(
         }
 
 
+@notifications_router.post("/radar-scan")
+async def run_radar_scan(
+    background_tasks: BackgroundTasks,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Scan products for radar threshold crossings and generate notifications for all users."""
+    profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0})
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    async def _run_scan():
+        from services.notification_service import create_notification_service, NotificationType
+        notification_service = create_notification_service(db)
+
+        # Radar thresholds
+        LAUNCH_SCORE_THRESHOLD = 70
+        MARGIN_THRESHOLD = 0.5  # 50% margin
+
+        # Find products that crossed radar thresholds
+        radar_products = await db.products.find(
+            {"$or": [
+                {"launch_score": {"$gte": LAUNCH_SCORE_THRESHOLD}},
+                {"early_trend_label": {"$in": ["exploding", "rising"]}},
+            ]},
+            {"_id": 0}
+        ).sort("launch_score", -1).limit(20).to_list(20)
+
+        if not radar_products:
+            return
+
+        # Mark products as radar detected
+        product_ids = [p["id"] for p in radar_products]
+        await db.products.update_many(
+            {"id": {"$in": product_ids}},
+            {"$set": {"radar_detected": True, "radar_detected_at": datetime.now(timezone.utc).isoformat()}}
+        )
+
+        # Get all users to notify
+        users = await db.profiles.find(
+            {"id": {"$exists": True}},
+            {"_id": 0, "id": 1}
+        ).to_list(100)
+
+        notifications_created = 0
+        for user in users:
+            for product in radar_products[:5]:  # Top 5 per user
+                try:
+                    notif = await notification_service.create_notification(
+                        user_id=user["id"],
+                        notification_type=NotificationType.RADAR_DETECTED,
+                        product=product,
+                    )
+                    if notif:
+                        notifications_created += 1
+                except Exception:
+                    pass
+
+        logging.info(f"Radar scan complete: {len(radar_products)} products detected, {notifications_created} notifications")
+
+    background_tasks.add_task(_run_scan)
+    return {"status": "started", "message": "Radar scan initiated in background"}
+
+
+@notifications_router.get("/radar-detections")
+async def get_radar_detections(
+    limit: int = 10,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get recently radar-detected products."""
+    products = await db.products.find(
+        {"radar_detected": True},
+        {"_id": 0}
+    ).sort("radar_detected_at", -1).limit(limit).to_list(limit)
+
+    return {"products": products, "count": len(products)}
+
+
+@notifications_router.post("/radar-digest")
+async def send_radar_digest_email(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Send a radar digest email to the current user with recent detections."""
+    from services.email_service import EmailService
+
+    # Get recent radar detections
+    products = await db.products.find(
+        {"radar_detected": True},
+        {"_id": 0}
+    ).sort("radar_detected_at", -1).limit(5).to_list(5)
+
+    if not products:
+        return {"status": "skipped", "message": "No radar detections to send"}
+
+    profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0})
+    user = await db.auth_users.find_one({"id": current_user.user_id}, {"_id": 0, "email": 1})
+    email = user.get("email") if user else (profile.get("email") if profile else None)
+    user_name = profile.get("full_name", "there") if profile else "there"
+
+    if not email:
+        raise HTTPException(status_code=400, detail="No email found for user")
+
+    # Build digest HTML
+    product_rows = ""
+    for p in products:
+        margin = p.get("estimated_margin", 0)
+        margin_pct = int((margin / p.get("estimated_retail_price", 1)) * 100) if p.get("estimated_retail_price") else 0
+        product_rows += f"""
+        <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:12px 8px;font-weight:600;color:#1e293b;">{p.get('product_name','Unknown')}</td>
+            <td style="padding:12px 8px;text-align:center;"><span style="background:#eef2ff;color:#4f46e5;padding:4px 10px;border-radius:12px;font-weight:700;">{p.get('launch_score',0)}</span></td>
+            <td style="padding:12px 8px;text-align:center;color:#059669;font-weight:600;">{margin_pct}%</td>
+            <td style="padding:12px 8px;text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:8px;font-size:12px;">{p.get('early_trend_label','—')}</span></td>
+        </tr>"""
+
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
+        <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:32px;text-align:center;">
+            <h1 style="color:white;margin:0;font-size:24px;">TrendScout Radar Digest</h1>
+            <p style="color:#c7d2fe;margin:8px 0 0;">Your daily winning product detections</p>
+        </div>
+        <div style="padding:24px;">
+            <p style="color:#475569;">Hi {user_name},</p>
+            <p style="color:#475569;">TrendScout Radar detected <strong>{len(products)} winning products</strong> for you today:</p>
+            <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                <thead>
+                    <tr style="border-bottom:2px solid #e2e8f0;">
+                        <th style="padding:8px;text-align:left;color:#64748b;font-size:12px;">PRODUCT</th>
+                        <th style="padding:8px;text-align:center;color:#64748b;font-size:12px;">SCORE</th>
+                        <th style="padding:8px;text-align:center;color:#64748b;font-size:12px;">MARGIN</th>
+                        <th style="padding:8px;text-align:center;color:#64748b;font-size:12px;">STAGE</th>
+                    </tr>
+                </thead>
+                <tbody>{product_rows}</tbody>
+            </table>
+            <div style="text-align:center;margin:24px 0;">
+                <a href="{os.environ.get('FRONTEND_URL', 'https://trendscout.click')}/dashboard" style="background:#4f46e5;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;">View Full Dashboard</a>
+            </div>
+            <p style="color:#94a3b8;font-size:12px;text-align:center;">You're receiving this because you have radar alerts enabled.</p>
+        </div>
+    </div>"""
+
+    email_service = EmailService()
+    result = await email_service.send_email(
+        to_email=email,
+        subject=f"TrendScout Radar: {len(products)} winning products detected",
+        html_content=html
+    )
+
+    return {"status": "sent" if result.get("success") else "failed", "products_included": len(products)}
+
+
 
 # =====================
 # ROUTES - User / Onboarding
@@ -4593,17 +4744,28 @@ async def get_onboarding_status(
 
 @user_router.post("/complete-onboarding")
 async def complete_onboarding(
+    request: Request,
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
-    """Mark onboarding as completed for the user"""
+    """Mark onboarding as completed for the user, saving preferences"""
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+
+    update_data = {
+        "onboarding_completed": True,
+        "onboarding_completed_at": datetime.now(timezone.utc).isoformat()
+    }
+    if body.get("experience_level"):
+        update_data["experience_level"] = body["experience_level"]
+    if body.get("preferred_niches"):
+        update_data["preferred_niches"] = body["preferred_niches"]
+
     await db.profiles.update_one(
         {"id": current_user.user_id},
-        {
-            "$set": {
-                "onboarding_completed": True,
-                "onboarding_completed_at": datetime.now(timezone.utc).isoformat()
-            }
-        },
+        {"$set": update_data},
         upsert=True
     )
     

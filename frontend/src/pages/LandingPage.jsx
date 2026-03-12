@@ -6,28 +6,28 @@ import { Badge } from '@/components/ui/badge';
 import {
   TrendingUp, Rocket, Store, Zap, Check, ArrowRight,
   Sparkles, Package, Star, Eye, BarChart3, Search,
-  Video, DollarSign, Truck, Shield, Radio, Target,
+  Video, DollarSign, Truck, Shield, Radio, Target, Bell,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 const pricingPlans = [
   {
-    id: 'free', name: 'Free', price: '0',
-    description: 'Get started with product research',
-    features: ['Limited product insights', 'Report previews', '1 store', 'Limited watchlist & alerts', 'Community support'],
-    cta: 'Get Started Free', popular: false,
+    id: 'starter', name: 'Starter', price: '19',
+    description: 'Start finding winning products',
+    features: ['5 product analyses per day', 'Supplier intelligence', 'Basic ad generator', '3 launch simulations per day', '2 stores', 'Opportunity feed (limited)'],
+    cta: 'Start for £19/mo', popular: false,
   },
   {
     id: 'pro', name: 'Pro', price: '39',
-    description: 'Full insights & multiple stores',
-    features: ['Full product insights', 'Complete reports + PDF export', 'Up to 5 stores', 'Full watchlist & alerts', 'Ad discovery', 'Priority support'],
+    description: 'Full research & launch intelligence',
+    features: ['Unlimited product analysis', 'Full supplier intelligence', 'Ad blueprint & creative generator', 'Ad A/B testing system', 'Unlimited launch simulations', 'Up to 5 stores'],
     cta: 'Upgrade to Pro', popular: true,
   },
   {
-    id: 'elite', name: 'Elite', price: '99',
-    description: 'Everything you need to dominate',
-    features: ['Everything in Pro', 'Unlimited stores', 'Early trend detection', 'Automated reports & priority alerts', 'Direct Shopify publish', 'Dedicated support'],
+    id: 'elite', name: 'Elite', price: '79',
+    description: 'Scale with AI automation',
+    features: ['Everything in Pro', 'Smart Budget Optimizer', 'Optimization timeline', 'Radar alerts', 'LaunchPad', 'Unlimited stores'],
     cta: 'Go Elite', popular: false,
   },
 ];
@@ -69,16 +69,16 @@ export default function LandingPage() {
                 style={{ animation: 'fadeSlideUp 0.6s ease forwards' }}
               >
                 <Sparkles className="h-4 w-4 text-indigo-500" />
-                AI-Powered Product Intelligence
+                AI Ecommerce Launch Assistant
               </div>
 
               <h1
                 className="font-manrope text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-[3.4rem] leading-[1.08]"
                 style={{ animation: 'fadeSlideUp 0.7s ease forwards' }}
               >
-                Find Winning Ecommerce Products{' '}
+                Find winning products early.{' '}
                 <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
-                  Before They Go Viral
+                  Launch them faster.
                 </span>
               </h1>
 
@@ -86,7 +86,7 @@ export default function LandingPage() {
                 className="mt-6 text-lg text-slate-600 leading-relaxed"
                 style={{ animation: 'fadeSlideUp 0.8s ease forwards' }}
               >
-                TrendScout scans real market signals to detect emerging products and helps you launch stores and ads in minutes.
+                TrendScout uses AI to discover trending products, validate demand, find suppliers, generate ads and launch stores — all in one platform.
               </p>
 
               <div
@@ -100,7 +100,7 @@ export default function LandingPage() {
                     data-testid="hero-cta-btn"
                   >
                     <Zap className="mr-2 h-5 w-5" />
-                    Find My Winning Product
+                    Start with Starter — £19/mo
                   </Button>
                 </Link>
                 <a href="#how-it-works">
@@ -117,9 +117,9 @@ export default function LandingPage() {
               </div>
 
               <p className="mt-6 text-sm text-slate-500 flex items-center gap-5">
-                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> No credit card</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Free trial available</span>
                 <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Real data only</span>
-                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Launch in 3 clicks</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Cancel anytime</span>
               </p>
             </div>
 
@@ -265,7 +265,7 @@ export default function LandingPage() {
               Simple, transparent pricing
             </h2>
             <p className="mt-4 text-lg text-slate-500">
-              Start free. Upgrade when you're ready to scale.
+              Start with Starter at £19/mo. Upgrade as you scale. All prices in GBP.
             </p>
           </div>
           <div className="mt-16 grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -320,6 +320,109 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── OPPORTUNITY DETECTION ── */}
+      <section className="py-24 bg-gradient-to-b from-white to-slate-50/60" data-testid="opportunity-detection-section">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <Badge className="bg-red-50 text-red-600 border-red-100 mb-5 text-xs px-3 py-1 rounded-full">Always Watching</Badge>
+              <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
+                Opportunity detection that never sleeps
+              </h2>
+              <p className="mt-4 text-lg text-slate-500 leading-relaxed">
+                TrendScout continuously monitors market signals and alerts you the moment a winning product is detected — so you can move before your competitors.
+              </p>
+              <ul className="mt-8 space-y-4">
+                {[
+                  { text: 'Real-time scoring across 7 market signals', icon: BarChart3 },
+                  { text: 'Instant alerts when products cross launch thresholds', icon: Bell },
+                  { text: 'Daily email digest of new opportunities', icon: Sparkles },
+                ].map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <li key={i} className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50">
+                        <Icon className="h-4 w-4 text-indigo-600" />
+                      </div>
+                      <span className="text-slate-700 font-medium text-sm">{item.text}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            <div className="bg-white rounded-3xl border border-slate-200/70 shadow-xl p-6 space-y-3">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-sm font-semibold text-slate-700">Live Radar Detections</span>
+              </div>
+              {[
+                { name: 'Portable Blender Pro', score: 86, stage: 'Exploding', margin: '72%', color: 'bg-red-100 text-red-700' },
+                { name: 'LED Sunset Lamp', score: 79, stage: 'Emerging', margin: '68%', color: 'bg-orange-100 text-orange-700' },
+                { name: 'Smart Posture Corrector', score: 74, stage: 'Rising', margin: '65%', color: 'bg-amber-100 text-amber-700' },
+              ].map((p, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-indigo-500" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-800 text-sm">{p.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge className={`text-[10px] border rounded-full ${p.color}`}>{p.stage}</Badge>
+                        <span className="text-[11px] text-emerald-600 font-medium">{p.margin} margin</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-xl font-bold text-indigo-600">{p.score}</p>
+                    <p className="text-[10px] text-slate-400">Score</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ── */}
+      <section className="py-24 bg-white" data-testid="testimonials-section">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
+              Trusted by dropshippers worldwide
+            </h2>
+            <p className="mt-4 text-lg text-slate-500">
+              See what early adopters are saying about TrendScout.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { quote: "TrendScout found me a winning product on day one. The launch score was spot on — I hit profitability in week two.", name: "Sarah K.", role: "Shopify Seller, UK", stars: 5 },
+              { quote: "The AI ad generator alone is worth the subscription. I used to spend hours writing ad copy — now it takes seconds.", name: "James M.", role: "Ecommerce Entrepreneur", stars: 5 },
+              { quote: "Finally a tool that does more than spy on ads. TrendScout actually helps me discover AND launch products.", name: "Priya D.", role: "Dropshipping Agency Owner", stars: 5 },
+            ].map((t, i) => (
+              <div key={i} className="bg-slate-50 rounded-3xl p-7 border border-slate-100 hover:shadow-lg hover:shadow-slate-100/60 transition-all duration-300" data-testid={`testimonial-${i}`}>
+                <div className="flex gap-0.5 mb-4">
+                  {Array.from({ length: t.stars }).map((_, j) => (
+                    <Star key={j} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <p className="text-slate-700 text-sm leading-relaxed italic">"{t.quote}"</p>
+                <div className="mt-5 flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white font-bold text-sm">
+                    {t.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800 text-sm">{t.name}</p>
+                    <p className="text-xs text-slate-500">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── FINAL CTA ── */}
       <section className="py-28 bg-white">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -331,7 +434,7 @@ export default function LandingPage() {
                 Ready to find your next winning product?
               </h2>
               <p className="mt-5 text-lg text-indigo-200/90 max-w-lg mx-auto">
-                Join sellers who discover, launch, and scale with TrendScout.
+                Join sellers who discover, launch and scale winning products with TrendScout.
               </p>
               <div className="mt-10">
                 <Link to="/signup">
@@ -341,7 +444,7 @@ export default function LandingPage() {
                     data-testid="final-cta-btn"
                   >
                     <Rocket className="mr-2 h-5 w-5" />
-                    Start Free — No Credit Card
+                    Start with Starter — £19/mo
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>

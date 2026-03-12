@@ -268,6 +268,60 @@ export function UpgradeLink({
   );
 }
 
+/**
+ * Context-aware limit hit banner — shown when Starter users exhaust daily limits
+ */
+export function LimitHitBanner({ limitType = 'analyses', used = 0, max = 5, upgradeTo = 'Pro' }) {
+  if (used < max) return null;
+
+  const messages = {
+    analyses: { title: 'Daily analysis limit reached', desc: `You've used all ${max} product analyses today.`, unlock: 'Unlock unlimited analysis' },
+    simulations: { title: 'Simulation limit reached', desc: `You've used all ${max} launch simulations today.`, unlock: 'Unlock unlimited simulations' },
+    feed: { title: 'Opportunity feed limited', desc: 'Upgrade to see the full opportunity feed.', unlock: 'Unlock full feed' },
+    default: { title: 'Feature limit reached', desc: 'Upgrade to unlock more.', unlock: 'Unlock full access' },
+  };
+
+  const msg = messages[limitType] || messages.default;
+
+  return (
+    <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl p-4 flex items-center justify-between gap-4" data-testid="limit-hit-banner">
+      <div className="flex items-center gap-3 text-white">
+        <Lock className="h-5 w-5 flex-shrink-0" />
+        <div>
+          <p className="font-semibold text-sm">{msg.title}</p>
+          <p className="text-indigo-200 text-xs">{msg.desc}</p>
+        </div>
+      </div>
+      <Link to="/pricing">
+        <Button size="sm" className="bg-white text-indigo-700 hover:bg-indigo-50 font-semibold whitespace-nowrap" data-testid="limit-upgrade-btn">
+          {msg.unlock}
+          <ArrowRight className="ml-1 h-3 w-3" />
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
+/**
+ * Inline upgrade nudge for locked insights (appears within content)
+ */
+export function InsightLockedNudge({ feature = 'full insights', upgradeTo = 'Pro' }) {
+  return (
+    <div className="flex items-center gap-3 bg-violet-50 border border-violet-100 rounded-lg px-4 py-3" data-testid="insight-locked-nudge">
+      <Lock className="h-4 w-4 text-violet-500 flex-shrink-0" />
+      <p className="text-sm text-violet-700">
+        <span className="font-semibold">Unlock {feature}</span> — Upgrade to {upgradeTo} to enable automation
+      </p>
+      <Link to="/pricing" className="ml-auto">
+        <Button size="sm" variant="ghost" className="text-violet-600 hover:text-violet-700 hover:bg-violet-100 text-xs font-semibold">
+          Upgrade
+          <ArrowRight className="ml-1 h-3 w-3" />
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
 export default {
   LockedContent,
   UpgradeBadge,
@@ -276,5 +330,7 @@ export default {
   ReportUpgradePrompt,
   EarlyTrendUpgradePrompt,
   WatchlistUpgradePrompt,
-  UpgradeLink
+  UpgradeLink,
+  LimitHitBanner,
+  InsightLockedNudge
 };
