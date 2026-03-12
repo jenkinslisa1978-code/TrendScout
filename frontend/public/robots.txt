@@ -7,4 +7,4 @@ Disallow: /dashboard
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://product-radar-21.preview.emergentagent.com/api/sitemap.xml
+Sitemap: /api/sitemap.xml

@@ -6,56 +6,42 @@ Build "TrendScout", a fully automated, AI-powered e-commerce intelligence platfo
 ## Tech Stack
 - Frontend: React, TailwindCSS, Shadcn/UI, html2canvas, react-helmet-async
 - Backend: FastAPI, MongoDB, APScheduler, aiohttp
-- Auth: Custom JWT | Payments: Stripe (GBP) | Email: Resend
+- Auth: Custom JWT | Payments: Stripe (GBP, live keys) | Email: Resend
 - LLM: Emergent LLM Key (OpenAI GPT-4.1-mini) via emergentintegrations
 
+## Production Status: LAUNCH READY
+
+### Integration Status
+| Source | Status | Mode |
+|--------|--------|------|
+| CJ Dropshipping | LIVE | api (token cached, auto-refresh) |
+| TikTok | LIVE | scraper |
+| Meta Ad Library | Configured | estimation (awaiting FB app permission) |
+| Zendrop | Wired | estimation (awaiting API key) |
+| AliExpress | Not configured | estimation (awaiting API key) |
+
+### Production Checklist
+- [x] Stripe live keys configured
+- [x] Resend email configured
+- [x] Dynamic sitemap.xml (domain-agnostic)
+- [x] robots.txt (domain-agnostic)
+- [x] No hardcoded URLs
+- [x] CORS configured via env var
+- [x] All features verified via testing agent
+- [ ] Submit sitemap to Google Search Console
+- [ ] Configure Stripe webhook URL for production domain
+- [ ] Verify Resend sending domain
+
 ## Completed Phases
-
-### Phase 1-29: Foundation through Optimizer V2 (DONE)
-
-### Phase 30: Growth & SEO Features (DONE - March 2026)
-- Public Trending Products Page, Programmatic SEO Pages, Zendrop Integration
-
-### Phase 31: SEO Infrastructure & Internal Linking (DONE - March 2026)
-- Dynamic sitemap.xml (103 URLs), robots.txt, Public Categories API
-- Category filter UI on /trending-products
-- Internal linking between product pages
-- Verified: iteration_45 — 100% pass
-
-### Phase 32: Live API Integrations (DONE - March 2026)
-- **CJ Dropshipping**: LIVE — Token auth flow with persistent file cache, price range parsing, v2 API response format fix. Health: healthy, mode: live
-- **Meta Ad Library**: Token configured, awaiting Facebook App Ad Library API permission
-- **Zendrop**: Wired into enrichment pipeline, estimation mode (awaiting API key)
-- **AliExpress**: Not configured (awaiting API key)
-
-## Integration Status
-| Source | Status | Mode | Notes |
-|--------|--------|------|-------|
-| CJ Dropshipping | LIVE | api | Token cached, auto-refresh every 14 days |
-| TikTok | LIVE | scraper | No API key needed |
-| Meta Ad Library | Configured | estimation | Awaiting Ad Library API permission |
-| Zendrop | Configured | estimation | Awaiting ZENDROP_API_KEY |
-| AliExpress | Not configured | estimation | Awaiting ALIEXPRESS_API_KEY |
-
-## Key API Endpoints
-
-### Public (No Auth)
-- `GET /api/public/trending-products` — SEO product grid
-- `GET /api/public/product/{slug}` — Individual product SEO page
-- `GET /api/public/categories` — Category list with counts
-- `GET /api/sitemap.xml` — Dynamic XML sitemap
-- `GET /api/robots.txt` — Crawl directives
-
-### Data Integration
-- `POST /api/data-integration/enrich/{product_id}` — Enrich with 5 sources
-- `GET /api/data-integration/integration-health` — Health of all API integrations
-
-## Upcoming Tasks
-- **P2**: Server.py refactoring into dedicated route files
-- Programmatic SEO V2 (richer structured data)
+- Phase 1-29: Foundation through Optimizer V2
+- Phase 30: Growth & SEO Features (Public pages, Zendrop)
+- Phase 31: SEO Infrastructure & Internal Linking (sitemap, categories, cross-links)
+- Phase 32: Live API Integrations (CJ live, Meta configured)
+- Phase 33: Production Readiness (hardcoded URLs removed, domain-agnostic)
 
 ## Future/Backlog
-- Enhanced Budget Optimizer (anomaly detection, budget pacing)
+- Supplier comparison widget
+- Programmatic SEO V2 (richer structured data)
+- Server.py refactoring into route files
+- Enhanced Budget Optimizer (anomaly detection)
 - Additional supplier integrations
-- Enhanced store generation (auto logos, trust badges)
-- Viral shareable public product pages

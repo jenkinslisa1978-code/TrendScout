@@ -4991,17 +4991,21 @@ async def public_categories():
 from fastapi.responses import Response
 
 @app.get("/api/sitemap.xml", response_class=Response)
-async def sitemap_xml():
+async def sitemap_xml(request: Request):
     """
     Dynamic sitemap.xml for SEO crawlers.
     Lists all public pages and trending product slugs.
     Cached for 30 minutes.
     """
-    cached = _get_cached("sitemap_xml")
+    # Derive base URL from forwarded headers (works behind reverse proxy)
+    proto = request.headers.get("x-forwarded-proto", "https")
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
+    base_url = f"{proto}://{host}" if host else str(request.base_url).rstrip("/")
+    cache_key = f"sitemap_xml_{host}"
+    cached = _get_cached(cache_key)
     if cached:
         return Response(content=cached, media_type="application/xml")
 
-    base_url = "https://product-radar-21.preview.emergentagent.com"
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # Static pages
@@ -5056,14 +5060,16 @@ async def sitemap_xml():
         + "\n</urlset>"
     )
 
-    _set_cached("sitemap_xml", xml)
+    _set_cached(cache_key, xml)
     return Response(content=xml, media_type="application/xml")
 
 
 @app.get("/api/robots.txt", response_class=Response)
-async def robots_txt():
+async def robots_txt(request: Request):
     """Serve robots.txt pointing to sitemap."""
-    base_url = "https://product-radar-21.preview.emergentagent.com"
+    proto = request.headers.get("x-forwarded-proto", "https")
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
+    base_url = f"{proto}://{host}" if host else str(request.base_url).rstrip("/")
     content = (
         "User-agent: *\n"
         "Allow: /\n"
@@ -5073,7 +5079,7 @@ async def robots_txt():
         "Disallow: /dashboard\n"
         "Disallow: /admin\n"
         "Disallow: /api/\n"
-        f"\nSitemap: {base_url}/sitemap.xml\n"
+        f"\nSitemap: {base_url}/api/sitemap.xml\n"
     )
     return Response(content=content, media_type="text/plain")
 
