@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -118,6 +119,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
+        <DialogTitle className="sr-only">TrendScout Onboarding</DialogTitle>
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-50 via-violet-50 to-fuchsia-50 px-6 pt-5 pb-4">
           <div className="flex items-center justify-between mb-3">

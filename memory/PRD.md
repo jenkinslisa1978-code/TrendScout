@@ -1,42 +1,70 @@
 # TrendScout - Product Requirements Document
 
 ## Original Problem Statement
-Build "TrendScout", a predictive e-commerce intelligence platform that identifies winning products earlier than competitors. The system should feel like an AI e-commerce co-pilot — enabling users to launch products with 3 clicks: Find Product -> Launch Store -> Generate Ads -> Start Selling.
+Build "TrendScout", a fully automated, AI-powered e-commerce intelligence platform that helps users discover winning products, launch stores, and optimize marketing. Core value proposition: "Find winning products early and launch them fast."
 
 ## Tech Stack
-- Frontend: React, TailwindCSS, Shadcn/UI
+- Frontend: React, TailwindCSS, Shadcn/UI, html2canvas
 - Backend: FastAPI, MongoDB, APScheduler, aiohttp
-- Auth: Custom JWT | Payments: Stripe (live test keys) | Email: Resend
+- Auth: Custom JWT | Payments: Stripe (GBP) | Email: Resend
 - Scraping: curl_cffi | Google Trends: pytrends
 - LLM: Emergent LLM Key (OpenAI GPT-4.1-mini) via emergentintegrations
+
+## Pricing Structure (GBP)
+| Plan | Price | Key Features |
+|------|-------|-------------|
+| Free | £0 | Limited insights, 1 store, preview reports |
+| Starter | £19/mo | 5 analyses/day, 3 simulations/day, 2 stores, basic ads |
+| Pro | £39/mo | Unlimited analysis, full supplier intel, ad A/B testing, 5 stores |
+| Elite | £79/mo | Everything + Budget Optimizer, LaunchPad, Radar Alerts, unlimited stores |
 
 ## Completed Phases
 
 ### Phase 1-22: Foundation through Ad Intelligence (DONE)
-- Full pipeline: data, scoring, stores, ads, subscriptions, AI co-pilot, competitor intelligence
-
 ### Phase 23: Smart Budget Optimizer V1 (DONE)
-- Rule-based budget recommendations, dashboard widget
-
-### Phase 24: Automated System Health Dashboard (DONE)
-- Admin-only /admin/health monitoring 18 services
-
+### Phase 24: System Health Dashboard (DONE)
 ### Phase 25: Data Credibility & Supplier Intelligence (DONE)
-- Circuit breakers, fallback chains, source trust badges, CJ supplier intelligence
+### Phase 26: Official API Integration Layer (DONE)
+### Phase 27: Dashboard & Pricing Rework (DONE)
 
-### Phase 26: Official API Integration Layer (DONE - March 2026)
-- Meta Ad Library, CJ Dropshipping, AliExpress API clients with auto-upgrade
-- 4-step fallback chain: Official API → Scraper → Estimation → Hardcoded
-- Integration Status Dashboard at /admin/integrations
+### Phase 28: Launch Readiness — March 2026 (DONE)
 
-### Phase 27: Dashboard & Pricing Rework (DONE - March 2026)
-**Verified and tested. All features working.**
-- 3-tier pricing: Starter (£19), Pro (£39), Elite (£79) in GBP
-- Redesigned dashboard: WhileYouWereAway, TrendScout Radar, AI Co-pilot, MissedOpportunities
-- Feature gating across plans (Free/Starter/Pro/Elite)
-- Shareable Product Cards (html2canvas export)
-- Feature comparison table with all 4 tiers
-- Simple/Advanced view mode toggle
+**Phase A — Landing Page Overhaul (DONE, TESTED)**
+- Hero: "Find winning products early. Launch them faster."
+- CTA: "Start with Starter — £19/mo"
+- Sections: How It Works, Live Demo Card, Opportunity Detection, Pricing, Testimonials, Final CTA
+- Value prop badge: "AI Ecommerce Launch Assistant"
+
+**Phase B — Radar Alert System (DONE, TESTED)**
+- Backend: POST /api/notifications/radar-scan (admin-only background task)
+- Backend: GET /api/notifications/radar-detections (list radar-detected products)
+- Backend: POST /api/notifications/radar-digest (email digest with detected products)
+- RADAR_DETECTED notification type added to notification service
+- Products marked with radar_detected flag when crossing score thresholds
+
+**Phase C — Upgrade Prompts & Conversion (DONE, TESTED)**
+- LimitHitBanner: shown when Starter users exhaust daily limits
+- InsightLockedNudge: inline upgrade nudge for locked features
+- Correctly hidden for Elite/Pro users, shown for Starter/Free
+
+**Phase D — Onboarding Enhancement (DONE, TESTED)**
+- 4-step interactive wizard: Experience Level → Niche Preferences → First Opportunity → First Analysis
+- Saves experience_level and preferred_niches to user profile
+- Fetches real product data for Step 3
+- Accessible (DialogTitle added)
+
+**Phase E — LaunchPad Architecture (DONE, TESTED)**
+- Renamed to "TrendScout LaunchPad" with branded header
+- Step 1: Product Intelligence + Pricing Strategy (supplier cost, recommended price, margin)
+- Step 2: Supplier Confirmation
+- Step 3: Store Assets + Shopify Import File section
+- Step 4: Ad Creative Pack + A/B Test Plan (3 phases: Testing, Validation, Scale)
+- Step 5: Launch Checklist (7 items: 4 auto-checked, 3 manual)
+
+**Phase F — Final Launch Readiness (DONE, TESTED)**
+- All 12 spec areas verified via testing_agent_v3_fork
+- Backend: 16/16 API tests passed
+- Frontend: All features verified via Playwright
 
 ## Current Data Source Status
 | Source | Method | Mode | Status |
@@ -49,9 +77,8 @@ Build "TrendScout", a predictive e-commerce intelligence platform that identifie
 | Meta Ad Library | Estimation (API ready) | Estimated | Awaiting token |
 
 ## Upcoming Tasks
-- **P0: Smart Budget Optimizer V2:** Timeline UI, auto-recommend, rule presets
+- **P1: Smart Budget Optimizer V2:** Timeline UI, auto-recommend, rule presets
 - **P1: Budget Optimizer Alerts:** Email/push for kill/scale recommendations
-- **P2: TrendScout LaunchPad** (major feature): AI-assisted product launch workflow
 
 ## Backlog
 - server.py refactoring into modular route files
