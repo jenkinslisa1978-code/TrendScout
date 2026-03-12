@@ -1,8 +1,7 @@
 # TrendScout - Product Requirements Document
 
 ## Original Problem Statement
-Build "TrendScout", a comprehensive e-commerce intelligence SaaS platform that enables:
-Product Discovery → Validation → Store Creation → Ad Creation → Launch — all in one seamless workflow.
+Build "TrendScout", a predictive e-commerce intelligence platform that identifies winning products earlier than competitors. The system should feel like an AI e-commerce co-pilot — enabling users to launch products with 3 clicks: Find Product → Launch Store → Generate Ads → Start Selling.
 
 ## Tech Stack
 - Frontend: React, TailwindCSS, Shadcn/UI
@@ -13,85 +12,60 @@ Product Discovery → Validation → Store Creation → Ad Creation → Launch �
 
 ## Completed Phases
 
-### Phase 1: Real Data Infrastructure (DONE)
-- Amazon UK Movers & Shakers scraper (curl_cffi, 12+ categories)
-- Google Trends integration (pytrends, keyword velocity)
-- Scheduler: scraping every 4h, Google Trends every 6h, score recompute every 4h
+### Phase 1-6: Foundation (DONE)
+- Real data pipeline (Amazon, Google Trends), scoring engine, supplier integration, one-click store launch, AI ad creatives, opportunity feed
 
-### Phase 2: Market Intelligence Engine (DONE)
-- launch_score formula with transparent reasoning per component
-- Score Breakdown card + data transparency badges
+### Phase 7-10: Platform Features (DONE)
+- Referral system, automated reports + PDF, ad discovery (TikTok/Meta/Google), Shopify direct publish
 
-### Phase 3: Supplier Integration (DONE)
-- AliExpress + CJ Dropshipping auto-discovery
-- One-click supplier selection, external verification links
+### Phase 11: Stripe Subscriptions (DONE)
+- Free/Pro £39/Elite £99 with server-side + frontend feature gating
 
-### Phase 4: One-Click Store Launch (DONE)
-- POST /api/stores/launch creates complete store
-- Export: Shopify JSON/CSV, WooCommerce JSON
+### Phase 12: AI Co-Pilot UX (DONE - March 2026)
+**"Find Me a Winning Product" Hero:**
+- Large CTA button on dashboard → auto-selects highest launch_score product
+- Shows product name, launch score, success probability, estimated profit
+- Shows auto-matched supplier with cost, shipping origin, delivery estimate
+- "Launch This Product" button → enters Launch Wizard
+- Alternative product suggestions
+- API: GET /api/products/find-winning
 
-### Phase 5: AI Ad Creative Generation (DONE)
-- TikTok scripts, Facebook copy, Instagram captions, video storyboards
-- Provider: Emergent LLM Key → OpenAI GPT-4.1-mini
+**5-Step Product Launch Wizard:**
+- Route: /launch/:productId
+- Step 1: Select Product (shows name, scores, trend stage with tooltips)
+- Step 2: Confirm Supplier (auto-matched, selectable options)
+- Step 3: Preview Store (auto-generated with branding, policies, checkout)
+- Step 4: Generate Ads (AI creates TikTok scripts, FB copy, IG captions)
+- Step 5: Launch (store goes live, view store button)
+- Each step has beginner-friendly explanations and tooltips
 
-### Phase 6: Opportunity Feed (DONE)
-- Real-time dashboard feed with 30-second auto-refresh
-- Event types: new_strong_launch, trend_spike, competition_drop, etc.
-
-### Phase 7: Referral & Viral Growth System (DONE - March 2026)
-- Unique referral codes, tracking, reward bonus store slots
-- Social sharing: Twitter, Facebook, WhatsApp
-- Signup integration: /signup?ref=CODE
-
-### Phase 8: Automated Reports (DONE - March 2026)
-- Weekly Winning Products + Monthly Market Trends
-- PDF export, email delivery, report archive
-
-### Phase 9: Ad Discovery (DONE - March 2026)
-- Multi-platform scanning: TikTok, Meta, Google Shopping
-- Cached results (12h TTL), activity scoring
-- Frontend: AdDiscoverySection on ProductDetailPage
-
-### Phase 10: Shopify Direct Publish (DONE - March 2026)
-- OAuth flow, direct publish endpoint, export-only fallback
-
-### Phase 11: Stripe Subscription Tiers & Feature Gating (DONE - March 2026)
-**Plans:**
-- Free (£0/mo): Limited insights, report previews, 1 store, limited watchlist/alerts, no PDF export
-- Pro (£39/mo): Full insights, full reports + PDF export, 5 stores, full watchlist/alerts
-- Elite (£99/mo): Everything in Pro + early trends, advanced opportunities, automated reports, priority alerts, unlimited stores, direct Shopify publish
-
-**Stripe Billing:**
-- Real Stripe checkout sessions (Pro & Elite)
-- Customer portal for billing management
-- Webhook handling: checkout.session.completed, subscription.updated/deleted, invoice events
-- Cancellation/downgrade at period end
-
-**Server-Side Gating:**
-- PDF export: requires Pro plan (403 for free)
-- Early trend opportunities: requires Elite (403 for free/pro)
-- Store creation: enforces limits (1/5/unlimited)
-- Direct Shopify publish: requires Elite
-
-**Frontend Gating:**
-- Pricing page: 3-tier cards with GBP pricing, feature comparison table
-- Reports page: Lock icons on PDF buttons, upgrade prompts for free users
-- Product detail: LockedContent blur on Score Breakdown + Market Intelligence for free users
-- Dashboard: EarlyTrendUpgradePrompt replaces section for non-Elite users
-- Premium badges, blurred locked sections, "Upgrade to unlock" prompts
+**Beginner / Advanced Mode Toggle:**
+- Persists in localStorage as 'trendscout_view_mode'
+- Toggle component on Dashboard and Discover pages
+- **Beginner (Simple) Mode:**
+  - Dashboard: Shows hero, top products, stores only (hides early trends, market opportunities, intelligence panels)
+  - Discover: Simplified cards (launch score + profit + trend badge), "Launch Product" button → wizard
+- **Advanced Mode:**
+  - Full analytics: early trends, market opportunities, competition, intelligence panels
+  - "Build Store" button opens StoreBuilderModal
 
 ## Key API Endpoints
-- Stripe: /api/stripe/plans, /create-checkout-session, /create-portal-session, /webhook, /cancel-subscription, /feature-access, /subscription
+- Find Winning: GET /api/products/find-winning (auth required)
+- Stripe: /api/stripe/plans, /create-checkout-session, /feature-access, /webhook
 - Products: /api/products, /api/products/{id}
-- Stores: /api/stores/launch, /api/stores/{id}/export
-- Reports: /api/reports/, /api/reports/weekly-winning-products, /api/reports/*/pdf
-- Ad Discovery: /api/ad-discovery/discover/{id}, /api/ad-discovery/{id}
-- Referrals: /api/viral/referral/stats, /api/viral/referral/track
-- Shopify: /api/shopify/status, /api/shopify/connect/init, /api/shopify/publish/{store_id}
+- Stores: /api/stores/launch
+- Ad Creatives: /api/ad-creatives/generate/{id}
+- Reports: /api/reports/, /api/reports/*/pdf
+- Referrals: /api/viral/referral/stats
+- Ad Discovery: /api/ad-discovery/discover/{id}
 
-## Remaining/Backlog
-- P1: server.py refactoring into modular route files (7000+ lines)
-- P2: CJ Dropshipping & Zendrop direct API supplier integration
-- P2: TikTok Creative Center / Meta Ad Library API integration
-- P3: Image/video quality improvements (deduplication, scoring)
-- P3: Additional data sources as anti-bot solutions become available
+## Upcoming Tasks
+- **P1: Predictive Engine Enhancement** — Add search_growth_score + order_velocity_score, update formula weights, recompute all scores, improve trend classification UI (Exploding/Emerging/Rising/Stable/Declining)
+- **P2: Tooltip Education System** — Contextual tooltips explaining Supplier, Launch Score, Trend Stage, Profit Estimate
+- **P2: Enhanced Store Generation** — Auto-generate logo, brand colors, trust badges, review sections
+
+## Backlog
+- server.py refactoring into modular route files (7000+ lines)
+- CJ Dropshipping & Zendrop direct supplier API
+- TikTok Creative Center / Meta Ad Library API integration
+- Image/video quality improvements
