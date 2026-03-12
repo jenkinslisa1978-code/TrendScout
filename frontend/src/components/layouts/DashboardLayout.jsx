@@ -16,7 +16,8 @@ import {
   Store,
   FileText,
   Settings,
-  Gift
+  Gift,
+  Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Discover', href: '/discover', icon: Search },
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'My Stores', href: '/stores', icon: Store },
+  { name: 'Outcomes', href: '/outcomes', icon: Target },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
   { name: 'Referrals', href: '/referrals', icon: Gift },
 ];

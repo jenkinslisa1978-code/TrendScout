@@ -117,6 +117,7 @@ export default function ProductLaunchWizard() {
     if (storeData?.store_id || storeData?.id) {
       setLaunchResult(storeData);
       toast.success('Store launched successfully!');
+      trackOutcome(storeData?.store_id || storeData?.id);
       return;
     }
     setActionLoading(true);
@@ -131,6 +132,7 @@ export default function ProductLaunchWizard() {
         const data = await res.json();
         setLaunchResult(data);
         toast.success('Store launched successfully!');
+        trackOutcome(data.store_id || data.store?.id || data.id);
       } else {
         const err = await res.json().catch(() => ({}));
         toast.error(err.detail || 'Launch failed');
@@ -139,6 +141,17 @@ export default function ProductLaunchWizard() {
       toast.error('Launch failed');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const trackOutcome = async (storeId) => {
+    try {
+      await apiPost('/api/outcomes/track', {
+        product_id: productId,
+        store_id: storeId,
+      });
+    } catch (e) {
+      // Silent - non-critical
     }
   };
 
@@ -500,6 +513,14 @@ function Step5Launch({ result, loading, navigate }) {
         >
           <Store className="h-4 w-4 mr-2" />
           View Store
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/outcomes')}
+          data-testid="track-outcomes-btn"
+        >
+          <TrendingUp className="h-4 w-4 mr-2" />
+          Track Outcomes
         </Button>
         <Button
           variant="outline"

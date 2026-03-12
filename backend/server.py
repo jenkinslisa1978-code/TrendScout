@@ -7177,8 +7177,268 @@ async def get_platform_ads(
     return {"product_id": product_id, "platform": platform, "ads": ads, "count": len(ads)}
 
 
+# ═══════════════════════════════════════════════════════════════════
+# Product Outcome Learning System
+# ═══════════════════════════════════════════════════════════════════
+outcomes_router = APIRouter(prefix="/api/outcomes")
+
+
+@outcomes_router.post("/track")
+async def track_product_outcome(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Record a product launch outcome for tracking."""
+    body = await request.json()
+    product_id = body.get("product_id")
+    store_id = body.get("store_id")
+
+    if not product_id:
+        raise HTTPException(status_code=400, detail="product_id is required")
+
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Check if already tracking this product for this user
+    existing = await db.product_outcomes.find_one(
+        {"product_id": product_id, "user_id": current_user.user_id}, {"_id": 0}
+    )
+    if existing:
+        return {"outcome": existing, "message": "Already tracking this product"}
+
+    outcome_doc = {
+        "id": str(uuid.uuid4()),
+        "product_id": product_id,
+        "user_id": current_user.user_id,
+        "store_id": store_id,
+        "product_name": product.get("product_name", ""),
+        "category": product.get("category", ""),
+        "image_url": product.get("image_url", ""),
+        "launch_score_at_launch": product.get("launch_score", 0),
+        "success_probability_at_launch": product.get("success_probability", 0),
+        "trend_stage_at_launch": product.get("trend_stage", "Stable"),
+        "launched_at": datetime.now(timezone.utc).isoformat(),
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "outcome_status": "pending",
+        "metrics": {
+            "revenue": 0,
+            "orders": 0,
+            "ad_spend": 0,
+            "roi": 0,
+            "days_active": 0,
+        },
+        "auto_label_reason": None,
+        "notes": body.get("notes", ""),
+    }
+
+    await db.product_outcomes.insert_one(outcome_doc)
+    outcome_doc.pop("_id", None)
+    return {"outcome": outcome_doc, "message": "Product outcome tracking started"}
+
+
+@outcomes_router.get("/my")
+async def get_my_outcomes(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    status: Optional[str] = None,
+):
+    """Get all tracked product outcomes for the current user."""
+    query = {"user_id": current_user.user_id}
+    if status and status in ("pending", "success", "moderate", "failed"):
+        query["outcome_status"] = status
+
+    cursor = db.product_outcomes.find(query, {"_id": 0}).sort("launched_at", -1)
+    outcomes = await cursor.to_list(100)
+
+    # Compute summary stats
+    total = len(outcomes)
+    success_count = sum(1 for o in outcomes if o.get("outcome_status") == "success")
+    moderate_count = sum(1 for o in outcomes if o.get("outcome_status") == "moderate")
+    failed_count = sum(1 for o in outcomes if o.get("outcome_status") == "failed")
+    pending_count = sum(1 for o in outcomes if o.get("outcome_status") == "pending")
+    total_revenue = sum(o.get("metrics", {}).get("revenue", 0) for o in outcomes)
+    total_orders = sum(o.get("metrics", {}).get("orders", 0) for o in outcomes)
+
+    return {
+        "outcomes": outcomes,
+        "summary": {
+            "total": total,
+            "success": success_count,
+            "moderate": moderate_count,
+            "failed": failed_count,
+            "pending": pending_count,
+            "total_revenue": round(total_revenue, 2),
+            "total_orders": total_orders,
+            "success_rate": round(success_count / max(total - pending_count, 1) * 100, 1),
+        },
+    }
+
+
+@outcomes_router.put("/{outcome_id}")
+async def update_outcome_metrics(
+    outcome_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Update metrics for a tracked product outcome."""
+    body = await request.json()
+    outcome = await db.product_outcomes.find_one(
+        {"id": outcome_id, "user_id": current_user.user_id}, {"_id": 0}
+    )
+    if not outcome:
+        raise HTTPException(status_code=404, detail="Outcome not found")
+
+    metrics_update = {}
+    for key in ("revenue", "orders", "ad_spend", "days_active"):
+        if key in body:
+            metrics_update[f"metrics.{key}"] = body[key]
+
+    # Compute ROI
+    revenue = body.get("revenue", outcome.get("metrics", {}).get("revenue", 0))
+    ad_spend = body.get("ad_spend", outcome.get("metrics", {}).get("ad_spend", 0))
+    if ad_spend > 0:
+        metrics_update["metrics.roi"] = round((revenue - ad_spend) / ad_spend * 100, 1)
+
+    if body.get("notes"):
+        metrics_update["notes"] = body["notes"]
+    if body.get("outcome_status") and body["outcome_status"] in ("pending", "success", "moderate", "failed"):
+        metrics_update["outcome_status"] = body["outcome_status"]
+
+    metrics_update["last_updated"] = datetime.now(timezone.utc).isoformat()
+
+    await db.product_outcomes.update_one(
+        {"id": outcome_id}, {"$set": metrics_update}
+    )
+
+    updated = await db.product_outcomes.find_one({"id": outcome_id}, {"_id": 0})
+    return {"outcome": updated, "message": "Outcome updated"}
+
+
+@outcomes_router.post("/auto-label")
+async def auto_label_outcomes(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Auto-classify all pending outcomes based on metrics thresholds.
+    success: orders >= 50 OR revenue >= 500
+    moderate: orders >= 10 OR revenue >= 100
+    failed: everything else after 30+ days
+    """
+    cursor = db.product_outcomes.find(
+        {"user_id": current_user.user_id, "outcome_status": "pending"}, {"_id": 0}
+    )
+    outcomes = await cursor.to_list(200)
+    labeled = 0
+
+    for o in outcomes:
+        m = o.get("metrics", {})
+        revenue = m.get("revenue", 0)
+        orders = m.get("orders", 0)
+        days = m.get("days_active", 0)
+
+        new_status = None
+        reason = None
+
+        if orders >= 50 or revenue >= 500:
+            new_status = "success"
+            reason = f"orders={orders}, revenue=£{revenue}"
+        elif orders >= 10 or revenue >= 100:
+            new_status = "moderate"
+            reason = f"orders={orders}, revenue=£{revenue}"
+        elif days >= 30:
+            new_status = "failed"
+            reason = f"After {days} days: orders={orders}, revenue=£{revenue}"
+
+        if new_status:
+            await db.product_outcomes.update_one(
+                {"id": o["id"]},
+                {
+                    "$set": {
+                        "outcome_status": new_status,
+                        "auto_label_reason": reason,
+                        "last_updated": datetime.now(timezone.utc).isoformat(),
+                    }
+                },
+            )
+            labeled += 1
+
+    return {"labeled": labeled, "total_checked": len(outcomes)}
+
+
+@outcomes_router.get("/stats")
+async def get_outcome_stats(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Aggregate outcome stats for the current user."""
+    cursor = db.product_outcomes.find(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    )
+    outcomes = await cursor.to_list(500)
+
+    if not outcomes:
+        return {
+            "total_tracked": 0,
+            "success_rate": 0,
+            "avg_roi": 0,
+            "total_revenue": 0,
+            "total_orders": 0,
+            "avg_launch_score_success": 0,
+            "avg_launch_score_failed": 0,
+            "best_categories": [],
+            "insights": [],
+        }
+
+    total = len(outcomes)
+    resolved = [o for o in outcomes if o.get("outcome_status") != "pending"]
+    successes = [o for o in outcomes if o.get("outcome_status") == "success"]
+    failures = [o for o in outcomes if o.get("outcome_status") == "failed"]
+
+    total_revenue = sum(o.get("metrics", {}).get("revenue", 0) for o in outcomes)
+    total_orders = sum(o.get("metrics", {}).get("orders", 0) for o in outcomes)
+    rois = [o.get("metrics", {}).get("roi", 0) for o in outcomes if o.get("metrics", {}).get("roi", 0) != 0]
+    avg_roi = round(sum(rois) / max(len(rois), 1), 1)
+
+    avg_score_success = round(
+        sum(o.get("launch_score_at_launch", 0) for o in successes) / max(len(successes), 1), 1
+    )
+    avg_score_failed = round(
+        sum(o.get("launch_score_at_launch", 0) for o in failures) / max(len(failures), 1), 1
+    )
+
+    # Best categories by success count
+    cat_stats = {}
+    for o in successes:
+        cat = o.get("category", "Other")
+        cat_stats[cat] = cat_stats.get(cat, 0) + 1
+    best_categories = sorted(cat_stats.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    # Generate insights
+    insights = []
+    if len(resolved) >= 3:
+        success_rate = len(successes) / max(len(resolved), 1) * 100
+        if success_rate >= 60:
+            insights.append({"type": "positive", "text": f"Strong track record! {success_rate:.0f}% of your launched products are successful."})
+        if avg_score_success > avg_score_failed + 10:
+            insights.append({"type": "learning", "text": f"Products with launch scores above {avg_score_success:.0f} tend to succeed for you."})
+        if best_categories:
+            insights.append({"type": "category", "text": f"Your strongest category is {best_categories[0][0]} with {best_categories[0][1]} successful launches."})
+
+    return {
+        "total_tracked": total,
+        "success_rate": round(len(successes) / max(len(resolved), 1) * 100, 1),
+        "avg_roi": avg_roi,
+        "total_revenue": round(total_revenue, 2),
+        "total_orders": total_orders,
+        "avg_launch_score_success": avg_score_success,
+        "avg_launch_score_failed": avg_score_failed,
+        "best_categories": [{"category": c, "count": n} for c, n in best_categories],
+        "insights": insights,
+    }
+
+
 # Include routers
 app.include_router(api_router)
+app.include_router(outcomes_router)
 app.include_router(stripe_router)
 app.include_router(automation_router)
 app.include_router(ingestion_router)

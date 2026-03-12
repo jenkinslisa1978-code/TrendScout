@@ -40,6 +40,7 @@ import ProductLaunchWizard from "@/pages/ProductLaunchWizard";
 import { ViewModeProvider } from "@/contexts/ViewModeContext";
 import SeoPage from "@/pages/SeoPage";
 import FreeToolsPage from "@/pages/FreeToolsPage";
+import OutcomesPage from "@/pages/OutcomesPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -234,6 +235,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <MonthlyReportPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/outcomes"
+        element={
+          <ProtectedRoute>
+            <OutcomesPage />
           </ProtectedRoute>
         }
       />
