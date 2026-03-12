@@ -16,11 +16,11 @@ import { apiGet, apiPost } from '@/lib/api';
 import { toast } from 'sonner';
 
 const STEPS = [
-  { id: 1, label: 'Select Product', icon: Package, tip: 'The product you want to sell in your store.' },
-  { id: 2, label: 'Confirm Supplier', icon: Truck, tip: 'Where the product ships from. We auto-match the best one.' },
-  { id: 3, label: 'Preview Store', icon: Store, tip: 'Your auto-generated online store — ready to publish.' },
-  { id: 4, label: 'Generate Ads', icon: Sparkles, tip: 'AI-created ad scripts and copy for TikTok, Facebook & Instagram.' },
-  { id: 5, label: 'Launch', icon: Rocket, tip: 'Go live! Export your store and start selling.' },
+  { id: 1, label: 'Product Intel', icon: Package, tip: 'Product intelligence and pricing strategy.' },
+  { id: 2, label: 'Supplier', icon: Truck, tip: 'Verified supplier with cost analysis.' },
+  { id: 3, label: 'Store Assets', icon: Store, tip: 'Product page, Shopify data, and store preview.' },
+  { id: 4, label: 'Ad Pack', icon: Sparkles, tip: 'Ad creatives, scripts, and A/B test plan.' },
+  { id: 5, label: 'Launch', icon: Rocket, tip: 'Review checklist and go live.' },
 ];
 
 export default function ProductLaunchWizard() {
@@ -180,8 +180,13 @@ export default function ProductLaunchWizard() {
       <div className="max-w-4xl mx-auto space-y-6" data-testid="launch-wizard">
         {/* Wizard Header */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 font-manrope">Product Launch Wizard</h1>
-          <p className="text-slate-500 mt-1">Follow these steps to launch your product — everything is automated.</p>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
+              <Rocket className="h-4 w-4 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 font-manrope">TrendScout LaunchPad</h1>
+          </div>
+          <p className="text-slate-500 mt-1">Everything you need to launch — product intel, store, ads, and go-live checklist.</p>
         </div>
 
         {/* Step Indicators */}
@@ -287,14 +292,19 @@ export default function ProductLaunchWizard() {
 
 function Step1Product({ product }) {
   if (!product) return <p className="text-slate-500">Product not found.</p>;
+  const supplierCost = product.supplier_cost || product.estimated_supplier_cost || 0;
+  const retailPrice = product.estimated_retail_price || supplierCost * 2.5;
+  const margin = retailPrice - supplierCost;
+  const marginPct = retailPrice > 0 ? ((margin / retailPrice) * 100).toFixed(0) : 0;
+
   return (
     <div data-testid="wizard-step1-content">
       <div className="flex items-center gap-2 mb-4">
         <Package className="h-5 w-5 text-indigo-600" />
-        <h3 className="text-lg font-semibold text-slate-900">Your Selected Product</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Product Intelligence</h3>
       </div>
       <p className="text-sm text-slate-500 mb-6">
-        This is the product our AI recommends based on current market data. Review the details below.
+        AI-analysed product data and recommended pricing strategy.
       </p>
       <div className="flex items-start gap-5">
         {product.image_url ? (
@@ -313,6 +323,33 @@ function Step1Product({ product }) {
             <MetricBox label="Trend Stage" value={product.trend_stage || 'Unknown'} color="amber" tooltip="Where this product is in its lifecycle: Emerging, Rising, etc." />
           </div>
         </div>
+      </div>
+
+      {/* Pricing Strategy */}
+      <div className="mt-6 bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-5 border border-indigo-100" data-testid="pricing-strategy">
+        <div className="flex items-center gap-2 mb-3">
+          <DollarSign className="h-4 w-4 text-indigo-600" />
+          <h4 className="font-semibold text-slate-800 text-sm">Recommended Pricing Strategy</h4>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <div className="bg-white rounded-lg p-3 text-center">
+            <p className="text-xs text-slate-400 mb-1">Supplier Cost</p>
+            <p className="font-bold text-slate-800">£{supplierCost.toFixed(2)}</p>
+          </div>
+          <div className="bg-white rounded-lg p-3 text-center">
+            <p className="text-xs text-slate-400 mb-1">Recommended Price</p>
+            <p className="font-bold text-indigo-600">£{retailPrice.toFixed(2)}</p>
+          </div>
+          <div className="bg-white rounded-lg p-3 text-center">
+            <p className="text-xs text-slate-400 mb-1">Estimated Margin</p>
+            <p className="font-bold text-emerald-600">£{margin.toFixed(2)}</p>
+          </div>
+          <div className="bg-white rounded-lg p-3 text-center">
+            <p className="text-xs text-slate-400 mb-1">Margin %</p>
+            <p className="font-bold text-amber-600">{marginPct}%</p>
+          </div>
+        </div>
+        <p className="text-xs text-slate-400 mt-3">Based on competitor pricing, demand signals, and margin targets.</p>
       </div>
     </div>
   );
@@ -420,6 +457,17 @@ function Step3Store({ storeData, loading }) {
             <Check className="h-4 w-4 inline mr-1" />
             Store preview ready. Proceed to generate ads.
           </div>
+          {/* Shopify Export */}
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-3" data-testid="shopify-export">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Shopify Import File</span>
+              </div>
+              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px]">Ready to export</Badge>
+            </div>
+            <p className="text-xs text-blue-600 mt-1">Product data, variants, images, and SEO metadata formatted for Shopify CSV import.</p>
+          </div>
         </div>
       ) : (
         <div className="bg-slate-50 rounded-lg p-8 text-center text-slate-400">
@@ -465,6 +513,29 @@ function Step4Ads({ adCreatives, loading }) {
             <Check className="h-4 w-4 inline mr-1" />
             All ad creatives ready. Click "Launch Product" to go live.
           </div>
+
+          {/* Ad Test Plan */}
+          <div className="bg-violet-50 border border-violet-100 rounded-xl p-5 mt-4" data-testid="ad-test-plan">
+            <div className="flex items-center gap-2 mb-3">
+              <RefreshCw className="h-4 w-4 text-violet-600" />
+              <h4 className="font-semibold text-violet-800 text-sm">A/B Test Plan</h4>
+            </div>
+            <div className="space-y-2 text-sm">
+              {[
+                { phase: 'Phase 1 — Testing (Day 1-3)', budget: '£20/day', desc: 'Run 3 ad variations across TikTok + Facebook. Kill underperformers at £5 CPA.' },
+                { phase: 'Phase 2 — Validation (Day 4-7)', budget: '£40/day', desc: 'Scale winning ad. Test 2 new audiences. Target 2x ROAS.' },
+                { phase: 'Phase 3 — Scale (Day 8+)', budget: '£100+/day', desc: 'Increase budget on proven winners. Add lookalike audiences.' },
+              ].map((p, i) => (
+                <div key={i} className="bg-white rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-slate-800">{p.phase}</span>
+                    <Badge className="bg-violet-100 text-violet-700 border-violet-200 text-[10px]">{p.budget}</Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">{p.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="bg-slate-50 rounded-lg p-8 text-center text-slate-400">
@@ -477,6 +548,14 @@ function Step4Ads({ adCreatives, loading }) {
 }
 
 function Step5Launch({ result, loading, navigate }) {
+  const [checklist, setChecklist] = useState({
+    product: true, supplier: true, store: true, ads: true,
+    pricing: false, testPlan: false, tracking: false,
+  });
+
+  const toggleCheck = (key) => setChecklist(prev => ({ ...prev, [key]: !prev[key] }));
+  const allChecked = Object.values(checklist).every(Boolean);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12" data-testid="wizard-step5-content">
@@ -487,49 +566,75 @@ function Step5Launch({ result, loading, navigate }) {
     );
   }
 
-  if (!result) {
+  if (result) {
     return (
-      <div className="text-center py-12" data-testid="wizard-step5-content">
-        <Rocket className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-        <p className="text-slate-500">Ready to launch — click "Launch Product" above.</p>
+      <div className="text-center py-8" data-testid="wizard-step5-content">
+        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+          <Check className="h-8 w-8 text-emerald-600" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Your Store is Live!</h3>
+        <p className="text-slate-500 mb-6">Your store has been created with connected supplier and ready-to-use product pages.</p>
+        <div className="flex justify-center gap-3">
+          <Button onClick={() => navigate(`/store/${result.store_id || result.id}`)} className="bg-indigo-600 hover:bg-indigo-700" data-testid="view-store-btn">
+            <Store className="h-4 w-4 mr-2" /> View Store
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/outcomes')} data-testid="track-outcomes-btn">
+            <TrendingUp className="h-4 w-4 mr-2" /> Track Outcomes
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/dashboard')} data-testid="back-to-dashboard-btn">
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="text-center py-8" data-testid="wizard-step5-content">
-      <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-        <Check className="h-8 w-8 text-emerald-600" />
+    <div data-testid="wizard-step5-content">
+      <div className="flex items-center gap-2 mb-4">
+        <Rocket className="h-5 w-5 text-indigo-600" />
+        <h3 className="text-lg font-semibold text-slate-900">Launch Checklist</h3>
       </div>
-      <h3 className="text-xl font-bold text-slate-900 mb-2">Your Store is Live!</h3>
-      <p className="text-slate-500 mb-6">
-        Your store has been created with connected supplier and ready-to-use product pages.
+      <p className="text-sm text-slate-500 mb-6">
+        Review all items before going live. Tick off each step to confirm you're ready.
       </p>
-      <div className="flex justify-center gap-3">
-        <Button
-          onClick={() => navigate(`/store/${result.store_id || result.id}`)}
-          className="bg-indigo-600 hover:bg-indigo-700"
-          data-testid="view-store-btn"
-        >
-          <Store className="h-4 w-4 mr-2" />
-          View Store
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate('/outcomes')}
-          data-testid="track-outcomes-btn"
-        >
-          <TrendingUp className="h-4 w-4 mr-2" />
-          Track Outcomes
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate('/dashboard')}
-          data-testid="back-to-dashboard-btn"
-        >
-          Back to Dashboard
-        </Button>
+      <div className="space-y-2" data-testid="launch-checklist">
+        {[
+          { key: 'product', label: 'Product intelligence reviewed', auto: true },
+          { key: 'supplier', label: 'Supplier confirmed and cost locked', auto: true },
+          { key: 'store', label: 'Store pages and branding generated', auto: true },
+          { key: 'ads', label: 'Ad creatives and scripts ready', auto: true },
+          { key: 'pricing', label: 'Pricing strategy confirmed' },
+          { key: 'testPlan', label: 'Ad test plan reviewed (budget & KPIs)' },
+          { key: 'tracking', label: 'Pixel/tracking ready on store' },
+        ].map(item => (
+          <button
+            key={item.key}
+            onClick={() => !item.auto && toggleCheck(item.key)}
+            className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
+              checklist[item.key]
+                ? 'border-emerald-200 bg-emerald-50/50'
+                : 'border-slate-200 hover:border-slate-300'
+            }`}
+            data-testid={`checklist-${item.key}`}
+          >
+            <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
+              checklist[item.key] ? 'bg-emerald-500 text-white' : 'border-2 border-slate-300'
+            }`}>
+              {checklist[item.key] && <Check className="h-3 w-3" />}
+            </div>
+            <span className={`text-sm ${checklist[item.key] ? 'text-slate-700' : 'text-slate-500'}`}>
+              {item.label}
+            </span>
+            {item.auto && <Badge className="ml-auto bg-slate-100 text-slate-500 border-slate-200 text-[9px]">Auto</Badge>}
+          </button>
+        ))}
       </div>
+      {!allChecked && (
+        <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
+          <Info className="h-3 w-3" /> Complete all checklist items before launching.
+        </p>
+      )}
     </div>
   );
 }
