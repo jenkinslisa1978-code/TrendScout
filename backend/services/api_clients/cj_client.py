@@ -21,6 +21,44 @@ logger = logging.getLogger("api.cj_dropshipping")
 _last_call_ts: float = 0
 _MIN_INTERVAL = 1.0  # CJ allows ~600 calls/min
 
+# Module-level token cache (persists across client instances)
+_cj_access_token: Optional[str] = None
+_cj_refresh_token: Optional[str] = None
+_cj_token_expiry: float = 0
+
+_CJ_TOKEN_FILE = "/tmp/cj_token_cache.json"
+
+
+def _load_token_cache():
+    """Load persisted CJ token from file (survives server restarts)."""
+    global _cj_access_token, _cj_refresh_token, _cj_token_expiry
+    try:
+        import json as _json
+        with open(_CJ_TOKEN_FILE, "r") as f:
+            data = _json.load(f)
+        if data.get("expiry", 0) > time.time():
+            _cj_access_token = data["access_token"]
+            _cj_refresh_token = data.get("refresh_token")
+            _cj_token_expiry = data["expiry"]
+            logger.info("CJ API: Loaded cached token from file")
+    except Exception:
+        pass
+
+def _save_token_cache():
+    """Persist CJ token to file."""
+    try:
+        import json as _json
+        with open(_CJ_TOKEN_FILE, "w") as f:
+            _json.dump({
+                "access_token": _cj_access_token,
+                "refresh_token": _cj_refresh_token,
+                "expiry": _cj_token_expiry,
+            }, f)
+    except Exception:
+        pass
+
+_load_token_cache()
+
 
 class CJDropshippingClient:
     BASE_URL = "https://developers.cjdropshipping.com/api2.0/v1"
@@ -34,6 +72,75 @@ class CJDropshippingClient:
     def is_configured(self) -> bool:
         return bool(self.api_key)
 
+    async def _get_access_token(self) -> Optional[str]:
+        """Exchange API key for access token (valid 15 days)."""
+        global _cj_access_token, _cj_refresh_token, _cj_token_expiry
+
+        if _cj_access_token and time.time() < _cj_token_expiry:
+            return _cj_access_token
+
+        if _cj_refresh_token:
+            token = await self._refresh_access_token()
+            if token:
+                return token
+
+        url = f"{self.BASE_URL}/authentication/getAccessToken"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    json={"apiKey": self.api_key},
+                    headers={"Content-Type": "application/json"},
+                    timeout=aiohttp.ClientTimeout(total=15),
+                ) as resp:
+                    if resp.status == 200:
+                        body = await resp.json()
+                        if body.get("result") or body.get("code") == 200:
+                            data = body.get("data", {})
+                            _cj_access_token = data.get("accessToken")
+                            _cj_refresh_token = data.get("refreshToken")
+                            _cj_token_expiry = time.time() + (14 * 24 * 3600)
+                            logger.info("CJ API: Access token obtained")
+                            _save_token_cache()
+                            return _cj_access_token
+                        elif body.get("code") == 1600200:
+                            logger.warning("CJ API: Auth rate limited (1/300s), will retry later")
+                        else:
+                            logger.error(f"CJ API auth error: {body.get('message', 'Unknown')}")
+                    else:
+                        logger.error(f"CJ API auth HTTP {resp.status}")
+        except Exception as e:
+            logger.error(f"CJ API auth exception: {e}")
+        return None
+
+    async def _refresh_access_token(self) -> Optional[str]:
+        """Refresh the access token using refresh token."""
+        global _cj_access_token, _cj_refresh_token, _cj_token_expiry
+
+        url = f"{self.BASE_URL}/authentication/refreshAccessToken"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    json={"refreshToken": _cj_refresh_token},
+                    headers={"Content-Type": "application/json"},
+                    timeout=aiohttp.ClientTimeout(total=15),
+                ) as resp:
+                    if resp.status == 200:
+                        body = await resp.json()
+                        if body.get("result") or body.get("code") == 200:
+                            data = body.get("data", {})
+                            _cj_access_token = data.get("accessToken")
+                            _cj_refresh_token = data.get("refreshToken")
+                            _cj_token_expiry = time.time() + (14 * 24 * 3600)
+                            logger.info("CJ API: Access token refreshed")
+                            _save_token_cache()
+                            return _cj_access_token
+        except Exception as e:
+            logger.error(f"CJ API refresh error: {e}")
+        _cj_refresh_token = None
+        return None
+
     async def health_check(self) -> Dict[str, Any]:
         """Test API connectivity."""
         if not self.is_configured:
@@ -44,8 +151,8 @@ class CJDropshippingClient:
                 "message": "CJ_API_KEY not set in .env",
             }
         try:
-            result = await self.search_products("phone case", limit=1)
-            if result is not None:
+            result = await self.search_products("bluetooth earbuds", limit=1)
+            if result is not None and len(result) > 0:
                 return {
                     "status": "healthy",
                     "credential_detected": True,
@@ -103,8 +210,9 @@ class CJDropshippingClient:
             "orderBy": 1,  # sort by listing count
             "sort": "desc",
         }
+        token = await self._get_access_token() or self.api_key
         headers = {
-            "CJ-Access-Token": self.api_key,
+            "CJ-Access-Token": token,
             "Content-Type": "application/json",
         }
 
@@ -119,9 +227,12 @@ class CJDropshippingClient:
                     if resp.status == 200:
                         body = await resp.json()
                         if body.get("result") is True or body.get("code") == 200:
-                            products = body.get("data", {}).get("productList", [])
-                            if not products and isinstance(body.get("data"), list):
-                                products = body["data"]
+                            data = body.get("data", {})
+                            products = []
+                            if isinstance(data, dict):
+                                products = data.get("list", []) or data.get("productList", []) or []
+                            elif isinstance(data, list):
+                                products = data
 
                             normalized = [self._normalize(p) for p in products if p]
                             normalized = [n for n in normalized if n]
@@ -163,8 +274,9 @@ class CJDropshippingClient:
             return cached["data"]
 
         url = f"{self.BASE_URL}/product/query"
+        token = await self._get_access_token() or self.api_key
         headers = {
-            "CJ-Access-Token": self.api_key,
+            "CJ-Access-Token": token,
             "Content-Type": "application/json",
         }
         params = {"pid": product_id}
@@ -198,12 +310,15 @@ class CJDropshippingClient:
             if not name:
                 return None
 
-            # Price
+            # Price (CJ v2 may return ranges like "3.51 -- 3.98")
             price = 0
             for key in ["sellPrice", "salePrice", "price", "cost"]:
                 if key in item:
                     try:
-                        price = float(item[key])
+                        val = str(item[key])
+                        if "--" in val:
+                            val = val.split("--")[0].strip()
+                        price = float(val)
                         if price > 0:
                             break
                     except (ValueError, TypeError):
