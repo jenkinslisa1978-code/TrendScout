@@ -36,6 +36,8 @@ import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
 // Subscription
 import PricingPage from "@/pages/PricingPage";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
+import ProductLaunchWizard from "@/pages/ProductLaunchWizard";
+import { ViewModeProvider } from "@/contexts/ViewModeContext";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -122,6 +124,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProductDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/launch/:productId"
+        element={
+          <ProtectedRoute>
+            <ProductLaunchWizard />
           </ProtectedRoute>
         }
       />
@@ -235,19 +245,21 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <SubscriptionProvider>
-          <BrowserRouter>
-            <AppRoutes />
-            <Toaster 
-              position="top-right" 
-              richColors 
-              closeButton
-              toastOptions={{
-                style: {
-                  fontFamily: 'Inter, sans-serif',
-                },
-              }}
-            />
-          </BrowserRouter>
+          <ViewModeProvider>
+            <BrowserRouter>
+              <AppRoutes />
+              <Toaster 
+                position="top-right" 
+                richColors 
+                closeButton
+                toastOptions={{
+                  style: {
+                    fontFamily: 'Inter, sans-serif',
+                  },
+                }}
+              />
+            </BrowserRouter>
+          </ViewModeProvider>
         </SubscriptionProvider>
       </AuthProvider>
     </ErrorBoundary>

@@ -50,10 +50,13 @@ import {
 import { toast } from 'sonner';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 import { ExplainScoreButton } from '@/components/LaunchScoreExplainerModal';
+import { useViewMode } from '@/contexts/ViewModeContext';
+import ViewModeToggle from '@/components/ViewModeToggle';
 
 export default function DiscoverPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isBeginner } = useViewMode();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -147,9 +150,12 @@ export default function DiscoverPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="font-manrope text-2xl font-bold text-slate-900">Discover Products</h1>
-          <p className="mt-1 text-slate-500">Find winning products and launch your store</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-manrope text-2xl font-bold text-slate-900">Discover Products</h1>
+            <p className="mt-1 text-slate-500">Find winning products and launch your store</p>
+          </div>
+          <ViewModeToggle />
         </div>
 
         {/* Filters */}
@@ -350,93 +356,106 @@ export default function DiscoverPage() {
                                   <p className={`font-mono text-2xl font-bold ${info.textColor}`}>
                                     {product.launch_score || 0}
                                   </p>
-                                  <ExplainScoreButton 
-                                    productId={product.id}
-                                    productName={product.product_name}
-                                    launchScore={product.launch_score || 0}
-                                    variant="icon"
-                                  />
+                                  {!isBeginner && (
+                                    <ExplainScoreButton 
+                                      productId={product.id}
+                                      productName={product.product_name}
+                                      launchScore={product.launch_score || 0}
+                                      variant="icon"
+                                    />
+                                  )}
                                 </>
                               );
                             })()}
                           </div>
                           <p className="text-xs text-slate-400">Launch Score</p>
                         </div>
-                        <div className="text-center">
-                          <p className={`font-mono text-lg font-semibold ${getTrendScoreColor(product.trend_score)}`}>
-                            {product.trend_score}
-                          </p>
-                          <p className="text-xs text-slate-400">Trend</p>
-                        </div>
+                        {!isBeginner && (
+                          <div className="text-center">
+                            <p className={`font-mono text-lg font-semibold ${getTrendScoreColor(product.trend_score)}`}>
+                              {product.trend_score}
+                            </p>
+                            <p className="text-xs text-slate-400">Trend</p>
+                          </div>
+                        )}
                         <div className="text-right">
                           <p className="font-mono text-lg font-semibold text-emerald-600">
                             {formatCurrency(product.estimated_margin)}
                           </p>
-                          <p className="text-xs text-slate-400">Est. Margin</p>
+                          <p className="text-xs text-slate-400">Est. Profit</p>
                         </div>
                       </div>
 
-                      {/* TikTok Views */}
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <Eye className="h-4 w-4" />
-                        {formatNumber(product.tiktok_views)} TikTok views
-                        {product.stores_created > 0 && (
-                          <>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-emerald-600">{product.stores_created} stores built</span>
-                          </>
-                        )}
-                      </div>
+                      {/* Advanced: TikTok Views */}
+                      {!isBeginner && (
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                          <Eye className="h-4 w-4" />
+                          {formatNumber(product.tiktok_views)} TikTok views
+                          {product.stores_created > 0 && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-emerald-600">{product.stores_created} stores built</span>
+                            </>
+                          )}
+                        </div>
+                      )}
 
-                      {/* Badges - Launch Score Label first */}
+                      {/* Badges - simplified in beginner mode */}
                       <div className="flex flex-wrap gap-2">
-                        {/* Launch Score Badge - PRIMARY */}
                         <Badge 
                           className={`${getLaunchScoreBadgeColor(product.launch_score || 0)} border text-xs font-semibold`}
                           data-testid={`launch-badge-${product.id}`}
                         >
                           {getLaunchScoreLabel(product.launch_score || 0)}
                         </Badge>
-                        {product.proven_winner && (
-                          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border text-xs">
-                            Proven Winner
-                          </Badge>
-                        )}
-                        {product.early_trend_label && product.early_trend_label !== 'stable' && (
-                          <Badge className={`${getEarlyTrendInfo(product.early_trend_label).color} border text-xs`}>
-                            {getEarlyTrendInfo(product.early_trend_label).text}
-                          </Badge>
-                        )}
                         <Badge className={`${getTrendStageColor(product.trend_stage)} border text-xs`}>
                           {product.trend_stage}
                         </Badge>
-                        <Badge className={`${getCompetitionColor(product.competition_level)} border text-xs`}>
-                          {product.competition_level} comp.
-                        </Badge>
-                        {product.is_real_data && (
-                          <Badge variant="outline" className="text-emerald-600 border-emerald-200 text-xs">
-                            Live
-                          </Badge>
-                        )}
-                        {product.confidence_score > 0 && (
-                          <Badge variant="outline" className="text-slate-400 border-slate-200 text-xs">
-                            {product.confidence_score}% conf.
-                          </Badge>
+                        {!isBeginner && (
+                          <>
+                            {product.proven_winner && (
+                              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border text-xs">
+                                Proven Winner
+                              </Badge>
+                            )}
+                            {product.early_trend_label && product.early_trend_label !== 'stable' && (
+                              <Badge className={`${getEarlyTrendInfo(product.early_trend_label).color} border text-xs`}>
+                                {getEarlyTrendInfo(product.early_trend_label).text}
+                              </Badge>
+                            )}
+                            <Badge className={`${getCompetitionColor(product.competition_level)} border text-xs`}>
+                              {product.competition_level} comp.
+                            </Badge>
+                            {product.is_real_data && (
+                              <Badge variant="outline" className="text-emerald-600 border-emerald-200 text-xs">
+                                Live
+                              </Badge>
+                            )}
+                            {product.confidence_score > 0 && (
+                              <Badge variant="outline" className="text-slate-400 border-slate-200 text-xs">
+                                {product.confidence_score}% conf.
+                              </Badge>
+                            )}
+                          </>
                         )}
                       </div>
 
-                      {/* Build Store Button */}
+                      {/* Launch Button */}
                       <Button 
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          handleBuildStore(product);
+                          if (isBeginner) {
+                            navigate(`/launch/${product.id}`);
+                          } else {
+                            handleBuildStore(product);
+                          }
                         }}
                         className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2"
                         data-testid={`build-store-btn-${product.id}`}
                       >
                         <Rocket className="mr-2 h-4 w-4" />
-                        Build Store
+                        {isBeginner ? 'Launch Product' : 'Build Store'}
                       </Button>
                     </div>
                   </CardContent>

@@ -4960,6 +4960,121 @@ async def handle_payment_failed(invoice):
 # PRODUCTS API
 # =====================
 
+@api_router.get("/products/find-winning")
+async def find_winning_product(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    AI Co-pilot: Auto-selects the best product to launch right now.
+    Returns the top product with supplier, profit estimate, and shipping info.
+    """
+    # Get top products sorted by launch_score
+    cursor = db.products.find(
+        {"is_canonical": {"$ne": False}, "launch_score": {"$exists": True}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(5)
+    candidates = await cursor.to_list(5)
+
+    if not candidates:
+        return {"product": None, "message": "No products available. Data pipeline may still be running."}
+
+    # Pick the best candidate (highest launch_score)
+    product = candidates[0]
+    product_id = product.get("id")
+
+    # Get best supplier if available
+    supplier = None
+    if product.get("selected_supplier_id"):
+        supplier = await db.suppliers.find_one(
+            {"id": product["selected_supplier_id"]}, {"_id": 0}
+        )
+    if not supplier:
+        # Find best supplier from DB
+        sup_cursor = db.suppliers.find(
+            {"product_id": product_id}, {"_id": 0}
+        ).sort("price", 1).limit(1)
+        suppliers = await sup_cursor.to_list(1)
+        if suppliers:
+            supplier = suppliers[0]
+
+    # Calculate estimated profit
+    selling_price = product.get("estimated_retail_price") or product.get("avg_selling_price") or product.get("recommended_price") or product.get("amazon_price") or product.get("price") or 0
+    supplier_cost = product.get("supplier_cost", 0) or (supplier.get("price", 0) if supplier else 0) or selling_price * 0.35
+    shipping_cost = product.get("estimated_shipping_cost", 0) or (supplier.get("shipping_cost", 0) if supplier else 0) or 0
+    estimated_profit = round(selling_price - supplier_cost - shipping_cost, 2) if selling_price > 0 else 0
+    profit_margin_pct = round((estimated_profit / selling_price * 100), 1) if selling_price > 0 else 0
+
+    return {
+        "product": {
+            "id": product_id,
+            "product_name": product.get("product_name", ""),
+            "category": product.get("category", ""),
+            "image_url": product.get("image_url", ""),
+            "launch_score": product.get("launch_score", 0),
+            "success_probability": product.get("success_probability", 0),
+            "trend_stage": product.get("trend_stage", "Unknown"),
+            "selling_price": selling_price,
+            "estimated_profit": estimated_profit,
+            "profit_margin_pct": profit_margin_pct,
+            "amazon_rating": product.get("amazon_rating"),
+            "amazon_reviews": product.get("amazon_reviews"),
+        },
+        "supplier": {
+            "name": supplier.get("supplier_name", supplier.get("name", "Best Available Supplier")) if supplier else "Auto-matched supplier",
+            "cost": supplier_cost,
+            "shipping_origin": supplier.get("shipping_origin", supplier.get("origin", "CN")) if supplier else "CN",
+            "delivery_estimate": supplier.get("delivery_estimate", supplier.get("shipping_time", "7-15 business days")) if supplier else "7-15 business days",
+            "shipping_cost": shipping_cost,
+            "id": supplier.get("id") if supplier else None,
+        } if supplier or True else None,
+        "recommendation": {
+            "confidence": "high" if product.get("launch_score", 0) >= 70 else "medium",
+            "reasons": _build_winning_reasons(product),
+        },
+        "alternatives": [
+            {
+                "id": c.get("id"),
+                "product_name": c.get("product_name", ""),
+                "launch_score": c.get("launch_score", 0),
+                "category": c.get("category", ""),
+            }
+            for c in candidates[1:4]
+        ],
+    }
+
+
+def _build_winning_reasons(product: dict) -> list:
+    """Build human-readable reasons for why this product was selected."""
+    reasons = []
+    score = product.get("launch_score", 0)
+    if score >= 80:
+        reasons.append(f"Exceptional launch score of {score}/100")
+    elif score >= 60:
+        reasons.append(f"Strong launch score of {score}/100")
+
+    prob = product.get("success_probability", 0)
+    if prob >= 70:
+        reasons.append(f"{prob}% predicted success probability")
+
+    stage = product.get("trend_stage", "")
+    if stage in ["Emerging", "Exploding"]:
+        reasons.append(f"Product is in '{stage}' trend stage — early mover advantage")
+
+    margin = product.get("estimated_margin", 0)
+    if margin and margin > 10:
+        reasons.append(f"Healthy profit margin (est. {margin:.0f}%+)")
+
+    reviews = product.get("amazon_reviews", 0)
+    rating = product.get("amazon_rating", 0)
+    if rating and rating >= 4.5:
+        reasons.append(f"High customer satisfaction ({rating} stars, {reviews:,} reviews)")
+
+    if not reasons:
+        reasons.append("Best available product based on current market data")
+
+    return reasons
+
+
 @api_router.get("/products")
 async def get_products(
     category: Optional[str] = None,

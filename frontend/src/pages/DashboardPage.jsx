@@ -29,8 +29,11 @@ import {
 import { getProducts, getProvenWinners, getMarketOpportunities } from '@/services/productService';
 import { getUserStores } from '@/services/storeService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useViewMode } from '@/contexts/ViewModeContext';
 import { formatNumber, formatCurrency, getEarlyTrendInfo, getEarlyTrendScoreColor, getSuccessProbabilityColor, getMarketOpportunityInfo, getMarketScoreColor } from '@/lib/utils';
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
+import FindWinningProductHero from '@/components/FindWinningProductHero';
+import ViewModeToggle from '@/components/ViewModeToggle';
 import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
@@ -40,6 +43,7 @@ export default function DashboardPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { canAccessEarlyTrends, isElite, isFree } = useSubscription();
+  const { isBeginner, isAdvanced } = useViewMode();
   const { showOnboarding, closeOnboarding } = useOnboarding();
   const [winningProducts, setWinningProducts] = useState([]);
   const [earlyTrendProducts, setEarlyTrendProducts] = useState([]);
@@ -152,13 +156,21 @@ export default function DashboardPage() {
               </p>
             )}
           </div>
-          <Link to="/discover">
-            <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="browse-products-btn">
-              <Package className="mr-2 h-4 w-4" />
-              Browse All Products
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <ViewModeToggle />
+            <Link to="/discover">
+              <Button className="bg-indigo-600 hover:bg-indigo-700" data-testid="browse-products-btn">
+                <Package className="mr-2 h-4 w-4" />
+                Browse All Products
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {/* AI Co-Pilot Hero */}
+        <FindWinningProductHero
+          onLaunchProduct={(product) => navigate(`/launch/${product.id}`)}
+        />
 
         {/* Section 1: Winning Products Today */}
         <Card className="border-0 shadow-lg overflow-hidden">
@@ -253,8 +265,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Section 2: Early Trend Opportunities */}
-        {canAccessEarlyTrends ? (
+        {/* Section 2: Early Trend Opportunities — Advanced only */}
+        {isAdvanced && (canAccessEarlyTrends ? (
         <Card className="border-0 shadow-lg overflow-hidden">
           <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-red-50 via-orange-50 to-amber-50">
             <div className="flex items-center justify-between">
@@ -354,9 +366,10 @@ export default function DashboardPage() {
         </Card>
         ) : (
           <EarlyTrendUpgradePrompt />
-        )}
+        ))}
 
-        {/* Section 3: Market Opportunities */}
+        {/* Section 3: Market Opportunities — Advanced only */}
+        {isAdvanced && (
         <Card className="border-0 shadow-lg overflow-hidden">
           <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50">
             <div className="flex items-center justify-between">
@@ -452,6 +465,7 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Section 4: Your Stores */}
         <Card className="border-0 shadow-lg overflow-hidden">
@@ -532,7 +546,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Intelligence Dashboard Section */}
+        {/* Intelligence Dashboard Section — Advanced only */}
+        {isAdvanced && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -589,6 +604,7 @@ export default function DashboardPage() {
             </TabsContent>
           </Tabs>
         </div>
+        )}
 
         {/* Quick Action Footer */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-center text-white">
