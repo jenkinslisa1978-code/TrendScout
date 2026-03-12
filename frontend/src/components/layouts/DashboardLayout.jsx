@@ -18,6 +18,7 @@ import {
   Settings,
   Gift,
   Target,
+  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +43,7 @@ const eliteNavigation = [
 const adminNavigation = [
   { name: 'Admin Panel', href: '/admin', icon: Shield },
   { name: 'Automation', href: '/admin/automation', icon: Zap },
+  { name: 'System Health', href: '/admin/health', icon: Activity },
 ];
 
 export default function DashboardLayout({ children }) {

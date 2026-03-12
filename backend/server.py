@@ -8082,6 +8082,34 @@ async def get_optimizer_dashboard_summary(
     return generate_dashboard_summary(active_tests)
 
 
+# ── System Health Dashboard (admin only) ──
+from services.system_health import get_full_system_health
+
+health_router = APIRouter(prefix="/api/system-health")
+
+
+@health_router.get("")
+async def system_health_check(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get full system health report (admin only)."""
+    profile = await db.profiles.find_one(
+        {"id": current_user.user_id}, {"_id": 0, "is_admin": 1}
+    )
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    scheduler_mgr = None
+    try:
+        from services.jobs.scheduler import SchedulerManager
+        scheduler_mgr = SchedulerManager.get_instance().scheduler
+    except Exception:
+        pass
+
+    return await get_full_system_health(db, scheduler_mgr)
+
+
+app.include_router(health_router)
 app.include_router(api_router)
 app.include_router(outcomes_router)
 app.include_router(radar_router)

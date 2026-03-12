@@ -42,6 +42,7 @@ import SeoPage from "@/pages/SeoPage";
 import FreeToolsPage from "@/pages/FreeToolsPage";
 import OutcomesPage from "@/pages/OutcomesPage";
 import AdTestsPage from "@/pages/AdTestsPage";
+import SystemHealthDashboard from "@/pages/SystemHealthDashboard";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -162,6 +163,14 @@ function AppRoutes() {
         element={
           <AdminRoute>
             <AdminAutomationPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/health"
+        element={
+          <AdminRoute>
+            <SystemHealthDashboard />
           </AdminRoute>
         }
       />

@@ -1,0 +1,104 @@
+{
+  "summary": "System Health Dashboard testing complete: Backend API 9/10 tests passed (90%), Frontend UI fully verified. All key features working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "console_warnings": [
+      "Mixed Content warning for /api/notifications/ using HTTP - pre-existing issue not related to System Health feature"
+    ]
+  },
+  "passed_tests": [
+    "Backend: GET /api/system-health requires authentication (returns 403 without token)",
+    "Backend: GET /api/system-health requires admin role (returns 403 for non-admin user testref@test.com)",
+    "Backend: GET /api/system-health returns 200 for admin user (testopt@example.com)",
+    "Backend: Response has overall_status, total_checks, healthy, warnings, errors, avg_uptime, checked_at, categories, checks fields",
+    "Backend: Response categories include data_ingestion, api_integrations, core_systems, infrastructure",
+    "Backend: Each check has name, category, status (healthy/warning/error), last_success, message, uptime fields",
+    "Backend: Data Ingestion shows Opportunity Feed, Amazon Scraper, Google Trends Enrichment, Score Recomputation, Product Data Freshness",
+    "Backend: API Integrations shows TikTok API, AliExpress Data Source, Meta Ad Library, CJ Dropshipping, Zendrop",
+    "Backend: Core Systems shows Product Scoring Engine, Opportunity Feed Generation, Ad Blueprint Generator, Store Launch Pipeline",
+    "Backend: Infrastructure shows MongoDB, Stripe Payments, Job Scheduler, Job Queue Worker",
+    "Frontend: SystemHealthDashboard renders at /admin/health for admin user",
+    "Frontend: Overall banner shows Platform Status with healthy/warnings/errors counts",
+    "Frontend: Stats row shows 18 Total Checks, 9 Healthy, 5 Warnings, 4 Errors",
+    "Frontend: Data Ingestion category section displays correctly (data-testid='category-data_ingestion')",
+    "Frontend: API Integrations category section displays correctly (data-testid='category-api_integrations')",
+    "Frontend: Core Systems category section displays correctly (data-testid='category-core_systems')",
+    "Frontend: Infrastructure category section displays correctly (data-testid='category-infrastructure')",
+    "Frontend: Refresh button works (data-testid='refresh-health-btn')",
+    "Frontend: Non-admin user (testref@test.com) correctly redirected to /dashboard when accessing /admin/health",
+    "Frontend: Navigation sidebar has 'System Health' link in adminNavigation array (href='/admin/health')"
+  ],
+  "skipped_tests": [
+    "test_health_requires_admin_role - Could not create new non-admin user via signup (signup endpoint returned 404). However, manually tested with existing user testref@test.com - 403 response confirmed working."
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_system_health_api.py",
+    "/app/test_reports/pytest/system_health_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_system_health_api.py"
+  ],
+  "success_rate": {
+    "backend": "90% (9/10 tests passed, 1 skipped due to signup endpoint)",
+    "frontend": "100% (all UI components verified)"
+  },
+  "test_credentials": {
+    "admin_user": {
+      "email": "testopt@example.com",
+      "password": "TestPass123!",
+      "is_admin": true
+    },
+    "non_admin_user": {
+      "email": "testref@test.com",
+      "password": "Test1234!",
+      "is_admin": false
+    },
+    "admin_api_key": "vs_admin_key_2024 (for /api/user/set-admin endpoint)"
+  },
+  "seed_data_creation": "None - used existing test users",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "System Health Dashboard feature verified: Backend endpoint GET /api/system-health (AUTH + ADMIN required) returns 18 health checks across 4 categories. Current platform status: 9 healthy, 5 warnings, 4 errors, 51% avg uptime. Frontend renders at /admin/health using AdminRoute protection. Sidebar navigation includes 'System Health' link in Administration section (visible when scrolled). Non-admin users are redirected to /dashboard. Test file: /app/backend/tests/test_system_health_api.py",
+  "features_verified": {
+    "System_Health_Dashboard": {
+      "backend_endpoint": "GET /api/system-health (AUTH + ADMIN required)",
+      "response_structure": {
+        "overall_status": "error (when any checks have error status)",
+        "total_checks": 18,
+        "healthy": 9,
+        "warnings": 5,
+        "errors": 4,
+        "avg_uptime": "51%",
+        "categories": ["data_ingestion", "api_integrations", "core_systems", "infrastructure"]
+      },
+      "health_checks_by_category": {
+        "data_ingestion": ["Opportunity Feed", "Amazon Scraper", "Google Trends Enrichment", "Score Recomputation", "Product Data Freshness"],
+        "api_integrations": ["TikTok API", "AliExpress Data Source", "Meta Ad Library", "CJ Dropshipping", "Zendrop"],
+        "core_systems": ["Product Scoring Engine", "Opportunity Feed Generation", "Ad Blueprint Generator", "Store Launch Pipeline"],
+        "infrastructure": ["MongoDB", "Stripe Payments", "Job Scheduler", "Job Queue Worker"]
+      },
+      "frontend_route": "/admin/health (AdminRoute protected)",
+      "ui_components": {
+        "overall_banner": "data-testid='overall-banner' - Shows Platform Status with stats",
+        "status_badge": "data-testid='overall-status-badge' - Shows overall status (Error/Warning/Healthy)",
+        "category_sections": "data-testid='category-{name}' for each of 4 categories",
+        "service_rows": "data-testid='service-{name}' for each health check",
+        "refresh_button": "data-testid='refresh-health-btn'"
+      },
+      "sidebar_navigation": "System Health link in adminNavigation array (DashboardLayout.jsx line 47)"
+    }
+  },
+  "current_platform_health": {
+    "healthy_services": ["Opportunity Feed", "Product Data Freshness", "Opportunity Feed Generation", "Ad Blueprint Generator", "Store Launch Pipeline", "MongoDB", "Stripe Payments", "Job Scheduler", "Job Queue Worker"],
+    "warning_services": ["Amazon Scraper (no job history)", "Google Trends Enrichment (no job history)", "Score Recomputation (no job history)", "TikTok API (simulated data)", "Product Scoring Engine (65% scored)"],
+    "error_services": ["AliExpress Data Source (no API key)", "Meta Ad Library (no API key)", "CJ Dropshipping (no API key)", "Zendrop (no API key)"]
+  }
+}
