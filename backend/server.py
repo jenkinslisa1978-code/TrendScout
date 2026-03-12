@@ -4991,14 +4991,13 @@ async def public_categories():
 from fastapi.responses import Response
 
 @app.get("/api/sitemap.xml", response_class=Response)
-async def sitemap_xml(request: Request):
+async def sitemap_xml():
     """
     Dynamic sitemap.xml for SEO crawlers.
     Lists all public pages and trending product slugs.
     Cached for 30 minutes.
     """
-    # Use production domain
-    base_url = "https://trendscout.click"
+    base_url = os.environ.get("SITE_URL").rstrip("/")
     cache_key = "sitemap_xml"
     cached = _get_cached(cache_key)
     if cached:
@@ -5063,9 +5062,9 @@ async def sitemap_xml(request: Request):
 
 
 @app.get("/api/robots.txt", response_class=Response)
-async def robots_txt(request: Request):
+async def robots_txt():
     """Serve robots.txt pointing to sitemap."""
-    base_url = "https://trendscout.click"
+    base_url = os.environ.get("SITE_URL").rstrip("/")
     content = (
         "User-agent: *\n"
         "Allow: /\n"
