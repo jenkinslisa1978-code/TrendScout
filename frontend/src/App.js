@@ -20,6 +20,7 @@ import StoresPage from "@/pages/StoresPage";
 import StoreDetailPage from "@/pages/StoreDetailPage";
 import StorePreviewPage from "@/pages/StorePreviewPage";
 import TrendingProductsPage from "@/pages/TrendingProductsPage";
+import TrendingProductPage from "@/pages/TrendingProductPage";
 import PublicProductPage from "@/pages/PublicProductPage";
 import ReferralPage from "@/pages/ReferralPage";
 
@@ -107,6 +108,7 @@ function AppRoutes() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/trending-products" element={<TrendingProductsPage />} />
+      <Route path="/trending/:slug" element={<TrendingProductPage />} />
       <Route path="/p/:id" element={<PublicProductPage />} />
       <Route path="/trending/:slug" element={<SeoPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />

@@ -52,6 +52,7 @@ email_router = APIRouter(prefix="/api/email")
 notifications_router = APIRouter(prefix="/api/notifications")
 user_router = APIRouter(prefix="/api/user")
 auth_router = APIRouter(prefix="/api/auth")
+public_router = APIRouter(prefix="/api/public")
 
 
 # =====================
@@ -2074,61 +2075,70 @@ async def get_weekly_winners(limit: int = 10):
 
 
 @api_router.get("/public/trending-products")
-async def get_trending_products(limit: int = 10):
+async def get_trending_products(limit: int = 20):
     """
     Public trending products endpoint for SEO page.
-    Returns top products sorted by launch_score.
+    No authentication required. Cached for 5 minutes.
+    Returns radar-detected and top-scoring products.
     """
-    cursor = db.products.find(
-        {"launch_score": {"$gte": 40}},
+    cached = _get_cached("trending_products")
+    if cached:
+        return cached
+
+    # Get radar-detected products first, then fill with top scorers
+    radar_products = await db.products.find(
+        {"radar_detected": True},
         {"_id": 0}
-    ).sort([("launch_score", -1), ("market_score", -1)]).limit(limit)
-    
-    products = await cursor.to_list(limit)
-    
-    trending = []
-    for product in products:
-        trending.append({
-            "id": product["id"],
-            "product_name": product.get("product_name"),
-            "category": product.get("category"),
-            "image_url": product.get("image_url"),
-            "launch_score": product.get("launch_score", 0),
-            "launch_score_label": product.get("launch_score_label", "risky"),
-            "trend_stage": product.get("trend_stage"),
-            "trend_score": product.get("trend_score"),
-            "market_score": product.get("market_score"),
-            "early_trend_label": product.get("early_trend_label"),
-            "margin_range": _get_margin_range(product.get("estimated_margin", 0)),
-        })
-    
-    # If no products with launch_score >= 40, fallback to top by market_score
-    if not trending:
-        cursor = db.products.find(
-            {},
+    ).sort("launch_score", -1).limit(limit).to_list(limit)
+
+    if len(radar_products) < limit:
+        existing_ids = {p["id"] for p in radar_products}
+        fill_count = limit - len(radar_products)
+        extra = await db.products.find(
+            {"launch_score": {"$gte": 40}, "id": {"$nin": list(existing_ids)}},
             {"_id": 0}
-        ).sort([("market_score", -1)]).limit(limit)
-        products = await cursor.to_list(limit)
-        for product in products:
-            trending.append({
-                "id": product["id"],
-                "product_name": product.get("product_name"),
-                "category": product.get("category"),
-                "image_url": product.get("image_url"),
-                "launch_score": product.get("launch_score", 0),
-                "launch_score_label": product.get("launch_score_label", "risky"),
-                "trend_stage": product.get("trend_stage"),
-                "trend_score": product.get("trend_score"),
-                "market_score": product.get("market_score"),
-                "early_trend_label": product.get("early_trend_label"),
-                "margin_range": _get_margin_range(product.get("estimated_margin", 0)),
-            })
-    
-    return {
-        "products": trending,
-        "count": len(trending),
-        "last_updated": datetime.now(timezone.utc).isoformat(),
+        ).sort([("launch_score", -1), ("market_score", -1)]).limit(fill_count).to_list(fill_count)
+        radar_products.extend(extra)
+
+    # If still empty, fallback to any products
+    if not radar_products:
+        radar_products = await db.products.find(
+            {}, {"_id": 0}
+        ).sort("market_score", -1).limit(limit).to_list(limit)
+
+    public_products = []
+    for p in radar_products:
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        public_products.append({
+            "id": p.get("id"),
+            "slug": _slugify(p.get("product_name", "")),
+            "product_name": p.get("product_name", "Unknown"),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage", p.get("early_trend_label", "Unknown")),
+            "margin_percent": margin_pct,
+            "radar_detected": p.get("radar_detected", False),
+        })
+
+    from datetime import timedelta
+    one_week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    week_count = await db.products.count_documents({
+        "$or": [
+            {"radar_detected_at": {"$gte": one_week_ago}},
+            {"created_at": {"$gte": one_week_ago}},
+        ]
+    })
+
+    result = {
+        "products": public_products,
+        "total": len(public_products),
+        "detected_this_week": week_count or len(public_products),
     }
+    _set_cached("trending_products", result)
+    return result
 
 
 @api_router.get("/public/featured-product")
@@ -4843,6 +4853,113 @@ async def set_admin_status(
         "email": email,
         "is_admin": is_admin
     }
+
+
+
+# =====================
+# ROUTES - Public (No Auth Required)
+# =====================
+
+import re
+from functools import lru_cache
+import time as _time
+
+# Simple TTL cache for public endpoints
+_public_cache = {}
+_CACHE_TTL = 300  # 5 minutes
+
+def _get_cached(key):
+    entry = _public_cache.get(key)
+    if entry and (_time.time() - entry["ts"]) < _CACHE_TTL:
+        return entry["data"]
+    return None
+
+def _set_cached(key, data):
+    _public_cache[key] = {"data": data, "ts": _time.time()}
+
+
+def _slugify(text: str) -> str:
+    """Convert product name to URL-safe slug."""
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s-]', '', text)
+    text = re.sub(r'[\s_]+', '-', text)
+    text = re.sub(r'-+', '-', text)
+    return text.strip('-')
+
+
+@public_router.get("/product/{slug}")
+async def public_product_by_slug(slug: str):
+    """
+    Public endpoint — no auth required.
+    Returns limited product data for SEO product pages.
+    Cached for 5 minutes.
+    """
+    cache_key = f"product_{slug}"
+    cached = _get_cached(cache_key)
+    if cached:
+        return cached
+
+    # Find product by slug match (search across product names)
+    all_products = await db.products.find(
+        {"launch_score": {"$gte": 30}},
+        {"_id": 0}
+    ).to_list(500)
+
+    product = None
+    for p in all_products:
+        if _slugify(p.get("product_name", "")) == slug:
+            product = p
+            break
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    margin = product.get("estimated_margin", 0)
+    retail = product.get("estimated_retail_price", 1)
+    margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+
+    # Get related products (same category, limited data)
+    related = []
+    if product.get("category"):
+        related_raw = await db.products.find(
+            {
+                "category": product["category"],
+                "id": {"$ne": product["id"]},
+                "launch_score": {"$gte": 50},
+            },
+            {"_id": 0}
+        ).sort("launch_score", -1).limit(4).to_list(4)
+        related = [
+            {
+                "id": r["id"],
+                "slug": _slugify(r.get("product_name", "")),
+                "product_name": r.get("product_name", "Unknown"),
+                "launch_score": r.get("launch_score", 0),
+                "trend_stage": r.get("trend_stage", r.get("early_trend_label", "Unknown")),
+                "image_url": r.get("image_url", ""),
+            }
+            for r in related_raw
+        ]
+
+    public_data = {
+        "id": product.get("id"),
+        "slug": slug,
+        "product_name": product.get("product_name", "Unknown"),
+        "category": product.get("category", ""),
+        "image_url": product.get("image_url", ""),
+        "launch_score": product.get("launch_score", 0),
+        "success_probability": product.get("success_probability", 0),
+        "trend_stage": product.get("trend_stage", product.get("early_trend_label", "Unknown")),
+        "margin_percent": margin_pct,
+        "estimated_retail_price": round(product.get("estimated_retail_price", 0), 2),
+        "supplier_cost": round(product.get("supplier_cost", product.get("estimated_supplier_cost", 0)), 2),
+        "radar_detected": product.get("radar_detected", False),
+        "data_confidence": product.get("data_confidence", "estimated"),
+        "related_products": related,
+    }
+
+    _set_cached(cache_key, public_data)
+    return public_data
 
 
 # =====================
@@ -8558,6 +8675,7 @@ app.include_router(supplier_router)
 app.include_router(ad_creative_router)
 app.include_router(ad_discovery_router)
 app.include_router(auth_router)
+app.include_router(public_router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,321 +1,240 @@
-/**
- * Public Trending Products Page
- * 
- * SEO-optimized page showcasing top trending products.
- * Limited info shown - premium insights require signup.
- */
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  TrendingUp,
-  Flame,
-  Rocket,
-  Lock,
-  ArrowRight,
-  Sparkles,
-  BarChart3,
-  Zap,
-  RefreshCw,
-  Share2,
-  Twitter,
-  Link2
+  TrendingUp, ArrowRight, Package, Zap, Radar, Lock,
+  Sparkles, BarChart3, Eye,
 } from 'lucide-react';
-import api from '@/lib/api';
+import { API_URL } from '@/lib/config';
 
-// Get trend stage info
-function getTrendStageInfo(stage) {
-  const stages = {
-    exploding: { label: 'Exploding', color: 'bg-red-500', icon: Flame },
-    rising: { label: 'Rising', color: 'bg-orange-500', icon: TrendingUp },
-    early_trend: { label: 'Early Trend', color: 'bg-blue-500', icon: Zap },
-    stable: { label: 'Stable', color: 'bg-slate-500', icon: BarChart3 }
-  };
-  return stages[stage] || stages.stable;
-}
-
-// Get launch score label
-function getLaunchScoreLabel(score) {
-  if (score >= 80) return { label: 'Strong Launch', color: 'text-green-600', bg: 'bg-green-50' };
-  if (score >= 60) return { label: 'Promising', color: 'text-blue-600', bg: 'bg-blue-50' };
-  if (score >= 40) return { label: 'Risky', color: 'text-amber-600', bg: 'bg-amber-50' };
-  return { label: 'Avoid', color: 'text-red-600', bg: 'bg-red-50' };
-}
-
-// Product Card Component
-function TrendingProductCard({ product, rank }) {
-  const trendInfo = getTrendStageInfo(product.early_trend_label || product.trend_stage);
-  const scoreInfo = getLaunchScoreLabel(product.launch_score || 0);
-  const TrendIcon = trendInfo.icon;
-  
-  return (
-    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-      <CardContent className="p-0">
-        <div className="flex flex-col sm:flex-row">
-          {/* Product Image */}
-          <div className="relative w-full sm:w-48 h-48 bg-slate-100 flex-shrink-0">
-            {product.image_url ? (
-              <img 
-                src={product.image_url} 
-                alt={product.product_name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Sparkles className="h-12 w-12 text-slate-300" />
-              </div>
-            )}
-            {/* Rank Badge */}
-            <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
-              {rank}
-            </div>
-          </div>
-          
-          {/* Product Info */}
-          <div className="flex-1 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <Link to={`/p/${product.slug || product.id}`}>
-                  <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2">
-                    {product.product_name}
-                  </h3>
-                </Link>
-                <p className="text-sm text-slate-500 mt-1">
-                  {product.category || 'Trending Product'}
-                </p>
-              </div>
-              
-              {/* Launch Score */}
-              <div className={`text-center px-3 py-2 rounded-lg ${scoreInfo.bg}`}>
-                <div className={`text-2xl font-bold ${scoreInfo.color}`}>
-                  {product.launch_score || 0}
-                </div>
-                <div className={`text-xs font-medium ${scoreInfo.color}`}>
-                  {scoreInfo.label}
-                </div>
-              </div>
-            </div>
-            
-            {/* Badges */}
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <Badge className={`${trendInfo.color} text-white`}>
-                <TrendIcon className="h-3 w-3 mr-1" />
-                {trendInfo.label}
-              </Badge>
-              {product.launch_score >= 80 && (
-                <Badge className="bg-green-100 text-green-700">
-                  <Rocket className="h-3 w-3 mr-1" />
-                  High Potential
-                </Badge>
-              )}
-            </div>
-            
-            {/* Locked Premium Insights */}
-            <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-              <div className="flex items-center gap-2 text-slate-500 text-sm">
-                <Lock className="h-4 w-4" />
-                <span>Supplier cost, margins, and detailed analytics</span>
-              </div>
-            </div>
-            
-            {/* CTA */}
-            <div className="mt-4 flex items-center gap-3">
-              <Link to={`/p/${product.slug || product.id}`}>
-                <Button variant="outline" size="sm" data-testid={`view-product-${rank}`}>
-                  View Details
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" data-testid={`unlock-product-${rank}`}>
-                  Unlock Insights
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                data-testid={`share-product-${rank}`}
-                onClick={() => {
-                  const url = `${window.location.origin}/p/${product.slug || product.id}`;
-                  if (navigator.share) {
-                    navigator.share({ title: product.product_name, url });
-                  } else {
-                    navigator.clipboard.writeText(url);
-                    import('sonner').then(m => m.toast.success('Link copied!'));
-                  }
-                }}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+const STAGE_COLORS = {
+  exploding: 'bg-red-100 text-red-700 border-red-200',
+  rising: 'bg-amber-100 text-amber-700 border-amber-200',
+  emerging: 'bg-blue-100 text-blue-700 border-blue-200',
+  early_trend: 'bg-violet-100 text-violet-700 border-violet-200',
+  Rising: 'bg-amber-100 text-amber-700 border-amber-200',
+  Unknown: 'bg-slate-100 text-slate-600 border-slate-200',
+};
 
 export default function TrendingProductsPage() {
   const [products, setProducts] = useState([]);
+  const [weekCount, setWeekCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  
+
   useEffect(() => {
-    const fetchTrendingProducts = async () => {
+    (async () => {
       try {
-        const response = await api.get('/api/public/trending-products?limit=10');
-        if (response.data) {
-          setProducts(response.data.products || []);
-          setLastUpdated(response.data.last_updated);
+        const res = await fetch(`${API_URL}/api/public/trending-products?limit=20`);
+        if (res.ok) {
+          const data = await res.json();
+          setProducts(data.products || []);
+          setWeekCount(data.detected_this_week || 0);
         }
-      } catch (error) {
-        console.error('Failed to fetch trending products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchTrendingProducts();
+      } catch (e) { console.error(e); }
+      setLoading(false);
+    })();
   }, []);
-  
+
+  const seoTitle = 'Trending Dropshipping Products — Detected by TrendScout AI';
+  const seoDescription = "Discover trending ecommerce products detected by TrendScout's AI scoring engine. Find winning products before competitors.";
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: seoTitle,
+    description: seoDescription,
+    url: `${siteUrl}/trending-products`,
+    numberOfItems: products.length,
+    itemListElement: products.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Product',
+        name: p.product_name,
+        url: `${siteUrl}/trending/${p.slug}`,
+        image: p.image_url,
+        category: p.category,
+      },
+    })),
+  };
+
   return (
     <>
       <Helmet>
-        <title>Trending Ecommerce Products Today | TrendScout</title>
-        <meta 
-          name="description" 
-          content="Discover trending ecommerce products before they go viral using TrendScout's market intelligence platform. See today's top opportunities ranked by Launch Score."
-        />
-        <meta property="og:title" content="Trending Ecommerce Products Today | TrendScout" />
-        <meta property="og:description" content="Discover trending ecommerce products before they go viral." />
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://www.trendscout.click/trending-products" />
+        <meta property="og:url" content={`${siteUrl}/trending-products`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        <link rel="canonical" href={`${siteUrl}/trending-products`} />
+        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
-      
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-        {/* Header */}
-        <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-white" />
+
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" data-testid="trending-products-page">
+        {/* Nav */}
+        <nav className="border-b border-white/5 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+          <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                <Radar className="h-4 w-4 text-white" />
               </div>
-              <span className="font-bold text-xl text-slate-900">TrendScout</span>
+              <span className="font-manrope font-bold text-white text-lg">TrendScout</span>
             </Link>
             <div className="flex items-center gap-3">
               <Link to="/login">
-                <Button variant="ghost">Sign In</Button>
+                <Button variant="ghost" className="text-slate-400 hover:text-white text-sm">Log in</Button>
               </Link>
               <Link to="/signup">
-                <Button className="bg-indigo-600 hover:bg-indigo-700">
-                  Start Free
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-sm" data-testid="nav-signup-btn">
+                  Get Started
                 </Button>
               </Link>
             </div>
           </div>
+        </nav>
+
+        {/* Hero */}
+        <header className="mx-auto max-w-7xl px-6 pt-16 pb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-sm font-medium text-emerald-400" data-testid="week-count">
+              {weekCount} products detected this week
+            </span>
+          </div>
+          <h1 className="font-manrope text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight" data-testid="trending-h1">
+            Trending Products Detected by{' '}
+            <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">TrendScout AI</span>
+          </h1>
+          <p className="mt-4 text-lg text-slate-400 max-w-2xl">
+            Real-time product intelligence powered by AI. These products are scoring high across trend signals, demand, and profitability.
+          </p>
         </header>
-        
-        {/* Hero Section */}
-        <section className="py-12 px-4">
-          <div className="max-w-6xl mx-auto text-center">
-            <Badge className="bg-indigo-100 text-indigo-700 mb-4">
-              <RefreshCw className="h-3 w-3 mr-1" />
-              Updated Daily
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-              Trending Ecommerce Products Today
-            </h1>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
-              TrendScout analyzes millions of ecommerce signals daily to detect emerging product opportunities. 
-              See which products are gaining momentum and could become the next bestsellers.
-            </p>
-            
-            {/* Quick Stats */}
-            <div className="flex justify-center gap-8 mb-8">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600">{products.length}</div>
-                <div className="text-sm text-slate-500">Top Products</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">
-                  {products.filter(p => p.launch_score >= 80).length}
-                </div>
-                <div className="text-sm text-slate-500">Strong Launches</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600">
-                  {products.filter(p => p.early_trend_label === 'exploding').length}
-                </div>
-                <div className="text-sm text-slate-500">Exploding Trends</div>
-              </div>
+
+        {/* Product Grid */}
+        <section className="mx-auto max-w-7xl px-6 pb-24">
+          {loading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="bg-white/5 rounded-2xl h-72 animate-pulse" />
+              ))}
             </div>
-          </div>
-        </section>
-        
-        {/* Products Grid */}
-        <section className="pb-16 px-4">
-          <div className="max-w-6xl mx-auto">
-            {loading ? (
-              <div className="text-center py-12">
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto text-indigo-500" />
-                <p className="text-slate-500 mt-4">Loading trending products...</p>
-              </div>
-            ) : products.length > 0 ? (
-              <div className="space-y-4">
-                {products.map((product, index) => (
-                  <TrendingProductCard 
-                    key={product.id} 
-                    product={product} 
-                    rank={index + 1}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Sparkles className="h-12 w-12 text-slate-300 mx-auto" />
-                <p className="text-slate-500 mt-4">No trending products available</p>
-              </div>
-            )}
-            
-            {/* CTA Section */}
-            <div className="mt-12 text-center bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white">
-              <h2 className="text-2xl font-bold mb-2">
-                Want Full Access to Product Intelligence?
-              </h2>
-              <p className="text-indigo-100 mb-6">
-                Unlock supplier costs, profit margins, competition analysis, and more.
-              </p>
-              <div className="flex justify-center gap-4">
-                <Link to="/signup">
-                  <Button size="lg" className="bg-white text-indigo-600 hover:bg-indigo-50">
-                    Start Free
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-                <Link to="/pricing">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-                    View Pricing
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" data-testid="product-grid">
+              {products.map((product, idx) => (
+                <ProductCard key={product.id} product={product} idx={idx} />
+              ))}
+            </div>
+          )}
+
+          {/* Bottom CTA */}
+          {!loading && products.length > 0 && (
+            <div className="mt-16 text-center">
+              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-8 py-6 backdrop-blur-sm">
+                <Lock className="h-5 w-5 text-indigo-400" />
+                <div className="text-left ml-2">
+                  <p className="text-white font-semibold">Want the full analysis?</p>
+                  <p className="text-slate-400 text-sm">Unlock detailed supplier data, ad creatives, and launch tools.</p>
+                </div>
+                <Link to="/signup" className="ml-4">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 whitespace-nowrap" data-testid="bottom-cta-btn">
+                    Start with TrendScout
+                    <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 </Link>
               </div>
             </div>
-          </div>
+          )}
         </section>
-        
+
         {/* Footer */}
-        <footer className="border-t bg-slate-50 py-8 px-4">
-          <div className="max-w-6xl mx-auto text-center text-slate-500 text-sm">
-            <p>© {new Date().getFullYear()} TrendScout. All rights reserved.</p>
-            <p className="mt-2">
-              {lastUpdated && `Last updated: ${new Date(lastUpdated).toLocaleDateString()}`}
-            </p>
+        <footer className="border-t border-white/5 py-8">
+          <div className="mx-auto max-w-7xl px-6 flex items-center justify-between">
+            <p className="text-sm text-slate-500">TrendScout — AI-powered product intelligence</p>
+            <div className="flex items-center gap-4 text-sm text-slate-500">
+              <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+              <Link to="/" className="hover:text-white transition-colors">Home</Link>
+            </div>
           </div>
         </footer>
       </div>
     </>
+  );
+}
+
+function ProductCard({ product, idx }) {
+  const stageClass = STAGE_COLORS[product.trend_stage] || STAGE_COLORS.Unknown;
+  const hasImage = product.image_url && !product.image_url.includes('01jrA-8DXYL');
+
+  return (
+    <div
+      className="group bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-indigo-500/30 rounded-2xl overflow-hidden transition-all duration-300"
+      style={{ animationDelay: `${idx * 50}ms` }}
+      data-testid={`trending-card-${idx}`}
+    >
+      {/* Image */}
+      <div className="h-36 bg-gradient-to-br from-slate-800 to-slate-900 relative overflow-hidden">
+        {hasImage ? (
+          <img src={product.image_url} alt={product.product_name} className="w-full h-full object-contain p-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <Package className="h-12 w-12 text-slate-700" />
+          </div>
+        )}
+        {product.radar_detected && (
+          <div className="absolute top-2 left-2 flex items-center gap-1 bg-indigo-600/90 backdrop-blur-sm rounded-full px-2 py-0.5">
+            <Radar className="h-3 w-3 text-white" />
+            <span className="text-[10px] text-white font-medium">Radar</span>
+          </div>
+        )}
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1">
+          <BarChart3 className="h-3 w-3 text-indigo-400" />
+          <span className="font-mono text-sm font-bold text-white">{product.launch_score}</span>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        <h3 className="font-semibold text-white text-sm line-clamp-2 leading-snug mb-2 min-h-[2.5rem]">
+          {product.product_name}
+        </h3>
+        <div className="flex items-center gap-2 mb-3">
+          <Badge className={`text-[10px] border rounded-full ${stageClass}`}>
+            {product.trend_stage}
+          </Badge>
+          {product.category && (
+            <span className="text-[10px] text-slate-500 truncate">{product.category}</span>
+          )}
+        </div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-1">
+            <TrendingUp className="h-3 w-3 text-emerald-400" />
+            <span className="text-sm font-semibold text-emerald-400">{product.margin_percent}%</span>
+            <span className="text-[10px] text-slate-500 ml-0.5">margin</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Eye className="h-3 w-3 text-slate-500" />
+            <span className="text-[10px] text-slate-500">Score {product.launch_score}</span>
+          </div>
+        </div>
+        <Link to={`/trending/${product.slug}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full border-indigo-500/30 text-indigo-400 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all text-xs"
+            data-testid={`unlock-btn-${idx}`}
+          >
+            <Lock className="mr-1.5 h-3 w-3" />
+            Unlock full analysis
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 }
