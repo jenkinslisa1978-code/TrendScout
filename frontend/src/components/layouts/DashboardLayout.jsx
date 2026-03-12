@@ -19,6 +19,7 @@ import {
   Gift,
   Target,
   Activity,
+  Wifi,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +45,7 @@ const adminNavigation = [
   { name: 'Admin Panel', href: '/admin', icon: Shield },
   { name: 'Automation', href: '/admin/automation', icon: Zap },
   { name: 'System Health', href: '/admin/health', icon: Activity },
+  { name: 'Integrations', href: '/admin/integrations', icon: Wifi },
 ];
 
 export default function DashboardLayout({ children }) {

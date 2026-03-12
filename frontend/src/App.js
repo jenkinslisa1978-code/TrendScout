@@ -43,6 +43,7 @@ import FreeToolsPage from "@/pages/FreeToolsPage";
 import OutcomesPage from "@/pages/OutcomesPage";
 import AdTestsPage from "@/pages/AdTestsPage";
 import SystemHealthDashboard from "@/pages/SystemHealthDashboard";
+import IntegrationStatusPage from "@/pages/IntegrationStatusPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -171,6 +172,14 @@ function AppRoutes() {
         element={
           <AdminRoute>
             <SystemHealthDashboard />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/integrations"
+        element={
+          <AdminRoute>
+            <IntegrationStatusPage />
           </AdminRoute>
         }
       />

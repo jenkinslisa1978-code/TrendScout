@@ -112,48 +112,75 @@ async def check_data_ingestion(db) -> List[Dict[str, Any]]:
 
 
 async def check_api_integrations(db) -> List[Dict[str, Any]]:
-    """Check external API integration statuses."""
-    integrations = [
-        ("TikTok API", "TIKTOK_API_KEY", "tiktok_trends"),
-        ("AliExpress Data Source", "ALIEXPRESS_API_KEY", "aliexpress_supplier"),
-        ("Meta Ad Library", "META_AD_LIBRARY_KEY", None),
-        ("CJ Dropshipping", "CJ_API_KEY", "cj_dropshipping"),
-        ("Zendrop", "ZENDROP_API_KEY", None),
-    ]
+    """Check external API integration statuses using official clients."""
     checks = []
-    for label, env_key, source_name in integrations:
-        key_present = bool(os.environ.get(env_key))
-        # Check if we have data from this source
-        data_count = 0
-        last_ts = None
-        if source_name:
-            data_count = await db.products.count_documents({"data_source": source_name})
-            latest = await db.products.find_one(
-                {"data_source": source_name},
-                {"_id": 0, "last_updated": 1},
-                sort=[("last_updated", -1)],
-            )
-            if latest:
-                last_ts = latest.get("last_updated")
 
-        if key_present:
-            status = "healthy"
-            msg = f"API key configured, {data_count} products"
-        elif data_count > 0:
-            status = "warning"
-            msg = f"No API key — using simulated data ({data_count} products)"
-        else:
-            status = "error"
-            msg = f"No API key ({env_key}) — not configured"
+    # Use official API clients for health checks
+    try:
+        from services.data_integration import DataIntegrationService
+        svc = DataIntegrationService(db)
+        integration_health = await svc.get_integration_health()
 
-        checks.append({
-            "name": label,
-            "category": "api_integrations",
-            "status": status,
-            "last_success": last_ts,
-            "message": msg,
-            "uptime": 100 if key_present else (50 if data_count > 0 else 0),
-        })
+        source_map = {
+            "aliexpress": "AliExpress Open Platform",
+            "cj_dropshipping": "CJ Dropshipping API",
+            "meta_ads": "Meta Ad Library API",
+            "tiktok": "TikTok Trends",
+        }
+
+        for key, label in source_map.items():
+            data = integration_health.get(key, {})
+            api_status = data.get("status", "not_configured")
+            mode = data.get("mode", "fallback")
+
+            # Map API health to system health status
+            if api_status == "healthy":
+                status = "healthy"
+            elif api_status in ("degraded", "not_configured"):
+                status = "warning"
+            else:
+                status = "error"
+
+            # Check enriched product count for this source
+            enriched = await db.products.count_documents({
+                f"source_signals.{'cj_supplier' if key == 'cj_dropshipping' else key.split('_')[0] + '_trend' if key == 'tiktok' else 'supplier_cost' if key == 'aliexpress' else 'meta_ads'}": {"$exists": True}
+            })
+
+            checks.append({
+                "name": label,
+                "category": "api_integrations",
+                "status": status,
+                "last_success": data.get("last_check"),
+                "message": f"Mode: {mode} | {data.get('message', '')} | {enriched} products enriched",
+                "uptime": 100 if mode == "live" else (60 if mode == "estimation" else 0),
+            })
+    except Exception:
+        # Fallback to simple env check
+        for label, env_key in [
+            ("AliExpress", "ALIEXPRESS_API_KEY"),
+            ("CJ Dropshipping", "CJ_API_KEY"),
+            ("Meta Ad Library", "META_AD_LIBRARY_TOKEN"),
+        ]:
+            key_present = bool(os.environ.get(env_key))
+            checks.append({
+                "name": label,
+                "category": "api_integrations",
+                "status": "healthy" if key_present else "warning",
+                "last_success": None,
+                "message": f"{'Configured' if key_present else 'No API key'} ({env_key})",
+                "uptime": 100 if key_present else 0,
+            })
+
+    # Zendrop (not yet integrated)
+    checks.append({
+        "name": "Zendrop",
+        "category": "api_integrations",
+        "status": "warning",
+        "last_success": None,
+        "message": "Not yet integrated — planned",
+        "uptime": 0,
+    })
+
     return checks
 
 

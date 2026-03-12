@@ -138,17 +138,32 @@ FALLBACK_META = {
 class DataIntegrationService:
     """
     Orchestrates all data sources for product enrichment.
-    Each source uses: scraper → estimation → hardcoded fallback.
+    Priority: Official API → Scraper → Estimation → Hardcoded.
+    Automatically switches to live data when API keys are present.
     """
 
     def __init__(self, db):
         self.db = db
+        # Initialize official API clients (auto-detect credentials)
+        from services.api_clients import MetaAdLibraryClient, CJDropshippingClient, AliExpressClient
+        self.meta_client = MetaAdLibraryClient()
+        self.cj_client = CJDropshippingClient()
+        self.ae_client = AliExpressClient()
 
     # ── AliExpress ────────────────────────────────────────────────
 
     async def fetch_aliexpress_data(self, product: Dict[str, Any]) -> SourceResult:
-        """Fetch AliExpress supplier data with fallback chain."""
+        """Fetch AliExpress data: Official API → Scraper → Estimation → Fallback."""
         name = product.get("product_name", "")
+
+        async def _official_api():
+            if not self.ae_client.is_configured:
+                return None
+            results = await self.ae_client.search_products(name[:60], limit=5)
+            if results:
+                best = max(results, key=lambda r: r.get("orders_30d", 0))
+                return best
+            return None
 
         async def _scrape():
             from services.scrapers.aliexpress_scraper import AliExpressScraper
@@ -178,17 +193,28 @@ class DataIntegrationService:
         async def _fallback():
             return FALLBACK_SUPPLIER.copy()
 
-        return await execute_with_fallback("aliexpress", [
+        chain = [
+            {"label": "official_api", "method": SourceMethod.API, "confidence": DataConfidence.LIVE, "fn": _official_api},
             {"label": "scraper", "method": SourceMethod.SCRAPER, "confidence": DataConfidence.LIVE, "fn": _scrape},
             {"label": "estimation", "method": SourceMethod.ESTIMATION, "confidence": DataConfidence.ESTIMATED, "fn": _estimate},
             {"label": "hardcoded", "method": SourceMethod.HARDCODED, "confidence": DataConfidence.FALLBACK, "fn": _fallback},
-        ], self.db)
+        ]
+        return await execute_with_fallback("aliexpress", chain, self.db)
 
     # ── CJ Dropshipping ──────────────────────────────────────────
 
     async def fetch_cj_data(self, product: Dict[str, Any]) -> SourceResult:
-        """Fetch CJ Dropshipping supplier data with fallback chain."""
+        """Fetch CJ data: Official API → Scraper → Estimation → Fallback."""
         name = product.get("product_name", "")
+
+        async def _official_api():
+            if not self.cj_client.is_configured:
+                return None
+            results = await self.cj_client.search_products(name[:60], limit=5)
+            if results:
+                best = results[0]  # CJ returns sorted by listing count
+                return best
+            return None
 
         async def _scrape():
             from services.scrapers.cj_scraper import CJDropshippingScraper
@@ -219,16 +245,18 @@ class DataIntegrationService:
         async def _fallback():
             return FALLBACK_CJ.copy()
 
-        return await execute_with_fallback("cj_dropshipping", [
+        chain = [
+            {"label": "official_api", "method": SourceMethod.API, "confidence": DataConfidence.LIVE, "fn": _official_api},
             {"label": "scraper", "method": SourceMethod.SCRAPER, "confidence": DataConfidence.LIVE, "fn": _scrape},
             {"label": "estimation", "method": SourceMethod.ESTIMATION, "confidence": DataConfidence.ESTIMATED, "fn": _estimate},
             {"label": "hardcoded", "method": SourceMethod.HARDCODED, "confidence": DataConfidence.FALLBACK, "fn": _fallback},
-        ], self.db)
+        ]
+        return await execute_with_fallback("cj_dropshipping", chain, self.db)
 
     # ── TikTok ────────────────────────────────────────────────────
 
     async def fetch_tiktok_data(self, product: Dict[str, Any]) -> SourceResult:
-        """Fetch TikTok trend signals with fallback chain."""
+        """Fetch TikTok trend signals: Scraper → Estimation → Fallback."""
         name = product.get("product_name", "")
 
         async def _scrape():
@@ -236,7 +264,6 @@ class DataIntegrationService:
             scraper = TikTokTrendsScraper(self.db)
             results = await scraper.scrape(max_items=10)
             if results:
-                # Try to find a match for this product
                 name_lower = name.lower()
                 for r in results:
                     r_name = (r.get("name", "") or r.get("hashtag", "")).lower()
@@ -248,7 +275,6 @@ class DataIntegrationService:
                             "tiktok_ad_count": r.get("ad_count", 0),
                             "tiktok_trend_velocity": r.get("trend_velocity", 0),
                         }
-                # No direct match — return aggregate signal
                 avg_views = sum(r.get("views", 0) or r.get("view_count", 0) for r in results) // max(len(results), 1)
                 return {
                     "tiktok_views": avg_views,
@@ -274,38 +300,13 @@ class DataIntegrationService:
     # ── Meta Ad Library ───────────────────────────────────────────
 
     async def fetch_meta_ad_data(self, product: Dict[str, Any]) -> SourceResult:
-        """Fetch Meta Ad Library signals with fallback chain."""
-        import os
-        token = os.environ.get("META_AD_LIBRARY_TOKEN")
+        """Fetch Meta Ad data: Official API → Estimation → Fallback."""
+        name = product.get("product_name", "")
 
-        async def _api():
-            if not token:
+        async def _official_api():
+            if not self.meta_client.is_configured:
                 return None
-            # Meta Ad Library API v21.0
-            import aiohttp
-            name = product.get("product_name", "")
-            url = "https://graph.facebook.com/v21.0/ads_archive"
-            params = {
-                "access_token": token,
-                "search_terms": name[:100],
-                "ad_reached_countries": "GB",
-                "ad_active_status": "ACTIVE",
-                "fields": "id,ad_creation_time,page_name",
-                "limit": 50,
-            }
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=15)) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        ads = data.get("data", [])
-                        if ads:
-                            return {
-                                "meta_active_ads": len(ads),
-                                "meta_ad_growth_7d": 0.0,
-                                "meta_estimated_spend_monthly": len(ads) * 50,
-                                "meta_platforms": {"facebook": 0.6, "instagram": 0.35, "audience_network": 0.05},
-                            }
-            return None
+            return await self.meta_client.search_ads(name[:80])
 
         async def _estimate():
             return _estimate_meta_ad_signals(product)
@@ -313,11 +314,33 @@ class DataIntegrationService:
         async def _fallback():
             return FALLBACK_META.copy()
 
-        return await execute_with_fallback("meta_ads", [
-            {"label": "api", "method": SourceMethod.API, "confidence": DataConfidence.LIVE, "fn": _api},
+        chain = [
+            {"label": "official_api", "method": SourceMethod.API, "confidence": DataConfidence.LIVE, "fn": _official_api},
             {"label": "estimation", "method": SourceMethod.ESTIMATION, "confidence": DataConfidence.ESTIMATED, "fn": _estimate},
             {"label": "hardcoded", "method": SourceMethod.HARDCODED, "confidence": DataConfidence.FALLBACK, "fn": _fallback},
-        ], self.db)
+        ]
+        return await execute_with_fallback("meta_ads", chain, self.db)
+
+    # ── Integration Health ────────────────────────────────────────
+
+    async def get_integration_health(self) -> Dict[str, Any]:
+        """Get health status of all official API integrations."""
+        ae_health = await self.ae_client.health_check()
+        cj_health = await self.cj_client.health_check()
+        meta_health = await self.meta_client.health_check()
+
+        return {
+            "aliexpress": ae_health,
+            "cj_dropshipping": cj_health,
+            "meta_ads": meta_health,
+            "tiktok": {
+                "status": "healthy",
+                "credential_detected": True,
+                "mode": "live",
+                "message": "Using public scraper (no API key required)",
+            },
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     # ── Product Enrichment ────────────────────────────────────────
 

@@ -8194,6 +8194,20 @@ async def get_source_health(
     }
 
 
+@integration_router.get("/integration-health")
+async def get_integration_health(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get health status of all official API integrations."""
+    profile = await db.profiles.find_one(
+        {"id": current_user.user_id}, {"_id": 0, "is_admin": 1}
+    )
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    svc = DataIntegrationService(db)
+    return await svc.get_integration_health()
+
+
 @integration_router.get("/ingestion-status")
 async def get_ingestion_status(
     current_user: AuthenticatedUser = Depends(get_current_user),
