@@ -8005,11 +8005,89 @@ async def get_launch_simulation(
     return simulate_launch(product, history)
 
 
+# ═══════════════════════════════════════════════════════════════════
+# Smart Budget Optimizer
+# ═══════════════════════════════════════════════════════════════════
+from services.budget_optimizer import recommend_for_test, recommend_for_variation, generate_dashboard_summary
+
+optimizer_router = APIRouter(prefix="/api/optimization")
+
+
+@optimizer_router.post("/recommend/{test_id}")
+async def get_recommendations(
+    test_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get budget optimization recommendations for an ad test."""
+    test = await db.ad_tests.find_one({"id": test_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not test:
+        raise HTTPException(status_code=404, detail="Ad test not found")
+
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+
+    target_cpa = body.get("target_cpa")
+    result = recommend_for_test(test, target_cpa)
+
+    # Log optimization events
+    for rec in result["recommendations"]:
+        event_doc = {
+            "id": str(uuid.uuid4()),
+            "test_id": test_id,
+            "variation_id": rec["variation_id"],
+            "user_id": current_user.user_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "metrics_snapshot": rec["metrics"],
+            "recommendation_action": rec["action"],
+            "recommended_budget": rec["recommended_budget"],
+            "confidence": rec["confidence"],
+            "reason_codes": rec["reasoning"],
+            "user_applied_action": None,
+            "outcome_after_24h": None,
+            "outcome_after_72h": None,
+        }
+        await db.optimization_events.insert_one(event_doc)
+
+    return result
+
+
+@optimizer_router.get("/timeline/{test_id}")
+async def get_optimization_timeline(
+    test_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get optimization event timeline for a test."""
+    cursor = db.optimization_events.find(
+        {"test_id": test_id, "user_id": current_user.user_id},
+        {"_id": 0},
+    ).sort("timestamp", -1)
+    events = await cursor.to_list(100)
+    return {"events": events, "total": len(events)}
+
+
+@optimizer_router.get("/dashboard-summary")
+async def get_optimizer_dashboard_summary(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get optimization summary across all active ad tests."""
+    cursor = db.ad_tests.find(
+        {"user_id": current_user.user_id, "status": "active"},
+        {"_id": 0},
+    )
+    active_tests = await cursor.to_list(50)
+    return generate_dashboard_summary(active_tests)
+
+
 app.include_router(api_router)
 app.include_router(outcomes_router)
 app.include_router(radar_router)
 app.include_router(ad_engine_router)
 app.include_router(ad_test_router)
+app.include_router(optimizer_router)
 app.include_router(stripe_router)
 app.include_router(automation_router)
 app.include_router(ingestion_router)

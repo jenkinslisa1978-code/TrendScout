@@ -9,3 +9,4 @@ export { default as MarketRadar } from './MarketRadar';
 export { default as OpportunityWatchlist } from './OpportunityWatchlist';
 export { default as AlertsPanel } from './AlertsPanel';
 export { default as OpportunityFeedPanel } from './OpportunityFeedPanel';
+export { default as OptimizationDashboardWidget } from './OptimizationDashboardWidget';

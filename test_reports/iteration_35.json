@@ -1,0 +1,119 @@
+{
+  "summary": "Smart Budget Optimizer V1 feature testing complete: All 15 backend tests passed (100%), frontend components verified (BudgetOptimizerCard in Results tab, OptimizationDashboardWidget on Dashboard)",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "console_warnings": [
+      "Mixed Content warning for /api/notifications/ using HTTP instead of HTTPS - not related to Budget Optimizer feature"
+    ]
+  },
+  "passed_tests": [
+    "Backend: POST /api/optimization/recommend/{test_id} requires authentication",
+    "Backend: POST /api/optimization/recommend returns 404 for non-existent test",
+    "Backend: POST /api/optimization/recommend returns valid recommendations structure",
+    "Backend: Recommendations summary has test_id, total_variations, to_scale, to_pause, to_maintain, waiting_data, overall_status",
+    "Backend: Each recommendation has variation_id, label, action, confidence, current_budget, recommended_budget, reasoning, metrics",
+    "Backend: Valid actions: increase_budget, maintain, pause, kill, needs_more_data",
+    "Backend: Confidence values are 0-1 range",
+    "Backend: Metrics include spend, clicks, ctr, cpc, purchases",
+    "Backend: Recommend accepts target_cpa parameter",
+    "Backend: Benchmarks include ctr_excellent, ctr_good, ctr_poor, cpc_good, cpc_poor, atc_good, atc_poor",
+    "Backend: GET /api/optimization/timeline/{test_id} requires authentication",
+    "Backend: Timeline returns events array with total count",
+    "Backend: Timeline events have id, test_id, variation_id, timestamp, metrics_snapshot, recommendation_action, recommended_budget, confidence",
+    "Backend: GET /api/optimization/dashboard-summary requires authentication",
+    "Backend: Dashboard summary has candidates_to_scale, losers_to_pause, needs_action, waiting_data, total_active_tests, generated_at",
+    "Frontend: AdTestPlanner component (data-testid='ad-test-planner') renders on product detail page",
+    "Frontend: AdTestPlanner has 3 tabs: Variations, Test Plan, Results (when test active)",
+    "Frontend: 'Start A/B Test' button (data-testid='start-test-btn') creates new ad test",
+    "Frontend: Results tab shows variation results tracker with Spend, Clicks, CTR, ATC, Sales columns",
+    "Frontend: BudgetOptimizerCard (data-testid='budget-optimizer-card') renders in Results tab when test is active",
+    "Frontend: BudgetOptimizerCard shows summary bar with 'Budget Optimizer' title and collecting_data badge",
+    "Frontend: BudgetOptimizerCard shows variation recommendations with action badges (Collecting Data for fresh tests)",
+    "Frontend: OptimizationDashboardWidget (data-testid='optimization-dashboard-widget') renders on Dashboard when active tests exist",
+    "Frontend: OptimizationDashboardWidget shows summary stats grid (Scale/Pause/Kill/Waiting counts)",
+    "Frontend: OptimizationDashboardWidget shows 'View All Tests' button (data-testid='view-all-tests-btn')",
+    "Frontend: Dashboard loads without errors (data-testid='dashboard')"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_budget_optimizer.py",
+    "/app/test_reports/pytest/budget_optimizer_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_budget_optimizer.py"
+  ],
+  "success_rate": {
+    "backend": "100% (15/15 tests passed)",
+    "frontend": "100% (all Budget Optimizer components verified)"
+  },
+  "test_credentials": {
+    "email": "testref@test.com",
+    "password": "Test1234!",
+    "optimizer_test_email": "optimizer_test@example.com",
+    "optimizer_test_password": "TestPass123!"
+  },
+  "seed_data_creation": "Created 1 active ad test for product 6a5d5ff2-fd4d-4d51-bcd6-d64f0bec8e59 (Worx WG745E lawnmower)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Budget Optimizer V1 fully verified. 3 backend endpoints: POST /api/optimization/recommend/{test_id} (AUTH - returns recommendations), GET /api/optimization/timeline/{test_id} (AUTH - returns event history), GET /api/optimization/dashboard-summary (AUTH - returns summary across active tests). Frontend components: BudgetOptimizerCard in AdTestPlanner Results tab (shows recommendations per variation with confidence bars, action badges, metrics), OptimizationDashboardWidget on Dashboard (shows Scale/Pause/Kill/Waiting counts, View All Tests button). Widget returns null if no active tests. Fresh tests with no results show 'needs_more_data' action. Rule-based engine benchmarks: CTR excellent 2.5%, good 1.8%, poor 1.0%; CPC good £0.50, poor £1.50; ATC good 8%, poor 3%.",
+  "features_verified": {
+    "Smart_Budget_Optimizer_V1": {
+      "backend_endpoints": {
+        "recommend": "POST /api/optimization/recommend/{test_id} (AUTH) - Returns recommendations for each variation with action, confidence, budget, reasoning, metrics",
+        "timeline": "GET /api/optimization/timeline/{test_id} (AUTH) - Returns optimization event history",
+        "dashboard_summary": "GET /api/optimization/dashboard-summary (AUTH) - Returns summary of all active tests (to_scale, to_pause, waiting_data counts)"
+      },
+      "frontend_components": {
+        "BudgetOptimizerCard": {
+          "testid": "budget-optimizer-card",
+          "location": "AdTestPlanner Results tab (only when test is active)",
+          "features": [
+            "Summary bar with test status (scaling/struggling/collecting_data/monitoring)",
+            "Top performer callout if available",
+            "Variation recommendation rows with action badges (Scale Up, Maintain, Pause, Kill, Collecting Data)",
+            "Confidence bars (0-100%)",
+            "Expandable details with metrics (Spend, CTR, CPC, Sales)",
+            "Reasoning and flags per variation",
+            "Refresh Recommendations button"
+          ]
+        },
+        "OptimizationDashboardWidget": {
+          "testid": "optimization-dashboard-widget",
+          "location": "Dashboard page (only when active tests exist)",
+          "features": [
+            "Purple gradient header with 'Budget Optimizer' title",
+            "Actions needed badge count",
+            "Summary stats grid (Scale/Pause/Kill/Waiting counts)",
+            "Action items list (top 3 items)",
+            "'View All Tests' button navigates to /ad-tests"
+          ]
+        }
+      },
+      "rule_engine_benchmarks": {
+        "ctr_excellent": "2.5%",
+        "ctr_good": "1.8%",
+        "ctr_poor": "1.0%",
+        "cpc_good": "£0.50",
+        "cpc_poor": "£1.50",
+        "atc_good": "8%",
+        "atc_poor": "3%",
+        "min_spend": "£10",
+        "min_clicks": "30"
+      },
+      "recommendation_actions": [
+        "increase_budget - Scale up winning ads (20-40% increments)",
+        "maintain - Keep running, monitor for clearer signals",
+        "pause - Consider pausing to reallocate budget",
+        "kill - Stop ad to save budget (multiple negative signals)",
+        "needs_more_data - Keep running until min_spend/min_clicks thresholds"
+      ]
+    }
+  }
+}

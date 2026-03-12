@@ -38,6 +38,7 @@ import DailyOpportunitiesPanel from '@/components/DailyOpportunitiesPanel';
 import PredictionAccuracyCard from '@/components/PredictionAccuracyCard';
 import OpportunityRadarFeed from '@/components/OpportunityRadarFeed';
 import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
+import OptimizationDashboardWidget from '@/components/dashboard/OptimizationDashboardWidget';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -177,6 +178,9 @@ export default function DashboardPage() {
 
         {/* Daily Opportunities */}
         <DailyOpportunitiesPanel />
+
+        {/* Budget Optimizer Widget */}
+        <OptimizationDashboardWidget />
 
         {/* Prediction Accuracy + Opportunity Radar — side by side */}
         <div className="grid lg:grid-cols-2 gap-6">
