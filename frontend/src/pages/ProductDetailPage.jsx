@@ -41,6 +41,9 @@ import AdCreativeSection from '@/components/AdCreativeSection';
 import AdDiscoverySection from '@/components/AdDiscoverySection';
 import SaturationRadar from '@/components/SaturationRadar';
 import CompetitorIntelligence from '@/components/CompetitorIntelligence';
+import WinningAdPatterns from '@/components/WinningAdPatterns';
+import AdBlueprint from '@/components/AdBlueprint';
+import AdPerformanceIndicator from '@/components/AdPerformanceIndicator';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -552,6 +555,15 @@ export default function ProductDetailPage() {
           <SaturationRadar productId={id} />
           <CompetitorIntelligence productId={id} />
         </div>
+
+        {/* Ad Winning Engine — Patterns + Blueprint + Performance */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <WinningAdPatterns productId={id} />
+          <AdBlueprint productId={id} />
+        </div>
+
+        {/* Ad Performance Indicator */}
+        <AdPerformanceIndicator productId={id} />
 
         {/* AI Ad Creatives */}
         <AdCreativeSection productId={id} />

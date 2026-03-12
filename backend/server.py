@@ -7709,6 +7709,48 @@ async def get_product_saturation(product_id: str):
 
 
 # ═══════════════════════════════════════════════════════════════════
+# Ad Winning Engine
+# ═══════════════════════════════════════════════════════════════════
+from services.ad_winning_engine import analyze_ad_patterns, generate_ad_blueprint, compute_ad_performance
+
+ad_engine_router = APIRouter(prefix="/api/ad-engine")
+
+
+@ad_engine_router.get("/patterns/{product_id}")
+async def get_ad_patterns(product_id: str):
+    """Analyze winning ad patterns for a product."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    ad_discovery = await db.ad_discoveries.find_one({"product_id": product_id}, {"_id": 0})
+    return analyze_ad_patterns(product, ad_discovery)
+
+
+@ad_engine_router.get("/blueprint/{product_id}")
+async def get_ad_blueprint(product_id: str):
+    """Generate an ad filming blueprint using detected winning patterns."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    ad_discovery = await db.ad_discoveries.find_one({"product_id": product_id}, {"_id": 0})
+    patterns = analyze_ad_patterns(product, ad_discovery)
+    return generate_ad_blueprint(product, patterns)
+
+
+@ad_engine_router.get("/performance/{product_id}")
+async def get_ad_performance(product_id: str):
+    """Get ad performance indicators for a product."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    ad_discovery = await db.ad_discoveries.find_one({"product_id": product_id}, {"_id": 0})
+    return compute_ad_performance(product, ad_discovery)
+
+
+# ═══════════════════════════════════════════════════════════════════
 # NEW: Competitor Store Intelligence Engine
 # ═══════════════════════════════════════════════════════════════════
 
@@ -7776,6 +7818,7 @@ async def get_competitor_intelligence(product_id: str):
 app.include_router(api_router)
 app.include_router(outcomes_router)
 app.include_router(radar_router)
+app.include_router(ad_engine_router)
 app.include_router(stripe_router)
 app.include_router(automation_router)
 app.include_router(ingestion_router)

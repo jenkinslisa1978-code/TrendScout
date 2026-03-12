@@ -107,11 +107,17 @@ export default function AdCreativeSection({ productId }) {
     <Card className="border-slate-200 shadow-sm" data-testid="ad-creative-section">
       <CardHeader className="border-b border-slate-100 pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="font-manrope text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-indigo-500" />
-            AI Ad Creatives
-            <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200">Generated</Badge>
-          </CardTitle>
+          <div>
+            <CardTitle className="font-manrope text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-indigo-500" />
+              AI Ad Creatives
+              <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200">Generated</Badge>
+            </CardTitle>
+            <p className="text-xs text-indigo-500 mt-1 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              Generated using winning ad patterns
+            </p>
+          </div>
           <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={generating} data-testid="regenerate-creatives-btn">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             <span className="ml-1">Regenerate</span>
