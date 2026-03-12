@@ -4994,15 +4994,8 @@ from fastapi.responses import Response
 async def sitemap_xml():
     """
     Dynamic sitemap.xml for SEO crawlers.
-    Lists all public pages and trending product slugs.
-    Cached for 30 minutes.
     """
-    base_url = os.environ.get("SITE_URL").rstrip("/")
-    cache_key = "sitemap_xml"
-    cached = _get_cached(cache_key)
-    if cached:
-        return Response(content=cached, media_type="application/xml")
-
+    base_url = os.environ.get("SITE_URL", "https://trendscout.click").rstrip("/")
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # Static pages
@@ -5057,8 +5050,7 @@ async def sitemap_xml():
         + "\n</urlset>"
     )
 
-    _set_cached(cache_key, xml)
-    return Response(content=xml, media_type="application/xml")
+    return Response(content=xml, media_type="application/xml", headers={"Cache-Control": "no-cache, max-age=0"})
 
 
 @app.get("/api/robots.txt", response_class=Response)
