@@ -7708,6 +7708,70 @@ async def get_product_saturation(product_id: str):
     }
 
 
+# ═══════════════════════════════════════════════════════════════════
+# NEW: Competitor Store Intelligence Engine
+# ═══════════════════════════════════════════════════════════════════
+
+@api_router.get("/products/{product_id}/competitor-intelligence")
+async def get_competitor_intelligence(product_id: str):
+    """
+    Analyze competitor stores selling this product.
+    Returns store count, age, traffic estimates, pricing range, ad activity.
+    """
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Derive intelligence from product signals
+    ad_count = product.get("ad_count", 0) or 0
+    stores_created = product.get("stores_created", 0) or 0
+    active_stores = product.get("active_competitor_stores", 0) or 0
+    trend_velocity = product.get("trend_velocity", 0) or 0
+    competition = product.get("competition_level", "medium")
+
+    # Estimate total stores from signals
+    total_stores = max(active_stores, stores_created, int(ad_count * 0.6))
+
+    # Estimate new stores in last 7 days from trend velocity
+    new_stores_7d = max(0, int(total_stores * (trend_velocity / 100) * 0.3)) if trend_velocity > 0 else int(total_stores * 0.05)
+
+    # Estimate price range from product data
+    sell_price = product.get("sell_price", 0) or product.get("estimated_profit", 0) * 3 or 25
+    price_low = round(sell_price * 0.7, 2)
+    price_high = round(sell_price * 1.4, 2)
+
+    # Estimate avg store age
+    if trend_velocity > 30:
+        avg_age_months = round(1.0 + (total_stores * 0.02), 1)
+    elif trend_velocity > 10:
+        avg_age_months = round(2.5 + (total_stores * 0.03), 1)
+    else:
+        avg_age_months = round(4.0 + (total_stores * 0.05), 1)
+
+    # Estimate traffic from ads and competition
+    est_traffic = "High" if ad_count > 100 else "Medium" if ad_count > 20 else "Low"
+
+    # Competition impact on scoring
+    if total_stores > 50:
+        competition_impact = "High competition — differentiation critical"
+    elif total_stores > 20:
+        competition_impact = "Moderate competition — branding matters"
+    else:
+        competition_impact = "Low competition — good window to enter"
+
+    return {
+        "product_id": product_id,
+        "stores_detected": total_stores,
+        "new_stores_7d": new_stores_7d,
+        "price_range": {"low": price_low, "high": price_high, "currency": "GBP"},
+        "avg_store_age_months": avg_age_months,
+        "advertising_activity": est_traffic,
+        "ads_detected": ad_count,
+        "competition_level": competition,
+        "competition_impact": competition_impact,
+    }
+
+
 # Include routers
 app.include_router(api_router)
 app.include_router(outcomes_router)

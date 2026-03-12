@@ -40,6 +40,7 @@ import SupplierSection from '@/components/SupplierSection';
 import AdCreativeSection from '@/components/AdCreativeSection';
 import AdDiscoverySection from '@/components/AdDiscoverySection';
 import SaturationRadar from '@/components/SaturationRadar';
+import CompetitorIntelligence from '@/components/CompetitorIntelligence';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -546,8 +547,11 @@ export default function ProductDetailPage() {
         {/* Supplier Section */}
         <SupplierSection productId={id} productName={product.product_name} />
 
-        {/* Saturation Radar */}
-        <SaturationRadar productId={id} />
+        {/* Saturation Radar + Competitor Intelligence — side by side */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <SaturationRadar productId={id} />
+          <CompetitorIntelligence productId={id} />
+        </div>
 
         {/* AI Ad Creatives */}
         <AdCreativeSection productId={id} />
