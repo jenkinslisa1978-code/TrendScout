@@ -24,7 +24,8 @@ import {
   Radar,
   Bell,
   LayoutDashboard,
-  Activity
+  Activity,
+  Share2
 } from 'lucide-react';
 import { getProducts, getProvenWinners, getMarketOpportunities } from '@/services/productService';
 import { getUserStores } from '@/services/storeService';
