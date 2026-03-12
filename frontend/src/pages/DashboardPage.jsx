@@ -39,7 +39,10 @@ import PredictionAccuracyCard from '@/components/PredictionAccuracyCard';
 import OpportunityRadarFeed from '@/components/OpportunityRadarFeed';
 import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
 import OptimizationDashboardWidget from '@/components/dashboard/OptimizationDashboardWidget';
+import WhileYouWereAway from '@/components/dashboard/WhileYouWereAway';
+import MissedOpportunities from '@/components/dashboard/MissedOpportunities';
 import { SourceDot } from '@/components/SourceTrustBadge';
+import ShareableProductCard from '@/components/ShareableProductCard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -47,7 +50,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const { canAccessEarlyTrends, isElite, isFree } = useSubscription();
+  const { canAccessEarlyTrends, isElite, isFree, isStarter } = useSubscription();
   const { isBeginner, isAdvanced } = useViewMode();
   const { showOnboarding, closeOnboarding } = useOnboarding();
   const [winningProducts, setWinningProducts] = useState([]);
@@ -55,6 +58,7 @@ export default function DashboardPage() {
   const [marketOpportunities, setMarketOpportunities] = useState([]);
   const [userStores, setUserStores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [shareProduct, setShareProduct] = useState(null);
   
   // Store builder modal
   const [showStoreBuilder, setShowStoreBuilder] = useState(false);
@@ -172,38 +176,29 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* While You Were Away */}
+        <WhileYouWereAway />
+
         {/* AI Co-Pilot Hero */}
         <FindWinningProductHero
           onLaunchProduct={(product) => navigate(`/launch/${product.id}`)}
         />
 
-        {/* Daily Opportunities */}
-        <DailyOpportunitiesPanel />
-
-        {/* Budget Optimizer Widget */}
-        <OptimizationDashboardWidget />
-
-        {/* Prediction Accuracy + Opportunity Radar — side by side */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <PredictionAccuracyCard />
-          <OpportunityRadarFeed />
-        </div>
-
-        {/* Section 1: Winning Products Today */}
+        {/* TrendScout Radar — Top Opportunities */}
         <Card className="border-0 shadow-lg overflow-hidden">
-          <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-amber-50 via-orange-50 to-red-50">
+          <CardHeader className="border-b border-slate-100 pb-5 bg-gradient-to-r from-indigo-50 via-violet-50 to-fuchsia-50">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="font-manrope text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <Trophy className="h-6 w-6 text-amber-500" />
-                  Winning Products Today
+                  <Radar className="h-6 w-6 text-indigo-600" />
+                  TrendScout Radar
                 </CardTitle>
-                <p className="text-sm text-slate-600 mt-1">Highest win scores based on trends, momentum, and success data</p>
+                <p className="text-sm text-slate-600 mt-1">Recently detected winning products from our scoring engine</p>
               </div>
               <Link 
                 to="/discover?sort_by=trend_score" 
-                className="flex items-center gap-1.5 text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors"
-                data-testid="view-all-winners-link"
+                className="flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
+                data-testid="view-all-radar-link"
               >
                 View all
                 <ArrowRight className="h-4 w-4" />
@@ -265,17 +260,40 @@ export default function DashboardPage() {
                     </div>
                     
                     <div className="flex items-center gap-4 shrink-0">
-                      <div className="text-right hidden sm:block">
-                        <p className="font-mono text-2xl font-bold text-amber-600">{product.win_score}</p>
-                        <p className="text-xs text-slate-400">Win Score</p>
+                      {/* Metrics */}
+                      <div className="hidden md:flex items-center gap-3">
+                        {product.supplier_cost > 0 && (
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-slate-700">£{product.supplier_cost.toFixed(0)}</p>
+                            <p className="text-[9px] text-slate-400">Supplier</p>
+                          </div>
+                        )}
+                        {product.estimated_retail_price > 0 && (
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-emerald-700">£{product.estimated_retail_price.toFixed(0)}</p>
+                            <p className="text-[9px] text-slate-400">Retail</p>
+                          </div>
+                        )}
                       </div>
-                      <Button 
-                        onClick={() => handleBuildStore(product)}
-                        className="bg-indigo-600 hover:bg-indigo-700 shrink-0"
-                        data-testid={`build-store-btn-${product.id}`}
+                      <div className="text-right hidden sm:block">
+                        <p className="font-mono text-2xl font-bold text-indigo-600">{product.win_score}</p>
+                        <p className="text-xs text-slate-400">Launch Score</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-slate-400 hover:text-indigo-600"
+                        onClick={(e) => { e.stopPropagation(); setShareProduct(product); }}
+                        data-testid={`share-btn-${product.id}`}
                       >
-                        <Rocket className="mr-2 h-4 w-4" />
-                        Build Store
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        onClick={() => navigate(`/product/${product.id}`)}
+                        className="bg-indigo-600 hover:bg-indigo-700 shrink-0"
+                        data-testid={`analyze-btn-${product.id}`}
+                      >
+                        Analyze
                       </Button>
                     </div>
                   </div>
@@ -284,6 +302,21 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Missed Opportunities — Free/Starter only */}
+        <MissedOpportunities />
+
+        {/* Daily Opportunities */}
+        <DailyOpportunitiesPanel />
+
+        {/* Budget Optimizer Widget */}
+        <OptimizationDashboardWidget />
+
+        {/* Prediction Accuracy + Opportunity Radar — side by side */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <PredictionAccuracyCard />
+          <OpportunityRadarFeed />
+        </div>
 
         {/* Section 2: Early Trend Opportunities — Advanced only */}
         {isAdvanced && (canAccessEarlyTrends ? (
@@ -661,6 +694,19 @@ export default function DashboardPage() {
         isOpen={showOnboarding} 
         onClose={closeOnboarding} 
       />
+
+      {/* Shareable Product Card Modal */}
+      {shareProduct && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShareProduct(null)}>
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()} data-testid="share-modal">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-slate-900">Share Product Insight</h3>
+              <button onClick={() => setShareProduct(null)} className="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+            </div>
+            <ShareableProductCard product={shareProduct} onClose={() => setShareProduct(null)} />
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

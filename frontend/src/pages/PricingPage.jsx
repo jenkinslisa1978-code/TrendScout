@@ -34,38 +34,57 @@ const PLANS = [
     id: 'free',
     name: 'Free',
     price: 0,
-    description: 'Get started with product research',
+    description: 'Explore product trends',
     icon: Zap,
     color: 'slate',
     features: [
       { text: 'Limited product insights', included: true },
-      { text: 'Report previews only', included: true },
+      { text: '2 product analyses per day', included: true },
       { text: '1 store', included: true },
-      { text: 'Limited watchlist & alerts', included: true },
-      { text: 'PDF report export', included: false },
-      { text: 'Early trend detection', included: false },
-      { text: 'Direct Shopify publish', included: false },
-      { text: 'Automated reports', included: false },
+      { text: 'Opportunity feed preview', included: true },
+      { text: 'Ad generator', included: false },
+      { text: 'Launch simulator', included: false },
+      { text: 'Budget optimizer', included: false },
     ],
     cta: 'Current Plan',
+    popular: false
+  },
+  {
+    id: 'starter',
+    name: 'Starter',
+    price: 19,
+    description: 'Start finding winning products',
+    icon: Rocket,
+    color: 'emerald',
+    features: [
+      { text: '5 product analyses per day', included: true },
+      { text: 'Supplier intelligence', included: true },
+      { text: 'Basic ad generator', included: true },
+      { text: '3 launch simulations per day', included: true },
+      { text: '2 stores', included: true },
+      { text: 'Opportunity feed (limited)', included: true },
+      { text: 'Budget optimizer', included: false },
+      { text: 'Radar alerts', included: false },
+    ],
+    cta: 'Start for £19/mo',
     popular: false
   },
   {
     id: 'pro',
     name: 'Pro',
     price: 39,
-    description: 'Scale with full insights & multiple stores',
+    description: 'Full research & launch intelligence',
     icon: TrendingUp,
     color: 'indigo',
     features: [
-      { text: 'Full product insights', included: true },
-      { text: 'Complete reports + PDF export', included: true },
+      { text: 'Unlimited product analysis', included: true },
+      { text: 'Full supplier intelligence', included: true },
+      { text: 'Ad blueprint & creative generator', included: true },
+      { text: 'Ad A/B testing system', included: true },
+      { text: 'Unlimited launch simulations', included: true },
+      { text: 'Full opportunity feed', included: true },
       { text: 'Up to 5 stores', included: true },
-      { text: 'Full watchlist & alerts', included: true },
-      { text: 'Priority support', included: true },
-      { text: 'Early trend detection', included: false },
-      { text: 'Direct Shopify publish', included: false },
-      { text: 'Automated reports', included: false },
+      { text: 'Budget optimizer', included: false },
     ],
     cta: 'Upgrade to Pro',
     popular: true
@@ -73,19 +92,19 @@ const PLANS = [
   {
     id: 'elite',
     name: 'Elite',
-    price: 99,
-    description: 'Everything you need to dominate',
+    price: 79,
+    description: 'Scale with AI automation',
     icon: Crown,
     color: 'amber',
     features: [
       { text: 'Everything in Pro', included: true },
-      { text: 'Early trend detection', included: true },
-      { text: 'Advanced opportunity insights', included: true },
-      { text: 'Automated reports & priority alerts', included: true },
+      { text: 'Smart Budget Optimizer', included: true },
+      { text: 'Optimization timeline', included: true },
+      { text: 'Radar alerts', included: true },
+      { text: 'LaunchPad (coming soon)', included: true },
+      { text: 'Priority analytics', included: true },
       { text: 'Unlimited stores', included: true },
       { text: 'Direct Shopify publish', included: true },
-      { text: 'Premium automation features', included: true },
-      { text: 'Dedicated support', included: true },
     ],
     cta: 'Go Elite',
     popular: false
@@ -96,7 +115,7 @@ function PlanCard({ plan, currentPlan, onSelect, loading }) {
   const isCurrentPlan = currentPlan === plan.id;
   
   // Define plan hierarchy
-  const planOrder = ['free', 'pro', 'elite'];
+  const planOrder = ['free', 'starter', 'pro', 'elite'];
   const currentIndex = planOrder.indexOf(currentPlan);
   const planIndex = planOrder.indexOf(plan.id);
   
@@ -306,7 +325,7 @@ export default function PricingPage() {
       
       {/* Pricing Cards */}
       <div className="max-w-6xl mx-auto px-4 pb-16">
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
           {PLANS.map(plan => (
             <PlanCard
               key={plan.id}

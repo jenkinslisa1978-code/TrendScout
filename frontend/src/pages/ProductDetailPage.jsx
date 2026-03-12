@@ -28,7 +28,8 @@ import {
   Rocket,
   AlertTriangle,
   XCircle,
-  Info
+  Info,
+  Share2,
 } from 'lucide-react';
 import { getProductById, getProductCompetitors } from '@/services/productService';
 import { getCompleteAnalysis } from '@/services/intelligenceService';
@@ -46,6 +47,7 @@ import AdBlueprint from '@/components/AdBlueprint';
 import AdPerformanceIndicator from '@/components/AdPerformanceIndicator';
 import AdTestPlanner from '@/components/AdTestPlanner';
 import LaunchSimulator from '@/components/LaunchSimulator';
+import ShareableProductCard from '@/components/ShareableProductCard';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -92,6 +94,7 @@ export default function ProductDetailPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [showStoreBuilder, setShowStoreBuilder] = useState(false);
   const [launching, setLaunching] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -354,6 +357,14 @@ export default function ProductDetailPage() {
                 </Button>
               </a>
             )}
+            <Button
+              variant="outline"
+              onClick={() => setShowShareCard(true)}
+              data-testid="share-product-btn"
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              Share
+            </Button>
           </div>
         </div>
 
@@ -867,6 +878,19 @@ export default function ProductDetailPage() {
         isOpen={showStoreBuilder}
         onClose={() => setShowStoreBuilder(false)}
       />
+
+      {/* Shareable Product Card Modal */}
+      {showShareCard && product && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowShareCard(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()} data-testid="share-card-modal">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-slate-900">Share Product Insight</h3>
+              <button onClick={() => setShowShareCard(false)} className="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+            </div>
+            <ShareableProductCard product={product} onClose={() => setShowShareCard(false)} />
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

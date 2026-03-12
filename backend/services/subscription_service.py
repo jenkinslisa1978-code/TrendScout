@@ -25,6 +25,7 @@ except ImportError:
 class SubscriptionPlan(str, Enum):
     """Available subscription plans"""
     FREE = "free"
+    STARTER = "starter"
     PRO = "pro"
     ELITE = "elite"
 
@@ -58,14 +59,45 @@ PLANS = {
             "direct_publish": False,
             "automated_reports": False,
             "priority_alerts": False,
+            "ad_generator": False,
+            "ad_testing": False,
+            "launch_simulator": False,
+            "budget_optimizer": False,
+            "radar_alerts": False,
+            "launchpad": False,
+            "max_analyses_daily": 2,
+            "max_simulations_daily": 0,
+            "opportunity_feed_limit": 3,
         },
-        "feature_descriptions": [
-            "Limited product insights",
-            "Report previews only",
-            "1 store",
-            "Limited watchlist & alerts",
-            "No PDF export"
-        ]
+    },
+    SubscriptionPlan.STARTER: {
+        "name": "Starter",
+        "price_monthly": 19,
+        "currency": "gbp",
+        "stripe_price_id": os.environ.get("STRIPE_STARTER_PRICE_ID"),
+        "features": {
+            "product_insights": "basic",
+            "reports_access": "basic",
+            "pdf_export": False,
+            "max_stores": 2,
+            "watchlist_access": "limited",
+            "alerts_access": "limited",
+            "early_trend_access": False,
+            "automation_insights": False,
+            "advanced_opportunities": False,
+            "direct_publish": False,
+            "automated_reports": False,
+            "priority_alerts": False,
+            "ad_generator": True,
+            "ad_testing": False,
+            "launch_simulator": True,
+            "budget_optimizer": False,
+            "radar_alerts": False,
+            "launchpad": False,
+            "max_analyses_daily": 5,
+            "max_simulations_daily": 3,
+            "opportunity_feed_limit": 10,
+        },
     },
     SubscriptionPlan.PRO: {
         "name": "Pro",
@@ -85,25 +117,27 @@ PLANS = {
             "direct_publish": False,
             "automated_reports": False,
             "priority_alerts": False,
+            "ad_generator": True,
+            "ad_testing": True,
+            "launch_simulator": True,
+            "budget_optimizer": False,
+            "radar_alerts": False,
+            "launchpad": False,
+            "max_analyses_daily": -1,
+            "max_simulations_daily": -1,
+            "opportunity_feed_limit": -1,
         },
-        "feature_descriptions": [
-            "Full product insights",
-            "Complete reports + PDF export",
-            "Up to 5 stores",
-            "Full watchlist & alerts",
-            "Priority support"
-        ]
     },
     SubscriptionPlan.ELITE: {
         "name": "Elite",
-        "price_monthly": 99,
+        "price_monthly": 79,
         "currency": "gbp",
         "stripe_price_id": os.environ.get("STRIPE_ELITE_PRICE_ID"),
         "features": {
             "product_insights": "full",
             "reports_access": "full",
             "pdf_export": True,
-            "max_stores": -1,  # Unlimited
+            "max_stores": -1,
             "watchlist_access": "full",
             "alerts_access": "full",
             "early_trend_access": True,
@@ -112,14 +146,16 @@ PLANS = {
             "direct_publish": True,
             "automated_reports": True,
             "priority_alerts": True,
+            "ad_generator": True,
+            "ad_testing": True,
+            "launch_simulator": True,
+            "budget_optimizer": True,
+            "radar_alerts": True,
+            "launchpad": True,
+            "max_analyses_daily": -1,
+            "max_simulations_daily": -1,
+            "opportunity_feed_limit": -1,
         },
-        "feature_descriptions": [
-            "Everything in Pro",
-            "Early trend detection",
-            "Advanced opportunity insights",
-            "Automated reports & priority alerts",
-            "Unlimited stores & direct publish"
-        ]
     }
 }
 
@@ -127,7 +163,7 @@ PLANS = {
 class FeatureGate:
     """Utility class for checking feature access by plan"""
     
-    PLAN_HIERARCHY = {"free": 0, "pro": 1, "elite": 2}
+    PLAN_HIERARCHY = {"free": 0, "starter": 1, "pro": 2, "elite": 3}
     
     @staticmethod
     def get_plan_features(plan: str) -> Dict[str, Any]:
@@ -668,7 +704,6 @@ def get_all_plans() -> List[Dict[str, Any]]:
             "price_monthly": config["price_monthly"],
             "currency": config["currency"],
             "features": config["features"],
-            "feature_descriptions": config["feature_descriptions"]
         }
         for plan, config in PLANS.items()
     ]

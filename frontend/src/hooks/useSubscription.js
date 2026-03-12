@@ -123,6 +123,19 @@ export function SubscriptionProvider({ children }) {
     isElite: subscription.plan === 'elite',
     isFree: subscription.plan === 'free',
     isStarter: subscription.plan === 'starter',
+    isStarterOrAbove: ['starter', 'pro', 'elite'].includes(subscription.plan),
+    isProOrAbove: ['pro', 'elite'].includes(subscription.plan),
+
+    // Plan limits
+    maxAnalysesDaily: subscription.features.max_analyses_daily ?? 2,
+    maxSimulationsDaily: subscription.features.max_simulations_daily ?? 0,
+    opportunityFeedLimit: subscription.features.opportunity_feed_limit ?? 3,
+    canUseBudgetOptimizer: subscription.features.budget_optimizer ?? false,
+    canUseRadarAlerts: subscription.features.radar_alerts ?? false,
+    canUseLaunchpad: subscription.features.launchpad ?? false,
+    canUseAdTesting: subscription.features.ad_testing ?? false,
+    canUseLaunchSimulator: subscription.features.launch_simulator ?? false,
+    canUseAdGenerator: subscription.features.ad_generator ?? false,
     
     // Feature checks
     canAccessFullReports: subscription.features.full_reports,
@@ -222,7 +235,42 @@ function getDefaultFeaturesForPlan(plan) {
         priority_alerts: false,
         max_stores: 5,
         can_create_store: true,
-        current_store_count: 0
+        current_store_count: 0,
+        ad_generator: true,
+        ad_testing: true,
+        launch_simulator: true,
+        budget_optimizer: false,
+        radar_alerts: false,
+        launchpad: false,
+        max_analyses_daily: -1,
+        max_simulations_daily: -1,
+        opportunity_feed_limit: -1,
+      };
+    case 'starter':
+      return {
+        full_reports: false,
+        full_insights: false,
+        pdf_export: false,
+        watchlist: false,
+        alerts: false,
+        early_trends: false,
+        automation_insights: false,
+        advanced_opportunities: false,
+        direct_publish: false,
+        automated_reports: false,
+        priority_alerts: false,
+        max_stores: 2,
+        can_create_store: true,
+        current_store_count: 0,
+        ad_generator: true,
+        ad_testing: false,
+        launch_simulator: true,
+        budget_optimizer: false,
+        radar_alerts: false,
+        launchpad: false,
+        max_analyses_daily: 5,
+        max_simulations_daily: 3,
+        opportunity_feed_limit: 10,
       };
     default:
       return DEFAULT_FEATURES;
