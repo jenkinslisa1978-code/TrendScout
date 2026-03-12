@@ -20,70 +20,55 @@ Build "TrendScout", a fully automated, AI-powered e-commerce intelligence platfo
 
 ## Completed Phases
 
-### Phase 1-22: Foundation through Ad Intelligence (DONE)
-### Phase 23: Smart Budget Optimizer V1 (DONE)
-### Phase 24: System Health Dashboard (DONE)
-### Phase 25: Data Credibility & Supplier Intelligence (DONE)
-### Phase 26: Official API Integration Layer (DONE)
-### Phase 27: Dashboard & Pricing Rework (DONE)
+### Phase 1-27: Foundation through Dashboard & Pricing Rework (DONE)
 
-### Phase 28: Launch Readiness — March 2026 (DONE)
+### Phase 28: Launch Readiness (DONE — March 2026)
+- Landing page overhaul with hero, testimonials, opportunity detection
+- Radar Alert System (backend endpoints + in-app notifications)
+- Upgrade prompts (LimitHitBanner, InsightLockedNudge)
+- Interactive 4-step onboarding wizard
+- TrendScout LaunchPad with pricing strategy, Shopify export, A/B test plan, launch checklist
 
-**Phase A — Landing Page Overhaul (DONE, TESTED)**
-- Hero: "Find winning products early. Launch them faster."
-- CTA: "Start with Starter — £19/mo"
-- Sections: How It Works, Live Demo Card, Opportunity Detection, Pricing, Testimonials, Final CTA
-- Value prop badge: "AI Ecommerce Launch Assistant"
+### Phase 29: Smart Budget Optimizer V2 (DONE — March 2026)
+**All features verified via testing_agent (iteration_42, 100% pass)**
+- **Rule Presets:** Beginner (conservative), Balanced (standard), Aggressive (fast scaling)
+  - Each adjusts CTR/CPC/CPA thresholds, scale factor, and kill thresholds
+  - User's preferred preset saved to profile and persists
+- **Auto-Recommend Mode:** Toggle that marks the user for continuous recommendation generation
+  - Visual green "active" indicator when enabled
+- **Optimization Timeline:** Full page at /optimization/:testId showing chronological events
+  - Each event shows Day #, action (Scale/Pause/Kill/Monitor), metrics, confidence
+  - Timeline line with color-coded action dots
+- **Budget Optimizer Alerts:** In-app alerts generated when recommendations trigger pause/scale/kill
+  - Alert list with unread count, mark-all-read functionality
+  - Also creates notifications via the existing notification service
+- **Weekly Radar Digest:** Scheduled task (Monday 8AM UTC)
+  - Sends top 5 radar-detected products to all users
+  - Includes product name, launch score, trend stage, estimated margin
+  - CTA to view full analysis in TrendScout
 
-**Phase B — Radar Alert System (DONE, TESTED)**
-- Backend: POST /api/notifications/radar-scan (admin-only background task)
-- Backend: GET /api/notifications/radar-detections (list radar-detected products)
-- Backend: POST /api/notifications/radar-digest (email digest with detected products)
-- RADAR_DETECTED notification type added to notification service
-- Products marked with radar_detected flag when crossing score thresholds
+### Key API Endpoints Added (Phase 29)
+- `GET /api/optimization/presets` — Available strategy presets
+- `POST /api/optimization/set-preset` — Set user's preferred preset
+- `POST /api/optimization/toggle-auto-recommend` — Toggle auto mode
+- `GET /api/optimization/settings` — Get current settings
+- `GET /api/optimization/alerts` — Optimizer alerts with unread count
+- `POST /api/optimization/alerts/mark-read` — Mark alerts read
+- `GET /api/optimization/timeline/{test_id}` — Timeline events
 
-**Phase C — Upgrade Prompts & Conversion (DONE, TESTED)**
-- LimitHitBanner: shown when Starter users exhaust daily limits
-- InsightLockedNudge: inline upgrade nudge for locked features
-- Correctly hidden for Elite/Pro users, shown for Starter/Free
-
-**Phase D — Onboarding Enhancement (DONE, TESTED)**
-- 4-step interactive wizard: Experience Level → Niche Preferences → First Opportunity → First Analysis
-- Saves experience_level and preferred_niches to user profile
-- Fetches real product data for Step 3
-- Accessible (DialogTitle added)
-
-**Phase E — LaunchPad Architecture (DONE, TESTED)**
-- Renamed to "TrendScout LaunchPad" with branded header
-- Step 1: Product Intelligence + Pricing Strategy (supplier cost, recommended price, margin)
-- Step 2: Supplier Confirmation
-- Step 3: Store Assets + Shopify Import File section
-- Step 4: Ad Creative Pack + A/B Test Plan (3 phases: Testing, Validation, Scale)
-- Step 5: Launch Checklist (7 items: 4 auto-checked, 3 manual)
-
-**Phase F — Final Launch Readiness (DONE, TESTED)**
-- All 12 spec areas verified via testing_agent_v3_fork
-- Backend: 16/16 API tests passed
-- Frontend: All features verified via Playwright
-
-## Current Data Source Status
-| Source | Method | Mode | Status |
-|--------|--------|------|--------|
-| TikTok | Public scraper | Live | Healthy |
-| Amazon | curl_cffi scraper | Live | Healthy |
-| Google Trends | pytrends API | Live | Healthy |
-| AliExpress | Estimation (API ready) | Estimated | Awaiting key |
-| CJ Dropshipping | Estimation (API ready) | Estimated | Awaiting key |
-| Meta Ad Library | Estimation (API ready) | Estimated | Awaiting token |
+### Frontend Pages Added (Phase 29)
+- `/optimization` — Smart Budget Optimizer settings + alerts
+- `/optimization/:testId` — Optimization timeline for specific test
+- Sidebar: "Budget Optimizer" under ELITE FEATURES
 
 ## Upcoming Tasks
-- **P1: Smart Budget Optimizer V2:** Timeline UI, auto-recommend, rule presets
-- **P1: Budget Optimizer Alerts:** Email/push for kill/scale recommendations
+None in immediate queue — all user-requested features complete.
 
-## Backlog
-- server.py refactoring into modular route files
-- Zendrop supplier API integration
-- Enhanced store generation (auto logos, trust badges)
-- Enhanced Budget Optimizer: anomaly detection, budget pacing, creative fatigue
-- Viral shareable public product pages
-- Programmatic SEO engine
+## Future/Backlog
+- **P1: Public Trending Products Page** — Display radar products publicly for SEO
+- **P2: Programmatic SEO pages** — Auto-generated pages for trending products
+- **P2: Zendrop supplier integration**
+- **P2: Enhanced store generation** (auto logos, trust badges)
+- **P2: Enhanced Budget Optimizer** — anomaly detection, budget pacing, creative fatigue
+- **P3: Viral shareable public product pages**
+- server.py refactoring (only when it blocks development)
