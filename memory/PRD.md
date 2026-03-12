@@ -27,46 +27,43 @@ Build "TrendScout", a predictive e-commerce intelligence platform that identifie
 - Premium landing page, programmatic SEO pages, 4 free tools
 
 ### Phase 15-20: Intelligence Systems (DONE)
-- Product Outcome Learning: track, update metrics, auto-label, stats
-- Prediction Accuracy: compare predictions vs outcomes
-- Opportunity Radar: live signal feed (30s refresh)
-- Saturation Radar: per-product risk (0-100 score)
-- Homepage Design Polish: soft gradients, animations, glass-morphism
-- Competitor Store Intelligence: stores, pricing, age, competition impact
+- Product Outcome Learning, Prediction Accuracy, Opportunity Radar, Saturation Radar
+- Homepage Design Polish, Competitor Store Intelligence
 
 ### Phase 21: Ad Winning Engine (DONE - March 2026)
-- Winning Ad Patterns: hook types, video lengths, UGC ratio, CTA styles, engagement, confidence scores
-- Ad Blueprint: 5-scene filming plan, 3 hook variations, filming tips
-- Ad Performance Indicator: engagement level, activity trend, saturation, platform breakdown
+- Winning Ad Patterns, Ad Blueprint, Ad Performance Indicator
 
 ### Phase 22: Ad A/B Test Planner + Launch Simulator (DONE - March 2026)
-- Generate 3 ad variations per product, test plan, performance tracker, auto-determine winner
-- Launch Simulator: profit estimates, CPC/CPA, break-even timeline, risk classification
+- Ad variations, test plan, performance tracker, launch simulator
 
 ### Phase 23: Smart Budget Optimizer V1 (DONE - March 2026)
-**Rule-Based Budget Recommendation Engine:**
-- Analyzes ad test variation results and generates actionable budget recommendations
-- 5 actions: increase_budget (scale 20-40%), maintain, pause, kill, needs_more_data
-- Confidence scoring (0-1) based on spend volume, click volume, purchase volume, signal agreement
-- Benchmarks: CTR excellent 2.5%, good 1.8%, poor 1.0%; CPC good £0.50, poor £1.50; ATC good 8%, poor 3%
-- Conservative budget scaling tiers (£10→£15→£20→£25→£35→£50→£70→£100→£140)
-- Event sourcing: every recommendation logged to optimization_events collection
-- Frontend: BudgetOptimizerCard in AdTestPlanner Results tab, OptimizationDashboardWidget on Dashboard
+- Rule-based budget recommendation engine (increase/maintain/pause/kill/needs_more_data)
+- Confidence scoring, conservative budget scaling, event sourcing
+- BudgetOptimizerCard in Ad Test Planner, OptimizationDashboardWidget on Dashboard
 - APIs: POST /api/optimization/recommend/{test_id}, GET /api/optimization/timeline/{test_id}, GET /api/optimization/dashboard-summary
+
+### Phase 24: Automated System Health Dashboard (DONE - March 2026)
+**Admin-only operational monitoring dashboard covering:**
+- Data Ingestion: Opportunity Feed, Amazon Scraper, Google Trends Enrichment, Score Recomputation, Product Data Freshness
+- API Integrations: TikTok API, AliExpress, Meta Ad Library, CJ Dropshipping, Zendrop
+- Core Systems: Product Scoring Engine, Opportunity Feed Generation, Ad Blueprint Generator, Store Launch Pipeline
+- Infrastructure: MongoDB, Stripe Payments, Job Scheduler, Job Queue Worker
+- Each service: status (healthy/warning/error), last successful run, error message, uptime indicator
+- Overall platform banner with aggregate stats
+- API: GET /api/system-health (admin only)
+- Frontend: /admin/health with expandable service rows, refresh capability
 
 ## Key API Endpoints
 All previous endpoints plus:
-- Budget Optimizer: POST /api/optimization/recommend/{test_id} (auth)
-- Optimization Timeline: GET /api/optimization/timeline/{test_id} (auth)
-- Dashboard Summary: GET /api/optimization/dashboard-summary (auth)
+- System Health: GET /api/system-health (admin auth)
 
 ## Upcoming Tasks (P0-P1)
-- **Smart Budget Optimizer V2 (Phases 2-4):** Optimization Timeline UI, auto-recommend mode, rule presets, feedback into Outcome Learning System
-- **Automated System Health Report:** Dashboard monitoring data ingestion, scoring, store launch, ad generation, Stripe, scraper health
+- **P0: Real Data Integrations:** TikTok Creative Center, AliExpress velocity API, Meta Ad Library
+- **P1: Smart Budget Optimizer V2 (Phases 2-4):** Optimization Timeline UI, auto-recommend mode, rule presets, feedback into Outcome Learning System
+- **P1: Budget Optimizer Alerts:** Email/push notifications for kill/scale recommendations
 
 ## Backlog
 - server.py refactoring into modular route files (8500+ lines)
-- Real data: AliExpress order velocity API, TikTok Creative Center, Meta Ad Library
 - Replace simulated free tools (TikTok Analyzer, Trend Checker) with real API data
 - CJ Dropshipping & Zendrop supplier APIs
 - Enhanced store generation (auto logos, trust badges)
