@@ -110,7 +110,6 @@ function AppRoutes() {
       <Route path="/trending-products" element={<TrendingProductsPage />} />
       <Route path="/trending/:slug" element={<TrendingProductPage />} />
       <Route path="/p/:id" element={<PublicProductPage />} />
-      <Route path="/trending/:slug" element={<SeoPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />
 
       {/* Protected routes */}

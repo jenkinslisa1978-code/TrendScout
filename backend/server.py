@@ -2081,7 +2081,7 @@ async def get_trending_products(limit: int = 20):
     No authentication required. Cached for 5 minutes.
     Returns radar-detected and top-scoring products.
     """
-    cached = _get_cached("trending_products")
+    cached = _get_cached(f"trending_products_{limit}")
     if cached:
         return cached
 
@@ -2137,7 +2137,7 @@ async def get_trending_products(limit: int = 20):
         "total": len(public_products),
         "detected_this_week": week_count or len(public_products),
     }
-    _set_cached("trending_products", result)
+    _set_cached(f"trending_products_{limit}", result)
     return result
 
 
