@@ -40,34 +40,29 @@ Build "TrendScout", a predictive e-commerce intelligence platform that identifie
 - Ad Performance Indicator: engagement level, activity trend, saturation, platform breakdown
 
 ### Phase 22: Ad A/B Test Planner + Launch Simulator (DONE - March 2026)
-**Ad A/B Test System:**
-- Generate 3 ad variations (different hooks) per product with full scripts
-- Step-by-step test plan (6 steps + 4 metrics with good/poor thresholds)
-- Performance tracker: record spend, clicks, CTR, add-to-cart, purchases per variation
-- Auto-determine winner by CTR comparison
-- Complete test & save learnings to ad_learnings collection for future model improvement
-- Dedicated /ad-tests page listing all active/completed tests with winner info
-- APIs: GET /variations/{id}, POST /create, GET /my, PUT /{id}/results, POST /{id}/complete
+- Generate 3 ad variations per product, test plan, performance tracker, auto-determine winner
+- Launch Simulator: profit estimates, CPC/CPA, break-even timeline, risk classification
 
-**Product Launch Simulator:**
-- Estimates: profit per sale, conversion rate, CPC, CPA, daily sales range, daily profit range, break-even timeline
-- Uses: launch_score, trend_stage, competition, supplier cost, ad activity, historical outcomes
-- Potential classification: High / Moderate / Risky with risk factors
-- Beginner-friendly guidance text ("Start small with £15-20 daily budget...")
-- Visual profit projection bar + expandable simulation inputs
-- API: GET /api/ad-tests/simulate/{id}
+### Phase 23: Smart Budget Optimizer V1 (DONE - March 2026)
+**Rule-Based Budget Recommendation Engine:**
+- Analyzes ad test variation results and generates actionable budget recommendations
+- 5 actions: increase_budget (scale 20-40%), maintain, pause, kill, needs_more_data
+- Confidence scoring (0-1) based on spend volume, click volume, purchase volume, signal agreement
+- Benchmarks: CTR excellent 2.5%, good 1.8%, poor 1.0%; CPC good £0.50, poor £1.50; ATC good 8%, poor 3%
+- Conservative budget scaling tiers (£10→£15→£20→£25→£35→£50→£70→£100→£140)
+- Event sourcing: every recommendation logged to optimization_events collection
+- Frontend: BudgetOptimizerCard in AdTestPlanner Results tab, OptimizationDashboardWidget on Dashboard
+- APIs: POST /api/optimization/recommend/{test_id}, GET /api/optimization/timeline/{test_id}, GET /api/optimization/dashboard-summary
 
 ## Key API Endpoints
 All previous endpoints plus:
-- Ad Variations: GET /api/ad-tests/variations/{id} (public)
-- Create Test: POST /api/ad-tests/create (auth)
-- My Tests: GET /api/ad-tests/my (auth)
-- Record Results: PUT /api/ad-tests/{id}/results (auth)
-- Complete Test: POST /api/ad-tests/{id}/complete (auth)
-- Simulate Launch: GET /api/ad-tests/simulate/{id} (auth)
+- Budget Optimizer: POST /api/optimization/recommend/{test_id} (auth)
+- Optimization Timeline: GET /api/optimization/timeline/{test_id} (auth)
+- Dashboard Summary: GET /api/optimization/dashboard-summary (auth)
 
-## Upcoming Tasks
-- **P5: Automated System Health Report**: Dashboard verifying data ingestion, scoring, store launch, ad generation, Stripe, scraper health
+## Upcoming Tasks (P0-P1)
+- **Smart Budget Optimizer V2 (Phases 2-4):** Optimization Timeline UI, auto-recommend mode, rule presets, feedback into Outcome Learning System
+- **Automated System Health Report:** Dashboard monitoring data ingestion, scoring, store launch, ad generation, Stripe, scraper health
 
 ## Backlog
 - server.py refactoring into modular route files (8500+ lines)
@@ -75,3 +70,6 @@ All previous endpoints plus:
 - Replace simulated free tools (TikTok Analyzer, Trend Checker) with real API data
 - CJ Dropshipping & Zendrop supplier APIs
 - Enhanced store generation (auto logos, trust badges)
+- Enhanced Budget Optimizer: anomaly detection, budget pacing, creative fatigue detection
+- Viral shareable public product pages
+- Programmatic SEO engine for trending product pages
