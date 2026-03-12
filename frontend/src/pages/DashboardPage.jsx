@@ -34,6 +34,7 @@ import { formatNumber, formatCurrency, getEarlyTrendInfo, getEarlyTrendScoreColo
 import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 import FindWinningProductHero from '@/components/FindWinningProductHero';
 import ViewModeToggle from '@/components/ViewModeToggle';
+import DailyOpportunitiesPanel from '@/components/DailyOpportunitiesPanel';
 import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
@@ -171,6 +172,9 @@ export default function DashboardPage() {
         <FindWinningProductHero
           onLaunchProduct={(product) => navigate(`/launch/${product.id}`)}
         />
+
+        {/* Daily Opportunities */}
+        <DailyOpportunitiesPanel />
 
         {/* Section 1: Winning Products Today */}
         <Card className="border-0 shadow-lg overflow-hidden">

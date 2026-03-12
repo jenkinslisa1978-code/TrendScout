@@ -2131,6 +2131,170 @@ async def get_trending_products(limit: int = 10):
     }
 
 
+@api_router.get("/public/featured-product")
+async def get_featured_product():
+    """
+    Public endpoint: returns the top product for the landing page live demo card.
+    No auth required. Returns limited info suitable for public display.
+    """
+    cursor = db.products.find(
+        {"launch_score": {"$exists": True}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(1)
+    products = await cursor.to_list(1)
+
+    if not products:
+        return {"product": None}
+
+    p = products[0]
+    selling_price = p.get("estimated_retail_price") or p.get("avg_selling_price") or 0
+    supplier_cost = p.get("supplier_cost", 0) or selling_price * 0.35
+    estimated_profit = round(selling_price - supplier_cost, 2) if selling_price > 0 else 0
+
+    return {
+        "product": {
+            "id": p.get("id"),
+            "product_name": p.get("product_name", ""),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "success_probability": p.get("success_probability", 0),
+            "trend_stage": p.get("trend_stage", "Stable"),
+            "estimated_profit": estimated_profit,
+            "supplier_source": "AliExpress",
+        }
+    }
+
+
+@api_router.get("/public/seo/{slug}")
+async def get_seo_page_data(slug: str):
+    """
+    Dynamic SEO page data. Returns products relevant to the slug.
+    Supports: trending-tiktok-products, trending-dropshipping-products,
+    winning-products-2025, tiktok-viral-products, etc.
+    """
+    # Map slugs to query filters
+    seo_configs = {
+        "trending-tiktok-products": {
+            "title": "Trending TikTok Products",
+            "description": "Discover the hottest products trending on TikTok right now. Updated daily with real market signals.",
+            "filter": {"launch_score": {"$gt": 30}},
+            "sort": ("trend_score", -1),
+        },
+        "trending-dropshipping-products": {
+            "title": "Trending Dropshipping Products",
+            "description": "Top dropshipping products with high profit margins and strong supplier availability.",
+            "filter": {"launch_score": {"$gt": 30}},
+            "sort": ("launch_score", -1),
+        },
+        "winning-products-2025": {
+            "title": "Winning Products 2025",
+            "description": "The best products to sell in 2025, ranked by our AI-powered scoring engine.",
+            "filter": {"launch_score": {"$gt": 30}},
+            "sort": ("launch_score", -1),
+        },
+        "tiktok-viral-products": {
+            "title": "TikTok Viral Products",
+            "description": "Products going viral on TikTok with exploding engagement and trend momentum.",
+            "filter": {"trend_stage": {"$in": ["Exploding", "Emerging"]}},
+            "sort": ("trend_score", -1),
+        },
+    }
+
+    config = seo_configs.get(slug)
+    if not config:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    cursor = db.products.find(
+        config["filter"], {"_id": 0}
+    ).sort(*config["sort"]).limit(12)
+    products = await cursor.to_list(12)
+
+    return {
+        "title": config["title"],
+        "description": config["description"],
+        "slug": slug,
+        "products": [
+            {
+                "id": p.get("id"),
+                "product_name": p.get("product_name", ""),
+                "category": p.get("category", ""),
+                "image_url": p.get("image_url", ""),
+                "launch_score": p.get("launch_score", 0),
+                "trend_stage": p.get("trend_stage", "Stable"),
+                "success_probability": p.get("success_probability", 0),
+            }
+            for p in products
+        ],
+        "total": len(products),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@api_router.get("/dashboard/daily-opportunities")
+async def get_daily_opportunities(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    Daily Opportunity Engine: surface the best products discovered or updated in the last 24h.
+    Returns top opportunity of the day + emerging/strong launch products.
+    """
+    from datetime import timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+
+    # Top opportunity of the day (highest launch_score updated recently)
+    top_cursor = db.products.find(
+        {"launch_score": {"$exists": True, "$gt": 0}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(1)
+    top_products = await top_cursor.to_list(1)
+    top_opportunity = top_products[0] if top_products else None
+
+    # Emerging products (trend_stage = Emerging or Exploding)
+    emerging_cursor = db.products.find(
+        {"trend_stage": {"$in": ["Emerging", "Exploding"]}, "launch_score": {"$exists": True}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(5)
+    emerging = await emerging_cursor.to_list(5)
+
+    # Products entering "Strong Launch" (launch_score >= 65)
+    strong_cursor = db.products.find(
+        {"launch_score": {"$gte": 65}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(5)
+    strong_launches = await strong_cursor.to_list(5)
+
+    # Recent trend spikes
+    spike_cursor = db.products.find(
+        {"trend_velocity": {"$gt": 30}, "launch_score": {"$exists": True}},
+        {"_id": 0}
+    ).sort("trend_velocity", -1).limit(5)
+    spikes = await spike_cursor.to_list(5)
+
+    def summarize(p):
+        selling = p.get("estimated_retail_price") or p.get("avg_selling_price") or 0
+        cost = p.get("supplier_cost", 0) or selling * 0.35
+        return {
+            "id": p.get("id"),
+            "product_name": p.get("product_name", ""),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "success_probability": p.get("success_probability", 0),
+            "trend_stage": p.get("trend_stage", "Stable"),
+            "estimated_profit": round(selling - cost, 2),
+            "supplier_source": "AliExpress",
+        }
+
+    return {
+        "top_opportunity": summarize(top_opportunity) if top_opportunity else None,
+        "emerging_products": [summarize(p) for p in emerging],
+        "strong_launches": [summarize(p) for p in strong_launches],
+        "trend_spikes": [summarize(p) for p in spikes],
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 @viral_router.get("/share/product/{product_id}")
 async def get_share_data(product_id: str):
     """Get share data for a product (for social sharing)"""

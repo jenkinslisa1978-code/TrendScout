@@ -7,7 +7,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://market-insights-beta.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://product-launcher-2.preview.emergentagent.com').rstrip('/')
 
 # Demo token for testing authenticated endpoints
 TEST_USER_ID = "test_onboarding_user_123"

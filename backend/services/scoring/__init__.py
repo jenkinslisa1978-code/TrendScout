@@ -27,13 +27,15 @@ class ScoringEngine:
     Designed for easy adjustment of weights and thresholds.
     """
     
-    # Scoring weights (must sum to 1.0) — exact formula from product spec
+    # Scoring weights (must sum to 1.0) — from user specification
     WEIGHTS = {
-        'trend': 0.30,
-        'margin': 0.25,
-        'competition': 0.20,
+        'trend': 0.25,
+        'margin': 0.20,
+        'competition': 0.15,
         'ad_activity': 0.15,
         'supplier_demand': 0.10,
+        'search_growth': 0.10,
+        'order_velocity': 0.05,
     }
     
     # Market opportunity labels
@@ -49,36 +51,35 @@ class ScoringEngine:
     
     def calculate_all_scores(self, product: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Calculate all scores for a product.
-        
+        Calculate all 7 scores for a product.
         Returns dict with all score fields ready for database update.
-        Each component includes transparent reasoning.
         """
-        # Calculate individual component scores with reasoning
         trend_score, trend_reasoning = self.calculate_trend_score(product)
         margin_score, margin_reasoning = self.calculate_margin_score(product)
         competition_score, competition_reasoning = self.calculate_competition_score(product)
         ad_activity_score, ad_reasoning = self.calculate_ad_activity_score(product)
         supplier_demand_score, supplier_reasoning = self.calculate_supplier_demand_score(product)
+        search_growth_score, search_reasoning = self.calculate_search_growth_score(product)
+        order_velocity_score, order_reasoning = self.calculate_order_velocity_score(product)
         
-        # Calculate launch_score using exact formula
+        # Calculate launch_score using 7-signal formula
         launch_score = round(
             trend_score * self.WEIGHTS['trend'] +
             margin_score * self.WEIGHTS['margin'] +
             competition_score * self.WEIGHTS['competition'] +
             ad_activity_score * self.WEIGHTS['ad_activity'] +
-            supplier_demand_score * self.WEIGHTS['supplier_demand']
+            supplier_demand_score * self.WEIGHTS['supplier_demand'] +
+            search_growth_score * self.WEIGHTS['search_growth'] +
+            order_velocity_score * self.WEIGHTS['order_velocity']
         )
         launch_score = min(100, max(0, launch_score))
         
-        # Get market label
         market_label, market_description = self.get_market_label(launch_score)
         
-        # Additional derived scores
         early_trend_score, early_trend_label = self.calculate_early_trend_score(product)
+        trend_stage = self.classify_trend_stage(product, trend_score, early_trend_score)
         success_probability = self.calculate_success_probability(product, launch_score)
         
-        # Build transparent score breakdown
         score_breakdown = {
             'trend': {
                 'score': trend_score,
@@ -110,23 +111,34 @@ class ScoringEngine:
                 'weighted': round(supplier_demand_score * self.WEIGHTS['supplier_demand'], 1),
                 'reasoning': supplier_reasoning,
             },
+            'search_growth': {
+                'score': search_growth_score,
+                'weight': self.WEIGHTS['search_growth'],
+                'weighted': round(search_growth_score * self.WEIGHTS['search_growth'], 1),
+                'reasoning': search_reasoning,
+            },
+            'order_velocity': {
+                'score': order_velocity_score,
+                'weight': self.WEIGHTS['order_velocity'],
+                'weighted': round(order_velocity_score * self.WEIGHTS['order_velocity'], 1),
+                'reasoning': order_reasoning,
+            },
         }
         
         return {
-            # Component scores
             'trend_score': trend_score,
             'margin_score': margin_score,
             'competition_score': competition_score,
             'ad_activity_score': ad_activity_score,
             'supplier_demand_score': supplier_demand_score,
+            'search_growth_score': search_growth_score,
+            'order_velocity_score': order_velocity_score,
             
-            # Launch score (PRIMARY metric)
             'launch_score': launch_score,
             'launch_score_breakdown': score_breakdown,
             'market_label': market_label,
             'market_description': market_description,
             
-            # Legacy market_score = launch_score
             'market_score': launch_score,
             'market_score_breakdown': {
                 'trend': trend_score,
@@ -134,14 +146,15 @@ class ScoringEngine:
                 'competition': competition_score,
                 'ad_activity': ad_activity_score,
                 'supplier_demand': supplier_demand_score,
+                'search_growth': search_growth_score,
+                'order_velocity': order_velocity_score,
             },
             
-            # Derived scores
             'early_trend_score': early_trend_score,
             'early_trend_label': early_trend_label,
+            'trend_stage': trend_stage,
             'success_probability': success_probability,
             
-            # Metadata
             'scores_updated_at': datetime.now(timezone.utc).isoformat(),
         }
     
@@ -444,6 +457,130 @@ class ScoringEngine:
         reasoning = ". ".join(reasons) if reasons else "Limited supplier data"
         return score, reasoning
     
+    def calculate_search_growth_score(self, product: Dict[str, Any]) -> tuple:
+        """
+        Calculate search growth score (0-100) based on Google Trends velocity
+        and keyword search interest data.
+        """
+        trend_velocity = product.get('trend_velocity', 0)
+        google_interest = product.get('google_trends_interest', 0)
+        search_volume_change = product.get('search_volume_change', 0)
+        
+        score = 0
+        reasons = []
+        
+        # Google Trends velocity (primary signal, 50%)
+        if trend_velocity and trend_velocity != 0:
+            if trend_velocity > 80:
+                score += 50
+                reasons.append(f"Surging search interest (+{trend_velocity:.0f}%)")
+            elif trend_velocity > 40:
+                score += 40
+                reasons.append(f"Strong search growth (+{trend_velocity:.0f}%)")
+            elif trend_velocity > 15:
+                score += 30
+                reasons.append(f"Rising search interest (+{trend_velocity:.0f}%)")
+            elif trend_velocity > 0:
+                score += 20
+                reasons.append(f"Modest search growth (+{trend_velocity:.0f}%)")
+            elif trend_velocity > -15:
+                score += 10
+                reasons.append(f"Stable search interest ({trend_velocity:.0f}%)")
+            else:
+                score += 5
+                reasons.append(f"Declining search interest ({trend_velocity:.0f}%)")
+        
+        # Google Trends absolute interest (30%)
+        if google_interest and google_interest > 0:
+            if google_interest >= 80:
+                score += 30
+            elif google_interest >= 50:
+                score += 22
+            elif google_interest >= 25:
+                score += 15
+            else:
+                score += 8
+        
+        # Search volume change (20%)
+        if search_volume_change and search_volume_change > 0:
+            score += min(20, int(search_volume_change / 5))
+        
+        score = min(100, max(0, score))
+        reasoning = ". ".join(reasons) if reasons else "Search data limited"
+        return score, reasoning
+
+    def calculate_order_velocity_score(self, product: Dict[str, Any]) -> tuple:
+        """
+        Calculate order velocity score (0-100) based on supplier order
+        rates and momentum.
+        """
+        order_velocity = product.get('supplier_order_velocity', 0)
+        orders_30d = product.get('supplier_orders_30d', 0)
+        order_growth = product.get('order_growth_rate', 0)
+        
+        score = 0
+        reasons = []
+        
+        # Weekly order velocity (50%)
+        if order_velocity and order_velocity > 0:
+            if order_velocity >= 5000:
+                score += 50
+                reasons.append(f"Explosive order velocity ({order_velocity}/week)")
+            elif order_velocity >= 2000:
+                score += 40
+                reasons.append(f"Very high orders ({order_velocity}/week)")
+            elif order_velocity >= 800:
+                score += 30
+                reasons.append(f"Strong order velocity ({order_velocity}/week)")
+            elif order_velocity >= 300:
+                score += 20
+                reasons.append(f"Moderate orders ({order_velocity}/week)")
+            elif order_velocity >= 50:
+                score += 12
+            else:
+                score += 5
+        
+        # 30-day total orders (30%)
+        if orders_30d and orders_30d > 0:
+            if orders_30d >= 20000:
+                score += 30
+            elif orders_30d >= 8000:
+                score += 22
+            elif orders_30d >= 3000:
+                score += 15
+            elif orders_30d >= 500:
+                score += 8
+            else:
+                score += 4
+        
+        # Order growth rate (20%)
+        if order_growth and order_growth > 0:
+            score += min(20, int(order_growth / 4))
+        
+        score = min(100, max(0, score))
+        reasoning = ". ".join(reasons) if reasons else "Order data limited"
+        return score, reasoning
+
+    def classify_trend_stage(self, product: Dict[str, Any], trend_score: int, early_trend_score: int) -> str:
+        """
+        Classify product into: Exploding, Emerging, Rising, Stable, Declining
+        """
+        trend_velocity = product.get('trend_velocity', 0) or 0
+        view_growth = product.get('view_growth_rate', 0) or 0
+        
+        combined = (trend_score * 0.4) + (early_trend_score * 0.3) + min(100, max(0, trend_velocity + 50)) * 0.3
+        
+        if combined >= 75 or (trend_velocity > 60 and trend_score >= 70):
+            return "Exploding"
+        elif combined >= 55 or (trend_velocity > 25 and trend_score >= 50):
+            return "Emerging"
+        elif combined >= 40 or trend_velocity > 5:
+            return "Rising"
+        elif trend_velocity >= -15:
+            return "Stable"
+        else:
+            return "Declining"
+
     def calculate_market_score(
         self,
         trend_score: int,
