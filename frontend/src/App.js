@@ -41,6 +41,7 @@ import { ViewModeProvider } from "@/contexts/ViewModeContext";
 import SeoPage from "@/pages/SeoPage";
 import FreeToolsPage from "@/pages/FreeToolsPage";
 import OutcomesPage from "@/pages/OutcomesPage";
+import AdTestsPage from "@/pages/AdTestsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -244,6 +245,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <OutcomesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ad-tests"
+        element={
+          <ProtectedRoute>
+            <AdTestsPage />
           </ProtectedRoute>
         }
       />

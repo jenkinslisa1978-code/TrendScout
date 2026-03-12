@@ -7815,10 +7815,201 @@ async def get_competitor_intelligence(product_id: str):
 
 
 # Include routers
+# ═══════════════════════════════════════════════════════════════════
+# Ad A/B Test Planner + Product Launch Simulator
+# ═══════════════════════════════════════════════════════════════════
+from services.ad_test_service import generate_ad_variations, generate_test_plan, simulate_launch
+
+ad_test_router = APIRouter(prefix="/api/ad-tests")
+
+
+@ad_test_router.get("/variations/{product_id}")
+async def get_ad_variations(product_id: str):
+    """Generate 3 ad variations with different hook styles."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    variations = generate_ad_variations(product, count=3)
+    test_plan = generate_test_plan(product, variations)
+    return {"product_id": product_id, "product_name": product.get("product_name", ""), "variations": variations, "test_plan": test_plan}
+
+
+@ad_test_router.post("/create")
+async def create_ad_test(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Create a new ad A/B test for a product."""
+    body = await request.json()
+    product_id = body.get("product_id")
+    if not product_id:
+        raise HTTPException(status_code=400, detail="product_id required")
+
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    variations = generate_ad_variations(product, count=3)
+
+    test_doc = {
+        "id": str(uuid.uuid4()),
+        "product_id": product_id,
+        "user_id": current_user.user_id,
+        "product_name": product.get("product_name", ""),
+        "image_url": product.get("image_url", ""),
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "variations": [
+            {
+                "variation_id": v["variation_id"],
+                "label": v["label"],
+                "hook_type": v["hook_type"],
+                "hook_id": v["hook_id"],
+                "results": {"spend": 0, "clicks": 0, "ctr": 0, "add_to_cart": 0, "purchases": 0},
+            }
+            for v in variations
+        ],
+        "winner": None,
+        "scripts": variations,
+    }
+
+    await db.ad_tests.insert_one(test_doc)
+    test_doc.pop("_id", None)
+    return {"test": test_doc, "message": "Ad test created"}
+
+
+@ad_test_router.get("/my")
+async def get_my_ad_tests(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    status: Optional[str] = None,
+):
+    """Get all ad tests for current user."""
+    query = {"user_id": current_user.user_id}
+    if status and status in ("active", "completed"):
+        query["status"] = status
+    cursor = db.ad_tests.find(query, {"_id": 0}).sort("created_at", -1)
+    tests = await cursor.to_list(50)
+    return {"tests": tests, "total": len(tests)}
+
+
+@ad_test_router.put("/{test_id}/results")
+async def update_ad_test_results(
+    test_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Update performance results for a variation in an ad test."""
+    body = await request.json()
+    variation_id = body.get("variation_id")
+    if not variation_id:
+        raise HTTPException(status_code=400, detail="variation_id required")
+
+    test = await db.ad_tests.find_one({"id": test_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not test:
+        raise HTTPException(status_code=404, detail="Ad test not found")
+
+    results = {
+        "spend": body.get("spend", 0),
+        "clicks": body.get("clicks", 0),
+        "ctr": body.get("ctr", 0),
+        "add_to_cart": body.get("add_to_cart", 0),
+        "purchases": body.get("purchases", 0),
+    }
+
+    # Auto-compute CTR if clicks and impressions provided
+    impressions = body.get("impressions", 0)
+    if impressions > 0 and results["clicks"] > 0:
+        results["ctr"] = round(results["clicks"] / impressions * 100, 2)
+
+    # Update the specific variation
+    variations = test.get("variations", [])
+    for v in variations:
+        if v["variation_id"] == variation_id:
+            v["results"] = results
+            break
+
+    # Determine winner (best CTR among variations with data)
+    with_data = [v for v in variations if v["results"]["clicks"] > 0]
+    winner = None
+    if len(with_data) >= 2:
+        best = max(with_data, key=lambda x: x["results"]["ctr"])
+        avg_ctr = sum(v["results"]["ctr"] for v in with_data) / len(with_data)
+        winner = {
+            "variation_id": best["variation_id"],
+            "label": best["label"],
+            "hook_type": best["hook_type"],
+            "ctr": best["results"]["ctr"],
+            "vs_average": round(best["results"]["ctr"] - avg_ctr, 2),
+        }
+
+    await db.ad_tests.update_one(
+        {"id": test_id},
+        {"$set": {"variations": variations, "winner": winner, "updated_at": datetime.now(timezone.utc).isoformat()}},
+    )
+
+    updated = await db.ad_tests.find_one({"id": test_id}, {"_id": 0})
+    return {"test": updated, "message": "Results updated"}
+
+
+@ad_test_router.post("/{test_id}/complete")
+async def complete_ad_test(
+    test_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Mark test as completed and feed results into learning system."""
+    test = await db.ad_tests.find_one({"id": test_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not test:
+        raise HTTPException(status_code=404, detail="Ad test not found")
+
+    # Feed results into learning — store ad performance signals
+    learning_doc = {
+        "id": str(uuid.uuid4()),
+        "type": "ad_test_result",
+        "product_id": test["product_id"],
+        "user_id": current_user.user_id,
+        "test_id": test_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "variations": test.get("variations", []),
+        "winner": test.get("winner"),
+    }
+    await db.ad_learnings.insert_one(learning_doc)
+
+    await db.ad_tests.update_one(
+        {"id": test_id},
+        {"$set": {"status": "completed", "updated_at": datetime.now(timezone.utc).isoformat()}},
+    )
+
+    return {"message": "Test completed. Results saved to learning system.", "winner": test.get("winner")}
+
+
+# ── Launch Simulator ──
+
+@ad_test_router.get("/simulate/{product_id}")
+async def get_launch_simulation(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Simulate a product launch and estimate potential outcomes."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Fetch historical outcomes for context
+    cursor = db.product_outcomes.find(
+        {"user_id": current_user.user_id, "outcome_status": {"$ne": "pending"}},
+        {"_id": 0},
+    )
+    history = await cursor.to_list(100)
+
+    return simulate_launch(product, history)
+
+
 app.include_router(api_router)
 app.include_router(outcomes_router)
 app.include_router(radar_router)
 app.include_router(ad_engine_router)
+app.include_router(ad_test_router)
 app.include_router(stripe_router)
 app.include_router(automation_router)
 app.include_router(ingestion_router)

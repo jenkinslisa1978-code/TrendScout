@@ -44,6 +44,8 @@ import CompetitorIntelligence from '@/components/CompetitorIntelligence';
 import WinningAdPatterns from '@/components/WinningAdPatterns';
 import AdBlueprint from '@/components/AdBlueprint';
 import AdPerformanceIndicator from '@/components/AdPerformanceIndicator';
+import AdTestPlanner from '@/components/AdTestPlanner';
+import LaunchSimulator from '@/components/LaunchSimulator';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -564,6 +566,12 @@ export default function ProductDetailPage() {
 
         {/* Ad Performance Indicator */}
         <AdPerformanceIndicator productId={id} />
+
+        {/* Ad A/B Test Planner */}
+        <AdTestPlanner productId={id} />
+
+        {/* Launch Simulator */}
+        <LaunchSimulator productId={id} />
 
         {/* AI Ad Creatives */}
         <AdCreativeSection productId={id} />

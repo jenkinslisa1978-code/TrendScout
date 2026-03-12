@@ -30,6 +30,7 @@ const navigation = [
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'My Stores', href: '/stores', icon: Store },
   { name: 'Outcomes', href: '/outcomes', icon: Target },
+  { name: 'Ad Tests', href: '/ad-tests', icon: Zap },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
   { name: 'Referrals', href: '/referrals', icon: Gift },
 ];
