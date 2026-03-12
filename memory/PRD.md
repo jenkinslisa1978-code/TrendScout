@@ -13,82 +13,83 @@ Build "TrendScout", a predictive e-commerce intelligence platform that identifie
 ## Completed Phases
 
 ### Phase 1-22: Foundation through Ad Intelligence (DONE)
-- Real data pipeline (Amazon, Google Trends), scoring engine, supplier integration
-- Store launch, AI ads, opportunity feed, referrals, reports, Stripe subscriptions
-- AI Co-Pilot, Predictive Engine, SEO, Outcome Learning, Prediction Accuracy
-- Opportunity/Saturation Radar, Competitor Intelligence, Ad Winning Engine
-- A/B Test Planner, Launch Simulator
+- Full pipeline: data, scoring, stores, ads, subscriptions, AI co-pilot, competitor intelligence
 
-### Phase 23: Smart Budget Optimizer V1 (DONE - March 2026)
-- Rule-based budget recommendations (increase/maintain/pause/kill/needs_more_data)
-- BudgetOptimizerCard in Ad Test Planner, OptimizationDashboardWidget on Dashboard
+### Phase 23: Smart Budget Optimizer V1 (DONE)
+- Rule-based budget recommendations, dashboard widget
 
-### Phase 24: Automated System Health Dashboard (DONE - March 2026)
-- Admin-only dashboard monitoring 18 services across 4 categories
-- Route: /admin/health
+### Phase 24: Automated System Health Dashboard (DONE)
+- Admin-only /admin/health monitoring 18 services
 
-### Phase 25: Data Credibility & Supplier Intelligence (DONE - March 2026)
-**Data Reliability Layer:**
-- Circuit breaker pattern per source (failure threshold, recovery timeout)
-- Fallback chains: scraper → estimation → hardcoded for every source
-- Source pull logging (source_pull_log collection) with success/failure/latency
-- `data_confidence` field per product: live | estimated | fallback
-- `source_signals` dict tracking per-signal confidence, source, and update time
+### Phase 25: Data Credibility & Supplier Intelligence (DONE)
+- Circuit breakers, fallback chains, source trust badges, CJ supplier intelligence
 
-**AliExpress Integration:**
-- Scraper attempts real data (curl_cffi, JS pages)
-- Falls back to estimation with plausible signals from existing data
-- Fields: orders_30d, ae_shipping_days, ae_processing_days, ae_availability, ae_rating, ae_reviews
+### Phase 26: Official API Integration Layer (DONE - March 2026)
+**Official API clients with auto-upgrade capability:**
 
-**CJ Dropshipping Supplier Intelligence:**
-- Full supplier intelligence: price, shipping_days, processing_days, availability, stock, variants, warehouse, fulfillment_type, product_url, last_sync
-- Scraper with estimation fallback
-- Fields: cj_price, cj_shipping_days, cj_processing_days, cj_availability, cj_variants_count, cj_warehouse, cj_fulfillment_type
+**Meta Ad Library API (Graph API v25.0)**
+- Client: `/app/backend/services/api_clients/meta_ads_client.py`
+- Endpoint: `GET https://graph.facebook.com/v25.0/ads_archive`
+- Signals: active ad counts, advertiser/page names, creation dates, platforms
+- Rate limiting: 2s interval, 1h cache, circuit breaker
+- .env: `META_AD_LIBRARY_TOKEN`
 
-**TikTok Creative Center:**
-- Real scraper returning live data (views, engagement, ad counts, trend velocity)
-- Fields: tiktok_views, engagement_rate, ad_count, view_growth_rate
+**CJ Dropshipping API v2.0**
+- Client: `/app/backend/services/api_clients/cj_client.py`
+- Endpoints: product search, product detail query
+- Signals: pricing, shipping, variants, stock, warehouse, fulfillment type
+- Rate limiting: 1s interval, 30min cache, circuit breaker
+- .env: `CJ_API_KEY`
 
-**Meta Ad Library:**
-- API integration (when META_AD_LIBRARY_TOKEN is set) + estimation fallback
-- Fields: meta_active_ads, meta_ad_growth_7d, estimated_monthly_ad_spend, ad_platform_distribution
+**AliExpress Open Platform (Affiliate API)**
+- Client: `/app/backend/services/api_clients/aliexpress_client.py`
+- Endpoints: product query, product detail
+- Signals: pricing, orders, ratings, reviews, shipping, commission rates
+- MD5 signature auth, dual gateway (api-sg + legacy)
+- .env: `ALIEXPRESS_API_KEY`, `ALIEXPRESS_API_SECRET`
 
-**Scoring Engine Updates:**
-- `scoring_metadata.source_breakdown` per product documenting each signal's confidence, source, and timestamp
-- Supplier demand score now uses enriched fields from AliExpress/CJ
-- Real data signals weighted higher than estimation
+**Architecture:**
+- 4-step fallback chain: Official API → Scraper → Estimation → Hardcoded
+- Auto-upgrade: adding key to .env instantly switches source from Estimated → Live
+- Per-source circuit breaker (3 failures → 5min cooldown)
+- Per-source rate limiting with exponential backoff
+- Response caching (30min-1hr TTL)
+- Full pull logging (source_pull_log collection)
 
-**Frontend Source Trust Labels:**
-- `SourceTrustBadge`: Live Data (green) / Estimated (amber) / Fallback (gray)
-- `SourceDot`: Small colored indicator next to product names on dashboard
-- `FreshnessIndicator`: "Just now" / "3h ago" / "2d ago" with color coding
-- `SourceBreakdownPanel`: Per-signal source grid in Data Transparency section
+**Integration Status Dashboard:**
+- Admin page: `/admin/integrations`
+- Per-source: credential status, current mode, health check, last sync
+- Summary bar: Total Products | Live Data | Estimated | Not Enriched
+- Source Pull History table with success rates
+- Setup guide with exact .env vars and credential URLs
+- Run Ingestion button (async background)
 
 **API Endpoints:**
-- POST /api/data-integration/enrich/{product_id} (auth)
-- POST /api/data-integration/run-ingestion?limit=N (admin, async background)
+- GET /api/data-integration/integration-health (admin)
 - GET /api/data-integration/source-health (auth)
 - GET /api/data-integration/ingestion-status (auth)
+- POST /api/data-integration/enrich/{product_id} (auth)
+- POST /api/data-integration/run-ingestion?limit=N (admin, async)
 
-**Current Data Source Status:**
-| Source | Method | Confidence |
-|--------|--------|------------|
-| Amazon | Scraper (curl_cffi) | Live |
-| Google Trends | API (pytrends) | Live |
-| TikTok | Scraper | Live |
-| AliExpress | Estimation (scraper blocked) | Estimated |
-| CJ Dropshipping | Estimation (scraper blocked) | Estimated |
-| Meta Ad Library | Estimation (no token) | Estimated |
+## Current Data Source Status
+| Source | Method | Mode | Status |
+|--------|--------|------|--------|
+| TikTok | Public scraper | Live | Healthy |
+| Amazon | curl_cffi scraper | Live | Healthy |
+| Google Trends | pytrends API | Live | Healthy |
+| AliExpress | Estimation (API ready) | Estimated | Awaiting key |
+| CJ Dropshipping | Estimation (API ready) | Estimated | Awaiting key |
+| Meta Ad Library | Estimation (API ready) | Estimated | Awaiting token |
 
-## Upcoming Tasks (P0-P1)
-- **P1: Smart Budget Optimizer V2:** Optimization Timeline UI, auto-recommend, rule presets
+## Upcoming Tasks
+- **P1: Smart Budget Optimizer V2:** Timeline UI, auto-recommend, rule presets
 - **P1: Budget Optimizer Alerts:** Email/push for kill/scale recommendations
+- **P0: TrendScout LaunchPad** (major feature): AI-assisted product launch workflow
 
 ## Backlog
-- server.py refactoring into modular route files (8500+ lines)
-- Official API keys for AliExpress, CJ Dropshipping, Meta when available
-- Replace estimation with real data as API access becomes available
+- server.py refactoring into modular route files
+- Zendrop supplier API integration
 - Enhanced store generation (auto logos, trust badges)
 - Enhanced Budget Optimizer: anomaly detection, budget pacing, creative fatigue
 - Viral shareable public product pages
-- Programmatic SEO engine for trending product pages
+- Programmatic SEO engine
