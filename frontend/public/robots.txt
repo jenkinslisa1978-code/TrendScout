@@ -3,8 +3,11 @@ Allow: /
 Allow: /trending-products
 Allow: /trending/
 Allow: /pricing
+
 Disallow: /dashboard
 Disallow: /admin
 Disallow: /api/
+
+Allow: /api/sitemap.xml
 
 Sitemap: https://trendscout.click/api/sitemap.xml

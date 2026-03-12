@@ -5066,16 +5066,19 @@ async def sitemap_xml():
 @app.get("/api/robots.txt", response_class=Response)
 async def robots_txt():
     """Serve robots.txt pointing to sitemap."""
-    base_url = os.environ.get("SITE_URL").rstrip("/")
+    base_url = os.environ.get("SITE_URL", "https://trendscout.click").rstrip("/")
     content = (
         "User-agent: *\n"
         "Allow: /\n"
         "Allow: /trending-products\n"
         "Allow: /trending/\n"
         "Allow: /pricing\n"
+        "\n"
         "Disallow: /dashboard\n"
         "Disallow: /admin\n"
         "Disallow: /api/\n"
+        "\n"
+        "Allow: /api/sitemap.xml\n"
         f"\nSitemap: {base_url}/api/sitemap.xml\n"
     )
     return Response(content=content, media_type="text/plain")
