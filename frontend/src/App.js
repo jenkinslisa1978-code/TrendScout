@@ -38,6 +38,8 @@ import PricingPage from "@/pages/PricingPage";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import ProductLaunchWizard from "@/pages/ProductLaunchWizard";
 import { ViewModeProvider } from "@/contexts/ViewModeContext";
+import SeoPage from "@/pages/SeoPage";
+import FreeToolsPage from "@/pages/FreeToolsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -101,6 +103,8 @@ function AppRoutes() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/trending-products" element={<TrendingProductsPage />} />
       <Route path="/p/:id" element={<PublicProductPage />} />
+      <Route path="/trending/:slug" element={<SeoPage />} />
+      <Route path="/tools" element={<FreeToolsPage />} />
 
       {/* Protected routes */}
       <Route
