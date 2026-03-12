@@ -359,28 +359,31 @@ export default function PricingPage() {
             Compare Features
           </h2>
           
-          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border shadow-sm overflow-x-auto">
             <table className="w-full" data-testid="feature-comparison-table">
               <thead>
                 <tr className="border-b bg-slate-50">
                   <th className="text-left p-4 font-medium text-slate-700">Feature</th>
                   <th className="text-center p-4 font-medium text-slate-700">Free</th>
+                  <th className="text-center p-4 font-medium text-emerald-700">Starter <span className="text-xs font-normal">(£19/mo)</span></th>
                   <th className="text-center p-4 font-medium text-indigo-700 bg-indigo-50">Pro <span className="text-xs font-normal">(£39/mo)</span></th>
-                  <th className="text-center p-4 font-medium text-amber-700">Elite <span className="text-xs font-normal">(£99/mo)</span></th>
+                  <th className="text-center p-4 font-medium text-amber-700">Elite <span className="text-xs font-normal">(£79/mo)</span></th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { icon: Eye, label: 'Product Insights', free: 'Limited', pro: true, elite: true },
-                  { icon: FileText, label: 'Market Reports', free: 'Preview', pro: true, elite: true },
-                  { icon: FileText, label: 'PDF Report Export', free: false, pro: true, elite: true },
-                  { icon: Store, label: 'Stores', free: '1', pro: '5', elite: 'Unlimited' },
-                  { icon: Bell, label: 'Watchlist & Alerts', free: 'Limited', pro: true, elite: true },
-                  { icon: Bell, label: 'Priority Alerts', free: false, pro: false, elite: true },
-                  { icon: TrendingUp, label: 'Early Trend Detection', free: false, pro: false, elite: true },
-                  { icon: Sparkles, label: 'Advanced Opportunities', free: false, pro: false, elite: true },
-                  { icon: Zap, label: 'Automated Reports', free: false, pro: false, elite: true },
-                  { icon: Rocket, label: 'Direct Shopify Publish', free: false, pro: false, elite: true },
+                  { icon: Eye, label: 'Product Insights', free: 'Limited', starter: '5/day', pro: 'Unlimited', elite: 'Unlimited' },
+                  { icon: FileText, label: 'Market Reports', free: 'Preview', starter: 'Preview', pro: true, elite: true },
+                  { icon: FileText, label: 'PDF Report Export', free: false, starter: false, pro: true, elite: true },
+                  { icon: Store, label: 'Stores', free: '1', starter: '2', pro: '5', elite: 'Unlimited' },
+                  { icon: Rocket, label: 'Ad Generator', free: false, starter: 'Basic', pro: true, elite: true },
+                  { icon: TrendingUp, label: 'Launch Simulator', free: false, starter: '3/day', pro: 'Unlimited', elite: 'Unlimited' },
+                  { icon: Bell, label: 'Watchlist & Alerts', free: 'Limited', starter: 'Limited', pro: true, elite: true },
+                  { icon: Bell, label: 'Priority Alerts', free: false, starter: false, pro: false, elite: true },
+                  { icon: TrendingUp, label: 'Early Trend Detection', free: false, starter: false, pro: false, elite: true },
+                  { icon: Sparkles, label: 'Budget Optimizer', free: false, starter: false, pro: false, elite: true },
+                  { icon: Zap, label: 'Automated Reports', free: false, starter: false, pro: false, elite: true },
+                  { icon: Rocket, label: 'Direct Shopify Publish', free: false, starter: false, pro: false, elite: true },
                 ].map((row, idx) => {
                   const Icon = row.icon;
                   const renderCell = (val) => {
@@ -395,6 +398,7 @@ export default function PricingPage() {
                         {row.label}
                       </td>
                       <td className="p-4 text-center">{renderCell(row.free)}</td>
+                      <td className="p-4 text-center">{renderCell(row.starter)}</td>
                       <td className="p-4 text-center bg-indigo-50/50">{renderCell(row.pro)}</td>
                       <td className="p-4 text-center">{renderCell(row.elite)}</td>
                     </tr>

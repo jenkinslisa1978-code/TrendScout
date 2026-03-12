@@ -25,51 +25,18 @@ Build "TrendScout", a predictive e-commerce intelligence platform that identifie
 - Circuit breakers, fallback chains, source trust badges, CJ supplier intelligence
 
 ### Phase 26: Official API Integration Layer (DONE - March 2026)
-**Official API clients with auto-upgrade capability:**
-
-**Meta Ad Library API (Graph API v25.0)**
-- Client: `/app/backend/services/api_clients/meta_ads_client.py`
-- Endpoint: `GET https://graph.facebook.com/v25.0/ads_archive`
-- Signals: active ad counts, advertiser/page names, creation dates, platforms
-- Rate limiting: 2s interval, 1h cache, circuit breaker
-- .env: `META_AD_LIBRARY_TOKEN`
-
-**CJ Dropshipping API v2.0**
-- Client: `/app/backend/services/api_clients/cj_client.py`
-- Endpoints: product search, product detail query
-- Signals: pricing, shipping, variants, stock, warehouse, fulfillment type
-- Rate limiting: 1s interval, 30min cache, circuit breaker
-- .env: `CJ_API_KEY`
-
-**AliExpress Open Platform (Affiliate API)**
-- Client: `/app/backend/services/api_clients/aliexpress_client.py`
-- Endpoints: product query, product detail
-- Signals: pricing, orders, ratings, reviews, shipping, commission rates
-- MD5 signature auth, dual gateway (api-sg + legacy)
-- .env: `ALIEXPRESS_API_KEY`, `ALIEXPRESS_API_SECRET`
-
-**Architecture:**
+- Meta Ad Library, CJ Dropshipping, AliExpress API clients with auto-upgrade
 - 4-step fallback chain: Official API → Scraper → Estimation → Hardcoded
-- Auto-upgrade: adding key to .env instantly switches source from Estimated → Live
-- Per-source circuit breaker (3 failures → 5min cooldown)
-- Per-source rate limiting with exponential backoff
-- Response caching (30min-1hr TTL)
-- Full pull logging (source_pull_log collection)
+- Integration Status Dashboard at /admin/integrations
 
-**Integration Status Dashboard:**
-- Admin page: `/admin/integrations`
-- Per-source: credential status, current mode, health check, last sync
-- Summary bar: Total Products | Live Data | Estimated | Not Enriched
-- Source Pull History table with success rates
-- Setup guide with exact .env vars and credential URLs
-- Run Ingestion button (async background)
-
-**API Endpoints:**
-- GET /api/data-integration/integration-health (admin)
-- GET /api/data-integration/source-health (auth)
-- GET /api/data-integration/ingestion-status (auth)
-- POST /api/data-integration/enrich/{product_id} (auth)
-- POST /api/data-integration/run-ingestion?limit=N (admin, async)
+### Phase 27: Dashboard & Pricing Rework (DONE - March 2026)
+**Verified and tested. All features working.**
+- 3-tier pricing: Starter (£19), Pro (£39), Elite (£79) in GBP
+- Redesigned dashboard: WhileYouWereAway, TrendScout Radar, AI Co-pilot, MissedOpportunities
+- Feature gating across plans (Free/Starter/Pro/Elite)
+- Shareable Product Cards (html2canvas export)
+- Feature comparison table with all 4 tiers
+- Simple/Advanced view mode toggle
 
 ## Current Data Source Status
 | Source | Method | Mode | Status |
@@ -82,9 +49,9 @@ Build "TrendScout", a predictive e-commerce intelligence platform that identifie
 | Meta Ad Library | Estimation (API ready) | Estimated | Awaiting token |
 
 ## Upcoming Tasks
-- **P1: Smart Budget Optimizer V2:** Timeline UI, auto-recommend, rule presets
+- **P0: Smart Budget Optimizer V2:** Timeline UI, auto-recommend, rule presets
 - **P1: Budget Optimizer Alerts:** Email/push for kill/scale recommendations
-- **P0: TrendScout LaunchPad** (major feature): AI-assisted product launch workflow
+- **P2: TrendScout LaunchPad** (major feature): AI-assisted product launch workflow
 
 ## Backlog
 - server.py refactoring into modular route files
