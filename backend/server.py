@@ -4962,6 +4962,122 @@ async def public_product_by_slug(slug: str):
     return public_data
 
 
+@public_router.get("/categories")
+async def public_categories():
+    """
+    Public endpoint — returns categories with product counts for internal linking.
+    Cached for 10 minutes.
+    """
+    cached = _get_cached("public_categories")
+    if cached:
+        return cached
+
+    pipeline = [
+        {"$match": {"category": {"$ne": None}, "launch_score": {"$gte": 30}}},
+        {"$group": {"_id": "$category", "count": {"$sum": 1}, "avg_score": {"$avg": "$launch_score"}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 20},
+    ]
+    results = await db.products.aggregate(pipeline).to_list(20)
+    categories = [
+        {"name": r["_id"], "slug": _slugify(r["_id"]), "count": r["count"], "avg_score": round(r["avg_score"], 1)}
+        for r in results if r["_id"]
+    ]
+    _set_cached("public_categories", categories)
+    return categories
+
+
+# ── Sitemap.xml ─────────────────────────────────────────────────
+from fastapi.responses import Response
+
+@app.get("/api/sitemap.xml", response_class=Response)
+async def sitemap_xml():
+    """
+    Dynamic sitemap.xml for SEO crawlers.
+    Lists all public pages and trending product slugs.
+    Cached for 30 minutes.
+    """
+    cached = _get_cached("sitemap_xml")
+    if cached:
+        return Response(content=cached, media_type="application/xml")
+
+    base_url = "https://product-radar-21.preview.emergentagent.com"
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # Static pages
+    static_pages = [
+        {"loc": "/", "priority": "1.0", "changefreq": "weekly"},
+        {"loc": "/trending-products", "priority": "0.9", "changefreq": "daily"},
+        {"loc": "/pricing", "priority": "0.7", "changefreq": "monthly"},
+        {"loc": "/tools", "priority": "0.6", "changefreq": "monthly"},
+        {"loc": "/reports/weekly-winning-products", "priority": "0.7", "changefreq": "weekly"},
+        {"loc": "/reports/monthly-market-trends", "priority": "0.6", "changefreq": "monthly"},
+    ]
+
+    # Dynamic product pages
+    products = await db.products.find(
+        {"launch_score": {"$gte": 30}},
+        {"_id": 0, "product_name": 1, "last_updated": 1}
+    ).sort("launch_score", -1).limit(200).to_list(200)
+
+    urls = []
+    for p in static_pages:
+        urls.append(
+            f'  <url>\n'
+            f'    <loc>{base_url}{p["loc"]}</loc>\n'
+            f'    <lastmod>{now}</lastmod>\n'
+            f'    <changefreq>{p["changefreq"]}</changefreq>\n'
+            f'    <priority>{p["priority"]}</priority>\n'
+            f'  </url>'
+        )
+
+    seen_slugs = set()
+    for prod in products:
+        slug = _slugify(prod.get("product_name", ""))
+        if not slug or slug in seen_slugs:
+            continue
+        seen_slugs.add(slug)
+        lastmod = prod.get("last_updated", now)
+        if isinstance(lastmod, str) and "T" in lastmod:
+            lastmod = lastmod.split("T")[0]
+        urls.append(
+            f'  <url>\n'
+            f'    <loc>{base_url}/trending/{slug}</loc>\n'
+            f'    <lastmod>{lastmod}</lastmod>\n'
+            f'    <changefreq>weekly</changefreq>\n'
+            f'    <priority>0.8</priority>\n'
+            f'  </url>'
+        )
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(urls)
+        + "\n</urlset>"
+    )
+
+    _set_cached("sitemap_xml", xml)
+    return Response(content=xml, media_type="application/xml")
+
+
+@app.get("/api/robots.txt", response_class=Response)
+async def robots_txt():
+    """Serve robots.txt pointing to sitemap."""
+    base_url = "https://product-radar-21.preview.emergentagent.com"
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Allow: /trending-products\n"
+        "Allow: /trending/\n"
+        "Allow: /pricing\n"
+        "Disallow: /dashboard\n"
+        "Disallow: /admin\n"
+        "Disallow: /api/\n"
+        f"\nSitemap: {base_url}/sitemap.xml\n"
+    )
+    return Response(content=content, media_type="text/plain")
+
+
 # =====================
 # ROUTES - Authentication
 # =====================

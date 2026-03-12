@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,20 +22,38 @@ export default function TrendingProductsPage() {
   const [products, setProducts] = useState([]);
   const [weekCount, setWeekCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const catParam = searchParams.get('category');
+    if (catParam) setSelectedCategory(catParam);
+  }, [searchParams]);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/public/trending-products?limit=20`);
-        if (res.ok) {
-          const data = await res.json();
+        const [prodRes, catRes] = await Promise.all([
+          fetch(`${API_URL}/api/public/trending-products?limit=20`),
+          fetch(`${API_URL}/api/public/categories`),
+        ]);
+        if (prodRes.ok) {
+          const data = await prodRes.json();
           setProducts(data.products || []);
           setWeekCount(data.detected_this_week || 0);
+        }
+        if (catRes.ok) {
+          setCategories(await catRes.json());
         }
       } catch (e) { console.error(e); }
       setLoading(false);
     })();
   }, []);
+
+  const filteredProducts = selectedCategory
+    ? products.filter(p => p.category === selectedCategory)
+    : products;
 
   const seoTitle = 'Trending Dropshipping Products — Detected by TrendScout AI';
   const seoDescription = "Discover trending ecommerce products detected by TrendScout's AI scoring engine. Find winning products before competitors.";
@@ -117,6 +135,39 @@ export default function TrendingProductsPage() {
           </p>
         </header>
 
+        {/* Category Filter Strip */}
+        {categories.length > 0 && (
+          <div className="mx-auto max-w-7xl px-6 pb-6" data-testid="category-filter">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  !selectedCategory
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white/[0.06] text-slate-400 hover:bg-white/[0.1] hover:text-white border border-white/[0.08]'
+                }`}
+                data-testid="category-all"
+              >
+                All ({products.length})
+              </button>
+              {categories.map(cat => (
+                <button
+                  key={cat.name}
+                  onClick={() => setSelectedCategory(cat.name === selectedCategory ? null : cat.name)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    selectedCategory === cat.name
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white/[0.06] text-slate-400 hover:bg-white/[0.1] hover:text-white border border-white/[0.08]'
+                  }`}
+                  data-testid={`category-${cat.slug}`}
+                >
+                  {cat.name} ({cat.count})
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Product Grid */}
         <section className="mx-auto max-w-7xl px-6 pb-24">
           {loading ? (
@@ -127,7 +178,7 @@ export default function TrendingProductsPage() {
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" data-testid="product-grid">
-              {products.map((product, idx) => (
+              {filteredProducts.map((product, idx) => (
                 <ProductCard key={product.id} product={product} idx={idx} />
               ))}
             </div>

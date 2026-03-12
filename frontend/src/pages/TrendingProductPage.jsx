@@ -175,9 +175,11 @@ export default function TrendingProductPage() {
                     {product.trend_stage}
                   </Badge>
                   {product.category && (
-                    <Badge variant="outline" className="text-xs text-slate-400 border-slate-700">
-                      {product.category}
-                    </Badge>
+                    <Link to={`/trending-products?category=${encodeURIComponent(product.category)}`}>
+                      <Badge variant="outline" className="text-xs text-slate-400 border-slate-700 hover:border-indigo-500/50 hover:text-indigo-400 cursor-pointer transition-colors">
+                        {product.category}
+                      </Badge>
+                    </Link>
                   )}
                   <Badge variant="outline" className="text-xs text-slate-500 border-slate-700">
                     {product.data_confidence}

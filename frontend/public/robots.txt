@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /trending-products
+Allow: /trending/
+Allow: /pricing
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://product-radar-21.preview.emergentagent.com/api/sitemap.xml
