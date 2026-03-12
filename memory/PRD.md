@@ -23,58 +23,51 @@ Build "TrendScout", a fully automated, AI-powered e-commerce intelligence platfo
 ### Phase 1-27: Foundation through Dashboard & Pricing Rework (DONE)
 
 ### Phase 28: Launch Readiness (DONE - March 2026)
-- Landing page overhaul with hero, testimonials, opportunity detection
-- Radar Alert System (backend endpoints + in-app notifications)
-- Upgrade prompts (LimitHitBanner, InsightLockedNudge)
-- Interactive 4-step onboarding wizard
-- TrendScout LaunchPad with pricing strategy, Shopify export, A/B test plan, launch checklist
+- Landing page overhaul, Radar Alert System, Upgrade prompts, Onboarding wizard, LaunchPad
 
 ### Phase 29: Smart Budget Optimizer V2 (DONE - March 2026)
-- Rule Presets: Beginner (conservative), Balanced (standard), Aggressive (fast scaling)
-- Auto-Recommend Mode: Toggle for continuous recommendation generation
-- Optimization Timeline: /optimization/:testId showing chronological events
-- Budget Optimizer Alerts: In-app alerts for pause/scale/kill actions
-- Weekly Radar Digest: Scheduled task (Monday 8AM UTC)
+- Rule Presets, Auto-Recommend Mode, Optimization Timeline, Budget Alerts, Weekly Radar Digest
 
 ### Phase 30: Growth & SEO Features (DONE - March 2026)
 - Public Trending Products Page: /trending-products (SEO-optimized, no auth needed)
 - Programmatic SEO Pages: /trending/:slug with meta tags, JSON-LD, related products
 - Zendrop Supplier Integration: Wired into enrichment pipeline with estimation fallback
+- **Verified:** iteration_44 — 100% pass (20/20 backend, all frontend)
 
-**Verification (iteration_44):** All features verified — 100% pass rate (20/20 backend, all frontend)
+### Phase 31: SEO Infrastructure & Internal Linking (DONE - March 2026)
+- **Dynamic sitemap.xml**: 103 URLs (6 static + ~97 product pages) at /api/sitemap.xml
+- **robots.txt**: Proper crawl directives at /robots.txt and /api/robots.txt
+- **Public Categories API**: /api/public/categories with aggregation pipeline
+- **Category Filter UI**: Filterable strip on /trending-products with counts, URL param support
+- **Internal Linking**: Category badges on product pages link to filtered views, related products cross-link
+- **Meta Ad Library Token**: Configured (awaiting Facebook App permission approval for Ad Library API)
+- **Verified:** iteration_45 — 100% pass (17/17 backend, all frontend)
 
 ## Key API Endpoints
 
 ### Public (No Auth)
 - `GET /api/public/trending-products` — SEO product grid
 - `GET /api/public/product/{slug}` — Individual product SEO page
+- `GET /api/public/categories` — Category list with counts
 - `GET /api/public/featured-product` — Landing page demo card
+- `GET /api/sitemap.xml` — Dynamic XML sitemap
+- `GET /api/robots.txt` — Crawl directives
 
 ### Optimizer V2
 - `GET /api/optimization/presets` — Available strategy presets
 - `POST /api/optimization/set-preset` — Set user's preferred preset
 - `POST /api/optimization/toggle-auto-recommend` — Toggle auto mode
 - `GET /api/optimization/settings` — Get current settings
-- `GET /api/optimization/alerts` — Optimizer alerts with unread count
-- `POST /api/optimization/alerts/mark-read` — Mark alerts read
-- `GET /api/optimization/timeline/{test_id}` — Timeline events
 
 ### Data Integration
-- `POST /api/data-integration/enrich/{product_id}` — Enrich with all 5 sources (AliExpress, CJ, Zendrop, TikTok, Meta)
+- `POST /api/data-integration/enrich/{product_id}` — Enrich with 5 sources
 - `GET /api/data-integration/integration-health` — Health of all API integrations
 
-## Supplier Sources
-All run in estimation mode (no API keys). Will auto-activate when keys are provided:
-- AliExpress (Official API client)
-- CJ Dropshipping (Official API client)
-- Zendrop (Official API client, integrated March 2026)
-- Meta Ad Library (Official API client)
-- TikTok (Public scraper, no key needed)
+## Supplier Sources (all estimation mode, auto-activate with API keys)
+- AliExpress, CJ Dropshipping, Zendrop, Meta Ad Library, TikTok (live scraper)
 
 ## Upcoming Tasks
-- **P1: Sitemap.xml generation** — Dynamic sitemap for public trending product pages
-- **P1: Internal linking** — Cross-links between SEO product pages
-- **P2: Server.py refactoring** — Migrate routes to dedicated files
+- **P2: Server.py refactoring** — Migrate routes to dedicated files (when needed)
 
 ## Future/Backlog
 - Programmatic SEO V2 (richer content, more structured data)
