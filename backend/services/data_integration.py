@@ -135,6 +135,20 @@ FALLBACK_META = {
 }
 
 
+FALLBACK_ZENDROP = {
+    "source": "zendrop",
+    "source_mode": "fallback",
+    "supplier_cost": 12.0,
+    "shipping_cost": 4.50,
+    "total_cost": 16.50,
+    "handling_time_days": 2,
+    "estimated_delivery_days": 7,
+    "available": True,
+    "reliability_score": 88.0,
+    "currency": "GBP",
+}
+
+
 class DataIntegrationService:
     """
     Orchestrates all data sources for product enrichment.
@@ -146,9 +160,11 @@ class DataIntegrationService:
         self.db = db
         # Initialize official API clients (auto-detect credentials)
         from services.api_clients import MetaAdLibraryClient, CJDropshippingClient, AliExpressClient
+        from services.api_clients.zendrop_client import zendrop_client
         self.meta_client = MetaAdLibraryClient()
         self.cj_client = CJDropshippingClient()
         self.ae_client = AliExpressClient()
+        self.zendrop_client = zendrop_client
 
     # ── AliExpress ────────────────────────────────────────────────
 
@@ -321,6 +337,32 @@ class DataIntegrationService:
         ]
         return await execute_with_fallback("meta_ads", chain, self.db)
 
+    # ── Zendrop ───────────────────────────────────────────────────
+
+    async def fetch_zendrop_data(self, product: Dict[str, Any]) -> SourceResult:
+        """Fetch Zendrop supplier data: Official API → Estimation → Fallback."""
+
+        async def _official_api():
+            if not self.zendrop_client.is_configured:
+                return None
+            data = await self.zendrop_client.get_supplier_intelligence(product)
+            if data and data.get("source_mode") == "live":
+                return data
+            return None
+
+        async def _estimate():
+            return self.zendrop_client.estimate_supplier_data(product)
+
+        async def _fallback():
+            return FALLBACK_ZENDROP.copy()
+
+        chain = [
+            {"label": "official_api", "method": SourceMethod.API, "confidence": DataConfidence.LIVE, "fn": _official_api},
+            {"label": "estimation", "method": SourceMethod.ESTIMATION, "confidence": DataConfidence.ESTIMATED, "fn": _estimate},
+            {"label": "hardcoded", "method": SourceMethod.HARDCODED, "confidence": DataConfidence.FALLBACK, "fn": _fallback},
+        ]
+        return await execute_with_fallback("zendrop", chain, self.db)
+
     # ── Integration Health ────────────────────────────────────────
 
     async def get_integration_health(self) -> Dict[str, Any]:
@@ -328,11 +370,13 @@ class DataIntegrationService:
         ae_health = await self.ae_client.health_check()
         cj_health = await self.cj_client.health_check()
         meta_health = await self.meta_client.health_check()
+        zd_health = await self.zendrop_client.health_check()
 
         return {
             "aliexpress": ae_health,
             "cj_dropshipping": cj_health,
             "meta_ads": meta_health,
+            "zendrop": zd_health,
             "tiktok": {
                 "status": "healthy",
                 "credential_detected": True,
@@ -356,6 +400,7 @@ class DataIntegrationService:
         # Run all sources (sequentially to respect rate limits)
         ae_result = await self.fetch_aliexpress_data(product)
         cj_result = await self.fetch_cj_data(product)
+        zd_result = await self.fetch_zendrop_data(product)
         tt_result = await self.fetch_tiktok_data(product)
         meta_result = await self.fetch_meta_ad_data(product)
 
@@ -415,6 +460,16 @@ class DataIntegrationService:
                 "updated": meta_result.fetched_at,
             }
 
+        # Zendrop signals
+        if zd_result.success and zd_result.data:
+            d = zd_result.data
+            source_signals["zendrop_supplier"] = {
+                "value": d.get("supplier_cost", 0),
+                "confidence": zd_result.confidence.value,
+                "source": f"zendrop_{zd_result.method.value}",
+                "updated": zd_result.fetched_at,
+            }
+
         # Compute overall confidence
         data_confidence = compute_product_confidence(source_signals)
 
@@ -464,6 +519,18 @@ class DataIntegrationService:
             update["estimated_monthly_ad_spend"] = d.get("meta_estimated_spend_monthly", 0)
             update["ad_platform_distribution"] = d.get("meta_platforms", {})
 
+        # Merge Zendrop data
+        if zd_result.success and zd_result.data:
+            d = zd_result.data
+            update["zendrop_supplier_cost"] = d.get("supplier_cost", 0)
+            update["zendrop_shipping_cost"] = d.get("shipping_cost", 0)
+            update["zendrop_total_cost"] = d.get("total_cost", 0)
+            update["zendrop_handling_days"] = d.get("handling_time_days", 2)
+            update["zendrop_delivery_days"] = d.get("estimated_delivery_days", 7)
+            update["zendrop_available"] = d.get("available", True)
+            update["zendrop_reliability"] = d.get("reliability_score", 88.0)
+            update["zendrop_source_mode"] = d.get("source_mode", "estimation")
+
         update["last_updated"] = now
         update["is_real_data"] = data_confidence == "live"
 
@@ -476,6 +543,7 @@ class DataIntegrationService:
             "sources_status": {
                 "aliexpress": ae_result.to_dict(),
                 "cj_dropshipping": cj_result.to_dict(),
+                "zendrop": zd_result.to_dict(),
                 "tiktok": tt_result.to_dict(),
                 "meta_ads": meta_result.to_dict(),
             },
@@ -499,6 +567,7 @@ class DataIntegrationService:
         results = {"enriched": 0, "failed": 0, "sources": {}}
         source_counts = {"aliexpress": {"live": 0, "estimated": 0, "fallback": 0},
                          "cj_dropshipping": {"live": 0, "estimated": 0, "fallback": 0},
+                         "zendrop": {"live": 0, "estimated": 0, "fallback": 0},
                          "tiktok": {"live": 0, "estimated": 0, "fallback": 0},
                          "meta_ads": {"live": 0, "estimated": 0, "fallback": 0}}
 
