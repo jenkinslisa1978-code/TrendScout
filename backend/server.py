@@ -4997,11 +4997,9 @@ async def sitemap_xml(request: Request):
     Lists all public pages and trending product slugs.
     Cached for 30 minutes.
     """
-    # Derive base URL from forwarded headers (works behind reverse proxy)
-    proto = request.headers.get("x-forwarded-proto", "https")
-    host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
-    base_url = f"{proto}://{host}" if host else str(request.base_url).rstrip("/")
-    cache_key = f"sitemap_xml_{host}"
+    # Use production domain
+    base_url = "https://trendscout.click"
+    cache_key = "sitemap_xml"
     cached = _get_cached(cache_key)
     if cached:
         return Response(content=cached, media_type="application/xml")
@@ -5067,9 +5065,7 @@ async def sitemap_xml(request: Request):
 @app.get("/api/robots.txt", response_class=Response)
 async def robots_txt(request: Request):
     """Serve robots.txt pointing to sitemap."""
-    proto = request.headers.get("x-forwarded-proto", "https")
-    host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
-    base_url = f"{proto}://{host}" if host else str(request.base_url).rstrip("/")
+    base_url = "https://trendscout.click"
     content = (
         "User-agent: *\n"
         "Allow: /\n"
