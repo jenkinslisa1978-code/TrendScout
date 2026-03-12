@@ -35,6 +35,8 @@ import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 import FindWinningProductHero from '@/components/FindWinningProductHero';
 import ViewModeToggle from '@/components/ViewModeToggle';
 import DailyOpportunitiesPanel from '@/components/DailyOpportunitiesPanel';
+import PredictionAccuracyCard from '@/components/PredictionAccuracyCard';
+import OpportunityRadarFeed from '@/components/OpportunityRadarFeed';
 import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
@@ -175,6 +177,12 @@ export default function DashboardPage() {
 
         {/* Daily Opportunities */}
         <DailyOpportunitiesPanel />
+
+        {/* Prediction Accuracy + Opportunity Radar — side by side */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <PredictionAccuracyCard />
+          <OpportunityRadarFeed />
+        </div>
 
         {/* Section 1: Winning Products Today */}
         <Card className="border-0 shadow-lg overflow-hidden">

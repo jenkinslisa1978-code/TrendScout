@@ -7436,9 +7436,282 @@ async def get_outcome_stats(
     }
 
 
+# ═══════════════════════════════════════════════════════════════════
+# P0: Prediction Accuracy System
+# ═══════════════════════════════════════════════════════════════════
+
+@outcomes_router.get("/prediction-accuracy")
+async def get_prediction_accuracy(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Compare initial predictions (launch_score, success_probability) against
+    actual outcomes to measure how accurate TrendScout's AI is.
+    """
+    cursor = db.product_outcomes.find(
+        {"user_id": current_user.user_id, "outcome_status": {"$ne": "pending"}},
+        {"_id": 0},
+    )
+    resolved = await cursor.to_list(500)
+
+    if not resolved:
+        return {
+            "sample_size": 0,
+            "accuracy_pct": 0,
+            "successful_predictions": 0,
+            "failed_predictions": 0,
+            "score_buckets": [],
+            "insights": [],
+            "insufficient_data": True,
+        }
+
+    # A prediction is "correct" when:
+    #   high score (>=60) → outcome=success  OR  low score (<40) → outcome=failed
+    #   moderate score (40-59) → outcome=moderate
+    correct = 0
+    score_buckets = {"80+": {"total": 0, "success": 0}, "60-79": {"total": 0, "success": 0},
+                     "40-59": {"total": 0, "success": 0}, "<40": {"total": 0, "success": 0}}
+
+    for o in resolved:
+        score = o.get("launch_score_at_launch", 0)
+        status = o.get("outcome_status", "")
+
+        # Bucket the score
+        if score >= 80:
+            bucket = "80+"
+        elif score >= 60:
+            bucket = "60-79"
+        elif score >= 40:
+            bucket = "40-59"
+        else:
+            bucket = "<40"
+
+        score_buckets[bucket]["total"] += 1
+        if status == "success":
+            score_buckets[bucket]["success"] += 1
+
+        # Determine if prediction was correct
+        if score >= 60 and status == "success":
+            correct += 1
+        elif score >= 40 and score < 60 and status == "moderate":
+            correct += 1
+        elif score < 40 and status == "failed":
+            correct += 1
+
+    total = len(resolved)
+    accuracy = round(correct / max(total, 1) * 100, 1)
+    successes = sum(1 for o in resolved if o["outcome_status"] == "success")
+    failures = sum(1 for o in resolved if o["outcome_status"] == "failed")
+
+    # Generate insights
+    insights = []
+    for bucket_name, bucket_data in score_buckets.items():
+        if bucket_data["total"] >= 2:
+            rate = round(bucket_data["success"] / bucket_data["total"] * 100)
+            insights.append({
+                "text": f"Products with launch score {bucket_name} succeed {rate}% of the time.",
+                "bucket": bucket_name,
+                "success_rate": rate,
+                "sample": bucket_data["total"],
+            })
+
+    if total >= 3 and total < 10:
+        insights.append({"text": f"Based on {total} tracked products. Track more products for higher accuracy.", "bucket": "info", "success_rate": 0, "sample": total})
+
+    return {
+        "sample_size": total,
+        "accuracy_pct": accuracy,
+        "successful_predictions": correct,
+        "failed_predictions": total - correct,
+        "score_buckets": [
+            {"range": k, "total": v["total"], "success": v["success"],
+             "success_rate": round(v["success"] / max(v["total"], 1) * 100, 1)}
+            for k, v in score_buckets.items() if v["total"] > 0
+        ],
+        "insights": insights,
+        "insufficient_data": total < 3,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════
+# P1: Opportunity Radar — Live Signal Events
+# ═══════════════════════════════════════════════════════════════════
+radar_router = APIRouter(prefix="/api/radar")
+
+
+@radar_router.get("/live-events")
+async def get_live_radar_events(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    limit: int = 20,
+):
+    """
+    Live signal feed: trend spikes, new ads, supplier demand jumps,
+    competition drops. Designed to auto-refresh every 30s on the frontend.
+    """
+    events = []
+
+    # 1. Trend spikes — products with high trend_velocity
+    spike_cursor = db.products.find(
+        {"trend_velocity": {"$gt": 15}, "launch_score": {"$exists": True}},
+        {"_id": 0},
+    ).sort("trend_velocity", -1).limit(8)
+    spikes = await spike_cursor.to_list(8)
+    for p in spikes:
+        events.append({
+            "type": "trend_spike",
+            "icon": "trending-up",
+            "title": f"Trend spike: {p.get('product_name', '')[:50]}",
+            "detail": f"+{p.get('trend_velocity', 0):.0f}% trend velocity",
+            "product_id": p.get("id"),
+            "product_name": p.get("product_name", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage", "Stable"),
+            "timestamp": p.get("updated_at") or p.get("last_updated") or datetime.now(timezone.utc).isoformat(),
+        })
+
+    # 2. New ad activity — products with ad signals
+    ad_cursor = db.products.find(
+        {"ad_count": {"$gt": 5}, "launch_score": {"$exists": True}},
+        {"_id": 0},
+    ).sort("ad_count", -1).limit(6)
+    ads = await ad_cursor.to_list(6)
+    for p in ads:
+        events.append({
+            "type": "new_ads",
+            "icon": "megaphone",
+            "title": f"Ad activity: {p.get('product_name', '')[:50]}",
+            "detail": f"{p.get('ad_count', 0)} ads detected across platforms",
+            "product_id": p.get("id"),
+            "product_name": p.get("product_name", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage", "Stable"),
+            "timestamp": p.get("updated_at") or p.get("last_updated") or datetime.now(timezone.utc).isoformat(),
+        })
+
+    # 3. Supplier demand jumps — high order velocity
+    demand_cursor = db.products.find(
+        {"supplier_order_velocity": {"$gt": 20}, "launch_score": {"$exists": True}},
+        {"_id": 0},
+    ).sort("supplier_order_velocity", -1).limit(6)
+    demand = await demand_cursor.to_list(6)
+    for p in demand:
+        events.append({
+            "type": "supplier_demand",
+            "icon": "truck",
+            "title": f"Supplier demand: {p.get('product_name', '')[:50]}",
+            "detail": f"{p.get('supplier_order_velocity', 0)} orders/week velocity",
+            "product_id": p.get("id"),
+            "product_name": p.get("product_name", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage", "Stable"),
+            "timestamp": p.get("updated_at") or p.get("last_updated") or datetime.now(timezone.utc).isoformat(),
+        })
+
+    # 4. Competition drops — low competition products
+    comp_cursor = db.products.find(
+        {"competition_level": "low", "launch_score": {"$gte": 30}},
+        {"_id": 0},
+    ).sort("launch_score", -1).limit(6)
+    low_comp = await comp_cursor.to_list(6)
+    for p in low_comp:
+        events.append({
+            "type": "competition_drop",
+            "icon": "shield",
+            "title": f"Low competition: {p.get('product_name', '')[:50]}",
+            "detail": f"Competition: low | Launch score: {p.get('launch_score', 0)}",
+            "product_id": p.get("id"),
+            "product_name": p.get("product_name", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage", "Stable"),
+            "timestamp": p.get("updated_at") or p.get("last_updated") or datetime.now(timezone.utc).isoformat(),
+        })
+
+    # Sort by timestamp desc and deduplicate by product_id
+    seen = set()
+    unique_events = []
+    for e in sorted(events, key=lambda x: x.get("timestamp", ""), reverse=True):
+        pid = e.get("product_id")
+        if pid not in seen:
+            seen.add(pid)
+            unique_events.append(e)
+
+    return {
+        "events": unique_events[:limit],
+        "total": len(unique_events),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════
+# P2: Saturation Radar
+# ═══════════════════════════════════════════════════════════════════
+
+@api_router.get("/products/{product_id}/saturation")
+async def get_product_saturation(product_id: str):
+    """
+    Calculate saturation risk for a product based on stores, ads,
+    search growth, and trend stage.
+    """
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    stores_detected = product.get("active_competitor_stores", 0) or product.get("stores_created", 0) or 0
+    ads_detected = product.get("ad_count", 0) or 0
+    trend_stage = product.get("trend_stage", "Stable")
+    search_growth = product.get("search_growth_score", 0) or 0
+    trend_velocity = product.get("trend_velocity", 0) or 0
+
+    # Compute saturation score (0-100)
+    sat_score = 0
+    sat_score += min(stores_detected * 1.5, 30)       # up to 30 pts
+    sat_score += min(ads_detected * 1.0, 25)           # up to 25 pts
+    if trend_stage in ("Declining", "Stable"):
+        sat_score += 20
+    elif trend_stage == "Rising":
+        sat_score += 10
+    if search_growth < 20:
+        sat_score += 15
+    elif search_growth < 50:
+        sat_score += 5
+    if trend_velocity < 0:
+        sat_score += 10
+    sat_score = min(round(sat_score), 100)
+
+    if sat_score >= 65:
+        risk_level = "High"
+    elif sat_score >= 35:
+        risk_level = "Medium"
+    else:
+        risk_level = "Low"
+
+    search_label = "rising" if search_growth >= 50 else "moderate" if search_growth >= 20 else "declining"
+
+    return {
+        "product_id": product_id,
+        "saturation_score": sat_score,
+        "risk_level": risk_level,
+        "stores_detected": stores_detected,
+        "ads_detected": ads_detected,
+        "search_growth": search_label,
+        "trend_stage": trend_stage,
+        "signals": {
+            "stores": {"value": stores_detected, "label": f"{stores_detected} stores selling this product"},
+            "ads": {"value": ads_detected, "label": f"{ads_detected} active ads detected"},
+            "search": {"value": search_growth, "label": f"Search growth: {search_label}"},
+            "trend": {"value": trend_stage, "label": f"Trend stage: {trend_stage}"},
+        },
+    }
+
+
 # Include routers
 app.include_router(api_router)
 app.include_router(outcomes_router)
+app.include_router(radar_router)
 app.include_router(stripe_router)
 app.include_router(automation_router)
 app.include_router(ingestion_router)

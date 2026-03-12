@@ -39,6 +39,7 @@ import { LockedContent, UpgradeBadge } from '@/components/common/UpgradePrompts'
 import SupplierSection from '@/components/SupplierSection';
 import AdCreativeSection from '@/components/AdCreativeSection';
 import AdDiscoverySection from '@/components/AdDiscoverySection';
+import SaturationRadar from '@/components/SaturationRadar';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -544,6 +545,9 @@ export default function ProductDetailPage() {
 
         {/* Supplier Section */}
         <SupplierSection productId={id} productName={product.product_name} />
+
+        {/* Saturation Radar */}
+        <SaturationRadar productId={id} />
 
         {/* AI Ad Creatives */}
         <AdCreativeSection productId={id} />
