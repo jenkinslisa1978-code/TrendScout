@@ -156,6 +156,55 @@ class ScoringEngine:
             'success_probability': success_probability,
             
             'scores_updated_at': datetime.now(timezone.utc).isoformat(),
+            'scoring_metadata': self._build_scoring_metadata(product),
+        }
+    
+    def _build_scoring_metadata(self, product: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Build scoring_metadata.source_breakdown documenting which signals
+        are real, estimated, or fallback for this product.
+        """
+        ss = product.get("source_signals", {})
+        dc = product.get("data_confidence", "fallback")
+
+        def _signal_info(signal_key: str, field_key: str, fallback_label: str) -> Dict[str, Any]:
+            if signal_key in ss and isinstance(ss[signal_key], dict):
+                return {
+                    "confidence": ss[signal_key].get("confidence", "fallback"),
+                    "source": ss[signal_key].get("source", "unknown"),
+                    "updated": ss[signal_key].get("updated"),
+                }
+            # Check if field has a non-zero value from Amazon/Google (real)
+            val = product.get(field_key, 0)
+            if val and val != 0:
+                return {"confidence": "estimated", "source": fallback_label, "updated": product.get("scores_updated_at")}
+            return {"confidence": "fallback", "source": "none", "updated": None}
+
+        return {
+            "product_data_confidence": dc,
+            "source_breakdown": {
+                "trend": _signal_info("tiktok_trend", "tiktok_views", "amazon_bsr"),
+                "supplier_cost": _signal_info("supplier_cost", "supplier_cost", "amazon_scraper"),
+                "order_velocity": _signal_info("order_velocity", "orders_30d", "estimation"),
+                "ad_activity": _signal_info("ad_activity", "ad_count", "estimation"),
+                "meta_ads": _signal_info("meta_ads", "meta_active_ads", "estimation"),
+                "cj_supplier": _signal_info("cj_supplier", "cj_price", "estimation"),
+                "search_growth": {
+                    "confidence": "live" if product.get("trend_velocity") else "fallback",
+                    "source": "google_trends" if product.get("trend_velocity") else "none",
+                    "updated": product.get("scores_updated_at"),
+                },
+                "competition": {
+                    "confidence": "live" if product.get("amazon_reviews") else "estimated",
+                    "source": "amazon_scraper" if product.get("amazon_reviews") else "estimation",
+                    "updated": product.get("scores_updated_at"),
+                },
+                "margin": {
+                    "confidence": "live" if (product.get("supplier_cost", 0) > 0 and product.get("estimated_retail_price", 0) > 0) else "fallback",
+                    "source": "price_data" if product.get("supplier_cost", 0) > 0 else "none",
+                    "updated": product.get("scores_updated_at"),
+                },
+            },
         }
     
     def calculate_trend_score(self, product: Dict[str, Any]) -> tuple:
@@ -381,15 +430,17 @@ class ScoringEngine:
     def calculate_supplier_demand_score(self, product: Dict[str, Any]) -> tuple:
         """
         Calculate supplier demand score (0-100).
+        Uses real data from AliExpress/CJ when available, estimation otherwise.
         Returns (score, reasoning).
         """
         order_velocity = product.get('supplier_order_velocity', 0)
-        orders_30d = product.get('supplier_orders_30d', 0)
-        supplier_rating = product.get('supplier_rating', 0)
-        processing_days = product.get('supplier_processing_days', 0)
-        shipping_days = product.get('supplier_shipping_days', 0)
+        orders_30d = product.get('orders_30d', 0) or product.get('supplier_orders_30d', 0)
+        supplier_rating = product.get('ae_rating', 0) or product.get('supplier_rating', 0)
+        processing_days = product.get('ae_processing_days', 0) or product.get('cj_processing_days', 0) or product.get('supplier_processing_days', 0)
+        shipping_days = product.get('ae_shipping_days', 0) or product.get('cj_shipping_days', 0) or product.get('supplier_shipping_days', 0)
         supplier_cost = product.get('supplier_cost', 0)
-        
+        cj_availability = product.get('cj_availability', '')
+
         # If we have no supplier data at all, mark as unavailable
         has_data = any([order_velocity, orders_30d, supplier_rating, supplier_cost])
         if not has_data:

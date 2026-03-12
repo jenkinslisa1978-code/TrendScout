@@ -228,18 +228,62 @@ class CJDropshippingScraper(BaseScraper):
         return products
     
     def _normalize_json_product(self, item: Dict, source_type: str) -> Optional[Dict[str, Any]]:
-        """Normalize JSON product data"""
+        """Normalize JSON product data with full supplier intelligence fields."""
         try:
             # Extract price
             price = 0
-            for key in ['price', 'sellPrice', 'cost']:
+            for key in ['price', 'sellPrice', 'cost', 'salePrice']:
                 if key in item:
                     try:
                         price = float(item[key])
                         break
                     except (ValueError, TypeError, AttributeError):
                         continue
-            
+
+            # Extract variants
+            variants = []
+            for key in ['variants', 'skuList', 'skus']:
+                if key in item and isinstance(item[key], list):
+                    for v in item[key]:
+                        variants.append({
+                            'name': v.get('name', v.get('propName', '')),
+                            'price': float(v.get('price', v.get('sellPrice', price)) or price),
+                            'stock': v.get('stock', v.get('inventory', 0)),
+                        })
+                    break
+
+            # Shipping info
+            shipping_days = 10
+            for key in ['deliveryDays', 'shippingDays', 'logisticsDay']:
+                if key in item:
+                    try:
+                        shipping_days = int(item[key])
+                        break
+                    except (ValueError, TypeError):
+                        pass
+
+            processing_days = 2
+            for key in ['processingDays', 'packingDay', 'handleDay']:
+                if key in item:
+                    try:
+                        processing_days = int(item[key])
+                        break
+                    except (ValueError, TypeError):
+                        pass
+
+            # Stock / availability
+            stock = item.get('stock', item.get('inventory', item.get('availableStock', 0)))
+            try:
+                stock = int(stock)
+            except (ValueError, TypeError):
+                stock = 0
+            availability = 'in_stock' if stock > 0 else 'out_of_stock'
+            if stock == 0 and price > 0:
+                availability = 'check_supplier'
+
+            # Warehouse
+            warehouse = item.get('warehouse', item.get('warehouseCode', item.get('originCode', 'CN')))
+
             return {
                 'product_name': item.get('productName', item.get('name', '')),
                 'cj_product_id': str(item.get('productId', item.get('id', ''))),
@@ -252,7 +296,17 @@ class CJDropshippingScraper(BaseScraper):
                 'data_source_type': 'scraped',
                 'cj_source_type': source_type,
                 'is_real_data': True,
-                'last_updated': datetime.now(timezone.utc).isoformat()
+                'last_updated': datetime.now(timezone.utc).isoformat(),
+                # Full supplier intelligence fields
+                'cj_shipping_days': shipping_days,
+                'cj_processing_days': processing_days,
+                'cj_availability': availability,
+                'cj_stock': stock,
+                'cj_variants': variants,
+                'cj_variants_count': len(variants) if variants else 1,
+                'cj_warehouse': warehouse,
+                'cj_fulfillment_type': item.get('fulfillmentType', 'dropshipping'),
+                'cj_last_sync': datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             self.logger.debug(f"Failed to normalize CJ JSON product: {e}")
@@ -324,7 +378,16 @@ class CJDropshippingScraper(BaseScraper):
             'data_source_type': 'scraped',
             'cj_source_type': source_type,
             'is_real_data': True,
-            'last_updated': datetime.now(timezone.utc).isoformat()
+            'last_updated': datetime.now(timezone.utc).isoformat(),
+            # Supplier intelligence defaults (enriched by JSON if available)
+            'cj_shipping_days': 10,
+            'cj_processing_days': 2,
+            'cj_availability': 'in_stock' if price > 0 else 'check_supplier',
+            'cj_variants_count': 1,
+            'cj_variants': [],
+            'cj_warehouse': 'CN',
+            'cj_fulfillment_type': 'dropshipping',
+            'cj_last_sync': datetime.now(timezone.utc).isoformat(),
         }
     
     def _parse_price(self, price_text: str) -> float:

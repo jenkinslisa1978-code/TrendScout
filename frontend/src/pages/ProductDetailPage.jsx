@@ -68,6 +68,7 @@ import {
   DataIntegrityWarning,
   DataIntegritySummary 
 } from '@/components/data-integrity';
+import { SourceTrustBadge, SourceDot, FreshnessIndicator } from '@/components/SourceTrustBadge';
 import {
   ProductValidationCard,
   SuccessPredictionCard,
@@ -295,6 +296,12 @@ export default function ProductDetailPage() {
                   source={product.data_source} 
                   isSimulated={product.data_source === 'simulated'} 
                 />
+                {product.data_confidence && (
+                  <SourceTrustBadge confidence={product.data_confidence} />
+                )}
+                {product.enrichment_last_run && (
+                  <FreshnessIndicator timestamp={product.enrichment_last_run} />
+                )}
               </div>
             </div>
           </div>
@@ -531,17 +538,30 @@ export default function ProductDetailPage() {
               </div>
               
               {/* Data Transparency */}
-              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-400" data-testid="data-transparency">
-                <span className="flex items-center gap-1">
-                  <Activity className="h-3 w-3" />
-                  Sources: {(product.data_sources || [product.data_source || 'unknown']).join(', ')}
-                </span>
-                <span>Confidence: {product.confidence_score || 0}%</span>
-                {product.last_updated && (
-                  <span>Updated: {new Date(product.last_updated).toLocaleString()}</span>
-                )}
-                {product.is_real_data && (
-                  <Badge variant="outline" className="text-emerald-600 border-emerald-200 text-xs">Live Data</Badge>
+              <div className="mt-4 pt-4 border-t border-slate-100" data-testid="data-transparency">
+                <div className="flex flex-wrap gap-4 text-xs text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Activity className="h-3 w-3" />
+                    Sources: {(product.data_sources || [product.data_source || 'unknown']).join(', ')}
+                  </span>
+                  <span>Confidence: {product.confidence_score || 0}%</span>
+                  {product.last_updated && (
+                    <span>Updated: {new Date(product.last_updated).toLocaleString()}</span>
+                  )}
+                  {product.data_confidence && (
+                    <SourceTrustBadge confidence={product.data_confidence} size="xs" />
+                  )}
+                </div>
+                {/* Source breakdown per signal */}
+                {product.scoring_metadata?.source_breakdown && (
+                  <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                    {Object.entries(product.scoring_metadata.source_breakdown).map(([key, info]) => (
+                      <div key={key} className="flex items-center gap-1 text-[10px] bg-slate-50 rounded px-1.5 py-0.5">
+                        <SourceDot confidence={info.confidence} />
+                        <span className="text-slate-500 capitalize truncate">{key.replace(/_/g, ' ')}</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </CardContent>

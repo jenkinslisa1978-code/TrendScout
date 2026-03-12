@@ -39,6 +39,7 @@ import PredictionAccuracyCard from '@/components/PredictionAccuracyCard';
 import OpportunityRadarFeed from '@/components/OpportunityRadarFeed';
 import { DailyWinnersPanel, MarketRadar, OpportunityWatchlist, AlertsPanel } from '@/components/dashboard';
 import OptimizationDashboardWidget from '@/components/dashboard/OptimizationDashboardWidget';
+import { SourceDot } from '@/components/SourceTrustBadge';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -241,7 +242,10 @@ export default function DashboardPage() {
                           to={`/product/${product.id}`}
                           className="font-semibold text-slate-900 group-hover:text-amber-600 transition-colors truncate block"
                         >
-                          {product.product_name}
+                          <span className="inline-flex items-center gap-1.5">
+                            {product.product_name}
+                            <SourceDot confidence={product.data_confidence || 'fallback'} />
+                          </span>
                         </Link>
                         <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
                           <span>{product.category}</span>

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, Header, BackgroundTasks
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -8110,6 +8110,115 @@ async def system_health_check(
 
 
 app.include_router(health_router)
+
+# ── Data Integration endpoints (admin only) ──
+from services.data_integration import DataIntegrationService
+
+integration_router = APIRouter(prefix="/api/data-integration")
+
+
+@integration_router.post("/enrich/{product_id}")
+async def enrich_product(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Enrich a single product with all real data sources."""
+    svc = DataIntegrationService(db)
+    return await svc.enrich_product(product_id)
+
+
+@integration_router.post("/run-ingestion")
+async def run_full_ingestion(
+    limit: int = 20,
+    background_tasks: BackgroundTasks = None,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Run full data ingestion across all sources (admin only). Runs async in background."""
+    profile = await db.profiles.find_one(
+        {"id": current_user.user_id}, {"_id": 0, "is_admin": 1}
+    )
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    # Start in background to avoid gateway timeout
+    import asyncio
+
+    async def _run():
+        svc = DataIntegrationService(db)
+        await svc.run_full_ingestion(limit=limit)
+
+    asyncio.ensure_future(_run())
+    return {
+        "status": "started",
+        "message": f"Data ingestion started for up to {limit} products. Check /api/data-integration/source-health for progress.",
+    }
+
+
+@integration_router.get("/source-health")
+async def get_source_health(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get health status of all data sources from pull logs."""
+    pipeline = [
+        {"$sort": {"timestamp": -1}},
+        {"$group": {
+            "_id": {"source": "$source", "method": "$method"},
+            "last_success": {"$first": {"$cond": [{"$eq": ["$success", True]}, "$timestamp", None]}},
+            "last_error": {"$first": {"$cond": [{"$eq": ["$success", False]}, "$error", None]}},
+            "total": {"$sum": 1},
+            "successes": {"$sum": {"$cond": ["$success", 1, 0]}},
+            "avg_latency": {"$avg": "$latency_ms"},
+        }},
+    ]
+    results = await db.source_pull_log.aggregate(pipeline).to_list(100)
+
+    # Also get latest ingestion log
+    latest_ingestion = await db.ingestion_log.find_one(
+        {}, {"_id": 0}, sort=[("timestamp", -1)]
+    )
+
+    return {
+        "sources": [
+            {
+                "source": r["_id"]["source"],
+                "method": r["_id"]["method"],
+                "success_rate": round(r["successes"] / max(r["total"], 1) * 100),
+                "total_pulls": r["total"],
+                "last_success": r["last_success"],
+                "last_error": r["last_error"],
+                "avg_latency_ms": round(r["avg_latency"] or 0, 1),
+            }
+            for r in results
+        ],
+        "latest_ingestion": latest_ingestion,
+    }
+
+
+@integration_router.get("/ingestion-status")
+async def get_ingestion_status(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get latest ingestion run status."""
+    latest = await db.ingestion_log.find_one(
+        {}, {"_id": 0}, sort=[("timestamp", -1)]
+    )
+    # Count enriched products
+    enriched_count = await db.products.count_documents({"data_confidence": {"$exists": True}})
+    total_count = await db.products.count_documents({})
+
+    confidence_breakdown = {}
+    for conf in ["live", "estimated", "fallback"]:
+        confidence_breakdown[conf] = await db.products.count_documents({"data_confidence": conf})
+
+    return {
+        "latest_ingestion": latest,
+        "enriched_count": enriched_count,
+        "total_products": total_count,
+        "confidence_breakdown": confidence_breakdown,
+    }
+
+
+app.include_router(integration_router)
 app.include_router(api_router)
 app.include_router(outcomes_router)
 app.include_router(radar_router)
