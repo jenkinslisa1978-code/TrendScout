@@ -5050,7 +5050,17 @@ async def sitemap_xml():
         + "\n</urlset>"
     )
 
-    return Response(content=xml, media_type="application/xml", headers={"Cache-Control": "no-cache, max-age=0"})
+    return Response(
+        content=xml,
+        media_type="application/xml",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+            "CDN-Cache-Control": "no-store",
+            "Cloudflare-CDN-Cache-Control": "no-store",
+        },
+    )
 
 
 @app.get("/api/robots.txt", response_class=Response)
