@@ -55,6 +55,8 @@ export default function NotificationSettingsPage() {
     quiet_hours_start: '22:00',
     quiet_hours_end: '08:00',
     watchlist_priority_enabled: true,
+    weekly_digest: true,
+    product_of_the_week: true,
     notification_types: {
       strong_launch: true,
       exploding_trend: true,
@@ -251,6 +253,60 @@ export default function NotificationSettingsPage() {
                 checked={preferences.in_app_enabled}
                 onCheckedChange={(checked) => updatePreference('in_app_enabled', checked)}
                 data-testid="in-app-enabled-switch"
+              />
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Weekly Email Digest */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Mail className="h-5 w-5 text-indigo-500" />
+              Weekly Email Reports
+            </CardTitle>
+            <CardDescription>
+              Automated email reports delivered to your inbox every Monday
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-indigo-50">
+                  <TrendingUp className="h-5 w-5 text-indigo-500" />
+                </div>
+                <div>
+                  <Label className="text-base font-medium">Weekly Winning Products Digest</Label>
+                  <p className="text-sm text-slate-500">
+                    Top 5 trending products, market stats, and launch opportunities every Monday
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={preferences.weekly_digest}
+                onCheckedChange={(checked) => updatePreference('weekly_digest', checked)}
+                data-testid="weekly-digest-switch"
+              />
+            </div>
+            
+            <Separator />
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-50">
+                  <Star className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <Label className="text-base font-medium">Product of the Week</Label>
+                  <p className="text-sm text-slate-500">
+                    Featured deep-dive on the highest-scoring product each week
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={preferences.product_of_the_week}
+                onCheckedChange={(checked) => updatePreference('product_of_the_week', checked)}
+                data-testid="product-of-week-switch"
               />
             </div>
           </CardContent>

@@ -1,68 +1,73 @@
-// Helper to get saved products from localStorage
-const getDemoSavedProducts = () => {
-  try {
-    const saved = localStorage.getItem('trendscout_saved_products');
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-};
+import api from '@/lib/api';
 
-// Helper to set saved products in localStorage for demo mode
-const setDemoSavedProducts = (products) => {
+// Get user's saved workspace products
+export const getSavedProducts = async (userId, status = null) => {
   try {
-    localStorage.setItem('trendscout_saved_products', JSON.stringify(products));
-  } catch {
-    // Ignore localStorage errors
+    const params = status ? `?status=${status}` : '';
+    const response = await api.get(`/api/workspace/products${params}`);
+    return { data: response.data.items || [], error: null };
+  } catch (error) {
+    console.error('Failed to fetch workspace products:', error);
+    return { data: [], error: error.message };
   }
-};
-
-// Get user's saved products
-export const getSavedProducts = async (userId) => {
-  return { data: getDemoSavedProducts(), error: null };
 };
 
 // Check if product is saved
 export const isProductSaved = async (userId, productId) => {
-  const savedProducts = getDemoSavedProducts();
-  return { 
-    data: savedProducts.some(sp => sp.product_id === productId), 
-    error: null 
-  };
+  try {
+    const response = await api.get(`/api/workspace/products/${productId}/check`);
+    return { data: response.data.saved, item: response.data.item, error: null };
+  } catch {
+    return { data: false, item: null, error: null };
+  }
 };
 
 // Save a product
 export const saveProduct = async (userId, productId, productData = null) => {
-  const savedProducts = getDemoSavedProducts();
-  const existing = savedProducts.find(sp => sp.product_id === productId);
-  if (!existing) {
-    savedProducts.push({
-      id: String(Date.now()),
-      user_id: userId,
-      product_id: productId,
-      products: productData,
-      created_at: new Date().toISOString()
-    });
-    setDemoSavedProducts(savedProducts);
+  try {
+    await api.post('/api/workspace/products', { product_id: productId });
+    return { error: null };
+  } catch (error) {
+    return { error: error.message };
   }
-  return { error: null };
 };
 
 // Unsave a product
 export const unsaveProduct = async (userId, productId) => {
-  const savedProducts = getDemoSavedProducts();
-  const filtered = savedProducts.filter(sp => sp.product_id !== productId);
-  setDemoSavedProducts(filtered);
-  return { error: null };
+  try {
+    await api.delete(`/api/workspace/products/${productId}`);
+    return { error: null };
+  } catch (error) {
+    return { error: error.message };
+  }
 };
 
 // Toggle save status
 export const toggleSaveProduct = async (userId, productId, productData = null) => {
   const { data: isSaved } = await isProductSaved(userId, productId);
-  
   if (isSaved) {
     return unsaveProduct(userId, productId);
   } else {
     return saveProduct(userId, productId, productData);
+  }
+};
+
+// Update note for a saved product
+export const updateProductNote = async (productId, note) => {
+  try {
+    await api.put(`/api/workspace/products/${productId}/note`, { note });
+    return { error: null };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
+
+// Update launch status for a saved product
+export const updateProductStatus = async (productId, launchStatus) => {
+  try {
+    await api.put(`/api/workspace/products/${productId}/status`, { launch_status: launchStatus });
+    return { error: null };
+  } catch (error) {
+    return { error: error.message };
   }
 };

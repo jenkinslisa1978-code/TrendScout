@@ -948,14 +948,14 @@ async def send_weekly_email_digest(db, params: Dict[str, Any] = None) -> Dict[st
         }
     
     # Get all users subscribed to weekly digest
-    subscribed_users = await db.users.find(
+    subscribed_users = await db.profiles.find(
         {"email_preferences.weekly_digest": True},
         {"_id": 0, "email": 1, "name": 1}
     ).to_list(None)
     
     # If no explicit subscribers, get users with verified emails (limit for safety)
     if not subscribed_users:
-        subscribed_users = await db.users.find(
+        subscribed_users = await db.profiles.find(
             {"email": {"$exists": True, "$ne": None}},
             {"_id": 0, "email": 1, "name": 1}
         ).to_list(100)
