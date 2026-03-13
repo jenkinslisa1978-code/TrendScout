@@ -37,10 +37,20 @@
 - **AI SEO Blog**: /blog — Auto-generated weekly articles by product category using GPT-5.2, /blog/:slug with structured data
 
 ### Monetisation
+- **3-Tier Pricing**: Starter £19/mo, Growth £49/mo (recommended), Pro £99/mo
+- **Conversion messaging**: "One winning product can generate £10,000+ revenue"
+- **7-day free trial, cancel anytime** on all paid plans
+- **Feature comparison table** on dedicated /pricing page
 - **Freemium Gating**: Supplier & Ad sections locked for free users, UpgradeModal
 - **Daily Insight Limits**: Free=2/day, Starter=5, Pro=unlimited
 - **Competitor Tracking Limits**: Free=2, Starter=5, Pro=15, Elite=unlimited
 - **Threshold Alert Subscriptions**: User-defined score alerts with email/in-app delivery
+
+### Conversion & UX
+- **Landing Page**: Hero ("Discover Winning Ecommerce Products Before They Go Viral"), social proof stats bar, How It Works (3 steps), live trending products, testimonials, final CTA
+- **Signup Flow**: "Start Free Product Discovery" — email + password → instant dashboard access, no credit card required
+- **Dashboard Onboarding Checklist**: 4-step guide (Browse, Analyse, Generate Ads, Save), progress bar, dismissible
+- **Platform Stats API**: /api/public/platform-stats — dynamic counts for social proof
 
 ### Scheduled Tasks (19 total)
 - weekly_competitor_scan (Monday 6AM)
@@ -83,6 +93,12 @@
 | GET/PUT /api/notifications/threshold-subscription | Yes | Alert settings |
 
 ## Upcoming Tasks
+- **Phase 2: Admin & Data Quality Tools**
+  - Admin Image Review Dashboard (/admin/image-review) with queue, bulk actions, QA metrics
+  - Image Validation Pipeline with confidence scoring, candidate ranking, placeholder fallback
+- **Phase 3: Analytics & Performance**
+  - Event analytics tracking (landing visits, signups, product views, upgrade clicks, funnel)
+  - Performance optimizations (caching, compression, load time targets)
 - Chrome Extension — "TrendScout – Product & Store Analyzer" (deferred)
 - Backend modularization — extract routes from server.py
 
@@ -104,3 +120,4 @@ notifications, profiles, subscriptions, stores, product_outcomes, blog_posts, wo
 - iteration_52: Growth upgrade (leaderboard, ad generator, images, SEO) — 100% (15/15 + all frontend)
 - iteration_53: AI SEO Blog System — 100% (12/12 backend + all frontend verified)
 - iteration_54: Workspace + Email Subscription — 100% (25/25 backend + all frontend verified)
+- iteration_55: Phase 1 Conversion Optimization — 100% (15/15 backend + all frontend verified)
