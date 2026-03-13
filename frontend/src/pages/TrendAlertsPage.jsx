@@ -90,19 +90,24 @@ const ALERT_TYPE_CONFIG = {
 
 const PRIORITY_CONFIG = {
   critical: {
-    color: 'border-red-200 bg-red-50',
-    badge: 'bg-red-100 text-red-700 border-red-200',
-    label: 'Critical',
+    color: 'border-emerald-200 bg-emerald-50',
+    badge: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    label: 'Top Pick',
   },
   high: {
     color: 'border-amber-200 bg-amber-50/50',
     badge: 'bg-amber-100 text-amber-700 border-amber-200',
-    label: 'High',
+    label: 'Recommended',
   },
   medium: {
     color: 'border-slate-200 bg-white',
     badge: 'bg-slate-100 text-slate-600 border-slate-200',
-    label: 'Medium',
+    label: 'Worth a Look',
+  },
+  low: {
+    color: 'border-slate-200 bg-white',
+    badge: 'bg-slate-100 text-slate-500 border-slate-200',
+    label: 'Keep an Eye On',
   },
 };
 
@@ -154,8 +159,8 @@ export default function TrendAlertsPage() {
   const filteredAlerts = alerts.filter(alert => {
     if (alert.dismissed) return false;
     if (filter === 'unread') return !alert.read;
-    if (filter === 'critical') return alert.priority === 'critical';
-    if (filter === 'high') return alert.priority === 'high';
+    if (filter === 'critical') return (alert.severity || alert.priority) === 'critical' || (alert.severity || alert.priority) === 'high';
+    if (filter === 'high') return (alert.severity || alert.priority) === 'high';
     return true;
   });
 

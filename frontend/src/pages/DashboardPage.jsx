@@ -46,6 +46,7 @@ import { SourceDot } from '@/components/SourceTrustBadge';
 import ShareableProductCard from '@/components/ShareableProductCard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import DailyUsageBanner from '@/components/dashboard/DailyUsageBanner';
+import QuickLaunchFlow from '@/components/dashboard/QuickLaunchFlow';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 
 export default function DashboardPage() {
@@ -151,6 +152,9 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8 max-w-7xl mx-auto" data-testid="dashboard">
+        {/* Quick Launch — 3-Click Flow for Beginners */}
+        <QuickLaunchFlow />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -175,9 +179,6 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
-
-        {/* Onboarding Checklist for New Users */}
-        <OnboardingChecklist />
 
         {/* While You Were Away */}
         <WhileYouWereAway />

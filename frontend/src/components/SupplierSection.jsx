@@ -187,12 +187,6 @@ export default function SupplierSection({ productId, productName }) {
                         {selecting === supplier.id ? 'Selecting...' : 'Select Supplier'}
                       </Button>
                     )}
-                    <a href={supplier.supplier_url} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm" className="text-xs" data-testid={`view-supplier-${supplier.source}`}>
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Search on {supplier.source === 'aliexpress' ? 'AliExpress' : 'CJ'}
-                      </Button>
-                    </a>
                   </div>
                 </div>
               </div>
