@@ -236,7 +236,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SIGNALS ── */}
-      <section className="py-24 bg-gradient-to-b from-slate-50/80 to-white">
+      <section id="features" className="py-24 bg-gradient-to-b from-slate-50/80 to-white">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
