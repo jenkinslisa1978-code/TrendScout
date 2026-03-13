@@ -23,6 +23,7 @@ import {
   Brain,
   Radar,
   ShoppingBag,
+  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ const navigation = [
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'My Stores', href: '/stores', icon: Store },
   { name: 'Competitors', href: '/competitor-tracker', icon: Radar },
+  { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
   { name: 'Outcomes', href: '/outcomes', icon: Target },
   { name: 'Ad Tests', href: '/ad-tests', icon: Zap },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },

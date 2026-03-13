@@ -8648,6 +8648,124 @@ async def get_launch_simulation(
     return simulate_launch(product, history)
 
 
+@ad_test_router.get("/ai-simulate/{product_id}")
+async def get_ai_launch_simulation(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """AI-powered product launch simulation using GPT 5.2."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Get base simulation data
+    cursor = db.product_outcomes.find(
+        {"user_id": current_user.user_id, "outcome_status": {"$ne": "pending"}},
+        {"_id": 0},
+    )
+    history = await cursor.to_list(100)
+    base_sim = simulate_launch(product, history)
+
+    # Build AI prompt
+    sim = base_sim["simulation"]
+    product_context = f"""Product: {product.get('product_name', 'Unknown')}
+Category: {product.get('category', 'Unknown')}
+Launch Score: {product.get('launch_score', 0)}/100
+Trend Stage: {product.get('trend_stage', 'Unknown')}
+Competition Level: {product.get('competition_level', 'Unknown')}
+TikTok Views: {product.get('tiktok_views', 0):,}
+Google Trend Score: {product.get('google_trend_score', 0)}
+Supplier Cost: £{product.get('supplier_cost', 0):.2f}
+Retail Price: £{product.get('estimated_retail_price', 0):.2f}
+Estimated CVR: {sim['estimated_cvr']}%
+Estimated CPC: £{sim['estimated_cpc']}
+Estimated Daily Sales: {sim['daily_sales_range']['low']}-{sim['daily_sales_range']['high']}
+Profit Per Sale: £{sim['profit_per_sale']}
+Potential Rating: {base_sim['potential']}
+Risks: {', '.join(base_sim['risks']) if base_sim['risks'] else 'None identified'}"""
+
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not llm_key:
+            raise HTTPException(status_code=500, detail="LLM key not configured")
+
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"launch-sim-{product_id}-{current_user.user_id}",
+            system_message="""You are TrendScout's AI Launch Strategist. You analyze product data and provide actionable launch strategies for ecommerce entrepreneurs. Be specific, data-driven, and practical. Use British pounds (£) for currency. Keep your response concise but insightful."""
+        ).with_model("openai", "gpt-5.2")
+
+        prompt = f"""Analyze this product and provide a launch strategy:
+
+{product_context}
+
+Respond in this exact JSON format (no markdown, just raw JSON):
+{{
+  "verdict": "one sentence verdict on launch viability",
+  "confidence_score": 75,
+  "strategy": {{
+    "phase_1": {{
+      "name": "Testing Phase",
+      "duration": "Days 1-3",
+      "daily_budget": 15,
+      "actions": ["action 1", "action 2", "action 3"],
+      "success_criteria": "what to look for"
+    }},
+    "phase_2": {{
+      "name": "Scaling Phase",
+      "duration": "Days 4-10",
+      "daily_budget": 50,
+      "actions": ["action 1", "action 2"],
+      "success_criteria": "what to look for"
+    }},
+    "phase_3": {{
+      "name": "Optimization Phase",
+      "duration": "Days 11-30",
+      "daily_budget": 100,
+      "actions": ["action 1", "action 2"],
+      "success_criteria": "what to look for"
+    }}
+  }},
+  "target_audience": {{
+    "primary": "description of primary audience",
+    "secondary": "description of secondary audience",
+    "platforms": ["platform1", "platform2"]
+  }},
+  "revenue_projection": {{
+    "month_1": {{ "revenue": 500, "profit": 150, "orders": 30 }},
+    "month_3": {{ "revenue": 2000, "profit": 800, "orders": 100 }},
+    "month_6": {{ "revenue": 5000, "profit": 2500, "orders": 250 }}
+  }},
+  "risk_assessment": ["risk 1 with mitigation", "risk 2 with mitigation"],
+  "competitive_edge": "how to differentiate from competitors",
+  "creative_angles": ["ad angle 1", "ad angle 2", "ad angle 3"]
+}}"""
+
+        response = await chat.send_message(UserMessage(text=prompt))
+
+        # Parse AI response
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', response)
+        if json_match:
+            ai_analysis = json.loads(json_match.group())
+        else:
+            ai_analysis = {"verdict": response[:200], "error": "Could not parse structured response"}
+
+    except json.JSONDecodeError:
+        ai_analysis = {"verdict": "AI analysis generated but could not be parsed. Using base simulation.", "error": "parse_error"}
+    except Exception as e:
+        logging.error(f"AI simulation error: {e}")
+        ai_analysis = {"verdict": base_sim["potential_description"], "error": str(e)[:100]}
+
+    return {
+        **base_sim,
+        "ai_analysis": ai_analysis,
+        "ai_powered": True,
+    }
+
+
+
 # ═══════════════════════════════════════════════════════════════════
 # Smart Budget Optimizer
 # ═══════════════════════════════════════════════════════════════════
@@ -9345,6 +9463,97 @@ async def _scan_shopify_store(domain: str) -> dict:
             "avg": round(sum(prices) / len(prices), 2) if prices else 0,
         },
     }
+
+
+
+@tools_router.get("/tiktok-intelligence")
+async def get_tiktok_intelligence():
+    """
+    TikTok Ad Intelligence dashboard data.
+    Aggregates TikTok-related product data from the database.
+    Public endpoint - cached for 30 minutes.
+    """
+    cached = _get_cached("tiktok_intelligence")
+    if cached:
+        return cached
+
+    # Get products with TikTok data, sorted by views
+    products = await db.products.find(
+        {"tiktok_views": {"$gt": 0}},
+        {"_id": 0}
+    ).sort("tiktok_views", -1).limit(30).to_list(30)
+
+    # Build category performance from TikTok data
+    category_perf = {}
+    for p in products:
+        cat = p.get("category", "Other")
+        if cat not in category_perf:
+            category_perf[cat] = {"views": 0, "products": 0, "total_score": 0, "trend_stages": []}
+        category_perf[cat]["views"] += p.get("tiktok_views", 0)
+        category_perf[cat]["products"] += 1
+        category_perf[cat]["total_score"] += p.get("launch_score", 0)
+        ts = p.get("trend_stage") or p.get("early_trend_label")
+        if ts:
+            category_perf[cat]["trend_stages"].append(ts)
+
+    categories = sorted([
+        {
+            "name": k,
+            "total_views": v["views"],
+            "product_count": v["products"],
+            "avg_score": round(v["total_score"] / v["products"]) if v["products"] > 0 else 0,
+            "dominant_stage": max(set(v["trend_stages"]), key=v["trend_stages"].count) if v["trend_stages"] else "Unknown",
+        }
+        for k, v in category_perf.items()
+    ], key=lambda c: c["total_views"], reverse=True)
+
+    # Top viral products
+    viral = []
+    for p in products[:10]:
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        viral.append({
+            "id": p.get("id"),
+            "slug": _slugify(p.get("product_name", "")),
+            "product_name": p.get("product_name", "Unknown"),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "tiktok_views": p.get("tiktok_views", 0),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage") or p.get("early_trend_label", "Unknown"),
+            "margin_percent": margin_pct,
+            "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
+            "google_trend_score": p.get("google_trend_score", 0),
+        })
+
+    # Trending hashtags / pattern insights
+    trending_patterns = [
+        {"pattern": "TikTok Made Me Buy It", "relevance": "high", "description": "Products trending through viral TikTok reviews and unboxings"},
+        {"pattern": "Oddly Satisfying", "relevance": "high", "description": "Products with satisfying visual demonstrations that get high engagement"},
+        {"pattern": "Life Hack Products", "relevance": "medium", "description": "Problem-solving gadgets that simplify daily tasks"},
+        {"pattern": "Before/After", "relevance": "medium", "description": "Transformation products (skincare, cleaning, organization) with visual results"},
+        {"pattern": "Dupes & Alternatives", "relevance": "medium", "description": "Affordable alternatives to luxury or popular products"},
+    ]
+
+    # Summary stats
+    total_views = sum(p.get("tiktok_views", 0) for p in products)
+    avg_score = round(sum(p.get("launch_score", 0) for p in products) / len(products)) if products else 0
+
+    result = {
+        "viral_products": viral,
+        "categories": categories[:8],
+        "trending_patterns": trending_patterns,
+        "stats": {
+            "total_tiktok_views": total_views,
+            "products_tracked": len(products),
+            "avg_launch_score": avg_score,
+            "top_category": categories[0]["name"] if categories else "N/A",
+        },
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _set_cached("tiktok_intelligence", result)
+    return result
 
 
 app.include_router(tools_router)

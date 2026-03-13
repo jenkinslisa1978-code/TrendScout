@@ -502,6 +502,112 @@ async def scan_threshold_subscriptions(db, params: Dict[str, Any]) -> Dict[str, 
     }
 
 
+
+@TaskRegistry.register(
+    name="weekly_competitor_scan",
+    description="Re-scan all tracked competitor stores and notify users of changes",
+    default_schedule="0 6 * * 1"  # Every Monday at 6 AM
+)
+async def weekly_competitor_scan(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Weekly scan of all tracked competitor stores.
+    Detects product additions/removals and creates notifications.
+    """
+    import aiohttp
+    from services.notification_service import create_notification_service, NotificationType
+
+    stores = await db.competitor_stores.find({}, {"_id": 0}).to_list(500)
+    if not stores:
+        return {"records_processed": 0, "details": {"stores": 0}}
+
+    ns = create_notification_service(db)
+    scanned = 0
+    changes = 0
+
+    for store in stores:
+        domain = store.get("domain")
+        if not domain:
+            continue
+
+        try:
+            url = f"https://{domain}/products.json?limit=250"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url,
+                    timeout=aiohttp.ClientTimeout(total=15),
+                    headers={"User-Agent": "TrendScout/1.0"}
+                ) as resp:
+                    if resp.status != 200:
+                        continue
+                    data = await resp.json()
+
+            raw = data.get("products", [])
+            new_count = len(raw)
+            prev_count = store.get("product_count", 0)
+            change = new_count - prev_count
+
+            prices = []
+            cats = {}
+            for p in raw:
+                for v in p.get("variants", []):
+                    try:
+                        prices.append(float(v.get("price", 0)))
+                    except (ValueError, TypeError):
+                        pass
+                pt = (p.get("product_type") or "").strip() or "Uncategorized"
+                cats[pt] = cats.get(pt, 0) + 1
+
+            scan_entry = {
+                "date": datetime.now(timezone.utc).isoformat(),
+                "product_count": new_count,
+                "change": change,
+            }
+
+            await db.competitor_stores.update_one(
+                {"id": store["id"]},
+                {"$set": {
+                    "product_count": new_count,
+                    "categories": sorted([{"name": k, "count": v} for k, v in cats.items()], key=lambda c: c["count"], reverse=True)[:5],
+                    "price_range": {
+                        "min": round(min(prices), 2) if prices else 0,
+                        "max": round(max(prices), 2) if prices else 0,
+                        "avg": round(sum(prices) / len(prices), 2) if prices else 0,
+                    },
+                    "last_scan_at": datetime.now(timezone.utc).isoformat(),
+                    "product_change": change,
+                }, "$push": {
+                    "scan_history": {"$each": [scan_entry], "$slice": -30}
+                }}
+            )
+
+            scanned += 1
+
+            # Notify user if significant change
+            if abs(change) >= 3:
+                changes += 1
+                try:
+                    await ns.create_notification(
+                        user_id=store["user_id"],
+                        notification_type=NotificationType.SCORE_MILESTONE,
+                        product={
+                            "product_name": f"Competitor: {store.get('name', domain)}",
+                            "launch_score": 0,
+                            "category": f"{'+'if change>0 else ''}{change} products",
+                        },
+                    )
+                except Exception:
+                    pass
+
+        except Exception as e:
+            logging.warning(f"Weekly scan failed for {domain}: {e}")
+            continue
+
+    return {
+        "records_processed": scanned,
+        "details": {"stores_scanned": scanned, "stores_with_changes": changes, "total_stores": len(stores)},
+    }
+
+
 @TaskRegistry.register(
     name="full_pipeline",
     description="Run complete data pipeline (all sources + scoring + alerts)",

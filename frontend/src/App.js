@@ -48,6 +48,7 @@ import SystemHealthDashboard from "@/pages/SystemHealthDashboard";
 import IntegrationStatusPage from "@/pages/IntegrationStatusPage";
 import ShopifyAnalyzerPage from "@/pages/ShopifyAnalyzerPage";
 import CompetitorTrackerPage from "@/pages/CompetitorTrackerPage";
+import TikTokIntelligencePage from "@/pages/TikTokIntelligencePage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -217,6 +218,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CompetitorTrackerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tiktok-intelligence"
+        element={
+          <ProtectedRoute>
+            <TikTokIntelligencePage />
           </ProtectedRoute>
         }
       />
