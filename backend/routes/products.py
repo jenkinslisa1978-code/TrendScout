@@ -904,4 +904,88 @@ async def get_scoring_methodology():
     }
 
 
+class ProfitCalcRequest(BaseModel):
+    product_id: str
+    daily_ad_budget: float = 10.0  # GBP
+    conversion_rate: float = 2.0   # percent
+    avg_cpc: float = 0.50          # GBP
+    days: int = 30
+
+
+@api_router.post("/profitability-calculator")
+async def calculate_profitability(req: ProfitCalcRequest):
+    """
+    Estimate ROI for a product based on ad budget and conversion assumptions.
+    Returns projected revenue, profit, and break-even analysis.
+    """
+    product = await db.products.find_one({"id": req.product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    retail_price = float(product.get("estimated_retail_price", 0))
+    supplier_cost = float(product.get("supplier_cost", 0))
+    margin_per_sale = retail_price - supplier_cost
+
+    daily_clicks = req.daily_ad_budget / req.avg_cpc if req.avg_cpc > 0 else 0
+    daily_sales = daily_clicks * (req.conversion_rate / 100)
+    daily_revenue = daily_sales * retail_price
+    daily_profit = (daily_sales * margin_per_sale) - req.daily_ad_budget
+
+    total_ad_spend = req.daily_ad_budget * req.days
+    total_revenue = daily_revenue * req.days
+    total_profit = daily_profit * req.days
+    total_sales = int(daily_sales * req.days)
+    roi_percent = ((total_profit / total_ad_spend) * 100) if total_ad_spend > 0 else 0
+
+    # Break-even
+    cost_per_acquisition = req.daily_ad_budget / daily_sales if daily_sales > 0 else 0
+    break_even_daily_sales = req.daily_ad_budget / margin_per_sale if margin_per_sale > 0 else 0
+    break_even_conversion = (break_even_daily_sales / daily_clicks * 100) if daily_clicks > 0 else 0
+
+    # Verdict
+    if roi_percent > 100:
+        verdict = "Strong opportunity — projected ROI is excellent"
+        verdict_color = "green"
+    elif roi_percent > 0:
+        verdict = "Profitable but tight margins — optimise ads carefully"
+        verdict_color = "amber"
+    else:
+        verdict = "Not profitable at current assumptions — lower CPC or increase conversion rate"
+        verdict_color = "red"
+
+    return {
+        "product_name": product.get("product_name"),
+        "inputs": {
+            "daily_ad_budget": req.daily_ad_budget,
+            "conversion_rate": req.conversion_rate,
+            "avg_cpc": req.avg_cpc,
+            "days": req.days,
+        },
+        "product_economics": {
+            "retail_price": round(retail_price, 2),
+            "supplier_cost": round(supplier_cost, 2),
+            "margin_per_sale": round(margin_per_sale, 2),
+            "margin_percent": round((margin_per_sale / retail_price * 100) if retail_price > 0 else 0, 1),
+        },
+        "projections": {
+            "daily_clicks": round(daily_clicks, 1),
+            "daily_sales": round(daily_sales, 2),
+            "daily_revenue": round(daily_revenue, 2),
+            "daily_profit": round(daily_profit, 2),
+            "total_ad_spend": round(total_ad_spend, 2),
+            "total_revenue": round(total_revenue, 2),
+            "total_profit": round(total_profit, 2),
+            "total_sales": total_sales,
+            "roi_percent": round(roi_percent, 1),
+        },
+        "break_even": {
+            "cost_per_acquisition": round(cost_per_acquisition, 2),
+            "break_even_daily_sales": round(break_even_daily_sales, 2),
+            "break_even_conversion_rate": round(break_even_conversion, 2),
+        },
+        "verdict": verdict,
+        "verdict_color": verdict_color,
+    }
+
+
 routers = [api_router]

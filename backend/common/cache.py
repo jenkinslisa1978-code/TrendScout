@@ -1,22 +1,17 @@
 """
 Cache utilities and common text helpers.
+Uses Redis-backed cache with in-memory fallback.
 """
 import re
-import time as _time
-
-_public_cache = {}
-_CACHE_TTL = 300  # 5 minutes
+from common.redis_cache import cache_get as _redis_get, cache_set as _redis_set
 
 
 def get_cached(key):
-    entry = _public_cache.get(key)
-    if entry and (_time.time() - entry["ts"]) < _CACHE_TTL:
-        return entry["data"]
-    return None
+    return _redis_get(key)
 
 
-def set_cached(key, data):
-    _public_cache[key] = {"data": data, "ts": _time.time()}
+def set_cached(key, data, ttl=300):
+    _redis_set(key, data, ttl)
 
 
 def slugify(text: str) -> str:

@@ -59,6 +59,7 @@ import TrendTimeline from '@/components/TrendTimeline';
 import ProductProfitCalculator from '@/components/ProductProfitCalculator';
 import ShareableProductCard from '@/components/ShareableProductCard';
 import ScoringMethodology from '@/components/ScoringMethodology';
+import ProfitabilityCalculator from '@/components/ProfitabilityCalculator';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -618,6 +619,9 @@ export default function ProductDetailPage() {
 
         {/* How Our Scores Work — Transparency */}
         <ScoringMethodology />
+
+        {/* Profitability Calculator */}
+        <ProfitabilityCalculator productId={id} productName={product?.product_name} />
 
         {/* Saturation Radar + Competitor Intelligence — side by side */}
         <div className="grid lg:grid-cols-2 gap-6">

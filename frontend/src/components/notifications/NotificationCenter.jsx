@@ -190,13 +190,53 @@ export default function NotificationCenter() {
     }
   }, [user, fetchNotifications]);
   
-  // Poll for unread count every 30 seconds
+  // Poll for unread count every 30 seconds (fallback if SSE disconnects)
   useEffect(() => {
     if (user) {
       pollInterval.current = setInterval(fetchUnreadCount, 30000);
       return () => clearInterval(pollInterval.current);
     }
   }, [user, fetchUnreadCount]);
+
+  // SSE real-time listener
+  useEffect(() => {
+    if (!user) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    let eventSource;
+    try {
+      eventSource = new EventSource(
+        `${process.env.REACT_APP_BACKEND_URL}/api/notifications/stream?token=${token}`
+      );
+
+      eventSource.addEventListener('notification', (e) => {
+        try {
+          const notif = JSON.parse(e.data);
+          setNotifications((prev) => [notif, ...prev].slice(0, 20));
+          setUnreadCount((prev) => prev + 1);
+        } catch {}
+      });
+
+      eventSource.addEventListener('unread_count', (e) => {
+        try {
+          const { count } = JSON.parse(e.data);
+          setUnreadCount(count);
+        } catch {}
+      });
+
+      eventSource.onerror = () => {
+        // SSE disconnected, polling will keep working
+        eventSource.close();
+      };
+    } catch {
+      // SSE not supported, polling handles it
+    }
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, [user]);
   
   // Refetch when popover opens
   useEffect(() => {

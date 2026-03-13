@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Store, Megaphone, Plus, Check, X, ExternalLink, Trash2,
-  ShoppingBag, Globe, Loader2, AlertCircle, Link2,
+  ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse,
 } from 'lucide-react';
 import { apiGet, apiPost, apiDelete } from '@/lib/api';
 
@@ -54,6 +54,20 @@ export default function PlatformConnectionsPage() {
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [healthResults, setHealthResults] = useState(null);
+  const [healthChecking, setHealthChecking] = useState(false);
+
+  const runHealthCheck = async () => {
+    setHealthChecking(true);
+    try {
+      const res = await apiPost('/api/connections/health-check');
+      const data = await res.json();
+      setHealthResults(data);
+    } catch {
+      setHealthResults({ error: true, message: 'Health check failed' });
+    }
+    setHealthChecking(false);
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -128,10 +142,44 @@ export default function PlatformConnectionsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8" data-testid="platform-connections">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 font-manrope">Platform Connections</h1>
-          <p className="text-slate-500 mt-1">Connect your store and ad accounts to auto-publish products and post ads</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 font-manrope">Platform Connections</h1>
+            <p className="text-slate-500 mt-1">Connect your store and ad accounts to auto-publish products and post ads</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runHealthCheck}
+            disabled={healthChecking}
+            data-testid="health-check-btn"
+          >
+            {healthChecking ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <HeartPulse className="h-4 w-4 mr-1" />}
+            {healthChecking ? 'Checking...' : 'Health Check'}
+          </Button>
         </div>
+
+        {/* Health Check Results */}
+        {healthResults && !healthResults.error && (
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3" data-testid="health-check-results">
+            <div className="flex items-center gap-2 mb-2">
+              <HeartPulse className="h-4 w-4 text-indigo-500" />
+              <span className="text-sm font-semibold text-slate-800">{healthResults.message}</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {healthResults.results?.map((r, i) => (
+                <div key={i} className={`rounded-lg p-2 text-xs border ${
+                  r.status === 'healthy' ? 'bg-emerald-50 border-emerald-200' :
+                  r.status === 'draft' ? 'bg-blue-50 border-blue-200' :
+                  'bg-red-50 border-red-200'
+                }`}>
+                  <p className="font-semibold capitalize">{r.platform}</p>
+                  <p className={r.status === 'healthy' ? 'text-emerald-600' : r.status === 'draft' ? 'text-blue-600' : 'text-red-600'}>{r.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* E-Commerce Stores */}
         <div>

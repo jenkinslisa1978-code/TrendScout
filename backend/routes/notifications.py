@@ -475,6 +475,105 @@ async def scan_thresholds_for_alerts(
 
 
 # =====================
+# SSE Real-Time Notifications
+# =====================
+
+import asyncio
+
+# In-memory event queues per user (production: use Redis pub/sub)
+_event_queues: Dict[str, list] = {}
+
+
+def push_event(user_id: str, event_type: str, data: Dict[str, Any]):
+    """Push an event to a user's SSE queue."""
+    if user_id not in _event_queues:
+        _event_queues[user_id] = []
+    _event_queues[user_id].append({
+        "type": event_type,
+        "data": data,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    })
+    # Keep queue bounded
+    if len(_event_queues[user_id]) > 100:
+        _event_queues[user_id] = _event_queues[user_id][-50:]
+
+
+@notifications_router.get("/stream")
+async def notification_stream(
+    request: Request,
+    token: Optional[str] = None,
+    current_user: AuthenticatedUser = Depends(get_optional_user),
+):
+    """
+    Server-Sent Events endpoint for real-time notifications.
+    Accepts token via query param (for EventSource which can't send headers)
+    or via Authorization header.
+    """
+    # Resolve user from query token or header
+    user_id = None
+    if current_user and current_user.user_id:
+        user_id = current_user.user_id
+    elif token:
+        import jwt as pyjwt
+        try:
+            secret = os.environ.get("SUPABASE_JWT_SECRET")
+            payload = pyjwt.decode(token, secret, algorithms=["HS256"])
+            user_id = payload.get("sub")
+        except Exception:
+            pass
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    async def event_generator():
+        last_check = datetime.now(timezone.utc)
+        heartbeat_interval = 30  # seconds
+
+        # Send initial connection event
+        yield f"data: {json.dumps({'type': 'connected', 'user_id': user_id})}\n\n"
+
+        while True:
+            # Check for queued events
+            events = _event_queues.pop(user_id, [])
+            for event in events:
+                yield f"event: {event['type']}\ndata: {json.dumps(event['data'], default=str)}\n\n"
+
+            # Check DB for new notifications since last check
+            new_notifs = await db.notifications.find(
+                {
+                    "user_id": user_id,
+                    "is_read": False,
+                    "created_at": {"$gt": last_check.isoformat()},
+                },
+                {"_id": 0},
+            ).sort("created_at", -1).limit(5).to_list(5)
+
+            for notif in new_notifs:
+                yield f"event: notification\ndata: {json.dumps(notif, default=str)}\n\n"
+
+            if new_notifs:
+                last_check = datetime.now(timezone.utc)
+
+            # Get unread count
+            unread = await db.notifications.count_documents(
+                {"user_id": user_id, "is_read": False}
+            )
+            yield f"event: unread_count\ndata: {json.dumps({'count': unread})}\n\n"
+
+            await asyncio.sleep(heartbeat_interval)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+# =====================
 # ROUTES - User / Onboarding
 # =====================
 

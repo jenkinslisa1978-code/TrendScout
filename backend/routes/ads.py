@@ -25,6 +25,7 @@ from common.scoring import (
 from common.models import *
 
 from services.ad_creative_service import generate_ad_creatives
+from services.ad_pipeline import generate_ad_creatives_pipeline
 from services.ad_discovery_service import AdDiscoveryService
 from services.ad_winning_engine import analyze_ad_patterns, generate_ad_blueprint, compute_ad_performance
 from services.ad_test_service import generate_ad_variations, generate_test_plan, simulate_launch
@@ -72,6 +73,33 @@ async def get_ad_creatives(
     if not creatives:
         return {"product_id": product_id, "creatives": None, "message": "No creatives generated yet. Use POST to generate."}
     return creatives
+
+
+@ad_creative_router.post("/generate-pipeline/{product_id}")
+async def generate_pipeline_endpoint(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Generate ad creatives using the multi-step pipeline.
+    Higher quality: each component (angles, headlines, scripts, etc.) is generated
+    in a focused step for better results.
+    """
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    result = await generate_ad_creatives_pipeline(product)
+
+    if result.get("success"):
+        result.pop("_id", None)
+        await db.ad_creatives.update_one(
+            {"product_id": product_id},
+            {"$set": result},
+            upsert=True,
+        )
+
+    return result
 
 
 # =====================

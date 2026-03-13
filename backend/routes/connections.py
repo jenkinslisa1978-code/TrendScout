@@ -452,4 +452,128 @@ async def auto_post_ads(
     }
 
 
+# ==================== CONNECTION HEALTH CHECK ====================
+
+@connections_router.post("/health-check")
+async def check_connection_health(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Verify all connected platforms are still accessible.
+    Pings each connected platform API with a lightweight request.
+    """
+    user_id = current_user.user_id
+    connections = await db.platform_connections.find(
+        {"user_id": user_id, "status": "active"}, {"_id": 0}
+    ).to_list(20)
+
+    if not connections:
+        return {"results": [], "message": "No connected platforms"}
+
+    import httpx
+    import base64
+
+    results = []
+    async with httpx.AsyncClient(timeout=10) as client:
+        for conn in connections:
+            platform = conn["platform"]
+            conn_type = conn["connection_type"]
+            status = "unknown"
+            message = ""
+
+            try:
+                if platform == "shopify":
+                    url = f"https://{conn.get('store_url', '').rstrip('/')}/admin/api/2024-07/shop.json"
+                    r = await client.get(url, headers={"X-Shopify-Access-Token": conn.get("access_token", "")})
+                    status = "healthy" if r.status_code == 200 else "error"
+                    message = "Store accessible" if status == "healthy" else f"HTTP {r.status_code}"
+
+                elif platform == "woocommerce":
+                    base = conn.get("store_url", "").rstrip("/")
+                    if not base.startswith("http"):
+                        base = f"https://{base}"
+                    auth = base64.b64encode(f"{conn.get('api_key', '')}:{conn.get('api_secret', '')}".encode()).decode()
+                    r = await client.get(f"{base}/wp-json/wc/v3/system_status", headers={"Authorization": f"Basic {auth}"})
+                    status = "healthy" if r.status_code == 200 else "error"
+                    message = "Store accessible" if status == "healthy" else f"HTTP {r.status_code}"
+
+                elif platform == "etsy":
+                    r = await client.get(
+                        f"https://openapi.etsy.com/v3/application/shops/{conn.get('store_url', '')}",
+                        headers={"x-api-key": conn.get("api_key", ""), "Authorization": f"Bearer {conn.get('access_token', '')}"},
+                    )
+                    status = "healthy" if r.status_code == 200 else "error"
+                    message = "Shop accessible" if status == "healthy" else f"HTTP {r.status_code}"
+
+                elif platform == "bigcommerce":
+                    store_hash = conn.get("store_url", "").replace("https://", "").replace("http://", "").split(".")[0]
+                    if store_hash.startswith("store-"):
+                        store_hash = store_hash[6:]
+                    r = await client.get(
+                        f"https://api.bigcommerce.com/stores/{store_hash}/v3/catalog/summary",
+                        headers={"X-Auth-Token": conn.get("access_token", ""), "Accept": "application/json"},
+                    )
+                    status = "healthy" if r.status_code == 200 else "error"
+                    message = "Store accessible" if status == "healthy" else f"HTTP {r.status_code}"
+
+                elif platform == "squarespace":
+                    r = await client.get(
+                        "https://api.squarespace.com/1.0/commerce/inventory",
+                        headers={"Authorization": f"Bearer {conn.get('api_key', '')}", "User-Agent": "TrendScout/1.0"},
+                    )
+                    status = "healthy" if r.status_code == 200 else "error"
+                    message = "Store accessible" if status == "healthy" else f"HTTP {r.status_code}"
+
+                elif platform == "meta" and conn_type == "ads":
+                    r = await client.get(f"https://graph.facebook.com/v21.0/me?access_token={conn.get('access_token', '')}")
+                    status = "healthy" if r.status_code == 200 else "error"
+                    message = "Token valid" if status == "healthy" else "Token expired or invalid"
+
+                elif platform == "tiktok" and conn_type == "ads":
+                    r = await client.get(
+                        "https://business-api.tiktok.com/open_api/v1.3/oauth2/advertiser/get/",
+                        headers={"Access-Token": conn.get("access_token", "")},
+                        params={"app_id": "", "secret": ""},
+                    )
+                    data = r.json()
+                    status = "healthy" if data.get("code") == 0 else "error"
+                    message = "Token valid" if status == "healthy" else data.get("message", "Check credentials")
+
+                elif platform == "google" and conn_type == "ads":
+                    status = "draft"
+                    message = "Google Ads uses manual setup — no health check needed"
+
+                else:
+                    status = "unknown"
+                    message = "Health check not implemented for this platform"
+
+            except httpx.RequestError as e:
+                status = "unreachable"
+                message = f"Connection failed: {str(e)[:100]}"
+            except Exception as e:
+                status = "error"
+                message = str(e)[:100]
+
+            # Update connection status in DB
+            await db.platform_connections.update_one(
+                {"user_id": user_id, "platform": platform, "connection_type": conn_type},
+                {"$set": {"health_status": status, "health_checked_at": datetime.now(timezone.utc).isoformat(), "health_message": message}},
+            )
+
+            results.append({
+                "platform": platform,
+                "connection_type": conn_type,
+                "status": status,
+                "message": message,
+            })
+
+    healthy_count = sum(1 for r in results if r["status"] == "healthy")
+    return {
+        "results": results,
+        "total": len(results),
+        "healthy": healthy_count,
+        "message": f"{healthy_count}/{len(results)} connections healthy",
+    }
+
+
 routers = [connections_router]

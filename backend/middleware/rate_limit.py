@@ -1,13 +1,15 @@
 """
 API Rate Limiting Middleware — per-user, per-plan enforcement.
-Uses in-memory storage (suitable for single-instance; migrate to Redis for multi-instance).
+Uses Redis for distributed rate limiting with in-memory fallback.
 """
 import time
 import logging
+import os
 from typing import Optional
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from common.database import db
+from common.redis_cache import cache_incr, cache_get_ttl
 
 logger = logging.getLogger(__name__)
 
@@ -29,36 +31,25 @@ EXEMPT_PATHS = {
     "/api/scoring/methodology",
 }
 
-# In-memory rate limit store: {user_id: {"count": int, "window_start": float}}
-_rate_store = {}
 WINDOW_SECONDS = 60
 
-
-def _get_rate_entry(user_id: str):
-    now = time.time()
-    entry = _rate_store.get(user_id)
-    if entry is None or (now - entry["window_start"]) >= WINDOW_SECONDS:
-        _rate_store[user_id] = {"count": 0, "window_start": now}
-        return _rate_store[user_id]
-    return entry
+# Cache for user plan lookups
+_plan_cache = {}
+_PLAN_CACHE_TTL = 300
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Skip non-API routes and exempt paths
         if not path.startswith("/api") or path in EXEMPT_PATHS:
             return await call_next(request)
 
-        # Extract user from auth header
         auth_header = request.headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
             return await call_next(request)
 
         token = auth_header.split(" ", 1)[1]
-
-        # Look up user plan
         user_plan = await _get_user_plan(token)
         if user_plan is None:
             return await call_next(request)
@@ -67,16 +58,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         plan = user_plan["plan"]
         limit = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
 
-        # Check rate
-        entry = _get_rate_entry(user_id)
-        entry["count"] += 1
+        # Atomic increment via Redis (or fallback)
+        count = cache_incr(f"rate:{user_id}", WINDOW_SECONDS)
+        reset_in = cache_get_ttl(f"rate:{user_id}") or WINDOW_SECONDS
+        remaining = max(0, limit - count)
 
-        remaining = max(0, limit - entry["count"])
-        reset_in = int(WINDOW_SECONDS - (time.time() - entry["window_start"]))
-
-        response = await call_next(request) if entry["count"] <= limit else None
-
-        if response is None:
+        if count > limit:
             logger.warning(f"Rate limit exceeded for user {user_id} (plan: {plan}, limit: {limit}/min)")
             raise HTTPException(
                 status_code=429,
@@ -89,23 +76,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 },
             )
 
+        response = await call_next(request)
         response.headers["X-RateLimit-Limit"] = str(limit)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
         response.headers["X-RateLimit-Reset"] = str(reset_in)
         response.headers["X-RateLimit-Plan"] = plan
-
         return response
-
-
-# Cache for user plan lookups (avoid DB hit on every request)
-_plan_cache = {}
-_PLAN_CACHE_TTL = 300  # 5 min
 
 
 async def _get_user_plan(token: str) -> Optional[dict]:
     """Get user's plan from JWT token, with caching."""
     import jwt
-    import os
 
     try:
         secret = os.environ.get("SUPABASE_JWT_SECRET")
@@ -116,12 +97,10 @@ async def _get_user_plan(token: str) -> Optional[dict]:
         if not user_id:
             return None
 
-        # Check cache
         cached = _plan_cache.get(user_id)
         if cached and (time.time() - cached["ts"]) < _PLAN_CACHE_TTL:
             return cached["data"]
 
-        # Fetch from DB
         user = await db.profiles.find_one({"id": user_id}, {"_id": 0, "id": 1, "subscription_plan": 1, "role": 1})
         if not user:
             return None
