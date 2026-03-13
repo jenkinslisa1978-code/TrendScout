@@ -66,6 +66,13 @@
 - Fixed 55 mismatched bulk-assigned category images with product-specific Unsplash images
 - Image enrichment pipeline: Amazon + DuckDuckGo, Pillow optimization
 - Local CDN at /api/images/
+- **Admin Image Review Dashboard** (`/admin/image-review`): QA metrics, product queue with status filters, bulk approve/reject, detail view with custom URL override, pin/unpin
+- Image metadata: `image_status` (needs_review/pending/approved/rejected/placeholder), `image_confidence`, `image_pinned`, `image_candidates`
+
+### Analytics & Performance
+- **Event Tracking**: Auto page views, CTA clicks, signup/checkout events, batched to `/api/analytics/batch`
+- **Admin Analytics Dashboard** (`/admin/analytics`): Conversion funnel, event breakdown, top pages, daily activity, period filters (7d/14d/30d)
+- **GZip Compression**: All responses > 500 bytes compressed via middleware
 
 ## API Endpoints Summary
 | Endpoint | Auth | Description |
@@ -93,14 +100,9 @@
 | GET/PUT /api/notifications/threshold-subscription | Yes | Alert settings |
 
 ## Upcoming Tasks
-- **Phase 2: Admin & Data Quality Tools**
-  - Admin Image Review Dashboard (/admin/image-review) with queue, bulk actions, QA metrics
-  - Image Validation Pipeline with confidence scoring, candidate ranking, placeholder fallback
-- **Phase 3: Analytics & Performance**
-  - Event analytics tracking (landing visits, signups, product views, upgrade clicks, funnel)
-  - Performance optimizations (caching, compression, load time targets)
 - Chrome Extension — "TrendScout – Product & Store Analyzer" (deferred)
-- Backend modularization — extract routes from server.py
+- Backend modularization — extract routes from server.py into /routes/
+- Redis cache migration for multi-instance scaling
 
 ## Future / Backlog
 - CDN migration (Cloudflare R2/S3) for image storage
@@ -122,3 +124,4 @@ notifications, profiles, subscriptions, stores, product_outcomes, blog_posts, wo
 - iteration_54: Workspace + Email Subscription — 100% (25/25 backend + all frontend verified)
 - iteration_55: Phase 1 Conversion Optimization — 100% (15/15 backend + all frontend verified)
 - iteration_56: Phase 3 Analytics & Performance — 100% (12/12 backend + all frontend verified, GZip confirmed)
+- iteration_57: Phase 2 Admin Image Review — 100% (22/22 backend + all frontend verified)
