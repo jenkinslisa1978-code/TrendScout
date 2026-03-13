@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Package, ExternalLink, Check, Truck, Clock, AlertCircle, RefreshCw, Star } from 'lucide-react';
+import { Package, Check, Truck, Clock, AlertCircle, RefreshCw, Star } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 

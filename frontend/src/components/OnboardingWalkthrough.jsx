@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -126,6 +127,7 @@ export default function OnboardingWalkthrough({ onComplete }) {
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleSkip(); }}>
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden" data-testid="onboarding-walkthrough">
+        <DialogTitle className="sr-only">{step.title}</DialogTitle>
         {/* Header with gradient */}
         <div className={`${colors.gradient} p-6 text-white`}>
           <div className="flex items-center gap-3 mb-3">
