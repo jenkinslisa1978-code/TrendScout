@@ -50,6 +50,7 @@ import AdTestPlanner from '@/components/AdTestPlanner';
 import LaunchSimulator from '@/components/LaunchSimulator';
 import AdCreativeGenerator from '@/components/AdCreativeGenerator';
 import TrendTimeline from '@/components/TrendTimeline';
+import ProductProfitCalculator from '@/components/ProductProfitCalculator';
 import ShareableProductCard from '@/components/ShareableProductCard';
 import { 
   formatCurrency, 
@@ -640,6 +641,9 @@ export default function ProductDetailPage() {
 
         {/* Trend Timeline */}
         <TrendTimeline product={product} />
+
+        {/* Profit Calculator */}
+        <ProductProfitCalculator product={product} />
 
         {/* AI Ad Creatives */}
         {isStarterOrAbove ? (

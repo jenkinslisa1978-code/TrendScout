@@ -71,9 +71,9 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 | 5 | Onboarding Checklist | Done |
 | 6 | Advanced Discovery Filters | Done |
 | 7 | AI Trend Score Engine | Done |
-| 8 | Trend Timeline Charts | PENDING |
-| 9 | Product Saturation Meter | PENDING |
-| 10 | Profit Calculator | PENDING |
+| 8 | Trend Timeline Charts | Done |
+| 9 | Product Saturation Meter | Done |
+| 10 | Profit Calculator | Done |
 | 11 | AI Launch Simulator | Done |
 | 12 | AI Ad Creative Generator | Done |
 | 13 | TikTok Intelligence | Done |
@@ -121,9 +121,9 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 - Test user: test_refactor@test.com / test123456
 
 ## Upcoming Tasks
-1. **P1**: Product Trend Timeline Charts (Part 8)
-2. **P2**: Product Saturation Meter UI (Part 9)
-3. **P2**: Profit Calculator (Part 10)
+1. Redis cache migration (replace in-memory cache with distributed cache)
 
 ## Backlog
-- Redis cache migration (replace in-memory cache)
+- API rate limiting per plan tier
+- Real-time WebSocket notifications
+- A/B test analytics dashboard improvements

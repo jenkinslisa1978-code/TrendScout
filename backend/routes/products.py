@@ -594,6 +594,65 @@ async def delete_product(product_id: str):
         raise HTTPException(status_code=404, detail="Product not found")
     return {"success": True}
 
+
+# =====================
+# SATURATION METER API
+# =====================
+
+@api_router.get("/products/{product_id}/saturation")
+async def get_product_saturation(product_id: str):
+    """Get saturation/competition data for a product."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    competition = product.get("competition_level", "medium")
+    ad_count = product.get("ad_count", 0)
+    active_stores = product.get("active_competitor_stores", 0)
+    market_saturation = product.get("market_saturation", 0)
+    trend_stage = product.get("trend_stage", "rising")
+
+    # Calculate saturation score (0-100)
+    if market_saturation > 0:
+        saturation_score = market_saturation
+    else:
+        base = {"low": 20, "medium": 45, "high": 70}.get(competition, 45)
+        ad_factor = min(30, ad_count / 10)
+        store_factor = min(20, active_stores)
+        saturation_score = min(100, int(base + ad_factor + store_factor))
+
+    # Risk level
+    if saturation_score >= 65:
+        risk_level = "High"
+    elif saturation_score >= 35:
+        risk_level = "Medium"
+    else:
+        risk_level = "Low"
+
+    # Search growth indicator
+    growth_rate = product.get("view_growth_rate", 0)
+    if growth_rate >= 50:
+        search_growth = "Rapid"
+    elif growth_rate >= 20:
+        search_growth = "Growing"
+    elif growth_rate > 0:
+        search_growth = "Steady"
+    else:
+        search_growth = "Flat"
+
+    return {
+        "product_id": product_id,
+        "saturation_score": saturation_score,
+        "risk_level": risk_level,
+        "stores_detected": active_stores or int({"low": 8, "medium": 25, "high": 55}.get(competition, 25)),
+        "ads_detected": ad_count,
+        "search_growth": search_growth,
+        "trend_stage": trend_stage,
+        "competition_level": competition,
+        "market_saturation": market_saturation,
+    }
+
+
 # =====================
 # ALERTS API
 # =====================

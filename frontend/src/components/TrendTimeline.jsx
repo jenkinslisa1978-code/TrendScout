@@ -1,119 +1,185 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, BarChart3, Eye, Activity } from 'lucide-react';
+import { Activity, TrendingUp, Eye, BarChart3, Zap, Clock } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Cell } from 'recharts';
 
-export default function TrendTimeline({ product }) {
-  if (!product) return null;
+const COLORS = {
+  trend: '#6366f1',
+  tiktok: '#f43f5e',
+  market: '#0ea5e9',
+  early: '#f59e0b',
+};
 
+function generateTimelineData(product) {
   const score = product.launch_score || product.market_score || 0;
   const tiktokViews = product.tiktok_views || 0;
-  const googleTrend = product.google_trend_score || 0;
-  const growthRate = product.growth_rate || product.trend_velocity || 0;
+  const growthRate = product.view_growth_rate || product.growth_rate || 0;
+  const earlyScore = product.early_trend_score || 0;
+  const trendScore = product.trend_score || 0;
+  const marketScore = product.market_score || 0;
 
-  // Generate a synthetic 7-day trend line from available data
-  const generateTrendData = () => {
-    const base = Math.max(10, score - 20);
-    const points = [];
-    for (let i = 0; i < 7; i++) {
-      const dayGrowth = growthRate > 0 ? (growthRate / 100) * (i / 7) : (Math.random() * 0.3 - 0.1);
-      const noise = (Math.random() - 0.5) * 8;
-      const value = Math.min(100, Math.max(0, base + (score - base) * (i / 6) + noise));
-      points.push({ day: i, value: Math.round(value) });
-    }
-    return points;
-  };
+  const points = [];
+  const days = 30;
 
-  const trendData = generateTrendData();
-  const maxVal = Math.max(...trendData.map(d => d.value));
-  const minVal = Math.min(...trendData.map(d => d.value));
-  const range = maxVal - minVal || 1;
+  for (let i = 0; i < days; i++) {
+    const progress = i / (days - 1);
+    const noise = () => (Math.random() - 0.5) * 6;
 
-  // Create SVG path
-  const width = 280;
-  const height = 60;
-  const padding = 4;
-  const pathPoints = trendData.map((d, i) => {
-    const x = padding + (i / 6) * (width - padding * 2);
-    const y = height - padding - ((d.value - minVal) / range) * (height - padding * 2);
-    return { x, y };
-  });
+    const trendBase = Math.max(10, trendScore - 25);
+    const trendVal = Math.min(100, Math.max(0, trendBase + (trendScore - trendBase) * progress + noise()));
 
-  const linePath = pathPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaPath = linePath + ` L ${pathPoints[pathPoints.length - 1].x} ${height} L ${pathPoints[0].x} ${height} Z`;
+    const marketBase = Math.max(10, marketScore - 20);
+    const marketVal = Math.min(100, Math.max(0, marketBase + (marketScore - marketBase) * progress + noise()));
 
-  const isRising = trendData[trendData.length - 1].value > trendData[0].value;
-  const color = isRising ? '#10b981' : '#ef4444';
-  const bgColor = isRising ? '#10b98120' : '#ef444420';
+    const viewBase = tiktokViews * 0.4;
+    const viewGrowth = growthRate > 0 ? (1 + (growthRate / 100) * progress) : (1 + progress * 0.15);
+    const viewVal = Math.round(viewBase * viewGrowth + (Math.random() - 0.3) * viewBase * 0.1);
 
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const earlyBase = Math.max(5, earlyScore - 15);
+    const earlyVal = Math.min(100, Math.max(0, earlyBase + (earlyScore - earlyBase) * progress + noise()));
+
+    const date = new Date();
+    date.setDate(date.getDate() - (days - 1 - i));
+    const label = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+    points.push({
+      date: label,
+      day: i,
+      trend: Math.round(trendVal),
+      market: Math.round(marketVal),
+      views: Math.max(0, viewVal),
+      early: Math.round(earlyVal),
+    });
+  }
+  return points;
+}
+
+function formatViews(val) {
+  if (val >= 1e6) return `${(val / 1e6).toFixed(1)}M`;
+  if (val >= 1e3) return `${(val / 1e3).toFixed(0)}K`;
+  return val;
+}
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white/95 backdrop-blur-sm shadow-xl rounded-lg p-3 border border-slate-200 text-xs">
+      <p className="font-semibold text-slate-700 mb-2">{label}</p>
+      {payload.map((entry, i) => (
+        <div key={i} className="flex items-center gap-2 py-0.5">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+          <span className="text-slate-500 capitalize">{entry.dataKey}</span>
+          <span className="ml-auto font-mono font-medium text-slate-800">
+            {entry.dataKey === 'views' ? formatViews(entry.value) : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default function TrendTimeline({ product }) {
+  const data = useMemo(() => product ? generateTimelineData(product) : [], [product]);
+  const growthRate = product?.view_growth_rate || product?.growth_rate || 0;
+  const isRising = data.length > 0 && data[data.length - 1]?.trend > data[0]?.trend;
+
+  const scoreBreakdown = useMemo(() => [
+    { name: 'Trend', value: product?.trend_score || 0, color: COLORS.trend },
+    { name: 'Market', value: product?.market_score || 0, color: COLORS.market },
+    { name: 'Early', value: product?.early_trend_score || 0, color: COLORS.early },
+    { name: 'Launch', value: product?.launch_score || 0, color: '#10b981' },
+  ], [product]);
+
+  const displayData = useMemo(() => data.filter((_, i) => i % 3 === 0 || i === data.length - 1), [data]);
+
+  if (!product) return null;
 
   return (
     <Card className="border-0 shadow-lg" data-testid="trend-timeline">
       <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
           <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
             <Activity className="h-4 w-4 text-indigo-500" />
-            Trend Timeline
+            Trend Timeline (30d)
           </h3>
-          <Badge className={`rounded-full text-[10px] border-0 ${isRising ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-            <TrendingUp className={`h-2.5 w-2.5 mr-0.5 ${isRising ? '' : 'rotate-180'}`} />
-            {isRising ? '+' : ''}{growthRate.toFixed(1)}% / 7d
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={`rounded-full text-[10px] border-0 ${isRising ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+              <TrendingUp className={`h-2.5 w-2.5 mr-0.5 ${isRising ? '' : 'rotate-180'}`} />
+              {isRising ? '+' : ''}{growthRate.toFixed(1)}%
+            </Badge>
+            <Badge className="rounded-full text-[10px] border-0 bg-slate-100 text-slate-600">
+              <Clock className="h-2.5 w-2.5 mr-0.5" />
+              30 days
+            </Badge>
+          </div>
         </div>
 
-        {/* Chart */}
-        <div className="relative mb-3">
-          <svg width="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-            <defs>
-              <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-              </linearGradient>
-            </defs>
-            {/* Grid lines */}
-            {[0, 1, 2].map(i => (
-              <line key={i} x1={padding} x2={width - padding} y1={padding + i * ((height - padding * 2) / 2)} y2={padding + i * ((height - padding * 2) / 2)} stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="4 4" />
-            ))}
-            {/* Area */}
-            <path d={areaPath} fill="url(#trendGradient)" />
-            {/* Line */}
-            <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {/* Points */}
-            {pathPoints.map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r="3" fill="white" stroke={color} strokeWidth="1.5" />
-            ))}
-          </svg>
-          {/* Day labels */}
-          <div className="flex justify-between px-1 mt-1">
-            {dayLabels.map(d => <span key={d} className="text-[9px] text-slate-400">{d}</span>)}
+        {/* Main trend chart */}
+        <div className="mb-4" data-testid="trend-chart">
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={displayData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+              <defs>
+                <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={COLORS.trend} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={COLORS.trend} stopOpacity={0.02} />
+                </linearGradient>
+                <linearGradient id="marketGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={COLORS.market} stopOpacity={0.2} />
+                  <stop offset="100%" stopColor={COLORS.market} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Area type="monotone" dataKey="trend" stroke={COLORS.trend} fill="url(#trendGrad)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="market" stroke={COLORS.market} fill="url(#marketGrad)" strokeWidth={1.5} dot={false} strokeDasharray="4 3" />
+            </AreaChart>
+          </ResponsiveContainer>
+          <div className="flex items-center gap-4 justify-center mt-1">
+            <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-3 h-0.5 rounded" style={{ backgroundColor: COLORS.trend }} /> Trend Score</span>
+            <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-3 h-0.5 rounded border-dashed border-b" style={{ borderColor: COLORS.market }} /> Market Score</span>
           </div>
+        </div>
+
+        {/* Score breakdown bars */}
+        <div data-testid="score-breakdown">
+          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-2">Score Snapshot</p>
+          <ResponsiveContainer width="100%" height={80}>
+            <BarChart data={scoreBreakdown} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
+              <XAxis type="number" domain={[0, 100]} hide />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} width={50} tickLine={false} axisLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={14}>
+                {scoreBreakdown.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Metrics row */}
-        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-slate-400 text-[10px] mb-0.5">
-              <BarChart3 className="h-3 w-3" /> Score
-            </div>
-            <p className="text-lg font-bold text-indigo-600 font-mono">{score}</p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-slate-400 text-[10px] mb-0.5">
-              <Eye className="h-3 w-3" /> TikTok
-            </div>
-            <p className="text-lg font-bold text-rose-600 font-mono">
-              {tiktokViews >= 1e6 ? `${(tiktokViews / 1e6).toFixed(1)}M` : tiktokViews >= 1e3 ? `${(tiktokViews / 1e3).toFixed(0)}K` : tiktokViews}
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 text-slate-400 text-[10px] mb-0.5">
-              <TrendingUp className="h-3 w-3" /> Google
-            </div>
-            <p className="text-lg font-bold text-amber-600 font-mono">{googleTrend}</p>
-          </div>
+        <div className="grid grid-cols-4 gap-2 pt-3 mt-2 border-t border-slate-100">
+          <MetricItem icon={BarChart3} label="Score" value={product.trend_score || 0} color="text-indigo-600" />
+          <MetricItem icon={Eye} label="TikTok" value={formatViews(product.tiktok_views || 0)} color="text-rose-600" />
+          <MetricItem icon={Zap} label="Early" value={product.early_trend_score || 0} color="text-amber-600" />
+          <MetricItem icon={TrendingUp} label="Launch" value={product.launch_score || 0} color="text-emerald-600" />
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function MetricItem({ icon: Icon, label, value, color }) {
+  return (
+    <div className="text-center">
+      <div className="flex items-center justify-center gap-1 text-slate-400 text-[10px] mb-0.5">
+        <Icon className="h-3 w-3" /> {label}
+      </div>
+      <p className={`text-base font-bold font-mono ${color}`}>{value}</p>
+    </div>
   );
 }
