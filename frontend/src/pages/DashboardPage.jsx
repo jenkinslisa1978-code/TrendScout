@@ -45,6 +45,7 @@ import MissedOpportunities from '@/components/dashboard/MissedOpportunities';
 import { SourceDot } from '@/components/SourceTrustBadge';
 import ShareableProductCard from '@/components/ShareableProductCard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
+import DailyUsageBanner from '@/components/dashboard/DailyUsageBanner';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
@@ -179,6 +180,9 @@ export default function DashboardPage() {
 
         {/* While You Were Away */}
         <WhileYouWereAway />
+
+        {/* Daily Usage Banner (Free/Starter users) */}
+        <DailyUsageBanner />
 
         {/* AI Co-Pilot Hero */}
         <FindWinningProductHero

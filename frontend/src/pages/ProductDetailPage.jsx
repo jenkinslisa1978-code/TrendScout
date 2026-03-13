@@ -37,6 +37,7 @@ import { toggleSaveProduct, isProductSaved } from '@/services/savedProductServic
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { LockedContent, UpgradeBadge } from '@/components/common/UpgradePrompts';
+import { UpgradeModal } from '@/components/common/UpgradeModal';
 import SupplierSection from '@/components/SupplierSection';
 import AdCreativeSection from '@/components/AdCreativeSection';
 import AdDiscoverySection from '@/components/AdDiscoverySection';
@@ -84,7 +85,7 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isFree, canAccessFullInsights, canAccessEarlyTrends, canDirectPublish } = useSubscription();
+  const { isFree, isStarter, canAccessFullInsights, canAccessEarlyTrends, canDirectPublish, isStarterOrAbove, isProOrAbove } = useSubscription();
   const [product, setProduct] = useState(null);
   const [competitorData, setCompetitorData] = useState(null);
   const [dataIntegrity, setDataIntegrity] = useState(null);
@@ -95,6 +96,7 @@ export default function ProductDetailPage() {
   const [showStoreBuilder, setShowStoreBuilder] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState({ open: false, feature: 'insights' });
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -581,7 +583,15 @@ export default function ProductDetailPage() {
         )}
 
         {/* Supplier Section */}
-        <SupplierSection productId={id} productName={product.product_name} />
+        {isStarterOrAbove ? (
+          <SupplierSection productId={id} productName={product.product_name} />
+        ) : (
+          <div className="relative cursor-pointer" onClick={() => setUpgradeModal({ open: true, feature: 'supplier' })} data-testid="supplier-locked">
+            <LockedContent feature="Supplier Intelligence" requiredPlan="Starter" blurIntensity="medium">
+              <SupplierSection productId={id} productName={product.product_name} />
+            </LockedContent>
+          </div>
+        )}
 
         {/* Saturation Radar + Competitor Intelligence — side by side */}
         <div className="grid lg:grid-cols-2 gap-6">
@@ -605,7 +615,15 @@ export default function ProductDetailPage() {
         <LaunchSimulator productId={id} />
 
         {/* AI Ad Creatives */}
-        <AdCreativeSection productId={id} />
+        {isStarterOrAbove ? (
+          <AdCreativeSection productId={id} />
+        ) : (
+          <div className="relative cursor-pointer" onClick={() => setUpgradeModal({ open: true, feature: 'ads' })} data-testid="ads-locked">
+            <LockedContent feature="Ad Intelligence" requiredPlan="Starter" blurIntensity="medium">
+              <AdCreativeSection productId={id} />
+            </LockedContent>
+          </div>
+        )}
 
         {/* Ad Discovery */}
         <AdDiscoverySection productId={id} />
@@ -891,6 +909,13 @@ export default function ProductDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={upgradeModal.open}
+        onClose={() => setUpgradeModal({ open: false, feature: 'insights' })}
+        feature={upgradeModal.feature}
+      />
     </DashboardLayout>
   );
 }

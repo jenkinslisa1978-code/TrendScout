@@ -9,6 +9,7 @@ import {
   ArrowUpDown, Filter, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
 import { API_URL } from '@/lib/config';
+import DailyPicksSection from '@/components/common/DailyPicksSection';
 
 const STAGE_COLORS = {
   Exploding: 'bg-red-500/10 text-red-600 border-red-200',
@@ -230,6 +231,11 @@ export default function TrendingProductsPage() {
             </div>
           )}
         </div>
+
+        {/* Daily Picks */}
+        {!selectedCategory && minMargin === 0 && !loading && (
+          <DailyPicksSection />
+        )}
 
         {/* Results count */}
         <p className="text-xs text-slate-500 mb-4" data-testid="results-count">

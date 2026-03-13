@@ -4863,6 +4863,123 @@ async def set_admin_status(
 
 
 # =====================
+# DAILY USAGE TRACKING (Freemium Gating)
+# =====================
+
+@user_router.get("/daily-usage")
+async def get_daily_usage(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get the current user's daily insight usage and limits."""
+    from services.subscription_service import FeatureGate
+    plan = await get_user_plan(current_user.user_id)
+    features = FeatureGate.get_plan_features(plan)
+    daily_limit = features.get("max_analyses_daily", 2)
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    usage_doc = await db.daily_usage.find_one(
+        {"user_id": current_user.user_id, "date": today},
+        {"_id": 0}
+    )
+    used = usage_doc.get("insights_used", 0) if usage_doc else 0
+
+    return {
+        "plan": plan,
+        "daily_limit": daily_limit,
+        "insights_used": used,
+        "remaining": max(0, daily_limit - used) if daily_limit != -1 else -1,
+        "is_unlimited": daily_limit == -1,
+    }
+
+
+@user_router.post("/track-insight")
+async def track_insight_usage(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Track that the user viewed a product insight. Returns updated usage."""
+    from services.subscription_service import FeatureGate
+    plan = await get_user_plan(current_user.user_id)
+    features = FeatureGate.get_plan_features(plan)
+    daily_limit = features.get("max_analyses_daily", 2)
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    result = await db.daily_usage.find_one_and_update(
+        {"user_id": current_user.user_id, "date": today},
+        {"$inc": {"insights_used": 1}, "$setOnInsert": {"created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+        return_document=True,
+        projection={"_id": 0}
+    )
+    used = result.get("insights_used", 1) if result else 1
+
+    return {
+        "plan": plan,
+        "daily_limit": daily_limit,
+        "insights_used": used,
+        "remaining": max(0, daily_limit - used) if daily_limit != -1 else -1,
+        "is_unlimited": daily_limit == -1,
+        "limit_reached": daily_limit != -1 and used >= daily_limit,
+    }
+
+
+@public_router.get("/daily-picks")
+async def get_daily_picks():
+    """
+    Public endpoint: returns 5 curated 'daily pick' products.
+    The selection is deterministic per day (seeded by date).
+    Cached for 30 minutes.
+    """
+    cached = _get_cached("daily_picks")
+    if cached:
+        return cached
+
+    import hashlib
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    seed = int(hashlib.md5(today.encode()).hexdigest()[:8], 16)
+
+    products = await db.products.find(
+        {"launch_score": {"$gte": 50}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(30).to_list(30)
+
+    if not products:
+        products = await db.products.find({}, {"_id": 0}).sort("market_score", -1).limit(15).to_list(15)
+
+    if len(products) > 5:
+        import random
+        rng = random.Random(seed)
+        products = rng.sample(products, min(5, len(products)))
+    else:
+        products = products[:5]
+
+    picks = []
+    for p in products:
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        picks.append({
+            "id": p.get("id"),
+            "slug": _slugify(p.get("product_name", "")),
+            "product_name": p.get("product_name", "Unknown"),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage", p.get("early_trend_label", "Unknown")),
+            "margin_percent": margin_pct,
+            "supplier_cost": round(p.get("supplier_cost", 0), 2),
+            "retail_price": round(p.get("estimated_retail_price", 0), 2),
+            "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
+            "gallery_images": p.get("gallery_images", []),
+        })
+
+    result = {"picks": picks, "date": today, "count": len(picks)}
+    _set_cached("daily_picks", result)
+    return result
+
+
+
+# =====================
 # ROUTES - Public (No Auth Required)
 # =====================
 
@@ -5372,6 +5489,16 @@ async def get_feature_access(
     
     # Get store count
     store_count = await db.stores.count_documents({"user_id": current_user.user_id})
+
+    # Get daily usage
+    features = FeatureGate.get_plan_features(plan)
+    daily_limit = features.get("max_analyses_daily", 2)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    usage_doc = await db.daily_usage.find_one(
+        {"user_id": current_user.user_id, "date": today},
+        {"_id": 0}
+    )
+    insights_used = usage_doc.get("insights_used", 0) if usage_doc else 0
     
     return {
         "plan": plan,
@@ -5391,7 +5518,9 @@ async def get_feature_access(
             "priority_alerts": FeatureGate.can_access_priority_alerts(plan),
             "max_stores": FeatureGate.get_max_stores(plan),
             "can_create_store": FeatureGate.can_create_store(plan, store_count),
-            "current_store_count": store_count
+            "current_store_count": store_count,
+            "max_analyses_daily": daily_limit,
+            "insights_used_today": insights_used,
         }
     }
 

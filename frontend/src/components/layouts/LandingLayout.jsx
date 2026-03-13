@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useCallback } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { TrendingUp, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 export default function LandingLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const navigation = [
     { name: 'Trending', href: '/trending-products' },
@@ -14,6 +16,22 @@ export default function LandingLayout({ children }) {
     { name: 'Features', href: '/#features' },
     { name: 'Pricing', href: '/#pricing' },
   ];
+
+  const handleNavClick = useCallback((e, href) => {
+    if (href.startsWith('/#')) {
+      e.preventDefault();
+      const id = href.slice(2);
+      if (location.pathname === '/') {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        navigate('/');
+        setTimeout(() => {
+          document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+      setMobileMenuOpen(false);
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -34,7 +52,9 @@ export default function LandingLayout({ children }) {
               <a
                 key={item.name}
                 href={item.href}
+                onClick={(e) => handleNavClick(e, item.href)}
                 className="text-sm font-medium text-slate-500 transition-colors duration-200 hover:text-slate-900"
+                data-testid={`nav-link-${item.name.toLowerCase()}`}
               >
                 {item.name}
               </a>
@@ -87,7 +107,8 @@ export default function LandingLayout({ children }) {
                   key={item.name}
                   href={item.href}
                   className="text-sm font-medium text-slate-600"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={(e) => handleNavClick(e, item.href)}
+                  data-testid={`mobile-nav-link-${item.name.toLowerCase()}`}
                 >
                   {item.name}
                 </a>

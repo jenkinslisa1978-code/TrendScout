@@ -128,6 +128,7 @@ export function SubscriptionProvider({ children }) {
 
     // Plan limits
     maxAnalysesDaily: subscription.features.max_analyses_daily ?? 2,
+    insightsUsedToday: subscription.features.insights_used_today ?? 0,
     maxSimulationsDaily: subscription.features.max_simulations_daily ?? 0,
     opportunityFeedLimit: subscription.features.opportunity_feed_limit ?? 3,
     canUseBudgetOptimizer: subscription.features.budget_optimizer ?? false,
