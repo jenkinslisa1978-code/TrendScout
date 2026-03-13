@@ -58,7 +58,7 @@ export default function ProductLaunchWizard() {
 
   const loadSuppliers = async () => {
     try {
-      const res = await apiGet(`/api/products/${productId}/suppliers`);
+      const res = await apiGet(`/api/suppliers/${productId}`);
       if (res.ok) {
         const data = await res.json();
         const list = data.suppliers || [];
