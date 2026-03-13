@@ -95,6 +95,15 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 | 29 | UX Philosophy | Adhered |
 | 30 | Success Metrics | Defined |
 
+## Launch Readiness (COMPLETED - March 2026)
+- Favicon, apple-touch-icon, OG meta tags for SEO
+- Rate limiting (slowapi): 200/min global, 5/min register, 10/min login
+- 404 catch-all page with navigation
+- Terms of Service page (/terms)
+- Privacy Policy page (/privacy)
+- Site footer with legal links
+- Production cleanup (removed backup files)
+
 ## Backend Modularization (COMPLETED - March 2026)
 - Refactored 10,754-line monolithic server.py into 30 route files + 6 common modules
 - server.py reduced to 178-line slim entrypoint
