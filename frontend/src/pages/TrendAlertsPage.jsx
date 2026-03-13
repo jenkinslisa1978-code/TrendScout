@@ -29,6 +29,7 @@ import { getAlerts, markAlertRead, dismissAlertById, markAllAlertsRead } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import ThresholdSubscriptionCard from '@/components/alerts/ThresholdSubscriptionCard';
 
 const ALERT_TYPE_CONFIG = {
   early_stage: {
@@ -242,6 +243,9 @@ export default function TrendAlertsPage() {
             </Card>
           </div>
         )}
+
+        {/* Threshold Subscription */}
+        <ThresholdSubscriptionCard />
 
         {/* Alerts List */}
         {loading ? (

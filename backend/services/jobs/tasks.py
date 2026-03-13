@@ -447,6 +447,62 @@ def _generate_alert_message(product: Dict[str, Any]) -> str:
 
 
 @TaskRegistry.register(
+    name="scan_threshold_subscriptions",
+    description="Scan products against user threshold subscriptions and send alerts",
+    default_schedule="0 */6 * * *"  # Every 6 hours
+)
+async def scan_threshold_subscriptions(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Scan all active threshold subscriptions and generate notifications
+    for products that cross user-defined score thresholds.
+    """
+    from services.notification_service import create_notification_service, NotificationType
+    ns = create_notification_service(db)
+
+    subs = await db.threshold_subscriptions.find(
+        {"enabled": True},
+        {"_id": 0}
+    ).to_list(500)
+
+    if not subs:
+        return {"records_processed": 0, "details": {"subscriptions": 0, "notifications": 0}}
+
+    products = await db.products.find(
+        {"launch_score": {"$gte": 40}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(50).to_list(50)
+
+    total_notifs = 0
+    for sub in subs:
+        threshold = sub.get("score_threshold", 75)
+        cats = sub.get("categories", [])
+        user_id = sub["user_id"]
+
+        matching = [
+            p for p in products
+            if p.get("launch_score", 0) >= threshold
+            and (not cats or p.get("category") in cats)
+        ]
+
+        for product in matching[:5]:
+            try:
+                notif = await ns.create_notification(
+                    user_id=user_id,
+                    notification_type=NotificationType.SCORE_MILESTONE,
+                    product=product,
+                )
+                if notif:
+                    total_notifs += 1
+            except Exception:
+                pass
+
+    return {
+        "records_processed": total_notifs,
+        "details": {"subscriptions": len(subs), "notifications": total_notifs, "products_scanned": len(products)},
+    }
+
+
+@TaskRegistry.register(
     name="full_pipeline",
     description="Run complete data pipeline (all sources + scoring + alerts)",
     default_schedule=None  # Manual only

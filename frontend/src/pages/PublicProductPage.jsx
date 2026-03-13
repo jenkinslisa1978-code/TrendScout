@@ -140,15 +140,35 @@ export default function PublicProductPage() {
   const productName = product.product_name || 'Trending Product';
   const productId = product.id || id;
 
+  const siteUrl = 'https://www.trendscout.click';
+  const canonicalUrl = `${siteUrl}/p/${productId}`;
+  const margin = product.estimated_margin && product.estimated_retail_price
+    ? Math.round((product.estimated_margin / product.estimated_retail_price) * 100)
+    : 0;
+  const ogDescription = `${marketInfo.text} | Launch Score: ${product.launch_score || product.market_score || 0}/100 | ${margin}% margin | ${earlyTrendInfo.text || 'Trending'} — Discover winning products before they go viral.`;
+  const ogImage = product.image_url || product.gallery_images?.[0] || '';
+
   return (
     <>
       <Helmet>
         <title>{`${productName} - TrendScout Product Insights`}</title>
-        <meta name="description" content={`${productName} - ${marketInfo.text}. Market Score: ${product.market_score || 0}/100. Discover trending ecommerce products on TrendScout.`} />
+        <meta name="description" content={ogDescription} />
+        {/* Open Graph */}
         <meta property="og:title" content={`${productName} - TrendScout`} />
-        <meta property="og:description" content={`${marketInfo.text} - Market Score: ${product.market_score || 0}/100`} />
+        <meta property="og:description" content={ogDescription} />
         <meta property="og:type" content="product" />
-        <link rel="canonical" href={`https://www.trendscout.click/p/${productId}`} />
+        <meta property="og:url" content={canonicalUrl} />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        <meta property="og:site_name" content="TrendScout" />
+        {/* Twitter Card */}
+        <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+        <meta name="twitter:title" content={`${productName} - TrendScout`} />
+        <meta name="twitter:description" content={ogDescription} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
+        {/* Product structured data */}
+        <meta property="product:price:amount" content={String(product.estimated_retail_price || 0)} />
+        <meta property="product:price:currency" content="GBP" />
+        <link rel="canonical" href={canonicalUrl} />
       </Helmet>
 
       <div className="min-h-screen bg-slate-50">

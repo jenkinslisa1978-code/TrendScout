@@ -4738,6 +4738,114 @@ async def send_radar_digest_email(
     return {"status": "sent" if result.get("success") else "failed", "products_included": len(products)}
 
 
+@notifications_router.get("/threshold-subscription")
+async def get_threshold_subscription(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get user's threshold alert subscription settings."""
+    sub = await db.threshold_subscriptions.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not sub:
+        sub = {
+            "user_id": current_user.user_id,
+            "enabled": False,
+            "score_threshold": 75,
+            "categories": [],
+            "email_alerts": True,
+            "in_app_alerts": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    return sub
+
+
+class ThresholdSubscriptionUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    score_threshold: Optional[int] = None
+    categories: Optional[List[str]] = None
+    email_alerts: Optional[bool] = None
+    in_app_alerts: Optional[bool] = None
+
+
+@notifications_router.put("/threshold-subscription")
+async def update_threshold_subscription(
+    updates: ThresholdSubscriptionUpdate,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Update user's threshold alert subscription."""
+    update_dict = {k: v for k, v in updates.model_dump().items() if v is not None}
+    update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    await db.threshold_subscriptions.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": update_dict, "$setOnInsert": {"created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return await db.threshold_subscriptions.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    )
+
+
+@notifications_router.post("/scan-thresholds")
+async def scan_thresholds_for_alerts(
+    background_tasks: BackgroundTasks,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Admin: Scan products against all user threshold subscriptions and send alerts."""
+    profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0})
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    async def _scan():
+        from services.notification_service import create_notification_service, NotificationType
+        ns = create_notification_service(db)
+
+        subs = await db.threshold_subscriptions.find(
+            {"enabled": True},
+            {"_id": 0}
+        ).to_list(500)
+
+        if not subs:
+            return
+
+        all_products = await db.products.find(
+            {"launch_score": {"$gte": 40}},
+            {"_id": 0}
+        ).sort("launch_score", -1).limit(50).to_list(50)
+
+        total = 0
+        for sub in subs:
+            threshold = sub.get("score_threshold", 75)
+            cats = sub.get("categories", [])
+            user_id = sub["user_id"]
+
+            matching = [
+                p for p in all_products
+                if p.get("launch_score", 0) >= threshold
+                and (not cats or p.get("category") in cats)
+            ]
+
+            for product in matching[:5]:
+                try:
+                    notif = await ns.create_notification(
+                        user_id=user_id,
+                        notification_type=NotificationType.SCORE_MILESTONE,
+                        product=product,
+                    )
+                    if notif:
+                        total += 1
+                except Exception:
+                    pass
+
+        logging.info(f"Threshold scan: {total} notifications created for {len(subs)} subscriptions")
+
+    background_tasks.add_task(_scan)
+    return {"status": "started", "message": "Threshold scan initiated"}
+
+
+
 
 # =====================
 # ROUTES - User / Onboarding

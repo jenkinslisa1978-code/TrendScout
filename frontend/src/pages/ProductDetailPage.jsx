@@ -113,6 +113,17 @@ export default function ProductDetailPage() {
       setProduct(data);
       setDataIntegrity(integrity);
       setWarnings(productWarnings || []);
+
+      // Track insight usage for freemium gating
+      try {
+        const token = localStorage.getItem('trendscout_token');
+        if (token) {
+          await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/user/track-insight`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+        }
+      } catch {}
       
       // Fetch competitor data
       const { data: competitors } = await getProductCompetitors(id);
