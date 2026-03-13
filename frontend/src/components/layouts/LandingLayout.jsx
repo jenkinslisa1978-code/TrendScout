@@ -14,6 +14,7 @@ export default function LandingLayout({ children }) {
     { name: 'Trending', href: '/trending-products' },
     { name: 'Leaderboard', href: '/top-trending-products' },
     { name: 'Tools', href: '/tools' },
+    { name: 'Blog', href: '/blog' },
     { name: 'Features', href: '/#features' },
     { name: 'Pricing', href: '/#pricing' },
   ];

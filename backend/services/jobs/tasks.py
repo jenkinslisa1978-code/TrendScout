@@ -608,6 +608,58 @@ async def weekly_competitor_scan(db, params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+
+@TaskRegistry.register(
+    name="weekly_blog_generation",
+    description="Auto-generate SEO blog posts for top product categories",
+    default_schedule="0 8 * * 1"  # Every Monday at 8 AM
+)
+async def weekly_blog_generation(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate blog posts for the top categories with enough products."""
+    import os
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not llm_key:
+        return {"records_processed": 0, "details": {"error": "No LLM key"}}
+
+    pipeline = [
+        {"$group": {"_id": "$category", "count": {"$sum": 1}, "avg_score": {"$avg": "$launch_score"}}},
+        {"$match": {"count": {"$gte": 3}}},
+        {"$sort": {"avg_score": -1}},
+        {"$limit": 5},
+    ]
+    categories = await db.products.aggregate(pipeline).to_list(5)
+
+    generated = 0
+    for cat in categories:
+        cat_name = cat["_id"]
+        if not cat_name:
+            continue
+
+        # Check if we already have a recent post for this category
+        recent = await db.blog_posts.find_one({
+            "category_slug": cat_name.lower().replace(" ", "-").replace("&", "and"),
+            "published_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=6)).isoformat()},
+        })
+        if recent:
+            continue
+
+        try:
+            # Import the generate function from server module
+            from server import _generate_blog_post
+            await _generate_blog_post(cat_name.lower().replace(" ", "-").replace("&", "and"))
+            generated += 1
+            await asyncio.sleep(5)  # Rate limit between generations
+        except Exception as e:
+            logging.warning(f"Blog generation failed for {cat_name}: {e}")
+
+    return {
+        "records_processed": generated,
+        "details": {"categories_processed": len(categories), "posts_generated": generated},
+    }
+
+
 @TaskRegistry.register(
     name="full_pipeline",
     description="Run complete data pipeline (all sources + scoring + alerts)",

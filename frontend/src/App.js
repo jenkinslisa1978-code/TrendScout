@@ -50,6 +50,8 @@ import ShopifyAnalyzerPage from "@/pages/ShopifyAnalyzerPage";
 import CompetitorTrackerPage from "@/pages/CompetitorTrackerPage";
 import TikTokIntelligencePage from "@/pages/TikTokIntelligencePage";
 import TopTrendingPage from "@/pages/TopTrendingPage";
+import BlogPage from "@/pages/BlogPage";
+import BlogPostPage from "@/pages/BlogPostPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -117,6 +119,8 @@ function AppRoutes() {
       <Route path="/tools" element={<FreeToolsPage />} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />
       <Route path="/top-trending-products" element={<TopTrendingPage />} />
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/blog/:slug" element={<BlogPostPage />} />
 
       {/* Protected routes */}
       <Route
