@@ -46,15 +46,13 @@ import { SourceDot } from '@/components/SourceTrustBadge';
 import ShareableProductCard from '@/components/ShareableProductCard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import DailyUsageBanner from '@/components/dashboard/DailyUsageBanner';
-import OnboardingModal from '@/components/onboarding/OnboardingModal';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { canAccessEarlyTrends, isElite, isFree, isStarter, maxAnalysesDaily, canUseBudgetOptimizer } = useSubscription();
   const { isBeginner, isAdvanced } = useViewMode();
-  const { showOnboarding, closeOnboarding } = useOnboarding();
   const [winningProducts, setWinningProducts] = useState([]);
   const [earlyTrendProducts, setEarlyTrendProducts] = useState([]);
   const [marketOpportunities, setMarketOpportunities] = useState([]);
@@ -177,6 +175,9 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        {/* Onboarding Checklist for New Users */}
+        <OnboardingChecklist />
 
         {/* While You Were Away */}
         <WhileYouWereAway />
@@ -712,12 +713,6 @@ export default function DashboardPage() {
         />
       )}
       
-      {/* Onboarding Modal for New Users */}
-      <OnboardingModal 
-        isOpen={showOnboarding} 
-        onClose={closeOnboarding} 
-      />
-
       {/* Shareable Product Card Modal */}
       {shareProduct && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShareProduct(null)}>

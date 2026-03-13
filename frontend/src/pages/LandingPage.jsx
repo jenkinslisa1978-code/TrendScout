@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import {
   TrendingUp, Rocket, Store, Zap, Check, ArrowRight,
   Sparkles, Package, Star, Eye, BarChart3, Search,
-  Video, DollarSign, Truck, Shield, Radio, Target, Bell,
+  Video, DollarSign, Truck, Shield, Target, Bell,
   ChevronRight, ShoppingBag, Play, Users, Clock, Flame,
-  Lock, Globe, Radar,
+  Globe, Radar, Database, ScanLine, Lightbulb,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -22,24 +22,25 @@ const TREND_BADGE = {
 };
 
 export default function LandingPage() {
-  const [featured, setFeatured] = useState(null);
   const [trendingProducts, setTrendingProducts] = useState([]);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API_URL}/api/public/featured-product`).then(r => r.json()).catch(() => ({})),
       fetch(`${API_URL}/api/public/trending-products?limit=6`).then(r => r.json()).catch(() => ({ products: [] })),
-    ]).then(([featData, trendData]) => {
-      if (featData.product) setFeatured(featData.product);
+      fetch(`${API_URL}/api/public/platform-stats`).then(r => r.json()).catch(() => null),
+    ]).then(([trendData, statsData]) => {
       setTrendingProducts(trendData.products || []);
+      setStats(statsData);
     });
   }, []);
+
+  const formatStat = (n) => n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : n?.toLocaleString();
 
   return (
     <LandingLayout>
       {/* ── HERO ── */}
       <section className="relative overflow-hidden bg-[#030712]" data-testid="hero-section">
-        {/* Background effects */}
         <div className="absolute inset-0 -z-0">
           <div className="absolute top-[-20%] left-[10%] w-[600px] h-[600px] rounded-full bg-indigo-600/8 blur-[120px]" />
           <div className="absolute bottom-[-10%] right-[5%] w-[500px] h-[500px] rounded-full bg-violet-600/6 blur-[100px]" />
@@ -53,14 +54,15 @@ export default function LandingPage() {
               style={{ animation: 'fadeSlideUp 0.5s ease forwards' }}
             >
               <Radar className="h-3.5 w-3.5 text-indigo-400" />
-              Early Trend Intelligence Platform
+              AI-Powered Ecommerce Intelligence
             </div>
 
             <h1
               className="font-manrope text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl leading-[1.08]"
               style={{ animation: 'fadeSlideUp 0.6s ease forwards' }}
+              data-testid="hero-headline"
             >
-              Discover Winning Products{' '}
+              Discover Winning Ecommerce Products{' '}
               <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
                 Before They Go Viral
               </span>
@@ -69,40 +71,41 @@ export default function LandingPage() {
             <p
               className="mt-6 text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto"
               style={{ animation: 'fadeSlideUp 0.7s ease forwards' }}
+              data-testid="hero-subheadline"
             >
-              TrendScout scans TikTok, Amazon and social media to detect early product trends before they explode — giving you a first-mover advantage.
+              TrendScout scans TikTok, Amazon and ecommerce stores with AI to identify products ready to scale — before competitors find them.
             </p>
 
             <div
               className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
               style={{ animation: 'fadeSlideUp 0.8s ease forwards' }}
             >
-              <Link to="/trending-products">
+              <Link to="/signup">
                 <Button
                   size="lg"
                   className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-13 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
                   data-testid="hero-cta-btn"
                 >
                   <Search className="mr-2 h-5 w-5" />
-                  Discover Trending Products
+                  Start Free Product Discovery
                 </Button>
               </Link>
-              <a href="#how-it-works">
+              <Link to="/trending-products">
                 <Button
                   variant="ghost"
                   size="lg"
                   className="text-base px-8 h-13 text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all duration-300 rounded-xl"
                   data-testid="hero-secondary-btn"
                 >
-                  <Play className="mr-2 h-4 w-4" />
-                  See How It Works
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Trending Products
                 </Button>
-              </a>
+              </Link>
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-6 text-sm text-slate-500" style={{ animation: 'fadeSlideUp 0.9s ease forwards' }}>
               <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> Free to start</span>
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> Real data only</span>
+              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> No credit card required</span>
               <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> Cancel anytime</span>
             </div>
           </div>
@@ -118,14 +121,29 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF BAR ── */}
-      <section className="py-5 border-b border-slate-100 bg-white">
+      {/* ── SOCIAL PROOF STATS BAR ── */}
+      <section className="py-6 border-b border-slate-100 bg-white" data-testid="social-proof-bar">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 text-sm text-slate-500">
-            <span className="flex items-center gap-2"><Users className="h-4 w-4 text-indigo-500" /> <strong className="text-slate-700">2,400+</strong> Sellers using TrendScout</span>
-            <span className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-emerald-500" /> <strong className="text-slate-700">137+</strong> Products tracked</span>
-            <span className="flex items-center gap-2"><Radar className="h-4 w-4 text-violet-500" /> <strong className="text-slate-700">5</strong> Live data sources</span>
-            <span className="flex items-center gap-2"><Zap className="h-4 w-4 text-amber-500" /> <strong className="text-slate-700">Early</strong> Trend detection</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
+            <div className="text-center" data-testid="stat-products">
+              <p className="font-manrope text-2xl font-extrabold text-slate-900">{stats ? formatStat(stats.products_analysed) : '12k+'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Products Analysed</p>
+            </div>
+            <div className="hidden sm:block w-px h-8 bg-slate-200" />
+            <div className="text-center" data-testid="stat-stores">
+              <p className="font-manrope text-2xl font-extrabold text-slate-900">{stats ? formatStat(stats.stores_tracked) : '340+'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Stores Tracked</p>
+            </div>
+            <div className="hidden sm:block w-px h-8 bg-slate-200" />
+            <div className="text-center" data-testid="stat-tiktok">
+              <p className="font-manrope text-2xl font-extrabold text-slate-900">{stats ? formatStat(stats.tiktok_scans_daily) : '15k'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">TikTok Videos Scanned Daily</p>
+            </div>
+            <div className="hidden sm:block w-px h-8 bg-slate-200" />
+            <div className="text-center" data-testid="stat-users">
+              <p className="font-manrope text-2xl font-extrabold text-slate-900">{stats ? formatStat(stats.active_users) : '2.4k+'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Active Sellers</p>
+            </div>
           </div>
         </div>
       </section>
@@ -136,19 +154,19 @@ export default function LandingPage() {
           <div className="text-center max-w-2xl mx-auto">
             <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 mb-5 text-xs px-3 py-1 rounded-full">How TrendScout Works</Badge>
             <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
-              Spot trends before your competitors
+              From data to decisions in 3 steps
             </h2>
             <p className="mt-4 text-base text-slate-500">
-              Our AI continuously monitors multiple platforms to detect products showing early signs of going viral.
+              Our AI scans thousands of signals across platforms to surface products ready to scale.
             </p>
           </div>
 
           <div className="mt-20 grid md:grid-cols-3 gap-8 relative">
-            <div className="hidden md:block absolute top-16 left-[16.5%] right-[16.5%] h-px bg-gradient-to-r from-indigo-200 via-violet-200 to-rose-200" />
+            <div className="hidden md:block absolute top-16 left-[16.5%] right-[16.5%] h-px bg-gradient-to-r from-indigo-200 via-violet-200 to-emerald-200" />
             {[
-              { step: '01', icon: Radar, title: 'AI Scans Trending Platforms', description: 'TrendScout monitors TikTok, Amazon movers, Google Trends and ad libraries 24/7 for early growth signals.', gradient: 'from-indigo-500 to-sky-500' },
-              { step: '02', icon: Sparkles, title: 'Detects Early Growth Signals', description: 'Our algorithm identifies products with unusual velocity — rising searches, new ads, and supplier demand spikes.', gradient: 'from-violet-500 to-purple-500' },
-              { step: '03', icon: Target, title: 'Surfaces High-Margin Opportunities', description: 'You get a scored list of products with supplier costs, margins, and confidence levels — ready to launch.', gradient: 'from-emerald-500 to-teal-500' },
+              { step: '01', icon: ScanLine, title: 'AI Scans TikTok, Amazon & Ecommerce Stores', description: 'TrendScout monitors TikTok hashtags, Amazon movers, Google Trends and ad libraries 24/7 for product velocity and engagement signals.', gradient: 'from-indigo-500 to-sky-500' },
+              { step: '02', icon: Sparkles, title: 'Algorithms Detect Product Velocity & Engagement', description: 'Our scoring engine identifies products with unusual growth — rising searches, new ad campaigns, supplier demand spikes, and social virality.', gradient: 'from-violet-500 to-purple-500' },
+              { step: '03', icon: Target, title: 'You Discover Products Ready to Scale', description: 'Get a scored list of trending products with supplier costs, margins, competition levels, and AI-powered launch recommendations.', gradient: 'from-emerald-500 to-teal-500' },
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -163,7 +181,7 @@ export default function LandingPage() {
                   <span className="font-mono text-6xl font-black text-slate-50 absolute top-4 right-6 select-none group-hover:text-slate-100 transition-colors">
                     {item.step}
                   </span>
-                  <h3 className="mt-6 font-manrope text-xl font-bold text-slate-900">{item.title}</h3>
+                  <h3 className="mt-6 font-manrope text-lg font-bold text-slate-900">{item.title}</h3>
                   <p className="mt-3 text-slate-500 leading-relaxed text-sm">{item.description}</p>
                 </div>
               );
@@ -172,7 +190,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── WINNING PRODUCTS EXAMPLES ── */}
+      {/* ── WINNING PRODUCTS ── */}
       <section className="py-24 bg-gradient-to-b from-slate-50/80 to-white" data-testid="winning-products-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -235,7 +253,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── SIGNALS ── */}
+      {/* ── FEATURES / SIGNALS ── */}
       <section id="features" className="py-24 bg-gradient-to-b from-slate-50/80 to-white" data-testid="features-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -275,83 +293,79 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto">
             <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
-              Start free. Upgrade when you're ready.
+              Simple pricing. Powerful intelligence.
             </h2>
             <p className="mt-4 text-base text-slate-500">
-              See trending products for free. Unlock full intelligence with a paid plan.
+              One winning product can generate &pound;10,000+ revenue.<br />
+              TrendScout costs less than testing a single TikTok ad campaign.
             </p>
           </div>
-          <div className="mt-16 grid md:grid-cols-4 gap-5 max-w-5xl mx-auto">
+          <div className="mt-16 grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {[
-              {
-                id: 'free', name: 'Free', price: '0',
-                description: 'Browse trending products',
-                features: ['3 product insights per day', 'Public trending feed', 'Basic trend scores', 'Category filters'],
-                cta: 'Get Started Free', popular: false, gradient: false,
-              },
               {
                 id: 'starter', name: 'Starter', price: '19',
                 description: 'Start finding winners',
-                features: ['5 full analyses per day', 'Supplier intelligence', 'Ad generator', '3 launch simulations', '2 stores'],
-                cta: 'Start for £19/mo', popular: false, gradient: false,
+                features: ['10 product views per day', 'Basic trend insights', 'Daily product updates', 'Category filters', 'Trend score access'],
+                cta: 'Start 7-Day Free Trial', popular: false,
               },
               {
-                id: 'pro', name: 'Pro', price: '39',
-                description: 'Full research toolkit',
-                features: ['Unlimited analysis', 'Full supplier intel', 'Ad A/B testing', 'Unlimited simulations', '5 stores', 'Advanced filters'],
-                cta: 'Upgrade to Pro', popular: true, gradient: false,
+                id: 'growth', name: 'Growth', price: '49',
+                description: 'Full product intelligence',
+                features: ['Unlimited product discovery', 'Trend score analytics', 'AI ad creative generator', 'Trend alerts & notifications', 'Supplier intelligence', 'Product profit calculator'],
+                cta: 'Start 7-Day Free Trial', popular: true,
               },
               {
-                id: 'elite', name: 'Elite', price: '79',
-                description: 'Scale with AI automation',
-                features: ['Everything in Pro', 'Budget Optimizer', 'Radar alerts', 'LaunchPad', 'Unlimited stores', 'Priority support'],
-                cta: 'Go Elite', popular: false, gradient: false,
+                id: 'pro', name: 'Pro', price: '99',
+                description: 'Scale with advanced tools',
+                features: ['Everything in Growth', 'Competitor store tracking', 'AI launch simulator', 'Advanced analytics', 'Unlimited insights', 'Priority support'],
+                cta: 'Start 7-Day Free Trial', popular: false,
               },
             ].map((plan) => (
               <div
                 key={plan.id}
                 data-testid={`pricing-card-${plan.id}`}
-                className={`relative rounded-2xl border bg-white p-6 transition-all duration-400 hover:-translate-y-1 ${
+                className={`relative rounded-2xl border bg-white p-7 transition-all duration-400 hover:-translate-y-1 ${
                   plan.popular
-                    ? 'border-indigo-500 shadow-2xl shadow-indigo-100/70 scale-[1.02]'
+                    ? 'border-indigo-500 shadow-2xl shadow-indigo-100/70 scale-[1.03]'
                     : 'border-slate-100 hover:border-slate-200 hover:shadow-xl hover:shadow-slate-100/60'
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-0.5 text-[11px] font-semibold text-white shadow-md">
-                      Most Popular
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                    <span className="inline-flex items-center rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-1 text-xs font-semibold text-white shadow-md">
+                      Recommended
                     </span>
                   </div>
                 )}
                 <div>
                   <h3 className="font-manrope text-lg font-bold text-slate-900">{plan.name}</h3>
                   <p className="mt-1 text-xs text-slate-500">{plan.description}</p>
-                  <div className="mt-4">
+                  <div className="mt-5">
                     <span className="font-manrope text-4xl font-extrabold text-slate-900">&pound;{plan.price}</span>
-                    <span className="text-slate-400 text-sm">/mo</span>
+                    <span className="text-slate-400 text-sm">/month</span>
                   </div>
                 </div>
-                <ul className="mt-5 space-y-2.5">
+                <ul className="mt-6 space-y-3">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2">
-                      <Check className="h-3.5 w-3.5 flex-shrink-0 text-emerald-500 mt-0.5" />
-                      <span className="text-xs text-slate-600">{f}</span>
+                    <li key={f} className="flex items-start gap-2.5">
+                      <Check className="h-4 w-4 flex-shrink-0 text-emerald-500 mt-0.5" />
+                      <span className="text-sm text-slate-600">{f}</span>
                     </li>
                   ))}
                 </ul>
-                <Link to="/signup" className="block mt-6">
+                <Link to="/signup" className="block mt-7">
                   <Button
-                    className={`w-full h-10 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                    className={`w-full h-11 text-sm font-semibold rounded-xl transition-all duration-300 ${
                       plan.popular
-                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 shadow-md'
-                        : plan.id === 'free' ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' : 'bg-slate-900 hover:bg-slate-800'
+                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 shadow-md text-white'
+                        : 'bg-slate-900 hover:bg-slate-800 text-white'
                     }`}
                     data-testid={`pricing-cta-${plan.id}`}
                   >
                     {plan.cta}
                   </Button>
                 </Link>
+                <p className="text-center text-xs text-slate-400 mt-3">7-day free trial. Cancel anytime.</p>
               </div>
             ))}
           </div>
@@ -416,7 +430,7 @@ export default function LandingPage() {
                     data-testid="final-cta-btn"
                   >
                     <Rocket className="mr-2 h-5 w-5" />
-                    Get Started Free
+                    Start Free Product Discovery
                   </Button>
                 </Link>
                 <Link to="/trending-products">
@@ -425,7 +439,7 @@ export default function LandingPage() {
                     size="lg"
                     className="text-base px-8 h-13 text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-xl"
                   >
-                    Browse Trending Products
+                    View Trending Products
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -485,7 +499,7 @@ function MiniProductCard({ product, delay }) {
   );
 }
 
-/* ── Product Showcase Card (Winning Products Section) ── */
+/* ── Product Showcase Card ── */
 function ProductShowcaseCard({ product }) {
   const confidenceLabel = product.launch_score >= 75 ? 'High Confidence' : product.launch_score >= 50 ? 'Emerging Opportunity' : 'Experimental';
   const confidenceColor = product.launch_score >= 75
@@ -502,7 +516,6 @@ function ProductShowcaseCard({ product }) {
       className="group block bg-white rounded-2xl border border-slate-100 overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-100/60 transition-all duration-400 hover:-translate-y-1"
       data-testid={`product-card-${product.id}`}
     >
-      {/* Image */}
       <div className="relative h-40 bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
         {product.image_url ? (
           <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -522,7 +535,6 @@ function ProductShowcaseCard({ product }) {
         </div>
       </div>
 
-      {/* Content */}
       <div className="p-4">
         <h3 className="font-semibold text-slate-900 text-sm line-clamp-1 group-hover:text-indigo-600 transition-colors">{product.product_name}</h3>
         <div className="flex items-center gap-2 mt-1.5">
@@ -536,7 +548,6 @@ function ProductShowcaseCard({ product }) {
           )}
         </div>
 
-        {/* Metrics row */}
         <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-50">
           <div>
             <p className="text-xs text-slate-400">Margin</p>

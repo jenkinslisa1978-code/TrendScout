@@ -85,8 +85,8 @@ export default function SignupPage() {
             <span className="text-xl font-bold text-slate-900">TrendScout</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Create your account</h2>
-          <p className="text-slate-500 mb-8">Start discovering trending products for free</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Start Free Product Discovery</h2>
+          <p className="text-slate-500 mb-8">No credit card required. Explore trending products instantly.</p>
 
           {referralCode && (
             <div className="mb-6 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2" data-testid="referral-badge">
@@ -156,7 +156,7 @@ export default function SignupPage() {
                   Creating account...
                 </>
               ) : (
-                'Create account'
+                'Start Free Product Discovery'
               )}
             </Button>
           </form>
