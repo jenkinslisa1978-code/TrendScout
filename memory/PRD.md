@@ -53,6 +53,7 @@
 
 ### Image System
 - Fixed 61 broken Amazon placeholder images with curated Unsplash URLs by category
+- Fixed 55 mismatched bulk-assigned category images with product-specific Unsplash images
 - Image enrichment pipeline: Amazon + DuckDuckGo, Pillow optimization
 - Local CDN at /api/images/
 
