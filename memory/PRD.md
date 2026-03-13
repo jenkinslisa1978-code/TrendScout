@@ -13,38 +13,47 @@ AI operating system for e-commerce product discovery. Scans TikTok, Amazon, and 
 
 ## Key Features
 
-### Platform Connections (NEW - March 13, 2026)
-- **E-Commerce Stores**: Shopify, WooCommerce, Etsy, BigCommerce, Squarespace
-- **Ad Platforms**: Meta (Facebook + Instagram), TikTok Ads, Google Ads
-- Users connect their accounts via API keys/tokens
-- Quick Launch auto-publishes to connected store and auto-posts ads
-- Settings → Connections page with connect/disconnect modals
-- **Note**: Auto-publish and auto-post are currently MOCKED (record intent in DB, don't call external APIs yet)
+### Platform Connections (March 13, 2026)
+**E-Commerce Stores (Real API calls):**
+- Shopify — Real Shopify Admin REST API (create product, set price, add images, publish)
+- WooCommerce — Real WooCommerce REST API (create product, publish)
+- Etsy — Credential storage, manual import guidance
+- BigCommerce — Credential storage, manual import guidance
+- Squarespace — Credential storage, manual import guidance
 
-### Quick Launch Flow (March 13, 2026)
+**Advertising Platforms (Real API calls):**
+- Meta (Facebook + Instagram) — Real Marketing API (create campaign, ad set, creative, PAUSED)
+- TikTok Ads — Real Marketing API (create campaign, PAUSED)
+- Google Ads — Draft preparation with ad copy (complex OAuth, user completes in Google Ads)
+
+**User Choice:**
+- "Make Ads" button generates AI ads and auto-posts to connected platforms
+- "Skip, I'll do my own" option lets users skip ad generation entirely
+
+### Quick Launch Flow
 - "Launch a Product in 3 Clicks" widget at top of dashboard
 - Step 1: AI recommends top product with profit breakdown
-- Step 2: One-click shop creation (auto-publishes if Shopify/WooCommerce connected)
-- Step 3: One-click ad generation (auto-posts if Meta/TikTok/Google connected)
+- Step 2: One-click shop creation (auto-publishes if store connected)
+- Step 3: Make ads OR skip — user's choice
+- Auto-integration: publishes to Shopify/WooCommerce and posts to Meta/TikTok when connected
 
-### Beginner-Friendly UX (March 13, 2026)
+### Beginner-Friendly UX
 - Score tooltips, plain English descriptions
-- Trend alerts with friendly labels (Top Pick / Recommended / Worth a Look)
+- Trend alerts with friendly labels
 - Currency in £ throughout
 
 ### Full 30-Part Spec (ALL COMPLETED)
 
 ## Architecture
-- Backend: FastAPI + MongoDB (31 route files)
+- Backend: FastAPI + MongoDB (32 route files)
 - Frontend: React + Shadcn/UI
-- Integrations: OpenAI GPT-5.2, Stripe, Resend, CJ Dropshipping
+- Integrations: OpenAI GPT-5.2, Stripe, Resend, CJ Dropshipping, Shopify API, WooCommerce API, Meta Marketing API, TikTok Marketing API
 
 ## Test Credentials
 - Admin: jenkinslisa1978@gmail.com / admin123456
 
 ## Backlog
-- P0: Implement real Shopify/WooCommerce API calls for auto-publish
-- P0: Implement real Meta/TikTok/Google API calls for auto-post
+- P1: Real Etsy/BigCommerce/Squarespace API integrations
 - P1: API rate limiting per subscription tier
 - P2: Redis cache migration
 - P3: Real-time WebSocket notifications
