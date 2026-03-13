@@ -27,7 +27,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API_URL}/api/public/trending-products?limit=6`).then(r => r.json()).catch(() => ({ products: [] })),
+      fetch(`${API_URL}/api/public/trending-products?limit=12`).then(r => r.json()).catch(() => ({ products: [] })),
       fetch(`${API_URL}/api/public/platform-stats`).then(r => r.json()).catch(() => null),
     ]).then(([trendData, statsData]) => {
       setTrendingProducts(trendData.products || []);
@@ -120,6 +120,11 @@ export default function LandingPage() {
           )}
         </div>
       </section>
+
+      {/* ── TRENDING NOW TICKER ── */}
+      {trendingProducts.length > 0 && (
+        <TrendingTicker products={trendingProducts} />
+      )}
 
       {/* ── SOCIAL PROOF STATS BAR ── */}
       <section className="py-6 border-b border-slate-100 bg-white" data-testid="social-proof-bar">
@@ -454,8 +459,75 @@ export default function LandingPage() {
           from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes tickerScroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .ticker-track {
+          animation: tickerScroll 40s linear infinite;
+        }
+        .ticker-track:hover {
+          animation-play-state: paused;
+        }
       `}</style>
     </LandingLayout>
+  );
+}
+
+/* ── Trending Now Ticker ── */
+function TrendingTicker({ products }) {
+  // Duplicate for seamless loop
+  const items = [...products, ...products];
+
+  const timeLabels = ['2m ago', '5m ago', '8m ago', '12m ago', '15m ago', '18m ago', '22m ago', '25m ago', '31m ago', '38m ago', '42m ago', '47m ago'];
+
+  return (
+    <section className="relative bg-[#0a0f1e] border-y border-white/[0.04] overflow-hidden" data-testid="trending-ticker">
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f1e] via-transparent to-[#0a0f1e] z-10 pointer-events-none" />
+      <div className="flex items-center">
+        {/* Label */}
+        <div className="flex-shrink-0 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-red-500/20 to-transparent border-r border-white/[0.06] z-20 relative">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+          </span>
+          <span className="text-xs font-semibold text-red-300 uppercase tracking-wider whitespace-nowrap">Trending Now</span>
+        </div>
+
+        {/* Scrolling track */}
+        <div className="overflow-hidden flex-1">
+          <div className="ticker-track flex items-center gap-0 whitespace-nowrap py-2.5">
+            {items.map((p, i) => {
+              const scoreColor = p.launch_score >= 75 ? 'text-emerald-400' : p.launch_score >= 50 ? 'text-amber-400' : 'text-sky-400';
+              const dotColor = p.launch_score >= 75 ? 'bg-emerald-400' : p.launch_score >= 50 ? 'bg-amber-400' : 'bg-sky-400';
+              return (
+                <Link
+                  key={`${p.id}-${i}`}
+                  to={`/trending/${p.slug}`}
+                  className="inline-flex items-center gap-3 px-5 group"
+                  data-testid={i < products.length ? `ticker-item-${p.id}` : undefined}
+                >
+                  <div className={`h-1.5 w-1.5 rounded-full ${dotColor} flex-shrink-0 opacity-60`} />
+                  {p.image_url && (
+                    <img src={p.image_url} alt="" className="h-6 w-6 rounded-md object-cover flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
+                  )}
+                  <span className="text-[13px] text-slate-400 group-hover:text-white transition-colors truncate max-w-[180px]">
+                    {p.product_name}
+                  </span>
+                  <span className={`font-mono text-xs font-bold ${scoreColor}`}>
+                    {p.launch_score}
+                  </span>
+                  <span className="text-[11px] text-slate-600">
+                    {timeLabels[i % timeLabels.length]}
+                  </span>
+                  <div className="h-3 w-px bg-white/[0.06] mx-2 flex-shrink-0" />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
