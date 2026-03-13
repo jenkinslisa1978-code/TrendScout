@@ -1,47 +1,46 @@
 # TrendScout - Product Requirements Document
 
-## Original Problem Statement
-Build "TrendScout", a fully automated, AI-powered e-commerce intelligence platform that helps users discover winning products, launch stores, and optimize marketing.
+## Positioning
+**TrendScout — The Early Trend Intelligence Platform for Ecommerce**
+"Discover winning products before they go viral."
 
 ## Tech Stack
-- Frontend: React, TailwindCSS, Shadcn/UI, html2canvas, react-helmet-async
+- Frontend: React, TailwindCSS, Shadcn/UI, react-helmet-async
 - Backend: FastAPI, MongoDB, APScheduler, aiohttp
-- Auth: Custom JWT | Payments: Stripe (GBP, live keys) | Email: Resend
-- LLM: Emergent LLM Key (OpenAI GPT-4.1-mini) via emergentintegrations
-
-## Production Status: LAUNCH READY
-
-### Integration Status
-| Source | Status | Mode |
-|--------|--------|------|
-| CJ Dropshipping | LIVE | api (token cached, auto-refresh) |
-| TikTok | LIVE | scraper |
-| Meta Ad Library | Configured | estimation (awaiting FB app permission) |
-| Zendrop | Wired | estimation (awaiting API key) |
-| AliExpress | Not configured | estimation (awaiting API key) |
-
-### Production Checklist
-- [x] Stripe live keys configured
-- [x] Resend email configured
-- [x] Dynamic sitemap.xml (domain-agnostic)
-- [x] robots.txt (domain-agnostic)
-- [x] No hardcoded URLs
-- [x] CORS configured via env var
-- [x] All features verified via testing agent
-- [ ] Submit sitemap to Google Search Console
-- [ ] Configure Stripe webhook URL for production domain
-- [ ] Verify Resend sending domain
+- Auth: Custom JWT | Payments: Stripe (GBP, live) | Email: Resend
+- LLM: Emergent LLM Key via emergentintegrations
 
 ## Completed Phases
-- Phase 1-29: Foundation through Optimizer V2
-- Phase 30: Growth & SEO Features (Public pages, Zendrop)
-- Phase 31: SEO Infrastructure & Internal Linking (sitemap, categories, cross-links)
-- Phase 32: Live API Integrations (CJ live, Meta configured)
-- Phase 33: Production Readiness (hardcoded URLs removed, domain-agnostic)
 
-## Future/Backlog
-- Supplier comparison widget
-- Programmatic SEO V2 (richer structured data)
-- Server.py refactoring into route files
-- Enhanced Budget Optimizer (anomaly detection)
-- Additional supplier integrations
+### Phase 1-32: Foundation through Live API Integrations (DONE)
+
+### Phase 33: Production Readiness (DONE - March 2026)
+- Hardcoded URLs removed, SITE_URL env var, dynamic sitemap/robots.txt
+
+### Phase 34: Landing Page Repositioning & Product Discovery (DONE - March 2026)
+- **Landing Page Rewrite**: New "Early Trend Intelligence" positioning, hero with "Discover Winning Products Before They Go Viral", How It Works (3 steps), Winning Products (live API data), Built For (4 audiences), Pricing (4 tiers), Testimonials (3), Social Proof bar, Final CTA
+- **Enhanced Trending Products Page**: Category filter pills (22), sort dropdown (5 options: Score/Growth/Margin/Newest/Cost), margin filter panel (Any/30%/50%/60%/70%+), enhanced product cards with confidence score badges (High Confidence/Emerging/Experimental), stage badges, supplier cost, retail price, margin %, growth rate
+- **Backend**: Public API now returns supplier_cost, retail_price, growth_rate, tiktok_views, detected_at
+- **Verified**: iteration_46 — 100% pass (17/17 backend, all frontend)
+
+## Upcoming Tasks (Phase C — Viral & Upgrade Features)
+- Daily Winning Product Feed on dashboard
+- Viral product leaderboard on public page
+- Free user unlock limits (3/day) with upgrade prompts
+- Enhanced shareable product pages with trend graphs
+
+## Future Phases
+- **Phase D**: Shopify Store Analyzer (paste URL → analyze)
+- **Phase E**: Competitor Store Tracker, TikTok Ad Intelligence
+- **Phase F**: Chrome Extension architecture
+- **Phase G**: Creator spotlight, community features
+- Server.py refactoring (when needed)
+
+## Integration Status
+| Source | Status | Mode |
+|--------|--------|------|
+| CJ Dropshipping | LIVE | api |
+| TikTok | LIVE | scraper |
+| Meta Ad Library | Configured | estimation (awaiting permission) |
+| Zendrop | Wired | estimation |
+| AliExpress | Not configured | estimation |
