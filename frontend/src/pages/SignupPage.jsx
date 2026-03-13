@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { TrendingUp, Eye, EyeOff, Loader2, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_URL } from '@/lib/config';
+import { trackEvent, EVENTS } from '@/services/analytics';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -49,6 +50,7 @@ export default function SignupPage() {
     }
 
     toast.success('Welcome to TrendScout!');
+    trackEvent(EVENTS.SIGNUP_COMPLETE, { referral: !!referralCode });
     navigate('/dashboard');
   };
 

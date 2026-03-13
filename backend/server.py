@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import io
@@ -15,7 +16,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 import uuid
 import jwt
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 import aiohttp
 
@@ -10075,6 +10076,178 @@ async def generate_all_blog_posts(
     return {"status": "generating", "categories": len(categories)}
 
 
+# =====================
+# ANALYTICS
+# =====================
+
+analytics_router = APIRouter(prefix="/api/analytics")
+
+
+@analytics_router.post("/event")
+async def track_event(request: Request):
+    """Track an analytics event. No auth required for public page events."""
+    body = await request.json()
+    event_type = body.get("event")
+    if not event_type:
+        raise HTTPException(status_code=400, detail="event field required")
+
+    # Extract user from token if present
+    user_id = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        try:
+            import jwt
+            token = auth_header.split(" ")[1]
+            payload = jwt.decode(token, os.environ.get('JWT_SECRET', ''), algorithms=["HS256"])
+            user_id = payload.get("sub")
+        except Exception:
+            pass
+
+    doc = {
+        "event": event_type,
+        "properties": body.get("properties", {}),
+        "user_id": user_id,
+        "session_id": body.get("session_id"),
+        "page": body.get("page", ""),
+        "referrer": body.get("referrer", ""),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user_agent": request.headers.get("User-Agent", "")[:200],
+    }
+    await db.analytics_events.insert_one(doc)
+    return {"ok": True}
+
+
+@analytics_router.post("/batch")
+async def track_batch_events(request: Request):
+    """Track multiple analytics events in a single request."""
+    body = await request.json()
+    events = body.get("events", [])
+    if not events:
+        raise HTTPException(status_code=400, detail="events array required")
+
+    user_id = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        try:
+            import jwt
+            token = auth_header.split(" ")[1]
+            payload = jwt.decode(token, os.environ.get('JWT_SECRET', ''), algorithms=["HS256"])
+            user_id = payload.get("sub")
+        except Exception:
+            pass
+
+    now = datetime.now(timezone.utc).isoformat()
+    docs = []
+    for evt in events[:50]:
+        docs.append({
+            "event": evt.get("event", "unknown"),
+            "properties": evt.get("properties", {}),
+            "user_id": user_id,
+            "session_id": evt.get("session_id"),
+            "page": evt.get("page", ""),
+            "referrer": evt.get("referrer", ""),
+            "timestamp": evt.get("timestamp", now),
+            "user_agent": request.headers.get("User-Agent", "")[:200],
+        })
+    if docs:
+        await db.analytics_events.insert_many(docs)
+    return {"ok": True, "count": len(docs)}
+
+
+@analytics_router.get("/dashboard")
+async def get_analytics_dashboard(
+    days: int = 7,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Admin-only analytics dashboard data."""
+    profile = await db.profiles.find_one({"email": current_user.email})
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    pipeline_events = [
+        {"$match": {"timestamp": {"$gte": from_date}}},
+        {"$group": {"_id": "$event", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    event_counts = {doc["_id"]: doc["count"] async for doc in db.analytics_events.aggregate(pipeline_events)}
+
+    pipeline_daily = [
+        {"$match": {"timestamp": {"$gte": from_date}}},
+        {"$addFields": {"day": {"$substr": ["$timestamp", 0, 10]}}},
+        {"$group": {"_id": {"day": "$day", "event": "$event"}, "count": {"$sum": 1}}},
+        {"$sort": {"_id.day": 1}},
+    ]
+    daily_raw = await db.analytics_events.aggregate(pipeline_daily).to_list(500)
+    daily = {}
+    for d in daily_raw:
+        day = d["_id"]["day"]
+        if day not in daily:
+            daily[day] = {}
+        daily[day][d["_id"]["event"]] = d["count"]
+
+    pipeline_pages = [
+        {"$match": {"timestamp": {"$gte": from_date}, "event": "page_view"}},
+        {"$group": {"_id": "$page", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 20},
+    ]
+    top_pages = await db.analytics_events.aggregate(pipeline_pages).to_list(20)
+
+    total_events = await db.analytics_events.count_documents({"timestamp": {"$gte": from_date}})
+    unique_sessions = len(await db.analytics_events.distinct("session_id", {"timestamp": {"$gte": from_date}}))
+    unique_users = len(await db.analytics_events.distinct("user_id", {"timestamp": {"$gte": from_date}, "user_id": {"$ne": None}}))
+
+    return {
+        "period_days": days,
+        "total_events": total_events,
+        "unique_sessions": unique_sessions,
+        "unique_users": unique_users,
+        "event_counts": event_counts,
+        "daily_breakdown": daily,
+        "top_pages": [{"page": p["_id"], "views": p["count"]} for p in top_pages],
+    }
+
+
+@analytics_router.get("/funnel")
+async def get_conversion_funnel(
+    days: int = 30,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Admin-only conversion funnel data."""
+    profile = await db.profiles.find_one({"email": current_user.email})
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    funnel_events = ["page_view", "signup_click", "signup_complete", "product_view", "upgrade_click", "checkout_start"]
+    funnel = {}
+    for evt in funnel_events:
+        count = await db.analytics_events.count_documents({"event": evt, "timestamp": {"$gte": from_date}})
+        funnel[evt] = count
+
+    # Calculate conversion rates
+    conversions = {}
+    if funnel.get("page_view", 0) > 0:
+        conversions["visit_to_signup_click"] = round(funnel.get("signup_click", 0) / funnel["page_view"] * 100, 1)
+    if funnel.get("signup_click", 0) > 0:
+        conversions["click_to_complete"] = round(funnel.get("signup_complete", 0) / funnel["signup_click"] * 100, 1)
+    if funnel.get("signup_complete", 0) > 0:
+        conversions["signup_to_product_view"] = round(funnel.get("product_view", 0) / funnel["signup_complete"] * 100, 1)
+    if funnel.get("product_view", 0) > 0:
+        conversions["view_to_upgrade_click"] = round(funnel.get("upgrade_click", 0) / funnel["product_view"] * 100, 1)
+
+    return {
+        "period_days": days,
+        "funnel": funnel,
+        "conversion_rates": conversions,
+    }
+
+
+app.include_router(analytics_router)
+
 app.include_router(blog_router)
 
 app.include_router(tools_router)
@@ -10105,6 +10278,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # ── Image Enrichment Endpoints ──
 # NOTE: These must be defined BEFORE app.mount for /api/images static files

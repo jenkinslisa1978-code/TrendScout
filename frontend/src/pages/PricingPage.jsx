@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { trackEvent, EVENTS } from '@/services/analytics';
 
 const PLANS = [
   {
@@ -85,9 +86,11 @@ export default function PricingPage() {
 
   const handleSelectPlan = async (planId) => {
     if (!user) {
+      trackEvent(EVENTS.SIGNUP_CLICK, { source: 'pricing', plan: planId });
       navigate('/signup');
       return;
     }
+    trackEvent(EVENTS.CHECKOUT_START, { plan: planId });
     setLoading(planId);
     try {
       const response = await api.post('/api/stripe/create-checkout-session', {

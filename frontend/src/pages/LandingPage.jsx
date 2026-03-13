@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { trackEvent, EVENTS } from '@/services/analytics';
 import {
   TrendingUp, Rocket, Store, Zap, Check, ArrowRight,
   Sparkles, Package, Star, Eye, BarChart3, Search,
@@ -85,6 +86,7 @@ export default function LandingPage() {
                   size="lg"
                   className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-13 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
                   data-testid="hero-cta-btn"
+                  onClick={() => trackEvent(EVENTS.SIGNUP_CLICK, { source: 'hero' })}
                 >
                   <Search className="mr-2 h-5 w-5" />
                   Start Free Product Discovery
@@ -96,6 +98,7 @@ export default function LandingPage() {
                   size="lg"
                   className="text-base px-8 h-13 text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all duration-300 rounded-xl"
                   data-testid="hero-secondary-btn"
+                  onClick={() => trackEvent(EVENTS.TRENDING_VIEW, { source: 'hero' })}
                 >
                   <Eye className="mr-2 h-4 w-4" />
                   View Trending Products
@@ -366,6 +369,7 @@ export default function LandingPage() {
                         : 'bg-slate-900 hover:bg-slate-800 text-white'
                     }`}
                     data-testid={`pricing-cta-${plan.id}`}
+                    onClick={() => trackEvent(EVENTS.SIGNUP_CLICK, { source: 'landing_pricing', plan: plan.id })}
                   >
                     {plan.cta}
                   </Button>
@@ -433,6 +437,7 @@ export default function LandingPage() {
                     size="lg"
                     className="bg-white text-slate-900 hover:bg-slate-100 text-base px-10 h-13 font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl"
                     data-testid="final-cta-btn"
+                    onClick={() => trackEvent(EVENTS.SIGNUP_CLICK, { source: 'final_cta' })}
                   >
                     <Rocket className="mr-2 h-5 w-5" />
                     Start Free Product Discovery

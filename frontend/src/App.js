@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "sonner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { trackPageView } from "@/services/analytics";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
@@ -15,6 +16,7 @@ import ProductDetailPage from "@/pages/ProductDetailPage";
 import SavedProductsPage from "@/pages/SavedProductsPage";
 import AdminPage from "@/pages/AdminPage";
 import AdminAutomationPage from "@/pages/AdminAutomationPage";
+import AnalyticsDashboardPage from "@/pages/AnalyticsDashboardPage";
 import TrendAlertsPage from "@/pages/TrendAlertsPage";
 import StoresPage from "@/pages/StoresPage";
 import StoreDetailPage from "@/pages/StoreDetailPage";
@@ -104,6 +106,14 @@ const AdminRoute = ({ children }) => {
 
   return children;
 };
+
+function PageTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+  return null;
+}
 
 function AppRoutes() {
   return (
@@ -208,6 +218,14 @@ function AppRoutes() {
         element={
           <AdminRoute>
             <IntegrationStatusPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/analytics"
+        element={
+          <AdminRoute>
+            <AnalyticsDashboardPage />
           </AdminRoute>
         }
       />
@@ -332,6 +350,7 @@ function App() {
         <SubscriptionProvider>
           <ViewModeProvider>
             <BrowserRouter>
+              <PageTracker />
               <AppRoutes />
               <Toaster 
                 position="top-right" 
