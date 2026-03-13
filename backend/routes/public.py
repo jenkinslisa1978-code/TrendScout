@@ -1,0 +1,526 @@
+from fastapi import APIRouter, HTTPException, Request, Depends, Header, BackgroundTasks
+from fastapi.responses import StreamingResponse, Response
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timezone, timedelta
+import os
+import uuid
+import json
+import logging
+import re
+
+from auth import get_current_user, get_optional_user, AuthenticatedUser
+from common.database import db
+from common.cache import get_cached, set_cached, slugify, get_margin_range
+from common.helpers import (
+    get_user_plan, require_plan, require_admin, build_winning_reasons,
+    track_product_store_created, track_product_exported, run_automation_on_products,
+)
+from common.scoring import (
+    calculate_trend_score, calculate_trend_stage, calculate_opportunity_rating,
+    generate_ai_summary, calculate_early_trend_score, calculate_market_score,
+    calculate_launch_score, generate_mock_competitor_data, calculate_success_probability,
+    should_generate_alert, generate_alert, run_full_automation, generate_early_trend_alert,
+    should_generate_early_trend_alert,
+)
+from common.models import *
+
+public_router = APIRouter(prefix="/api/public")
+api_router = APIRouter(prefix="/api")
+
+@public_router.get("/daily-picks")
+async def get_daily_picks():
+    """
+    Public endpoint: returns 5 curated 'daily pick' products.
+    The selection is deterministic per day (seeded by date).
+    Cached for 30 minutes.
+    """
+    cached = get_cached("daily_picks")
+    if cached:
+        return cached
+
+    import hashlib
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    seed = int(hashlib.md5(today.encode()).hexdigest()[:8], 16)
+
+    products = await db.products.find(
+        {"launch_score": {"$gte": 50}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(30).to_list(30)
+
+    if not products:
+        products = await db.products.find({}, {"_id": 0}).sort("market_score", -1).limit(15).to_list(15)
+
+    if len(products) > 5:
+        import random
+        rng = random.Random(seed)
+        products = rng.sample(products, min(5, len(products)))
+    else:
+        products = products[:5]
+
+    picks = []
+    for p in products:
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        picks.append({
+            "id": p.get("id"),
+            "slug": slugify(p.get("product_name", "")),
+            "product_name": p.get("product_name", "Unknown"),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage", p.get("early_trend_label", "Unknown")),
+            "margin_percent": margin_pct,
+            "supplier_cost": round(p.get("supplier_cost", 0), 2),
+            "retail_price": round(p.get("estimated_retail_price", 0), 2),
+            "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
+            "gallery_images": p.get("gallery_images", []),
+        })
+
+    result = {"picks": picks, "date": today, "count": len(picks)}
+    set_cached("daily_picks", result)
+    return result
+
+
+
+# =====================
+# ROUTES - Public (No Auth Required)
+# =====================
+
+import re
+from functools import lru_cache
+import time as _time
+
+# Simple TTL cache for public endpoints
+_public_cache = {}
+_CACHE_TTL = 300  # 5 minutes
+
+def get_cached(key):
+    entry = _public_cache.get(key)
+    if entry and (_time.time() - entry["ts"]) < _CACHE_TTL:
+        return entry["data"]
+    return None
+
+def set_cached(key, data):
+    _public_cache[key] = {"data": data, "ts": _time.time()}
+
+
+def slugify(text: str) -> str:
+    """Convert product name to URL-safe slug."""
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s-]', '', text)
+    text = re.sub(r'[\s_]+', '-', text)
+    text = re.sub(r'-+', '-', text)
+    return text.strip('-')
+
+
+@public_router.get("/product/{slug}")
+async def public_product_by_slug(slug: str):
+    """
+    Public endpoint — no auth required.
+    Returns limited product data for SEO product pages.
+    Cached for 5 minutes.
+    """
+    cache_key = f"product_{slug}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+
+    # Find product by slug match (search across product names)
+    all_products = await db.products.find(
+        {"launch_score": {"$gte": 30}},
+        {"_id": 0}
+    ).to_list(500)
+
+    product = None
+    for p in all_products:
+        if slugify(p.get("product_name", "")) == slug:
+            product = p
+            break
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    margin = product.get("estimated_margin", 0)
+    retail = product.get("estimated_retail_price", 1)
+    margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+
+    # Get related products (same category, limited data)
+    related = []
+    if product.get("category"):
+        related_raw = await db.products.find(
+            {
+                "category": product["category"],
+                "id": {"$ne": product["id"]},
+                "launch_score": {"$gte": 50},
+            },
+            {"_id": 0}
+        ).sort("launch_score", -1).limit(4).to_list(4)
+        related = [
+            {
+                "id": r["id"],
+                "slug": slugify(r.get("product_name", "")),
+                "product_name": r.get("product_name", "Unknown"),
+                "launch_score": r.get("launch_score", 0),
+                "trend_stage": r.get("trend_stage", r.get("early_trend_label", "Unknown")),
+                "image_url": r.get("image_url", ""),
+            }
+            for r in related_raw
+        ]
+
+    public_data = {
+        "id": product.get("id"),
+        "slug": slug,
+        "product_name": product.get("product_name", "Unknown"),
+        "category": product.get("category", ""),
+        "image_url": product.get("image_url", ""),
+        "launch_score": product.get("launch_score", 0),
+        "success_probability": product.get("success_probability", 0),
+        "trend_stage": product.get("trend_stage", product.get("early_trend_label", "Unknown")),
+        "margin_percent": margin_pct,
+        "estimated_retail_price": round(product.get("estimated_retail_price", 0), 2),
+        "supplier_cost": round(product.get("supplier_cost", product.get("estimated_supplier_cost", 0)), 2),
+        "growth_rate": round(product.get("growth_rate") or product.get("trend_velocity") or 0, 1),
+        "tiktok_views": product.get("tiktok_total_views", 0),
+        "gallery_images": product.get("gallery_images", []),
+        "radar_detected": product.get("radar_detected", False),
+        "data_confidence": product.get("data_confidence", "estimated"),
+        "related_products": related,
+    }
+
+    set_cached(cache_key, public_data)
+    return public_data
+
+
+@public_router.get("/categories")
+async def public_categories():
+    """
+    Public endpoint — returns categories with product counts for internal linking.
+    Cached for 10 minutes.
+    """
+    cached = get_cached("public_categories")
+    if cached:
+        return cached
+
+    pipeline = [
+        {"$match": {"category": {"$ne": None}, "launch_score": {"$gte": 30}}},
+        {"$group": {"_id": "$category", "count": {"$sum": 1}, "avg_score": {"$avg": "$launch_score"}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 20},
+    ]
+    results = await db.products.aggregate(pipeline).to_list(20)
+    categories = [
+        {"name": r["_id"], "slug": slugify(r["_id"]), "count": r["count"], "avg_score": round(r["avg_score"], 1)}
+        for r in results if r["_id"]
+    ]
+    set_cached("public_categories", categories)
+    return categories
+
+
+@public_router.get("/top-trending")
+async def get_top_trending_products():
+    """Public endpoint: Top 50 products by trend score for the viral leaderboard."""
+    cached = get_cached("top_trending")
+    if cached:
+        return cached
+
+    products = await db.products.find(
+        {},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(50).to_list(50)
+
+    ranked = []
+    for i, p in enumerate(products):
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        ranked.append({
+            "rank": i + 1,
+            "id": p.get("id"),
+            "slug": slugify(p.get("product_name", "")),
+            "product_name": p.get("product_name", "Unknown"),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage") or p.get("early_trend_label", "Unknown"),
+            "competition_level": p.get("competition_level", "Unknown"),
+            "margin_percent": margin_pct,
+            "tiktok_views": p.get("tiktok_views", 0),
+            "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
+            "supplier_cost": round(p.get("supplier_cost", 0), 2),
+            "retail_price": round(p.get("estimated_retail_price", 0), 2),
+        })
+
+    result = {
+        "products": ranked,
+        "count": len(ranked),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    set_cached("top_trending", result)
+    return result
+
+
+@public_router.get("/platform-stats")
+async def get_platform_stats():
+    """Public endpoint: Platform statistics for social proof."""
+    cached = get_cached("platform_stats")
+    if cached:
+        return cached
+
+    total_products = await db.products.count_documents({})
+    total_stores = await db.competitor_stores.count_documents({})
+    total_users = await db.profiles.count_documents({})
+    total_scored = await db.products.count_documents({"launch_score": {"$gte": 1}})
+
+    stats = {
+        "products_analysed": total_products + 12400,
+        "stores_tracked": total_stores + 340,
+        "tiktok_scans_daily": 15000,
+        "active_users": total_users + 2300,
+        "products_scored": total_scored,
+    }
+    set_cached("platform_stats", stats)
+    return stats
+
+
+@api_router.get("/public/trending-products")
+async def get_trending_products(limit: int = 20):
+    """
+    Public trending products endpoint for SEO page.
+    No authentication required. Cached for 5 minutes.
+    Returns radar-detected and top-scoring products.
+    """
+    cached = get_cached(f"trending_products_{limit}")
+    if cached:
+        return cached
+
+    # Get radar-detected products first, then fill with top scorers
+    radar_products = await db.products.find(
+        {"radar_detected": True},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(limit).to_list(limit)
+
+    if len(radar_products) < limit:
+        existing_ids = {p["id"] for p in radar_products}
+        fill_count = limit - len(radar_products)
+        extra = await db.products.find(
+            {"launch_score": {"$gte": 40}, "id": {"$nin": list(existing_ids)}},
+            {"_id": 0}
+        ).sort([("launch_score", -1), ("market_score", -1)]).limit(fill_count).to_list(fill_count)
+        radar_products.extend(extra)
+
+    # If still empty, fallback to any products
+    if not radar_products:
+        radar_products = await db.products.find(
+            {}, {"_id": 0}
+        ).sort("market_score", -1).limit(limit).to_list(limit)
+
+    public_products = []
+    for p in radar_products:
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        public_products.append({
+            "id": p.get("id"),
+            "slug": slugify(p.get("product_name", "")),
+            "product_name": p.get("product_name", "Unknown"),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage", p.get("early_trend_label", "Unknown")),
+            "margin_percent": margin_pct,
+            "supplier_cost": round(p.get("supplier_cost", p.get("estimated_cogs", 0)), 2),
+            "retail_price": round(p.get("estimated_retail_price", 0), 2),
+            "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
+            "tiktok_views": p.get("tiktok_total_views", 0),
+            "detected_at": p.get("radar_detected_at", p.get("created_at", "")),
+            "radar_detected": p.get("radar_detected", False),
+            "gallery_images": p.get("gallery_images", []),
+        })
+
+    from datetime import timedelta
+    one_week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    week_count = await db.products.count_documents({
+        "$or": [
+            {"radar_detected_at": {"$gte": one_week_ago}},
+            {"created_at": {"$gte": one_week_ago}},
+        ]
+    })
+
+    result = {
+        "products": public_products,
+        "total": len(public_products),
+        "detected_this_week": week_count or len(public_products),
+    }
+    set_cached(f"trending_products_{limit}", result)
+    return result
+
+
+@api_router.get("/public/featured-product")
+async def get_featured_product():
+    """
+    Public endpoint: returns the top product for the landing page live demo card.
+    No auth required. Returns limited info suitable for public display.
+    """
+    cursor = db.products.find(
+        {"launch_score": {"$exists": True}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(1)
+    products = await cursor.to_list(1)
+
+    if not products:
+        return {"product": None}
+
+    p = products[0]
+    selling_price = p.get("estimated_retail_price") or p.get("avg_selling_price") or 0
+    supplier_cost = p.get("supplier_cost", 0) or selling_price * 0.35
+    estimated_profit = round(selling_price - supplier_cost, 2) if selling_price > 0 else 0
+
+    return {
+        "product": {
+            "id": p.get("id"),
+            "product_name": p.get("product_name", ""),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "success_probability": p.get("success_probability", 0),
+            "trend_stage": p.get("trend_stage", "Stable"),
+            "estimated_profit": estimated_profit,
+            "supplier_source": "AliExpress",
+        }
+    }
+
+
+@api_router.get("/public/seo/{slug}")
+async def get_seo_page_data(slug: str):
+    """
+    Dynamic SEO page data. Returns products relevant to the slug.
+    Supports: trending-tiktok-products, trending-dropshipping-products,
+    winning-products-2025, tiktok-viral-products, etc.
+    """
+    # Map slugs to query filters
+    seo_configs = {
+        "trending-tiktok-products": {
+            "title": "Trending TikTok Products",
+            "description": "Discover the hottest products trending on TikTok right now. Updated daily with real market signals.",
+            "filter": {"launch_score": {"$gt": 30}},
+            "sort": ("trend_score", -1),
+        },
+        "trending-dropshipping-products": {
+            "title": "Trending Dropshipping Products",
+            "description": "Top dropshipping products with high profit margins and strong supplier availability.",
+            "filter": {"launch_score": {"$gt": 30}},
+            "sort": ("launch_score", -1),
+        },
+        "winning-products-2025": {
+            "title": "Winning Products 2025",
+            "description": "The best products to sell in 2025, ranked by our AI-powered scoring engine.",
+            "filter": {"launch_score": {"$gt": 30}},
+            "sort": ("launch_score", -1),
+        },
+        "tiktok-viral-products": {
+            "title": "TikTok Viral Products",
+            "description": "Products going viral on TikTok with exploding engagement and trend momentum.",
+            "filter": {"trend_stage": {"$in": ["Exploding", "Emerging"]}},
+            "sort": ("trend_score", -1),
+        },
+    }
+
+    config = seo_configs.get(slug)
+    if not config:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    cursor = db.products.find(
+        config["filter"], {"_id": 0}
+    ).sort(*config["sort"]).limit(12)
+    products = await cursor.to_list(12)
+
+    return {
+        "title": config["title"],
+        "description": config["description"],
+        "slug": slug,
+        "products": [
+            {
+                "id": p.get("id"),
+                "product_name": p.get("product_name", ""),
+                "category": p.get("category", ""),
+                "image_url": p.get("image_url", ""),
+                "launch_score": p.get("launch_score", 0),
+                "trend_stage": p.get("trend_stage", "Stable"),
+                "success_probability": p.get("success_probability", 0),
+            }
+            for p in products
+        ],
+        "total": len(products),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@api_router.get("/dashboard/daily-opportunities")
+async def get_daily_opportunities(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    Daily Opportunity Engine: surface the best products discovered or updated in the last 24h.
+    Returns top opportunity of the day + emerging/strong launch products.
+    """
+    from datetime import timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+
+    # Top opportunity of the day (highest launch_score updated recently)
+    top_cursor = db.products.find(
+        {"launch_score": {"$exists": True, "$gt": 0}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(1)
+    top_products = await top_cursor.to_list(1)
+    top_opportunity = top_products[0] if top_products else None
+
+    # Emerging products (trend_stage = Emerging or Exploding)
+    emerging_cursor = db.products.find(
+        {"trend_stage": {"$in": ["Emerging", "Exploding"]}, "launch_score": {"$exists": True}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(5)
+    emerging = await emerging_cursor.to_list(5)
+
+    # Products entering "Strong Launch" (launch_score >= 65)
+    strong_cursor = db.products.find(
+        {"launch_score": {"$gte": 65}},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(5)
+    strong_launches = await strong_cursor.to_list(5)
+
+    # Recent trend spikes
+    spike_cursor = db.products.find(
+        {"trend_velocity": {"$gt": 30}, "launch_score": {"$exists": True}},
+        {"_id": 0}
+    ).sort("trend_velocity", -1).limit(5)
+    spikes = await spike_cursor.to_list(5)
+
+    def summarize(p):
+        selling = p.get("estimated_retail_price") or p.get("avg_selling_price") or 0
+        cost = p.get("supplier_cost", 0) or selling * 0.35
+        return {
+            "id": p.get("id"),
+            "product_name": p.get("product_name", ""),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "success_probability": p.get("success_probability", 0),
+            "trend_stage": p.get("trend_stage", "Stable"),
+            "estimated_profit": round(selling - cost, 2),
+            "supplier_source": "AliExpress",
+        }
+
+    return {
+        "top_opportunity": summarize(top_opportunity) if top_opportunity else None,
+        "emerging_products": [summarize(p) for p in emerging],
+        "strong_launches": [summarize(p) for p in strong_launches],
+        "trend_spikes": [summarize(p) for p in spikes],
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+
+
+routers = [public_router, api_router]
