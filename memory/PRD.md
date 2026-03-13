@@ -1,127 +1,131 @@
 # TrendScout - Product Requirements Document
 
-## Positioning
-**TrendScout — The AI Operating System for Discovering & Launching Winning Ecommerce Products**
+## Product Vision
+AI operating system for e-commerce product discovery. TrendScout scans TikTok, Amazon, and ecommerce stores with AI to identify products ready to scale before competitors find them.
 
-## Tech Stack
-- Frontend: React, TailwindCSS, Shadcn/UI, react-helmet-async
-- Backend: FastAPI, MongoDB, APScheduler, aiohttp, Pillow
-- Auth: Custom JWT | Payments: Stripe (GBP, live) | Email: Resend
-- LLM: GPT 5.2 via emergentintegrations (Emergent LLM Key)
+## Architecture
 
-## Feature Inventory (All Implemented)
+### Backend (FastAPI + MongoDB)
+```
+/app/backend/
+├── server.py              # Slim 178-line entrypoint (middleware, startup/shutdown, router includes)
+├── auth.py                # JWT auth middleware
+├── common/
+│   ├── database.py        # MongoDB client & db instance
+│   ├── models.py          # All Pydantic request/response models
+│   ├── scoring.py         # Product scoring/calculation functions
+│   ├── cache.py           # In-memory cache utilities
+│   └── helpers.py         # Auth helpers, product tracking, automation helpers
+├── routes/
+│   ├── health.py          # GET /api/, /api/health
+│   ├── auth_routes.py     # POST /api/auth/register, /login, GET /profile
+│   ├── user.py            # Onboarding, admin, daily usage
+│   ├── stripe_routes.py   # Checkout, portal, webhook, plans, feature-access
+│   ├── products.py        # Products CRUD, launch score, proven winners, saturation
+│   ├── automation.py      # Automation pipeline run, logs, stats
+│   ├── jobs.py            # Job queue status, history, trigger, cancel
+│   ├── viral.py           # Referral system, public product views, sharing
+│   ├── public.py          # Daily picks, top-trending, platform-stats, SEO pages
+│   ├── seo.py             # Sitemap.xml, robots.txt
+│   ├── data_quality.py    # Data integrity, source health, confidence
+│   ├── intelligence.py    # Product validation, trend analysis, success prediction
+│   ├── dashboard.py       # Daily winners, opportunity feed, watchlist, radar, summary
+│   ├── reports.py         # Weekly/monthly reports, PDF downloads
+│   ├── email.py           # Email subscriptions, digest, newsletter
+│   ├── notifications.py   # In-app notifications, radar scan, threshold subscriptions
+│   ├── ingestion.py       # TikTok/Amazon/Supplier imports, scraping, dedup
+│   ├── stores.py          # Store CRUD, generation, export, launch
+│   ├── shopify.py         # Shopify OAuth, publish, disconnect
+│   ├── suppliers.py       # Supplier endpoints
+│   ├── ads.py             # Ad creatives, discovery, outcomes, A/B testing, engine
+│   ├── radar.py           # Live market radar events
+│   ├── optimizer.py       # Budget optimizer settings, recommendations
+│   ├── system_health.py   # System health, data integration
+│   ├── tools.py           # Shopify analyzer, competitor store tracker
+│   ├── workspace.py       # Saved products workspace
+│   ├── blog.py            # AI-generated blog posts
+│   ├── admin.py           # Image review, analytics dashboard
+│   └── images.py          # Image enrichment
+└── services/              # Business logic services
+```
 
-### Core Intelligence
-- **AI Trend Score (0-100)**: Dead/Weak/Emerging/Strong/Viral categories, displayed on all cards
-- **AI Launch Simulator (GPT 5.2)**: 3-phase strategy, target audience, revenue projections, risk assessment
-- **AI Ad Creative Generator (GPT 5.2)**: 3 TikTok ad concepts (Unboxing/Problem-Solution/Curiosity) with scenes, hooks, music
-- **Trend Timeline Chart**: SVG 7-day trend visualization with score/TikTok/Google metrics
-- **Product Saturation Meter**: Competition level, stores detected, ad saturation
+### Frontend (React)
+```
+/app/frontend/src/
+├── pages/                 # Page components
+├── components/            # Reusable UI components
+│   ├── ui/               # Shadcn components
+│   └── specific/         # App-specific components
+├── services/             # API service layer
+└── App.jsx               # Router configuration
+```
 
-### Discovery & Feed
-- **Daily Picks**: 5 curated daily products, deterministic rotation
-- **Viral Leaderboard**: /top-trending-products — Top 50 products ranked by score, SEO optimized
-- **Trending Products**: Advanced filters (category, margin, sort), confidence badges
-- **TikTok Intelligence Dashboard**: Viral products, category performance, ad patterns
+## Completed Features (30-Part Spec)
 
-### Tools
-- **Shopify Store Analyzer**: /tools/shopify-analyzer — paste any URL for instant analysis
-- **Competitor Store Tracker**: Track stores, refresh scans, product change detection
-- **Product Profit Calculator**: Break-even CPA, margin, daily profit
-- **Saved Products Workspace**: /saved — save products, add private notes, track launch status (Researching/Testing/Launched/Dropped), filter by status
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | Product Vision | Done |
+| 2 | Landing Page CRO | Done |
+| 3 | Pricing Page (3-tier) | Done |
+| 4 | Signup Flow | Done |
+| 5 | Onboarding Checklist | Done |
+| 6 | Advanced Discovery Filters | PENDING |
+| 7 | AI Trend Score Engine | Done |
+| 8 | Trend Timeline Charts | PENDING |
+| 9 | Product Saturation Meter | PENDING |
+| 10 | Profit Calculator | PENDING |
+| 11 | AI Launch Simulator | Done |
+| 12 | AI Ad Creative Generator | Done |
+| 13 | TikTok Intelligence | Done |
+| 14 | Competitor Store Scanner | Done |
+| 15 | Saved Product Workspace | Done |
+| 16 | Weekly Trend Report | Done |
+| 17 | Viral Product Alerts | Done |
+| 18 | SEO Growth Engine | Done |
+| 19 | Top Trending Page | Done |
+| 20 | Image Resolution Pipeline | PENDING (backend) |
+| 21 | Image Candidate Sources | PENDING |
+| 22 | Image Validation | PENDING |
+| 23 | Admin Image Review | Done |
+| 24 | Image Review Detail | Done |
+| 25 | Bulk Image Review | Done |
+| 26 | Image QA Metrics | Done |
+| 27 | Performance (GZip) | Done |
+| 28 | Analytics Pipeline | Done |
+| 29 | UX Philosophy | Adhered |
+| 30 | Success Metrics | Defined |
 
-### Viral Growth Engine
-- **Public SEO pages**: /trending/{slug} with full OG tags, Twitter cards, JSON-LD structured data
-- **Creator Share Feature**: Twitter/X, Facebook, LinkedIn, Reddit, WhatsApp + copy link
-- **Viral Leaderboard**: Top 50 daily-updated public page targeting SEO keywords
-- **AI SEO Blog**: /blog — Auto-generated weekly articles by product category using GPT-5.2, /blog/:slug with structured data
+## Backend Modularization (COMPLETED - March 2026)
+- Refactored 10,754-line monolithic server.py into 30 route files + 6 common modules
+- server.py reduced to 178-line slim entrypoint
+- 41/41 regression tests passed
+- No breaking changes to any API endpoint
 
-### Monetisation
-- **3-Tier Pricing**: Starter £19/mo, Growth £49/mo (recommended), Pro £99/mo
-- **Conversion messaging**: "One winning product can generate £10,000+ revenue"
-- **7-day free trial, cancel anytime** on all paid plans
-- **Feature comparison table** on dedicated /pricing page
-- **Freemium Gating**: Supplier & Ad sections locked for free users, UpgradeModal
-- **Daily Insight Limits**: Free=2/day, Starter=5, Pro=unlimited
-- **Competitor Tracking Limits**: Free=2, Starter=5, Pro=15, Elite=unlimited
-- **Threshold Alert Subscriptions**: User-defined score alerts with email/in-app delivery
+## Key DB Collections
+- products, profiles, auth_users, stores, store_products
+- subscriptions, trend_alerts, automation_logs
+- reports, workspaces, blog_posts
+- analytics_events, notifications, ad_tests
+- optimization_events, optimizer_alerts
 
-### Conversion & UX
-- **Landing Page**: Hero ("Discover Winning Ecommerce Products Before They Go Viral"), social proof stats bar, How It Works (3 steps), live trending products, testimonials, final CTA
-- **Signup Flow**: "Start Free Product Discovery" — email + password → instant dashboard access, no credit card required
-- **Dashboard Onboarding Checklist**: 4-step guide (Browse, Analyse, Generate Ads, Save), progress bar, dismissible
-- **Platform Stats API**: /api/public/platform-stats — dynamic counts for social proof
+## 3rd Party Integrations
+- OpenAI GPT-5.2 (via emergentintegrations)
+- MongoDB (primary DB)
+- Stripe (subscriptions)
+- Resend (emails)
+- CJ Dropshipping API (live)
+- Amazon, TikTok, Google Trends (scrapers)
 
-### Scheduled Tasks (19 total)
-- weekly_competitor_scan (Monday 6AM)
-- weekly_blog_generation (Monday 8AM) — generates blog posts for top 8 product categories
-- send_weekly_email_digest (Monday 10AM) — sends weekly winning products digest to subscribed users
-- send_product_of_the_week (Wednesday 11AM) — sends featured product email
-- scan_threshold_subscriptions (every 6h)
-- generate_alerts (hourly)
-- Plus 13 data ingestion/enrichment tasks
-
-### Image System
-- Fixed 61 broken Amazon placeholder images with curated Unsplash URLs by category
-- Fixed 55 mismatched bulk-assigned category images with product-specific Unsplash images
-- Image enrichment pipeline: Amazon + DuckDuckGo, Pillow optimization
-- Local CDN at /api/images/
-- **Admin Image Review Dashboard** (`/admin/image-review`): QA metrics, product queue with status filters, bulk approve/reject, detail view with custom URL override, pin/unpin
-- Image metadata: `image_status` (needs_review/pending/approved/rejected/placeholder), `image_confidence`, `image_pinned`, `image_candidates`
-
-### Analytics & Performance
-- **Event Tracking**: Auto page views, CTA clicks, signup/checkout events, batched to `/api/analytics/batch`
-- **Admin Analytics Dashboard** (`/admin/analytics`): Conversion funnel, event breakdown, top pages, daily activity, period filters (7d/14d/30d)
-- **GZip Compression**: All responses > 500 bytes compressed via middleware
-
-## API Endpoints Summary
-| Endpoint | Auth | Description |
-|----------|------|-------------|
-| GET /api/public/top-trending | No | 50 products ranked by score |
-| GET /api/public/daily-picks | No | 5 curated daily products |
-| GET /api/public/trending-products | No | Paginated trending products |
-| GET /api/tools/tiktok-intelligence | No | TikTok viral data |
-| POST /api/tools/analyze-store | No | Shopify store analysis |
-| GET /api/blog/posts | No | List published blog posts |
-| GET /api/blog/posts/{slug} | No | Single blog post with full content |
-| POST /api/blog/generate/{category} | Admin | Generate AI blog post for category |
-| POST /api/blog/generate-all | Admin | Generate for top 8 categories |
-| GET /api/workspace/products | Yes | List saved workspace products |
-| POST /api/workspace/products | Yes | Save product to workspace |
-| DELETE /api/workspace/products/{id} | Yes | Remove product from workspace |
-| PUT /api/workspace/products/{id}/note | Yes | Update product note |
-| PUT /api/workspace/products/{id}/status | Yes | Update launch status |
-| GET /api/workspace/products/{id}/check | Yes | Check if product is saved |
-| GET /api/email/subscription-status | Yes | Get email preferences |
-| POST /api/email/subscription-status | Yes | Update email preferences |
-| GET /api/ad-tests/ad-creatives/{id} | Yes | 3 AI ad concepts |
-| GET /api/ad-tests/ai-simulate/{id} | Yes | AI launch simulation |
-| GET/POST/DELETE /api/competitor-stores | Yes | Competitor tracking |
-| GET/PUT /api/notifications/threshold-subscription | Yes | Alert settings |
+## Test Credentials
+- Admin: jenkinslisa1978@gmail.com / admin123456 (auto elite plan)
+- Test user: test_refactor@test.com / test123456
 
 ## Upcoming Tasks
-- Chrome Extension — "TrendScout – Product & Store Analyzer" (deferred)
-- Backend modularization — extract routes from server.py into /routes/
-- Redis cache migration for multi-instance scaling
+1. **P1**: Product Image Resolution Pipeline (Parts 20-22)
+2. **P2**: Advanced Discovery Dashboard Filters (Part 6)
+3. **P3**: Product Trend Timeline Charts (Part 8)
+4. **P3**: Product Saturation Meter UI (Part 9)
+5. **P3**: Profit Calculator (Part 10)
 
-## Future / Backlog
-- CDN migration (Cloudflare R2/S3) for image storage
-- Redis cache for multi-instance scaling
-- Community growth features
-- Advanced competitor diff tracking (product-level changes)
-
-## DB Collections
-products, daily_usage, threshold_subscriptions, competitor_stores,
-notifications, profiles, subscriptions, stores, product_outcomes, blog_posts, workspace_products
-
-## Testing Status
-- iteration_48: Phase C features — 100% (14/14)
-- iteration_49: Trend alerts + conversion — 100% (17/17)
-- iteration_50: Shopify analyzer + competitor tracker — 100% (15/15)
-- iteration_51: AI simulator + TikTok intel — 100% (23/23)
-- iteration_52: Growth upgrade (leaderboard, ad generator, images, SEO) — 100% (15/15 + all frontend)
-- iteration_53: AI SEO Blog System — 100% (12/12 backend + all frontend verified)
-- iteration_54: Workspace + Email Subscription — 100% (25/25 backend + all frontend verified)
-- iteration_55: Phase 1 Conversion Optimization — 100% (15/15 backend + all frontend verified)
-- iteration_56: Phase 3 Analytics & Performance — 100% (12/12 backend + all frontend verified, GZip confirmed)
-- iteration_57: Phase 2 Admin Image Review — 100% (22/22 backend + all frontend verified)
+## Backlog
+- Redis cache migration (replace in-memory cache)
