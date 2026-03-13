@@ -132,13 +132,13 @@ export default function SupplierSection({ productId, productName }) {
                     <div>
                       <p className="text-xs text-slate-400 uppercase tracking-wide">Cost</p>
                       <p className="text-sm font-mono font-bold text-slate-900">
-                        {supplier.supplier_cost > 0 ? `$${supplier.supplier_cost.toFixed(2)}` : 'Unknown'}
+                        {supplier.supplier_cost > 0 ? `£${supplier.supplier_cost.toFixed(2)}` : 'Unknown'}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 uppercase tracking-wide">Shipping</p>
                       <p className="text-sm font-mono text-slate-700">
-                        {supplier.estimated_shipping_cost > 0 ? `+$${supplier.estimated_shipping_cost.toFixed(2)}` : 'Free'}
+                        {supplier.estimated_shipping_cost > 0 ? `+£${supplier.estimated_shipping_cost.toFixed(2)}` : 'Free'}
                       </p>
                     </div>
                     <div className="flex items-start gap-1">
@@ -190,7 +190,7 @@ export default function SupplierSection({ productId, productName }) {
                     <a href={supplier.supplier_url} target="_blank" rel="noopener noreferrer">
                       <Button variant="outline" size="sm" className="text-xs" data-testid={`view-supplier-${supplier.source}`}>
                         <ExternalLink className="h-3 w-3 mr-1" />
-                        View on {supplier.source === 'aliexpress' ? 'AliExpress' : 'CJ'}
+                        Search on {supplier.source === 'aliexpress' ? 'AliExpress' : 'CJ'}
                       </Button>
                     </a>
                   </div>

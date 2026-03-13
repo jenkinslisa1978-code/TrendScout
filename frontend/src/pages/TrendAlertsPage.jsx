@@ -56,6 +56,36 @@ const ALERT_TYPE_CONFIG = {
     bgColor: 'bg-purple-50',
     label: 'New Opportunity',
   },
+  exploding_trend: {
+    icon: TrendingUp,
+    color: 'text-rose-600',
+    bgColor: 'bg-rose-50',
+    label: 'Trending Fast',
+  },
+  rising_early_trend: {
+    icon: TrendingUp,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    label: 'Rising Trend',
+  },
+  massive_opportunity: {
+    icon: Target,
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
+    label: 'Big Opportunity',
+  },
+  early_trend_opportunity: {
+    icon: Sparkles,
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
+    label: 'Early Opportunity',
+  },
+  strong_opportunity: {
+    icon: Target,
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-50',
+    label: 'Strong Opportunity',
+  },
 };
 
 const PRIORITY_CONFIG = {
@@ -270,7 +300,8 @@ export default function TrendAlertsPage() {
           <div className="space-y-4">
             {filteredAlerts.map((alert) => {
               const typeConfig = ALERT_TYPE_CONFIG[alert.alert_type] || ALERT_TYPE_CONFIG.new_opportunity;
-              const priorityConfig = PRIORITY_CONFIG[alert.priority] || PRIORITY_CONFIG.medium;
+              const severity = alert.severity || alert.priority || 'medium';
+              const priorityConfig = PRIORITY_CONFIG[severity] || PRIORITY_CONFIG.medium;
               const TypeIcon = typeConfig.icon;
 
               return (
@@ -310,9 +341,9 @@ export default function TrendAlertsPage() {
                                 <Clock className="h-3 w-3" />
                                 {formatTime(alert.created_at)}
                               </div>
-                              {alert.trend_score && (
+                              {(alert.launch_score || alert.trend_score) && (
                                 <div className="text-xs font-mono font-semibold text-slate-600">
-                                  Score: {alert.trend_score}
+                                  Launch Score: {alert.launch_score || alert.trend_score}/100
                                 </div>
                               )}
                             </div>

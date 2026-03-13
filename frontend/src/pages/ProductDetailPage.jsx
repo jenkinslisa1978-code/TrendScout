@@ -38,6 +38,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { LockedContent, UpgradeBadge } from '@/components/common/UpgradePrompts';
 import { UpgradeModal } from '@/components/common/UpgradeModal';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import SupplierSection from '@/components/SupplierSection';
 import AdCreativeSection from '@/components/AdCreativeSection';
 import AdDiscoverySection from '@/components/AdDiscoverySection';
@@ -213,25 +219,29 @@ export default function ProductDetailPage() {
       icon: LaunchIcon,
       color: launchInfo.textColor,
       isPrimary: true,
-      showExplain: true
+      showExplain: true,
+      tooltip: 'How ready this product is to sell. Higher = better chance of success. Based on trend, profit margin, competition, and demand.'
     },
     {
       label: 'Trend Score',
       value: product.trend_score,
       icon: TrendingUp,
-      color: getTrendScoreColor(product.trend_score)
+      color: getTrendScoreColor(product.trend_score),
+      tooltip: 'How popular this product is right now. Higher = more people are searching for and buying it.'
     },
     {
       label: 'Est. Margin',
       value: formatCurrency(product.estimated_margin),
       icon: PoundSterling,
-      color: 'text-emerald-600'
+      color: 'text-emerald-600',
+      tooltip: 'How much profit you could make per sale after paying the supplier. Higher = more money in your pocket.'
     },
     {
       label: 'Competitors',
       value: product.active_competitor_stores || 0,
       icon: Users,
-      color: 'text-purple-600'
+      color: 'text-purple-600',
+      tooltip: 'How many other shops are already selling this product. Lower = less competition for you.'
     }
   ];
 
@@ -365,14 +375,6 @@ export default function ProductDetailPage() {
                 </>
               )}
             </Button>
-            {product.supplier_link && (
-              <a href={product.supplier_link} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" data-testid="supplier-link-btn">
-                  View Supplier
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Button>
-              </a>
-            )}
             <Button
               variant="outline"
               onClick={() => setShowShareCard(true)}
@@ -452,6 +454,7 @@ export default function ProductDetailPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="product-stats">
+          <TooltipProvider delayDuration={200}>
           {stats.map((stat) => (
             <Card key={stat.label} className={`border-slate-200 shadow-sm ${stat.isPrimary ? 'ring-2 ring-indigo-100' : ''}`}>
               <CardContent className="p-5">
@@ -459,6 +462,16 @@ export default function ProductDetailPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm text-slate-500">{stat.label}</p>
+                      {stat.tooltip && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-slate-300 hover:text-slate-500 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] text-xs">
+                            <p>{stat.tooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       {stat.showExplain && (
                         <ExplainScoreButton 
                           productId={product.id}
@@ -484,6 +497,7 @@ export default function ProductDetailPage() {
               </CardContent>
             </Card>
           ))}
+          </TooltipProvider>
         </div>
 
         {/* Transparent Score Breakdown */}
@@ -526,12 +540,12 @@ export default function ProductDetailPage() {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 {[
-                  { key: 'trend', label: 'Trend', icon: TrendingUp, color: 'indigo' },
-                  { key: 'margin', label: 'Margin', icon: PoundSterling, color: 'emerald' },
-                  { key: 'competition', label: 'Competition', icon: Users, color: 'amber' },
-                  { key: 'ad_activity', label: 'Ad Activity', icon: Megaphone, color: 'rose' },
-                  { key: 'supplier_demand', label: 'Supplier', icon: Package, color: 'sky' },
-                ].map(({ key, label, icon: Icon, color }) => {
+                  { key: 'trend', label: 'Trend', icon: TrendingUp, color: 'indigo', help: 'Is this product getting more popular?' },
+                  { key: 'margin', label: 'Margin', icon: PoundSterling, color: 'emerald', help: 'How much profit can you make per sale?' },
+                  { key: 'competition', label: 'Competition', icon: Users, color: 'amber', help: 'How many other sellers are there?' },
+                  { key: 'ad_activity', label: 'Ad Activity', icon: Megaphone, color: 'rose', help: 'How hard is it to advertise this product?' },
+                  { key: 'supplier_demand', label: 'Supplier', icon: Package, color: 'sky', help: 'Is there a reliable supplier for this?' },
+                ].map(({ key, label, icon: Icon, color, help }) => {
                   const data = product.launch_score_breakdown?.[key];
                   if (!data) return null;
                   const scoreVal = data.score || 0;
@@ -549,15 +563,9 @@ export default function ProductDetailPage() {
                       <div className="w-full h-1.5 bg-slate-200 rounded-full">
                         <div className={`h-full rounded-full ${barColor}`} style={{ width: `${scoreVal}%` }} />
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-slate-500">
-                        <span className="font-medium">Weight:</span>
-                        <span>{(data.weight * 100).toFixed(0)}%</span>
-                        <span className="mx-1">|</span>
-                        <span className="font-medium">Contribution:</span>
-                        <span>{data.weighted?.toFixed(1)}</span>
-                      </div>
+                      <p className="text-xs text-slate-500 leading-relaxed">{help}</p>
                       {data.reasoning && (
-                        <p className="text-xs text-slate-500 leading-relaxed mt-1">{data.reasoning}</p>
+                        <p className="text-xs text-slate-400 leading-relaxed mt-1">{data.reasoning}</p>
                       )}
                     </div>
                   );
