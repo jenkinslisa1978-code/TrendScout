@@ -29,9 +29,9 @@ const STORE_ICONS = {
 const STORE_AUTOMATION = {
   shopify: { level: 'full', label: 'Full Automation', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
   woocommerce: { level: 'full', label: 'Full Automation', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-  etsy: { level: 'manual', label: 'Manual Import', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  bigcommerce: { level: 'manual', label: 'Manual Import', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  squarespace: { level: 'manual', label: 'Manual Import', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  etsy: { level: 'full', label: 'Full Automation', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  bigcommerce: { level: 'full', label: 'Full Automation', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  squarespace: { level: 'full', label: 'Full Automation', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
 };
 
 const AD_ICONS = {

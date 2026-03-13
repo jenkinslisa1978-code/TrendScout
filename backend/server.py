@@ -85,6 +85,10 @@ app.add_middleware(
 )
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
+# Per-user, per-plan rate limiting
+from middleware.rate_limit import RateLimitMiddleware
+app.add_middleware(RateLimitMiddleware)
+
 # Serve product images from local storage
 IMAGES_DIR = ROOT_DIR / "static" / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)

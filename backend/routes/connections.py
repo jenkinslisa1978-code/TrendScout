@@ -49,8 +49,8 @@ SUPPORTED_STORES = {
     },
     "etsy": {
         "name": "Etsy",
-        "fields": ["api_key", "access_token"],
-        "help": "Go to etsy.com/developers → Create a new app → Get your API key and OAuth token",
+        "fields": ["store_url", "api_key", "access_token"],
+        "help": "Go to etsy.com/developers → Create a new app → Get your API key (Keystring) and OAuth2 access token. Your Shop ID is in your shop URL (e.g. etsy.com/shop/YourShop → use the numeric Shop ID from Shop Manager).",
         "url": "https://www.etsy.com/developers",
     },
     "bigcommerce": {
@@ -236,6 +236,9 @@ async def disconnect_platform(
 from services.platform_integrations import (
     publish_to_shopify,
     publish_to_woocommerce,
+    publish_to_etsy,
+    publish_to_bigcommerce,
+    publish_to_squarespace,
     post_ads_to_meta,
     post_ads_to_tiktok,
     post_ads_to_google,
@@ -291,12 +294,31 @@ async def auto_publish_to_store(
                 api_secret=store_conn.get("api_secret", ""),
                 products=store_products,
             )
+        elif platform == "etsy":
+            api_result = await publish_to_etsy(
+                api_key=store_conn.get("api_key", ""),
+                access_token=store_conn.get("access_token", ""),
+                shop_id=store_conn.get("store_url", ""),
+                products=store_products,
+            )
+        elif platform == "bigcommerce":
+            api_result = await publish_to_bigcommerce(
+                store_url=store_url,
+                api_key=store_conn.get("api_key", ""),
+                access_token=store_conn.get("access_token", ""),
+                products=store_products,
+            )
+        elif platform == "squarespace":
+            api_result = await publish_to_squarespace(
+                store_url=store_url,
+                api_key=store_conn.get("api_key", ""),
+                products=store_products,
+            )
         else:
-            # Etsy, BigCommerce, Squarespace — record intent
             api_result = {
                 "platform": platform,
                 "total_created": len(store_products),
-                "message": f"Product data prepared for {SUPPORTED_STORES.get(platform,{}).get('name', platform)}. Import via their dashboard using the product details below.",
+                "message": f"Product data prepared for {SUPPORTED_STORES.get(platform,{}).get('name', platform)}.",
                 "products": [{"title": p.get("product_name", p.get("title", "")), "success": True} for p in store_products],
             }
     except Exception as e:

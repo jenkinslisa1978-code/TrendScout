@@ -330,8 +330,6 @@ async def post_ads_to_google(
     Google Ads API requires OAuth2 + developer token + complex protobuf payloads.
     We create a campaign shell that the user completes in Google Ads UI.
     """
-    # Google Ads API is significantly more complex (protobuf, OAuth2, developer tokens).
-    # For now, we record the intent and guide the user to complete in Google Ads.
     return {
         "platform": "google",
         "success": True,
@@ -341,4 +339,241 @@ async def post_ads_to_google(
             "headline": creatives[0].get("headline", product.get("product_name", "")) if creatives else product.get("product_name", ""),
             "description": creatives[0].get("primary_text", "") if creatives else "",
         },
+    }
+
+
+# ==================== NEW E-COMMERCE INTEGRATIONS ====================
+
+async def publish_to_etsy(
+    api_key: str,
+    access_token: str,
+    shop_id: str,
+    products: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Create listings on Etsy via Open API v3"""
+    base_url = "https://openapi.etsy.com/v3"
+    headers = {
+        "Content-Type": "application/json",
+        "x-api-key": api_key,
+        "Authorization": f"Bearer {access_token}",
+    }
+
+    results = []
+    async with httpx.AsyncClient(timeout=30) as client:
+        for prod in products[:10]:
+            title = prod.get("product_name") or prod.get("title", "Product")
+            description = prod.get("description", title)
+            price_raw = prod.get("price") or prod.get("estimated_retail_price", 0)
+            try:
+                price_float = float(price_raw)
+            except (ValueError, TypeError):
+                price_float = 0
+
+            listing_data = {
+                "quantity": 100,
+                "title": title[:140],
+                "description": description,
+                "price": price_float,
+                "who_made": "someone_else",
+                "when_made": "2020_2025",
+                "taxonomy_id": 1,
+                "shipping_profile_id": None,
+                "state": "draft",
+                "type": "physical",
+            }
+
+            try:
+                response = await client.post(
+                    f"{base_url}/application/shops/{shop_id}/listings",
+                    json=listing_data,
+                    headers=headers,
+                )
+                if response.status_code in (200, 201):
+                    result = response.json()
+                    listing_id = result.get("listing_id")
+                    results.append({
+                        "success": True,
+                        "etsy_listing_id": listing_id,
+                        "title": result.get("title"),
+                        "url": f"https://www.etsy.com/listing/{listing_id}",
+                        "state": "draft",
+                    })
+                    logger.info(f"Created Etsy listing: {listing_id}")
+                else:
+                    error_msg = response.text[:200]
+                    results.append({
+                        "success": False,
+                        "error": f"Etsy API error ({response.status_code}): {error_msg}",
+                    })
+                    logger.error(f"Etsy create failed: {response.status_code} - {error_msg}")
+            except Exception as e:
+                results.append({"success": False, "error": str(e)})
+                logger.error(f"Etsy request failed: {e}")
+
+    successful = [r for r in results if r["success"]]
+    return {
+        "platform": "etsy",
+        "total_submitted": len(products[:10]),
+        "total_created": len(successful),
+        "products": results,
+        "note": "Listings created as DRAFT. Review and activate them in your Etsy Shop Manager.",
+    }
+
+
+async def publish_to_bigcommerce(
+    store_url: str,
+    api_key: str,
+    access_token: str,
+    products: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Create products on BigCommerce via REST API v3"""
+    # BigCommerce store_url contains the store hash (e.g. store-abc123.mybigcommerce.com)
+    store_hash = store_url.replace("https://", "").replace("http://", "").split(".")[0]
+    if store_hash.startswith("store-"):
+        store_hash = store_hash[6:]
+
+    base_url = f"https://api.bigcommerce.com/stores/{store_hash}/v3"
+    headers = {
+        "Content-Type": "application/json",
+        "X-Auth-Token": access_token,
+        "Accept": "application/json",
+    }
+
+    results = []
+    async with httpx.AsyncClient(timeout=30) as client:
+        for prod in products[:10]:
+            title = prod.get("product_name") or prod.get("title", "Product")
+            price_raw = prod.get("price") or prod.get("estimated_retail_price", 0)
+            try:
+                price_float = float(price_raw)
+            except (ValueError, TypeError):
+                price_float = 0
+
+            product_data = {
+                "name": title,
+                "type": "physical",
+                "weight": 1,
+                "price": price_float,
+                "description": prod.get("description", ""),
+                "categories": [],
+                "availability": "available",
+                "is_visible": True,
+            }
+
+            if prod.get("image_url"):
+                product_data["images"] = [{"image_url": prod["image_url"], "is_thumbnail": True}]
+
+            try:
+                response = await client.post(
+                    f"{base_url}/catalog/products",
+                    json=product_data,
+                    headers=headers,
+                )
+                if response.status_code in (200, 201):
+                    result = response.json().get("data", {})
+                    bc_id = result.get("id")
+                    results.append({
+                        "success": True,
+                        "bigcommerce_product_id": bc_id,
+                        "title": result.get("name"),
+                        "url": result.get("custom_url", {}).get("url", ""),
+                    })
+                    logger.info(f"Created BigCommerce product: {bc_id}")
+                else:
+                    error_msg = response.text[:200]
+                    results.append({
+                        "success": False,
+                        "error": f"BigCommerce API error ({response.status_code}): {error_msg}",
+                    })
+                    logger.error(f"BigCommerce create failed: {response.status_code}")
+            except Exception as e:
+                results.append({"success": False, "error": str(e)})
+                logger.error(f"BigCommerce request failed: {e}")
+
+    successful = [r for r in results if r["success"]]
+    return {
+        "platform": "bigcommerce",
+        "total_submitted": len(products[:10]),
+        "total_created": len(successful),
+        "products": results,
+        "store_url": store_url,
+    }
+
+
+async def publish_to_squarespace(
+    store_url: str,
+    api_key: str,
+    products: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Create products on Squarespace via Commerce API v1"""
+    base_url = "https://api.squarespace.com/1.0"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+        "User-Agent": "TrendScout/1.0",
+    }
+
+    results = []
+    async with httpx.AsyncClient(timeout=30) as client:
+        for prod in products[:10]:
+            title = prod.get("product_name") or prod.get("title", "Product")
+            price_raw = prod.get("price") or prod.get("estimated_retail_price", 0)
+            try:
+                price_cents = int(float(price_raw) * 100)
+            except (ValueError, TypeError):
+                price_cents = 0
+
+            product_data = {
+                "type": "PHYSICAL",
+                "name": title,
+                "description": prod.get("description", ""),
+                "isVisible": True,
+                "variants": [
+                    {
+                        "sku": prod.get("sku", ""),
+                        "pricing": {
+                            "basePrice": {"currency": "GBP", "value": str(price_cents)},
+                        },
+                        "stock": {"quantity": 100, "unlimited": False},
+                    }
+                ],
+            }
+
+            if prod.get("image_url"):
+                product_data["images"] = [{"url": prod["image_url"]}]
+
+            try:
+                response = await client.post(
+                    f"{base_url}/commerce/products",
+                    json=product_data,
+                    headers=headers,
+                )
+                if response.status_code in (200, 201):
+                    result = response.json()
+                    sq_id = result.get("id")
+                    results.append({
+                        "success": True,
+                        "squarespace_product_id": sq_id,
+                        "title": result.get("name"),
+                        "url": f"{store_url}/product/{result.get('urlSlug', '')}",
+                    })
+                    logger.info(f"Created Squarespace product: {sq_id}")
+                else:
+                    error_msg = response.text[:200]
+                    results.append({
+                        "success": False,
+                        "error": f"Squarespace API error ({response.status_code}): {error_msg}",
+                    })
+                    logger.error(f"Squarespace create failed: {response.status_code}")
+            except Exception as e:
+                results.append({"success": False, "error": str(e)})
+                logger.error(f"Squarespace request failed: {e}")
+
+    successful = [r for r in results if r["success"]]
+    return {
+        "platform": "squarespace",
+        "total_submitted": len(products[:10]),
+        "total_created": len(successful),
+        "products": results,
+        "store_url": store_url,
     }
