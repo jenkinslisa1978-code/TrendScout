@@ -811,4 +811,97 @@ async def get_competitor_intelligence(product_id: str):
     }
 
 
+
+@api_router.get("/scoring/methodology")
+async def get_scoring_methodology():
+    """
+    Public endpoint that explains exactly how TrendScout scores products.
+    Built for transparency — helps users trust the data.
+    """
+    return {
+        "title": "How TrendScout Scores Products",
+        "overview": "Every product receives a Launch Score from 0-100, calculated from 7 real signals. Higher scores mean a product is more likely to succeed as a dropshipping product.",
+        "formula": "Launch Score = (25% Trend) + (20% Margin) + (15% Competition) + (15% Ad Activity) + (10% Supplier) + (10% Search Growth) + (5% Order Velocity)",
+        "signals": [
+            {
+                "name": "Trend Score",
+                "weight": "25%",
+                "description": "How much momentum this product has right now",
+                "sources": ["Amazon Best Seller Rank changes", "Google Trends velocity", "TikTok view counts", "View growth rate"],
+                "what_high_means": "Product is gaining popularity fast — more people searching and buying",
+                "what_low_means": "Demand is flat or declining",
+            },
+            {
+                "name": "Margin Score",
+                "weight": "20%",
+                "description": "How much profit you can make per sale",
+                "sources": ["AliExpress/CJ supplier pricing", "Amazon retail price data", "Market average pricing"],
+                "what_high_means": "Strong profit margins (50%+) — plenty of room for ad costs",
+                "what_low_means": "Tight margins — ads may eat all your profit",
+            },
+            {
+                "name": "Competition Score",
+                "weight": "15%",
+                "description": "How many other sellers are already in this market (higher score = less competition)",
+                "sources": ["Amazon review counts", "Competition level analysis", "Market saturation data"],
+                "what_high_means": "Few competitors — good entry window",
+                "what_low_means": "Highly saturated — many established sellers",
+            },
+            {
+                "name": "Ad Activity Score",
+                "weight": "15%",
+                "description": "Sweet spot analysis — some ads validate the market, too many means oversaturation",
+                "sources": ["Meta Ad Library active ad counts", "TikTok ad detection"],
+                "what_high_means": "10-75 active ads — proven demand with manageable competition",
+                "what_low_means": "Either no validation (0 ads) or oversaturated (300+ ads)",
+            },
+            {
+                "name": "Supplier Demand Score",
+                "weight": "10%",
+                "description": "Supply chain reliability and supplier quality",
+                "sources": ["AliExpress order velocity", "CJ Dropshipping availability", "Supplier ratings", "Fulfillment speed"],
+                "what_high_means": "Reliable supplier, fast shipping, high demand",
+                "what_low_means": "Limited suppliers or slow fulfillment",
+            },
+            {
+                "name": "Search Growth Score",
+                "weight": "10%",
+                "description": "Whether people are searching for this product more than before",
+                "sources": ["Google Trends interest data", "Search volume changes"],
+                "what_high_means": "Search interest is rising — growing demand",
+                "what_low_means": "Search interest is flat or declining",
+            },
+            {
+                "name": "Order Velocity Score",
+                "weight": "5%",
+                "description": "How fast the product is selling on supplier platforms",
+                "sources": ["AliExpress weekly order velocity", "30-day order totals", "Order growth rate"],
+                "what_high_means": "Product is selling well — validated demand",
+                "what_low_means": "Low order volume",
+            },
+        ],
+        "data_sources": [
+            {"name": "Amazon", "type": "Retail pricing, reviews, BSR", "method": "API/Scraper", "update_frequency": "Daily"},
+            {"name": "Google Trends", "type": "Search interest & velocity", "method": "API", "update_frequency": "Daily"},
+            {"name": "TikTok", "type": "Viral content & view counts", "method": "API/Scraper", "update_frequency": "Daily"},
+            {"name": "AliExpress", "type": "Supplier pricing & orders", "method": "API/Scraper", "update_frequency": "Daily"},
+            {"name": "CJ Dropshipping", "type": "Supplier availability & pricing", "method": "API", "update_frequency": "Real-time"},
+            {"name": "Meta Ad Library", "type": "Active ad counts & creatives", "method": "API", "update_frequency": "Daily"},
+        ],
+        "confidence_levels": {
+            "high": "80-100 — Multiple live data sources confirm this signal",
+            "medium": "50-79 — At least one live source, some signals estimated",
+            "low": "25-49 — Limited data, mostly estimated from patterns",
+            "very_low": "0-24 — Minimal data available",
+        },
+        "honest_limitations": [
+            "Scores are based on available data — not every signal has a live data source for every product",
+            "Success probability is an estimate, not a guarantee — real-world results depend on execution, ad spend, timing, and competition",
+            "TikTok view counts reflect content popularity, not purchase intent — high views don't always mean high sales",
+            "Supplier prices may fluctuate — always verify before committing to large orders",
+            "Competition data is a snapshot — new sellers can enter at any time",
+        ],
+    }
+
+
 routers = [api_router]

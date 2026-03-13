@@ -26,10 +26,24 @@ const STORE_ICONS = {
   squarespace: '⬛',
 };
 
+const STORE_AUTOMATION = {
+  shopify: { level: 'full', label: 'Full Automation', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  woocommerce: { level: 'full', label: 'Full Automation', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  etsy: { level: 'manual', label: 'Manual Import', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  bigcommerce: { level: 'manual', label: 'Manual Import', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  squarespace: { level: 'manual', label: 'Manual Import', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+};
+
 const AD_ICONS = {
   meta: '🔵',
   tiktok: '⬛',
   google: '🔴',
+};
+
+const AD_AUTOMATION = {
+  meta: { level: 'full', label: 'Auto-Post Ads', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  tiktok: { level: 'full', label: 'Auto-Post Ads', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  google: { level: 'draft', label: 'Draft Only', color: 'bg-blue-100 text-blue-700 border-blue-200' },
 };
 
 export default function PlatformConnectionsPage() {
@@ -145,6 +159,11 @@ export default function PlatformConnectionsPage() {
                         <Badge variant="outline" className="text-slate-400">Not connected</Badge>
                       )}
                     </div>
+                    {STORE_AUTOMATION[key] && (
+                      <Badge className={`${STORE_AUTOMATION[key].color} text-[10px] mb-2`} data-testid={`automation-badge-${key}`}>
+                        {STORE_AUTOMATION[key].label}
+                      </Badge>
+                    )}
                     {connected && conn && (
                       <p className="text-xs text-slate-500 mb-3 truncate">{conn.store_url}</p>
                     )}
@@ -208,6 +227,11 @@ export default function PlatformConnectionsPage() {
                         <Badge variant="outline" className="text-slate-400">Not connected</Badge>
                       )}
                     </div>
+                    {AD_AUTOMATION[key] && (
+                      <Badge className={`${AD_AUTOMATION[key].color} text-[10px] mb-2`} data-testid={`automation-badge-${key}-ads`}>
+                        {AD_AUTOMATION[key].label}
+                      </Badge>
+                    )}
                     {connected && conn && (
                       <p className="text-xs text-slate-500 mb-3">Account: {conn.account_id || 'Connected'}</p>
                     )}

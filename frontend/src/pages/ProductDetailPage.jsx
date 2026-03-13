@@ -58,6 +58,7 @@ import AdCreativeGenerator from '@/components/AdCreativeGenerator';
 import TrendTimeline from '@/components/TrendTimeline';
 import ProductProfitCalculator from '@/components/ProductProfitCalculator';
 import ShareableProductCard from '@/components/ShareableProductCard';
+import ScoringMethodology from '@/components/ScoringMethodology';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -614,6 +615,9 @@ export default function ProductDetailPage() {
             </LockedContent>
           </div>
         )}
+
+        {/* How Our Scores Work — Transparency */}
+        <ScoringMethodology />
 
         {/* Saturation Radar + Competitor Intelligence — side by side */}
         <div className="grid lg:grid-cols-2 gap-6">

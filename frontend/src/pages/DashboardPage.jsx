@@ -49,6 +49,7 @@ import DailyUsageBanner from '@/components/dashboard/DailyUsageBanner';
 import QuickLaunchFlow from '@/components/dashboard/QuickLaunchFlow';
 import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
+import DataTrustBanner from '@/components/dashboard/DataTrustBanner';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
@@ -193,6 +194,9 @@ export default function DashboardPage() {
 
         {/* While You Were Away */}
         <WhileYouWereAway />
+
+        {/* Data Trust Banner */}
+        <DataTrustBanner />
 
         {/* Daily Usage Banner (Free/Starter users) */}
         <DailyUsageBanner />
