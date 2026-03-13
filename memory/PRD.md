@@ -69,7 +69,7 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 | 3 | Pricing Page (3-tier) | Done |
 | 4 | Signup Flow | Done |
 | 5 | Onboarding Checklist | Done |
-| 6 | Advanced Discovery Filters | PENDING |
+| 6 | Advanced Discovery Filters | Done |
 | 7 | AI Trend Score Engine | Done |
 | 8 | Trend Timeline Charts | PENDING |
 | 9 | Product Saturation Meter | PENDING |
@@ -83,9 +83,9 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 | 17 | Viral Product Alerts | Done |
 | 18 | SEO Growth Engine | Done |
 | 19 | Top Trending Page | Done |
-| 20 | Image Resolution Pipeline | PENDING (backend) |
-| 21 | Image Candidate Sources | PENDING |
-| 22 | Image Validation | PENDING |
+| 20 | Image Resolution Pipeline | Done |
+| 21 | Image Candidate Sources | Done |
+| 22 | Image Validation | Done |
 | 23 | Admin Image Review | Done |
 | 24 | Image Review Detail | Done |
 | 25 | Bulk Image Review | Done |
@@ -121,11 +121,9 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 - Test user: test_refactor@test.com / test123456
 
 ## Upcoming Tasks
-1. **P1**: Product Image Resolution Pipeline (Parts 20-22)
-2. **P2**: Advanced Discovery Dashboard Filters (Part 6)
-3. **P3**: Product Trend Timeline Charts (Part 8)
-4. **P3**: Product Saturation Meter UI (Part 9)
-5. **P3**: Profit Calculator (Part 10)
+1. **P1**: Product Trend Timeline Charts (Part 8)
+2. **P2**: Product Saturation Meter UI (Part 9)
+3. **P2**: Profit Calculator (Part 10)
 
 ## Backlog
 - Redis cache migration (replace in-memory cache)
