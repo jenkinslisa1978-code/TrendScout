@@ -17,6 +17,7 @@ import SavedProductsPage from "@/pages/SavedProductsPage";
 import AdminPage from "@/pages/AdminPage";
 import AdminAutomationPage from "@/pages/AdminAutomationPage";
 import AnalyticsDashboardPage from "@/pages/AnalyticsDashboardPage";
+import AdminImageReviewPage from "@/pages/AdminImageReviewPage";
 import TrendAlertsPage from "@/pages/TrendAlertsPage";
 import StoresPage from "@/pages/StoresPage";
 import StoreDetailPage from "@/pages/StoreDetailPage";
@@ -226,6 +227,14 @@ function AppRoutes() {
         element={
           <AdminRoute>
             <AnalyticsDashboardPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/image-review"
+        element={
+          <AdminRoute>
+            <AdminImageReviewPage />
           </AdminRoute>
         }
       />

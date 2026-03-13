@@ -10077,6 +10077,265 @@ async def generate_all_blog_posts(
 
 
 # =====================
+# ADMIN IMAGE REVIEW
+# =====================
+
+image_review_router = APIRouter(prefix="/api/admin/image-review")
+
+
+async def _require_admin(current_user: AuthenticatedUser):
+    profile = await db.profiles.find_one({"email": current_user.email})
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+
+@image_review_router.get("/metrics")
+async def image_review_metrics(current_user: AuthenticatedUser = Depends(get_current_user)):
+    """Get image QA metrics."""
+    await _require_admin(current_user)
+
+    pipeline = [
+        {"$group": {"_id": "$image_status", "count": {"$sum": 1}}},
+    ]
+    status_counts = {doc["_id"]: doc["count"] async for doc in db.products.aggregate(pipeline)}
+    pinned = await db.products.count_documents({"image_pinned": True})
+    total = await db.products.count_documents({})
+
+    return {
+        "total_products": total,
+        "needs_review": status_counts.get("needs_review", 0),
+        "pending": status_counts.get("pending", 0),
+        "approved": status_counts.get("approved", 0),
+        "rejected": status_counts.get("rejected", 0),
+        "placeholder": status_counts.get("placeholder", 0),
+        "pinned": pinned,
+    }
+
+
+@image_review_router.get("/products")
+async def list_review_products(
+    status: str = None,
+    confidence_max: float = None,
+    page: int = 1,
+    limit: int = 20,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """List products for image review with filters."""
+    await _require_admin(current_user)
+
+    query = {}
+    if status:
+        query["image_status"] = status
+    if confidence_max is not None:
+        query["image_confidence"] = {"$lte": confidence_max}
+
+    skip = (page - 1) * limit
+    total = await db.products.count_documents(query)
+
+    products = await db.products.find(
+        query,
+        {"_id": 0, "id": 1, "product_name": 1, "category": 1, "image_url": 1,
+         "image_status": 1, "image_confidence": 1, "image_pinned": 1,
+         "image_mismatch_reason": 1, "image_detected_object": 1,
+         "image_validated_at": 1, "image_review_note": 1, "image_candidates": 1,
+         "launch_score": 1}
+    ).sort("image_confidence", 1).skip(skip).limit(limit).to_list(limit)
+
+    return {"products": products, "total": total, "page": page, "limit": limit}
+
+
+@image_review_router.get("/products/{product_id}")
+async def get_review_product(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get detailed image review data for a product."""
+    await _require_admin(current_user)
+
+    product = await db.products.find_one(
+        {"id": product_id},
+        {"_id": 0}
+    )
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return product
+
+
+@image_review_router.put("/products/{product_id}/approve")
+async def approve_image(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Approve the current image for a product."""
+    await _require_admin(current_user)
+
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {
+            "image_status": "approved",
+            "image_confidence": 1.0,
+            "image_validated_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Image approved", "status": "approved"}
+
+
+@image_review_router.put("/products/{product_id}/reject")
+async def reject_image(
+    product_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Reject image and set placeholder."""
+    await _require_admin(current_user)
+
+    body = await request.json()
+    reason = body.get("reason", "Manual rejection")
+
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {
+            "image_status": "placeholder",
+            "image_url": "",
+            "image_confidence": 0.0,
+            "image_mismatch_reason": reason,
+            "image_validated_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Image rejected, placeholder set", "status": "placeholder"}
+
+
+@image_review_router.put("/products/{product_id}/url")
+async def set_image_url(
+    product_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Set a custom image URL for a product."""
+    await _require_admin(current_user)
+
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="url required")
+
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {
+            "image_url": url,
+            "image_status": "approved",
+            "image_confidence": 1.0,
+            "image_review_note": "Manual URL override",
+            "image_validated_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Image URL updated", "url": url}
+
+
+@image_review_router.put("/products/{product_id}/pin")
+async def pin_image(
+    product_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Pin/unpin an image to prevent automatic updates."""
+    await _require_admin(current_user)
+
+    body = await request.json()
+    pinned = body.get("pinned", True)
+
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {"image_pinned": pinned}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": f"Image {'pinned' if pinned else 'unpinned'}", "pinned": pinned}
+
+
+@image_review_router.put("/products/{product_id}/select-candidate")
+async def select_candidate_image(
+    product_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Select a candidate image from the candidates list."""
+    await _require_admin(current_user)
+
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="url required")
+
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {
+            "image_url": url,
+            "image_status": "approved",
+            "image_confidence": 0.85,
+            "image_review_note": "Admin selected from candidates",
+            "image_validated_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Candidate image selected", "url": url}
+
+
+@image_review_router.post("/bulk")
+async def bulk_image_action(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Perform bulk image review operations."""
+    await _require_admin(current_user)
+
+    body = await request.json()
+    action = body.get("action")
+    product_ids = body.get("product_ids", [])
+
+    if not action or not product_ids:
+        raise HTTPException(status_code=400, detail="action and product_ids required")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    if action == "approve":
+        result = await db.products.update_many(
+            {"id": {"$in": product_ids}},
+            {"$set": {"image_status": "approved", "image_confidence": 1.0, "image_validated_at": now}}
+        )
+    elif action == "reject":
+        result = await db.products.update_many(
+            {"id": {"$in": product_ids}},
+            {"$set": {"image_status": "placeholder", "image_url": "", "image_confidence": 0.0, "image_validated_at": now}}
+        )
+    elif action == "mark_placeholder":
+        result = await db.products.update_many(
+            {"id": {"$in": product_ids}},
+            {"$set": {"image_status": "placeholder", "image_url": "", "image_validated_at": now}}
+        )
+    elif action == "mark_needs_review":
+        result = await db.products.update_many(
+            {"id": {"$in": product_ids}},
+            {"$set": {"image_status": "needs_review", "image_validated_at": now}}
+        )
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid action: {action}")
+
+    return {"message": f"Bulk {action} completed", "modified": result.modified_count}
+
+
+app.include_router(image_review_router)
+
+
+# =====================
 # ANALYTICS
 # =====================
 
