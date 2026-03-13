@@ -21,6 +21,8 @@ import {
   Activity,
   Wifi,
   Brain,
+  Radar,
+  ShoppingBag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +34,7 @@ const navigation = [
   { name: 'Discover', href: '/discover', icon: Search },
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'My Stores', href: '/stores', icon: Store },
+  { name: 'Competitors', href: '/competitor-tracker', icon: Radar },
   { name: 'Outcomes', href: '/outcomes', icon: Target },
   { name: 'Ad Tests', href: '/ad-tests', icon: Zap },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },

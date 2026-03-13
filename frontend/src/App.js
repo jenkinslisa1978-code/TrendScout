@@ -46,6 +46,8 @@ import OutcomesPage from "@/pages/OutcomesPage";
 import AdTestsPage from "@/pages/AdTestsPage";
 import SystemHealthDashboard from "@/pages/SystemHealthDashboard";
 import IntegrationStatusPage from "@/pages/IntegrationStatusPage";
+import ShopifyAnalyzerPage from "@/pages/ShopifyAnalyzerPage";
+import CompetitorTrackerPage from "@/pages/CompetitorTrackerPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -111,6 +113,7 @@ function AppRoutes() {
       <Route path="/trending/:slug" element={<TrendingProductPage />} />
       <Route path="/p/:id" element={<PublicProductPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />
+      <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />
 
       {/* Protected routes */}
       <Route
@@ -206,6 +209,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <TrendAlertsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/competitor-tracker"
+        element={
+          <ProtectedRoute>
+            <CompetitorTrackerPage />
           </ProtectedRoute>
         }
       />

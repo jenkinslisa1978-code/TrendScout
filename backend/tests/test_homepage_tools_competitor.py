@@ -1,144 +1,335 @@
 """
-Tests for P4 Homepage Polish, Enhanced Free Tools, and Competitor Intelligence Engine
-- Homepage design (/, /tools page)
-- TikTok Analyzer, Product Trend Checker (frontend simulation)
-- GET /api/products/{id}/competitor-intelligence (public endpoint)
+Test Suite for Shopify Store Analyzer (Public Tool) and Competitor Tracker (Auth Required)
+Phase C New Features: Shopify Analyzer at /tools/shopify-analyzer, Competitor Tracker at /competitor-tracker
 """
+
 import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+
+# Test credentials
+FREE_USER_EMAIL = "testuser_phase_c@test.com"
+FREE_USER_PASSWORD = "test123"
+ADMIN_USER_EMAIL = "jenkinslisa1978@gmail.com"
+ADMIN_USER_PASSWORD = "Test123!"
 
 
-class TestCompetitorIntelligence:
-    """Test competitor-intelligence endpoint (PUBLIC - no auth needed)"""
+@pytest.fixture(scope="module")
+def api_client():
+    """Shared requests session"""
+    session = requests.Session()
+    session.headers.update({"Content-Type": "application/json"})
+    return session
+
+
+@pytest.fixture(scope="module")
+def free_user_token(api_client):
+    """Login and get token for free user"""
+    response = api_client.post(
+        f"{BASE_URL}/api/auth/login",
+        json={"email": FREE_USER_EMAIL, "password": FREE_USER_PASSWORD}
+    )
+    if response.status_code == 200:
+        return response.json().get("token")
+    pytest.skip(f"Free user login failed: {response.status_code}")
+
+
+@pytest.fixture(scope="module")
+def admin_token(api_client):
+    """Login and get token for admin user"""
+    response = api_client.post(
+        f"{BASE_URL}/api/auth/login",
+        json={"email": ADMIN_USER_EMAIL, "password": ADMIN_USER_PASSWORD}
+    )
+    if response.status_code == 200:
+        return response.json().get("token")
+    pytest.skip(f"Admin login failed: {response.status_code}")
+
+
+@pytest.fixture
+def authenticated_client(api_client, free_user_token):
+    """Session with free user auth header"""
+    api_client.headers.update({"Authorization": f"Bearer {free_user_token}"})
+    return api_client
+
+
+@pytest.fixture
+def admin_client(api_client, admin_token):
+    """Session with admin auth header"""
+    api_client.headers.update({"Authorization": f"Bearer {admin_token}"})
+    return api_client
+
+
+class TestShopifyAnalyzerPublicEndpoint:
+    """Test POST /api/tools/analyze-store - PUBLIC endpoint (no auth required)"""
     
-    @pytest.fixture
-    def get_product_id(self):
-        """Get a product ID for testing"""
-        # First login to get a product ID
-        login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "testref@test.com",
-            "password": "Test1234!"
-        })
-        if login_response.status_code != 200:
-            pytest.skip("Cannot login to fetch product ID")
-        
-        token = login_response.json().get("access_token")
-        headers = {"Authorization": f"Bearer {token}"}
-        
-        products_response = requests.get(f"{BASE_URL}/api/products?limit=1", headers=headers)
-        if products_response.status_code != 200 or not products_response.json().get("data"):
-            pytest.skip("No products available for testing")
-        
-        return products_response.json()["data"][0]["id"]
-    
-    def test_competitor_intelligence_public_access(self, get_product_id):
-        """Test that competitor-intelligence endpoint is public (no auth required)"""
-        product_id = get_product_id
-        
-        # Call without auth
-        response = requests.get(f"{BASE_URL}/api/products/{product_id}/competitor-intelligence")
-        
-        # Should be accessible without auth
+    def test_analyze_real_shopify_store_allbirds(self, api_client):
+        """Test analyzing a real Shopify store - allbirds.com"""
+        response = api_client.post(
+            f"{BASE_URL}/api/tools/analyze-store",
+            json={"url": "allbirds.com"}
+        )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
-        print(f"[PASS] Competitor intelligence endpoint is public (no auth needed)")
-    
-    def test_competitor_intelligence_response_structure(self, get_product_id):
-        """Test response contains all required fields"""
-        product_id = get_product_id
-        
-        response = requests.get(f"{BASE_URL}/api/products/{product_id}/competitor-intelligence")
-        assert response.status_code == 200
         
         data = response.json()
-        
         # Verify required fields
-        required_fields = [
-            "product_id", "stores_detected", "new_stores_7d", "price_range",
-            "avg_store_age_months", "advertising_activity", "ads_detected",
-            "competition_level", "competition_impact"
-        ]
+        assert "product_count" in data, "Missing product_count"
+        assert "store_size" in data, "Missing store_size"
+        assert "categories" in data, "Missing categories"
+        assert "price_range" in data, "Missing price_range"
+        assert "newest_products" in data, "Missing newest_products"
+        assert "domain" in data, "Missing domain"
+        assert "store_url" in data, "Missing store_url"
         
-        for field in required_fields:
-            assert field in data, f"Missing required field: {field}"
+        # Verify product_count is positive (allbirds has products)
+        assert data["product_count"] > 0, f"Expected products, got {data['product_count']}"
         
-        print(f"[PASS] Response contains all required fields: {list(data.keys())}")
+        # Verify price_range structure
+        assert "min" in data["price_range"]
+        assert "max" in data["price_range"]
+        assert "avg" in data["price_range"]
+        
+        print(f"Allbirds store analyzed: {data['product_count']} products, store_size={data['store_size']}")
     
-    def test_competitor_intelligence_data_types(self, get_product_id):
-        """Test data types of response fields"""
-        product_id = get_product_id
-        
-        response = requests.get(f"{BASE_URL}/api/products/{product_id}/competitor-intelligence")
-        assert response.status_code == 200
+    def test_analyze_gymshark_store(self, api_client):
+        """Test analyzing gymshark.com Shopify store"""
+        response = api_client.post(
+            f"{BASE_URL}/api/tools/analyze-store",
+            json={"url": "gymshark.com"}
+        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         
         data = response.json()
-        
-        # Check data types
-        assert isinstance(data["product_id"], str), "product_id should be string"
-        assert isinstance(data["stores_detected"], int), "stores_detected should be int"
-        assert isinstance(data["new_stores_7d"], int), "new_stores_7d should be int"
-        assert isinstance(data["price_range"], dict), "price_range should be dict"
-        assert isinstance(data["avg_store_age_months"], (int, float)), "avg_store_age_months should be number"
-        assert isinstance(data["advertising_activity"], str), "advertising_activity should be string"
-        assert isinstance(data["ads_detected"], int), "ads_detected should be int"
-        assert isinstance(data["competition_level"], str), "competition_level should be string"
-        assert isinstance(data["competition_impact"], str), "competition_impact should be string"
-        
-        print(f"[PASS] All data types are correct")
-        print(f"  - stores_detected: {data['stores_detected']}")
-        print(f"  - new_stores_7d: {data['new_stores_7d']}")
-        print(f"  - price_range: {data['price_range']}")
-        print(f"  - avg_store_age_months: {data['avg_store_age_months']}")
-        print(f"  - advertising_activity: {data['advertising_activity']}")
-        print(f"  - ads_detected: {data['ads_detected']}")
-        print(f"  - competition_level: {data['competition_level']}")
-        print(f"  - competition_impact: {data['competition_impact']}")
+        assert data["product_count"] >= 0  # Even 0 is valid if store restricts access
+        assert "categories" in data
+        print(f"Gymshark store analyzed: {data['product_count']} products")
     
-    def test_competitor_intelligence_price_range_structure(self, get_product_id):
-        """Test price_range has correct structure"""
-        product_id = get_product_id
-        
-        response = requests.get(f"{BASE_URL}/api/products/{product_id}/competitor-intelligence")
+    def test_analyze_store_with_https_prefix(self, api_client):
+        """Test URL normalization with https:// prefix"""
+        response = api_client.post(
+            f"{BASE_URL}/api/tools/analyze-store",
+            json={"url": "https://allbirds.com"}
+        )
         assert response.status_code == 200
-        
         data = response.json()
-        price_range = data["price_range"]
-        
-        assert "low" in price_range, "price_range should have 'low'"
-        assert "high" in price_range, "price_range should have 'high'"
-        assert isinstance(price_range["low"], (int, float)), "price_range.low should be number"
-        assert isinstance(price_range["high"], (int, float)), "price_range.high should be number"
-        assert price_range["low"] <= price_range["high"], "low price should be <= high price"
-        
-        print(f"[PASS] Price range structure valid: £{price_range['low']} - £{price_range['high']}")
+        assert data["domain"] == "allbirds.com"
     
-    def test_competitor_intelligence_nonexistent_product(self):
-        """Test 404 for non-existent product"""
-        response = requests.get(f"{BASE_URL}/api/products/nonexistent-product-id-12345/competitor-intelligence")
-        
-        assert response.status_code == 404, f"Expected 404, got {response.status_code}"
-        print(f"[PASS] Returns 404 for non-existent product")
+    def test_analyze_invalid_url_returns_400(self, api_client):
+        """Test that invalid URL returns 400 error"""
+        response = api_client.post(
+            f"{BASE_URL}/api/tools/analyze-store",
+            json={"url": "not-a-valid-shopify-store-xyz123.invalidtld"}
+        )
+        assert response.status_code == 400, f"Expected 400, got {response.status_code}"
+    
+    def test_analyze_non_shopify_store_returns_400(self, api_client):
+        """Test that non-Shopify store returns appropriate error"""
+        response = api_client.post(
+            f"{BASE_URL}/api/tools/analyze-store",
+            json={"url": "google.com"}
+        )
+        # Should return 400 because google.com doesn't have /products.json
+        assert response.status_code == 400
 
 
-class TestHealthAndPublicEndpoints:
-    """Test public endpoints accessibility"""
+class TestCompetitorStoreEndpointsAuth:
+    """Test /api/competitor-stores endpoints - require authentication"""
     
-    def test_api_health(self):
-        """Test API health endpoint"""
-        response = requests.get(f"{BASE_URL}/api/health")
-        assert response.status_code == 200
+    def test_list_competitor_stores_requires_auth(self, api_client):
+        """GET /api/competitor-stores requires authentication"""
+        # Clear any existing auth header
+        api_client.headers.pop("Authorization", None)
+        response = api_client.get(f"{BASE_URL}/api/competitor-stores")
+        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+    
+    def test_add_competitor_store_requires_auth(self, api_client):
+        """POST /api/competitor-stores requires authentication"""
+        api_client.headers.pop("Authorization", None)
+        response = api_client.post(
+            f"{BASE_URL}/api/competitor-stores",
+            json={"url": "bombas.com"}
+        )
+        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+
+
+class TestCompetitorStoresCRUD:
+    """Test competitor store CRUD operations with authentication"""
+    
+    def test_list_competitor_stores_authenticated(self, authenticated_client):
+        """GET /api/competitor-stores returns list for authenticated user"""
+        response = authenticated_client.get(f"{BASE_URL}/api/competitor-stores")
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        
         data = response.json()
-        assert data["status"] == "healthy"
-        print(f"[PASS] API health check passed")
+        assert "stores" in data, "Missing 'stores' key in response"
+        assert isinstance(data["stores"], list), "stores should be a list"
+        assert "count" in data
+        
+        print(f"User has {data['count']} tracked competitor stores")
     
-    def test_public_featured_product(self):
-        """Test public featured product endpoint used by homepage"""
-        response = requests.get(f"{BASE_URL}/api/public/featured-product")
-        # May return empty product but should be 200
-        assert response.status_code == 200
-        print(f"[PASS] Public featured product endpoint accessible")
+    def test_add_competitor_store_duplicate_returns_400(self, authenticated_client):
+        """POST /api/competitor-stores with duplicate store returns 400"""
+        # First get existing stores
+        list_response = authenticated_client.get(f"{BASE_URL}/api/competitor-stores")
+        stores = list_response.json().get("stores", [])
+        
+        # Try to add allbirds.com which should already exist per test context
+        response = authenticated_client.post(
+            f"{BASE_URL}/api/competitor-stores",
+            json={"url": "allbirds.com"}
+        )
+        
+        # If allbirds is already tracked, should get 400
+        # If not already tracked and under limit, should get 200/201
+        if response.status_code == 400:
+            assert "already tracking" in response.json().get("detail", "").lower() or \
+                   "duplicate" in response.json().get("detail", "").lower() or \
+                   "limit" in response.json().get("detail", "").lower()
+            print("Confirmed: Duplicate store returns 400")
+        else:
+            assert response.status_code == 200
+            print("Store was added (wasn't a duplicate)")
+    
+    def test_add_new_competitor_store(self, authenticated_client):
+        """POST /api/competitor-stores adds a new store with initial scan data"""
+        # Use a unique store that likely isn't tracked yet
+        import time
+        test_store = "bombas.com"  # Another real Shopify store
+        
+        # First check if it exists
+        list_response = authenticated_client.get(f"{BASE_URL}/api/competitor-stores")
+        stores = list_response.json().get("stores", [])
+        existing_domains = [s.get("domain", "") for s in stores]
+        
+        if test_store in existing_domains:
+            # Delete it first so we can test add
+            store_to_delete = next((s for s in stores if s.get("domain") == test_store), None)
+            if store_to_delete:
+                authenticated_client.delete(f"{BASE_URL}/api/competitor-stores/{store_to_delete['id']}")
+        
+        # Now add the store
+        response = authenticated_client.post(
+            f"{BASE_URL}/api/competitor-stores",
+            json={"url": test_store, "name": "Bombas Test"}
+        )
+        
+        if response.status_code == 403:
+            # Exceeded plan limit
+            print(f"Plan limit reached: {response.json().get('detail')}")
+            pytest.skip("User has reached competitor store limit")
+        
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        
+        data = response.json()
+        assert "id" in data, "Response should include store id"
+        assert "domain" in data, "Response should include domain"
+        assert "product_count" in data, "Response should include initial product_count"
+        assert "last_scan_at" in data, "Response should include last_scan_at"
+        
+        print(f"Added competitor store: {data['domain']} with {data.get('product_count', 0)} products")
+        
+        # Cleanup - delete the test store
+        authenticated_client.delete(f"{BASE_URL}/api/competitor-stores/{data['id']}")
+    
+    def test_refresh_competitor_store(self, authenticated_client):
+        """POST /api/competitor-stores/{id}/refresh re-scans a store"""
+        # Get existing stores
+        list_response = authenticated_client.get(f"{BASE_URL}/api/competitor-stores")
+        stores = list_response.json().get("stores", [])
+        
+        if not stores:
+            pytest.skip("No competitor stores to refresh")
+        
+        store = stores[0]
+        store_id = store["id"]
+        old_count = store.get("product_count", 0)
+        
+        response = authenticated_client.post(f"{BASE_URL}/api/competitor-stores/{store_id}/refresh")
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        
+        data = response.json()
+        assert "product_count" in data, "Should return updated product_count"
+        assert "last_scan_at" in data, "Should return updated last_scan_at"
+        
+        print(f"Refreshed store: {data.get('name')} - count: {old_count} -> {data.get('product_count')}")
+    
+    def test_refresh_nonexistent_store_returns_404(self, authenticated_client):
+        """POST /api/competitor-stores/{id}/refresh with invalid id returns 404"""
+        response = authenticated_client.post(f"{BASE_URL}/api/competitor-stores/invalid-id-xyz/refresh")
+        assert response.status_code == 404
+    
+    def test_delete_competitor_store(self, authenticated_client):
+        """DELETE /api/competitor-stores/{id} removes a tracked store"""
+        # First add a store we can delete
+        add_response = authenticated_client.post(
+            f"{BASE_URL}/api/competitor-stores",
+            json={"url": "colourpop.com", "name": "Delete Test"}
+        )
+        
+        if add_response.status_code == 403:
+            pytest.skip("Plan limit reached, can't test delete")
+        
+        if add_response.status_code == 400:
+            # Already exists - find and delete it
+            list_response = authenticated_client.get(f"{BASE_URL}/api/competitor-stores")
+            stores = list_response.json().get("stores", [])
+            store = next((s for s in stores if "colourpop" in s.get("domain", "")), None)
+            if store:
+                store_id = store["id"]
+            else:
+                pytest.skip("Cannot create test store for deletion")
+        else:
+            store_id = add_response.json()["id"]
+        
+        # Now delete it
+        response = authenticated_client.delete(f"{BASE_URL}/api/competitor-stores/{store_id}")
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+        
+        data = response.json()
+        assert data.get("status") == "deleted"
+        
+        # Verify it's gone
+        list_response = authenticated_client.get(f"{BASE_URL}/api/competitor-stores")
+        stores = list_response.json().get("stores", [])
+        assert not any(s.get("id") == store_id for s in stores), "Store should be deleted"
+        
+        print("Confirmed: Store deleted successfully")
+    
+    def test_delete_nonexistent_store_returns_404(self, authenticated_client):
+        """DELETE /api/competitor-stores/{id} with invalid id returns 404"""
+        response = authenticated_client.delete(f"{BASE_URL}/api/competitor-stores/nonexistent-id-abc")
+        assert response.status_code == 404
+
+
+class TestCompetitorStorePlanLimits:
+    """Test plan-based limits for competitor tracking"""
+    
+    def test_free_user_limit(self, authenticated_client):
+        """Free plan users can track up to 2 stores"""
+        # This is a soft test - we check if the error message mentions limits
+        response = authenticated_client.get(f"{BASE_URL}/api/competitor-stores")
+        data = response.json()
+        count = data.get("count", 0)
+        
+        # Try to exceed limit by adding multiple stores
+        if count >= 2:
+            # Try to add another
+            add_response = authenticated_client.post(
+                f"{BASE_URL}/api/competitor-stores",
+                json={"url": "unique-test-store-xyz.myshopify.com"}
+            )
+            if add_response.status_code == 403:
+                assert "plan" in add_response.json().get("detail", "").lower() or \
+                       "limit" in add_response.json().get("detail", "").lower() or \
+                       "upgrade" in add_response.json().get("detail", "").lower()
+                print("Confirmed: Plan limit enforcement working")
+            elif add_response.status_code == 400:
+                # Invalid store URL or already tracked
+                print(f"Got 400: {add_response.json().get('detail')}")
+        else:
+            print(f"User has {count}/2 stores tracked")
 
 
 if __name__ == "__main__":

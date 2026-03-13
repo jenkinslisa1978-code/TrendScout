@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Calculator, TrendingUp, ArrowRight, DollarSign, Package,
-  BarChart3, Sparkles, Percent, Search, Video, Eye, Radio,
+  BarChart3, Sparkles, Percent, Search, Video, Eye, Radio, Store,
 } from 'lucide-react';
 
 export default function FreeToolsPage() {
@@ -26,6 +26,23 @@ export default function FreeToolsPage() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          {/* Shopify Analyzer Link Card */}
+          <Link to="/tools/shopify-analyzer" className="lg:col-span-2" data-testid="shopify-analyzer-link">
+            <Card className="border-0 shadow-xl overflow-hidden hover:shadow-2xl transition-shadow group">
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Store className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Shopify Store Analyzer</h3>
+                    <p className="text-emerald-100 text-sm mt-0.5">Paste any Shopify URL to see their products, pricing, and categories instantly</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              </div>
+            </Card>
+          </Link>
           <ProfitCalculator />
           <SaturationChecker />
           <TikTokProductAnalyzer />

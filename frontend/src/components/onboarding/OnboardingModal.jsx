@@ -26,7 +26,9 @@ import {
   Rocket,
   Package,
   Zap,
-  Check
+  Check,
+  Search,
+  Target,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -36,6 +38,13 @@ const EXPERIENCE_LEVELS = [
   { id: 'beginner', label: 'Beginner', desc: "I'm new to dropshipping/ecommerce", icon: '🌱' },
   { id: 'intermediate', label: 'Intermediate', desc: "I've sold products before", icon: '📦' },
   { id: 'advanced', label: 'Advanced', desc: 'I run multiple stores', icon: '🚀' },
+];
+
+const GOALS = [
+  { id: 'find_products', label: 'Find Winning Products', desc: 'Discover trending products to sell', icon: Search },
+  { id: 'build_store', label: 'Build a Store', desc: 'Launch a store around a winning niche', icon: Store },
+  { id: 'track_competitors', label: 'Track Competitors', desc: 'Monitor what competitors are selling', icon: Target },
+  { id: 'research_trends', label: 'Research Trends', desc: 'Understand market trends early', icon: TrendingUp },
 ];
 
 const NICHES = [
@@ -50,15 +59,16 @@ export default function OnboardingModal({ isOpen, onClose }) {
   const [step, setStep] = useState(0);
   const [experience, setExperience] = useState(null);
   const [selectedNiches, setSelectedNiches] = useState([]);
+  const [selectedGoals, setSelectedGoals] = useState([]);
   const [featuredProduct, setFeaturedProduct] = useState(null);
   const [loadingProduct, setLoadingProduct] = useState(false);
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progress = ((step + 1) / totalSteps) * 100;
 
-  // Fetch a featured product for step 3
+  // Fetch a featured product for step 4
   useEffect(() => {
-    if (step === 2 && !featuredProduct) {
+    if (step === 3 && !featuredProduct) {
       setLoadingProduct(true);
       (async () => {
         try {
@@ -93,11 +103,18 @@ export default function OnboardingModal({ isOpen, onClose }) {
     );
   };
 
+  const toggleGoal = (goalId) => {
+    setSelectedGoals(prev =>
+      prev.includes(goalId) ? prev.filter(g => g !== goalId) : [...prev, goalId]
+    );
+  };
+
   const completeOnboarding = async () => {
     try {
       await api.post('/api/user/complete-onboarding', {
         experience_level: experience,
         preferred_niches: selectedNiches,
+        goals: selectedGoals,
       });
     } catch { /* silent */ }
     onClose();
@@ -203,6 +220,42 @@ export default function OnboardingModal({ isOpen, onClose }) {
           )}
 
           {step === 2 && (
+            <div data-testid="onboarding-step-goals">
+              <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center mx-auto mb-4">
+                <Target className="h-7 w-7 text-sky-600" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 text-center mb-1">What's your main goal?</h2>
+              <p className="text-sm text-slate-500 text-center mb-5">Select what you want to achieve (pick 1-2)</p>
+              <div className="space-y-2">
+                {GOALS.map(goal => {
+                  const Icon = goal.icon;
+                  return (
+                    <button
+                      key={goal.id}
+                      onClick={() => toggleGoal(goal.id)}
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left ${
+                        selectedGoals.includes(goal.id)
+                          ? 'border-sky-500 bg-sky-50'
+                          : 'border-slate-100 hover:border-slate-200 bg-white'
+                      }`}
+                      data-testid={`goal-${goal.id}`}
+                    >
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${selectedGoals.includes(goal.id) ? 'bg-sky-100' : 'bg-slate-50'}`}>
+                        <Icon className={`h-4 w-4 ${selectedGoals.includes(goal.id) ? 'text-sky-600' : 'text-slate-400'}`} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-800 text-sm">{goal.label}</p>
+                        <p className="text-xs text-slate-500">{goal.desc}</p>
+                      </div>
+                      {selectedGoals.includes(goal.id) && <Check className="h-5 w-5 text-sky-600 flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
             <div data-testid="onboarding-step-opportunity">
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
                 <Trophy className="h-7 w-7 text-emerald-600" />
@@ -255,7 +308,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <div data-testid="onboarding-step-analyze">
               <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-4">
                 <Zap className="h-7 w-7 text-rose-600" />
@@ -292,7 +345,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
           <Button variant="outline" onClick={handlePrev} disabled={step === 0} className={step === 0 ? 'invisible' : ''} data-testid="onboarding-prev-btn">
             <ChevronLeft className="h-4 w-4 mr-1" /> Back
           </Button>
-          {step < 3 && (
+          {step < 4 && (
             <Button onClick={handleNext} className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[100px]" disabled={step === 0 && !experience} data-testid="onboarding-next-btn">
               Next <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
