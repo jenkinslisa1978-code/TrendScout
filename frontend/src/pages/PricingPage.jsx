@@ -30,9 +30,9 @@ const PLANS = [
     popular: false,
   },
   {
-    id: 'growth',
-    name: 'Growth',
-    price: 49,
+    id: 'pro',
+    name: 'Pro',
+    price: 39,
     description: 'Full product intelligence',
     features: [
       'Unlimited product discovery',
@@ -47,12 +47,12 @@ const PLANS = [
     popular: true,
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    price: 99,
+    id: 'elite',
+    name: 'Elite',
+    price: 79,
     description: 'Scale with advanced tools',
     features: [
-      'Everything in Growth',
+      'Everything in Pro',
       'Competitor store tracking',
       'AI launch simulator',
       'Advanced analytics & reports',
@@ -149,7 +149,7 @@ export default function PricingPage() {
           <div className="grid md:grid-cols-3 gap-6">
             {PLANS.map((plan) => {
               const isCurrentPlan = currentPlan === plan.id;
-              const planOrder = ['free', 'starter', 'growth', 'pro'];
+              const planOrder = ['free', 'starter', 'pro', 'elite'];
               const canUpgrade = !isCurrentPlan && planOrder.indexOf(plan.id) > planOrder.indexOf(currentPlan);
 
               return (
@@ -244,20 +244,20 @@ export default function PricingPage() {
                   <tr className="border-b bg-slate-50">
                     <th className="text-left p-4 font-medium text-slate-700">Feature</th>
                     <th className="text-center p-4 font-medium text-slate-700">Starter <span className="text-xs font-normal">(&pound;19)</span></th>
-                    <th className="text-center p-4 font-medium text-indigo-700 bg-indigo-50">Growth <span className="text-xs font-normal">(&pound;49)</span></th>
-                    <th className="text-center p-4 font-medium text-slate-700">Pro <span className="text-xs font-normal">(&pound;99)</span></th>
+                    <th className="text-center p-4 font-medium text-indigo-700 bg-indigo-50">Pro <span className="text-xs font-normal">(&pound;39)</span></th>
+                    <th className="text-center p-4 font-medium text-slate-700">Elite <span className="text-xs font-normal">(&pound;79)</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { icon: Eye, label: 'Product Views', starter: '10/day', growth: 'Unlimited', pro: 'Unlimited' },
-                    { icon: TrendingUp, label: 'Trend Insights', starter: 'Basic', growth: 'Full', pro: 'Advanced' },
-                    { icon: Sparkles, label: 'AI Ad Generator', starter: false, growth: true, pro: true },
-                    { icon: Bell, label: 'Trend Alerts', starter: false, growth: true, pro: true },
-                    { icon: Rocket, label: 'Launch Simulator', starter: false, growth: false, pro: true },
-                    { icon: Store, label: 'Competitor Tracking', starter: false, growth: false, pro: true },
-                    { icon: FileText, label: 'Analytics & Reports', starter: 'Basic', growth: 'Standard', pro: 'Advanced' },
-                    { icon: Shield, label: 'Support', starter: 'Email', growth: 'Priority Email', pro: 'Priority' },
+                    { icon: Eye, label: 'Product Views', starter: '10/day', pro: 'Unlimited', elite: 'Unlimited' },
+                    { icon: TrendingUp, label: 'Trend Insights', starter: 'Basic', pro: 'Full', elite: 'Advanced' },
+                    { icon: Sparkles, label: 'AI Ad Generator', starter: false, pro: true, elite: true },
+                    { icon: Bell, label: 'Trend Alerts', starter: false, pro: true, elite: true },
+                    { icon: Rocket, label: 'Launch Simulator', starter: false, pro: false, elite: true },
+                    { icon: Store, label: 'Competitor Tracking', starter: false, pro: false, elite: true },
+                    { icon: FileText, label: 'Analytics & Reports', starter: 'Basic', pro: 'Standard', elite: 'Advanced' },
+                    { icon: Shield, label: 'Support', starter: 'Email', pro: 'Priority Email', elite: 'Priority' },
                   ].map((row, idx) => {
                     const Icon = row.icon;
                     const renderCell = (val) => {
@@ -272,8 +272,8 @@ export default function PricingPage() {
                           {row.label}
                         </td>
                         <td className="p-4 text-center">{renderCell(row.starter)}</td>
-                        <td className="p-4 text-center bg-indigo-50/30">{renderCell(row.growth)}</td>
-                        <td className="p-4 text-center">{renderCell(row.pro)}</td>
+                        <td className="p-4 text-center bg-indigo-50/30">{renderCell(row.pro)}</td>
+                        <td className="p-4 text-center">{renderCell(row.elite)}</td>
                       </tr>
                     );
                   })}

@@ -36,41 +36,49 @@ export const Permissions = {
 const PERMISSION_MAP = {
   [Permissions.VIEW_PRODUCTS]: {
     free: true,
+    starter: true,
     pro: true,
     elite: true,
   },
   [Permissions.VIEW_PREMIUM_PRODUCTS]: {
     free: false,
+    starter: false,
     pro: true,
     elite: true,
   },
   [Permissions.SAVE_PRODUCTS]: {
     free: true,
+    starter: true,
     pro: true,
     elite: true,
   },
   [Permissions.VIEW_ALERTS]: {
     free: false,
+    starter: false,
     pro: true,
     elite: true,
   },
   [Permissions.EXPORT_DATA]: {
     free: false,
+    starter: false,
     pro: true,
     elite: true,
   },
   [Permissions.API_ACCESS]: {
     free: false,
+    starter: false,
     pro: false,
     elite: true,
   },
   [Permissions.ADMIN_PANEL]: {
     free: 'admin_only',
+    starter: 'admin_only',
     pro: 'admin_only',
     elite: 'admin_only',
   },
   [Permissions.AUTOMATION_CENTER]: {
     free: 'admin_only',
+    starter: 'admin_only',
     pro: 'admin_only',
     elite: 'admin_only',
   },
@@ -184,6 +192,8 @@ export const getRestrictedFeatures = (profile, isDemoMode = false) => {
   
   if (plan === 'free') {
     restricted.push('Premium Products', 'Trend Alerts', 'Export Data', 'API Access', 'Advanced Filters');
+  } else if (plan === 'starter') {
+    restricted.push('Premium Products', 'Trend Alerts', 'Export Data', 'API Access', 'Advanced Filters');
   } else if (plan === 'pro') {
     restricted.push('Trend Alerts', 'API Access');
   }
@@ -206,7 +216,7 @@ export const getUpgradePathForFeature = (feature, currentPlan = 'free') => {
   
   if (!requiredPlan) return null;
   
-  const planOrder = ['free', 'pro', 'elite'];
+  const planOrder = ['free', 'starter', 'pro', 'elite'];
   const currentIndex = planOrder.indexOf(currentPlan);
   const requiredIndex = planOrder.indexOf(requiredPlan);
   

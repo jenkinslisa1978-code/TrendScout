@@ -317,15 +317,15 @@ export default function LandingPage() {
                 cta: 'Start 7-Day Free Trial', popular: false,
               },
               {
-                id: 'growth', name: 'Growth', price: '49',
+                id: 'pro', name: 'Pro', price: '39',
                 description: 'Full product intelligence',
                 features: ['Unlimited product discovery', 'Trend score analytics', 'AI ad creative generator', 'Trend alerts & notifications', 'Supplier intelligence', 'Product profit calculator'],
                 cta: 'Start 7-Day Free Trial', popular: true,
               },
               {
-                id: 'pro', name: 'Pro', price: '99',
+                id: 'elite', name: 'Elite', price: '79',
                 description: 'Scale with advanced tools',
-                features: ['Everything in Growth', 'Competitor store tracking', 'AI launch simulator', 'Advanced analytics', 'Unlimited insights', 'Priority support'],
+                features: ['Everything in Pro', 'Competitor store tracking', 'AI launch simulator', 'Advanced analytics', 'Unlimited insights', 'Priority support'],
                 cta: 'Start 7-Day Free Trial', popular: false,
               },
             ].map((plan) => (

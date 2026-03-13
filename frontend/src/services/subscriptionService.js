@@ -29,6 +29,22 @@ export const PLANS = {
     },
     description: 'Get started with product research',
   },
+  starter: {
+    id: 'starter',
+    name: 'Starter',
+    price: 19,
+    priceId: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || '',
+    features: {
+      maxProducts: 30,
+      maxSavedProducts: 15,
+      trendAlerts: false,
+      apiAccess: false,
+      prioritySupport: false,
+      advancedFilters: false,
+      exportData: false,
+    },
+    description: 'Start finding winners',
+  },
   pro: {
     id: 'pro',
     name: 'Pro',
@@ -48,7 +64,7 @@ export const PLANS = {
   elite: {
     id: 'elite',
     name: 'Elite',
-    price: 99,
+    price: 79,
     priceId: process.env.REACT_APP_STRIPE_ELITE_PRICE_ID || '',
     features: {
       maxProducts: -1, // Unlimited
