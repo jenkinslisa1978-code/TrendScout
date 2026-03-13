@@ -28,7 +28,7 @@
 - **Shopify Store Analyzer**: /tools/shopify-analyzer — paste any URL for instant analysis
 - **Competitor Store Tracker**: Track stores, refresh scans, product change detection
 - **Product Profit Calculator**: Break-even CPA, margin, daily profit
-- **Saved Products Workspace**: /saved — save, note, track
+- **Saved Products Workspace**: /saved — save products, add private notes, track launch status (Researching/Testing/Launched/Dropped), filter by status
 
 ### Viral Growth Engine
 - **Public SEO pages**: /trending/{slug} with full OG tags, Twitter cards, JSON-LD structured data
@@ -45,9 +45,11 @@
 ### Scheduled Tasks (19 total)
 - weekly_competitor_scan (Monday 6AM)
 - weekly_blog_generation (Monday 8AM) — generates blog posts for top 8 product categories
+- send_weekly_email_digest (Monday 10AM) — sends weekly winning products digest to subscribed users
+- send_product_of_the_week (Wednesday 11AM) — sends featured product email
 - scan_threshold_subscriptions (every 6h)
 - generate_alerts (hourly)
-- Plus 15 data ingestion/enrichment tasks
+- Plus 13 data ingestion/enrichment tasks
 
 ### Image System
 - Fixed 61 broken Amazon placeholder images with curated Unsplash URLs by category
@@ -66,14 +68,20 @@
 | GET /api/blog/posts/{slug} | No | Single blog post with full content |
 | POST /api/blog/generate/{category} | Admin | Generate AI blog post for category |
 | POST /api/blog/generate-all | Admin | Generate for top 8 categories |
+| GET /api/workspace/products | Yes | List saved workspace products |
+| POST /api/workspace/products | Yes | Save product to workspace |
+| DELETE /api/workspace/products/{id} | Yes | Remove product from workspace |
+| PUT /api/workspace/products/{id}/note | Yes | Update product note |
+| PUT /api/workspace/products/{id}/status | Yes | Update launch status |
+| GET /api/workspace/products/{id}/check | Yes | Check if product is saved |
+| GET /api/email/subscription-status | Yes | Get email preferences |
+| POST /api/email/subscription-status | Yes | Update email preferences |
 | GET /api/ad-tests/ad-creatives/{id} | Yes | 3 AI ad concepts |
 | GET /api/ad-tests/ai-simulate/{id} | Yes | AI launch simulation |
 | GET/POST/DELETE /api/competitor-stores | Yes | Competitor tracking |
 | GET/PUT /api/notifications/threshold-subscription | Yes | Alert settings |
 
 ## Upcoming Tasks
-- Saved Product Workspace (Part 9) — /workspace page for saving products, notes, launch tracking
-- Weekly Trend Report email (Monday digest via Resend)
 - Chrome Extension — "TrendScout – Product & Store Analyzer" (deferred)
 - Backend modularization — extract routes from server.py
 
@@ -85,7 +93,7 @@
 
 ## DB Collections
 products, daily_usage, threshold_subscriptions, competitor_stores,
-notifications, profiles, subscriptions, stores, product_outcomes, blog_posts
+notifications, profiles, subscriptions, stores, product_outcomes, blog_posts, workspace_products
 
 ## Testing Status
 - iteration_48: Phase C features — 100% (14/14)
@@ -94,3 +102,4 @@ notifications, profiles, subscriptions, stores, product_outcomes, blog_posts
 - iteration_51: AI simulator + TikTok intel — 100% (23/23)
 - iteration_52: Growth upgrade (leaderboard, ad generator, images, SEO) — 100% (15/15 + all frontend)
 - iteration_53: AI SEO Blog System — 100% (12/12 backend + all frontend verified)
+- iteration_54: Workspace + Email Subscription — 100% (25/25 backend + all frontend verified)
