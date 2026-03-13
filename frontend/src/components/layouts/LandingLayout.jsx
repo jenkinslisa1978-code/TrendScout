@@ -12,6 +12,7 @@ export default function LandingLayout({ children }) {
 
   const navigation = [
     { name: 'Trending', href: '/trending-products' },
+    { name: 'Leaderboard', href: '/top-trending-products' },
     { name: 'Tools', href: '/tools' },
     { name: 'Features', href: '/#features' },
     { name: 'Pricing', href: '/#pricing' },

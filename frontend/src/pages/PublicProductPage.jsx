@@ -60,6 +60,16 @@ function ShareMenu({ product, onClose }) {
       onClick: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank'),
     },
     {
+      name: 'LinkedIn',
+      icon: Share2,
+      onClick: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank'),
+    },
+    {
+      name: 'Reddit',
+      icon: MessageCircle,
+      onClick: () => window.open(`https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareText)}`, '_blank'),
+    },
+    {
       name: 'WhatsApp',
       icon: MessageCircle,
       onClick: () => window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank'),
@@ -169,6 +179,30 @@ export default function PublicProductPage() {
         <meta property="product:price:amount" content={String(product.estimated_retail_price || 0)} />
         <meta property="product:price:currency" content="GBP" />
         <link rel="canonical" href={canonicalUrl} />
+        {/* JSON-LD Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": productName,
+            "description": ogDescription,
+            "image": ogImage || undefined,
+            "url": canonicalUrl,
+            "brand": { "@type": "Brand", "name": product.category || "TrendScout" },
+            "offers": {
+              "@type": "Offer",
+              "price": product.estimated_retail_price || 0,
+              "priceCurrency": "GBP",
+              "availability": "https://schema.org/InStock",
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": Math.min(5, ((product.launch_score || 50) / 20)).toFixed(1),
+              "bestRating": "5",
+              "ratingCount": Math.max(1, Math.floor((product.tiktok_views || 0) / 10000)),
+            },
+          })}
+        </script>
       </Helmet>
 
       <div className="min-h-screen bg-slate-50">

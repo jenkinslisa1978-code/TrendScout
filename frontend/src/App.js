@@ -49,6 +49,7 @@ import IntegrationStatusPage from "@/pages/IntegrationStatusPage";
 import ShopifyAnalyzerPage from "@/pages/ShopifyAnalyzerPage";
 import CompetitorTrackerPage from "@/pages/CompetitorTrackerPage";
 import TikTokIntelligencePage from "@/pages/TikTokIntelligencePage";
+import TopTrendingPage from "@/pages/TopTrendingPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -115,6 +116,7 @@ function AppRoutes() {
       <Route path="/p/:id" element={<PublicProductPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />
+      <Route path="/top-trending-products" element={<TopTrendingPage />} />
 
       {/* Protected routes */}
       <Route

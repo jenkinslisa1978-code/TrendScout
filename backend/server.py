@@ -8758,6 +8758,145 @@ Respond in this exact JSON format (no markdown, just raw JSON):
         logging.error(f"AI simulation error: {e}")
         ai_analysis = {"verdict": base_sim["potential_description"], "error": str(e)[:100]}
 
+
+
+@ad_test_router.get("/ad-creatives/{product_id}")
+async def generate_ad_creatives(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Generate 3 TikTok ad concepts for a product using GPT 5.2."""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not llm_key:
+            raise HTTPException(status_code=500, detail="LLM key not configured")
+
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"ad-creative-{product_id}-{current_user.user_id}",
+            system_message="You are TrendScout's AI Ad Strategist. You create viral TikTok ad scripts for ecommerce products. Be creative, specific, and format-aware."
+        ).with_model("openai", "gpt-5.2")
+
+        prompt = f"""Create 3 TikTok ad concepts for this product:
+
+Product: {product.get('product_name', 'Unknown')}
+Category: {product.get('category', 'Unknown')}
+Price: £{product.get('estimated_retail_price', 0):.2f}
+Key Features: {product.get('description', product.get('product_name', ''))}
+TikTok Views: {product.get('tiktok_views', 0):,}
+
+Respond in this exact JSON format (raw JSON only, no markdown):
+{{
+  "creatives": [
+    {{
+      "type": "Unboxing",
+      "hook": "A compelling first-line hook",
+      "scenes": [
+        {{"scene": 1, "description": "scene description", "duration": "2s"}},
+        {{"scene": 2, "description": "scene description", "duration": "3s"}},
+        {{"scene": 3, "description": "scene description", "duration": "3s"}},
+        {{"scene": 4, "description": "CTA scene", "duration": "2s"}}
+      ],
+      "music_style": "trending upbeat",
+      "estimated_engagement": "high"
+    }},
+    {{
+      "type": "Problem/Solution",
+      "hook": "A problem-focused hook",
+      "scenes": [
+        {{"scene": 1, "description": "scene", "duration": "2s"}},
+        {{"scene": 2, "description": "scene", "duration": "3s"}},
+        {{"scene": 3, "description": "scene", "duration": "3s"}},
+        {{"scene": 4, "description": "CTA", "duration": "2s"}}
+      ],
+      "music_style": "dramatic to upbeat",
+      "estimated_engagement": "high"
+    }},
+    {{
+      "type": "Curiosity Hook",
+      "hook": "A curiosity-driven hook",
+      "scenes": [
+        {{"scene": 1, "description": "scene", "duration": "2s"}},
+        {{"scene": 2, "description": "scene", "duration": "3s"}},
+        {{"scene": 3, "description": "scene", "duration": "3s"}},
+        {{"scene": 4, "description": "CTA", "duration": "2s"}}
+      ],
+      "music_style": "mysterious to energetic",
+      "estimated_engagement": "medium"
+    }}
+  ]
+}}"""
+
+        response = await chat.send_message(UserMessage(text=prompt))
+
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', response)
+        if json_match:
+            result = json.loads(json_match.group())
+        else:
+            result = {"creatives": [], "error": "Could not parse response"}
+
+    except json.JSONDecodeError:
+        result = {"creatives": [], "error": "parse_error"}
+    except Exception as e:
+        logging.error(f"Ad creative generation error: {e}")
+        result = {"creatives": [], "error": str(e)[:100]}
+
+    return {
+        "product_id": product_id,
+        "product_name": product.get("product_name", "Unknown"),
+        **result,
+        "ai_powered": True,
+    }
+
+
+@public_router.get("/top-trending")
+async def get_top_trending_products():
+    """Public endpoint: Top 50 products by trend score for the viral leaderboard."""
+    cached = _get_cached("top_trending")
+    if cached:
+        return cached
+
+    products = await db.products.find(
+        {},
+        {"_id": 0}
+    ).sort("launch_score", -1).limit(50).to_list(50)
+
+    ranked = []
+    for i, p in enumerate(products):
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        ranked.append({
+            "rank": i + 1,
+            "id": p.get("id"),
+            "slug": _slugify(p.get("product_name", "")),
+            "product_name": p.get("product_name", "Unknown"),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "trend_stage": p.get("trend_stage") or p.get("early_trend_label", "Unknown"),
+            "competition_level": p.get("competition_level", "Unknown"),
+            "margin_percent": margin_pct,
+            "tiktok_views": p.get("tiktok_views", 0),
+            "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
+            "supplier_cost": round(p.get("supplier_cost", 0), 2),
+            "retail_price": round(p.get("estimated_retail_price", 0), 2),
+        })
+
+    result = {
+        "products": ranked,
+        "count": len(ranked),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _set_cached("top_trending", result)
+    return result
+
     return {
         **base_sim,
         "ai_analysis": ai_analysis,

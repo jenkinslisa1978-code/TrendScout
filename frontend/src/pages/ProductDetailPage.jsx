@@ -48,6 +48,8 @@ import AdBlueprint from '@/components/AdBlueprint';
 import AdPerformanceIndicator from '@/components/AdPerformanceIndicator';
 import AdTestPlanner from '@/components/AdTestPlanner';
 import LaunchSimulator from '@/components/LaunchSimulator';
+import AdCreativeGenerator from '@/components/AdCreativeGenerator';
+import TrendTimeline from '@/components/TrendTimeline';
 import ShareableProductCard from '@/components/ShareableProductCard';
 import { 
   formatCurrency, 
@@ -624,6 +626,20 @@ export default function ProductDetailPage() {
 
         {/* Launch Simulator */}
         <LaunchSimulator productId={id} />
+
+        {/* AI Ad Creative Generator */}
+        {isStarterOrAbove ? (
+          <AdCreativeGenerator productId={id} productName={product.product_name} />
+        ) : (
+          <div className="relative cursor-pointer" onClick={() => setUpgradeModal({ open: true, feature: 'ads' })} data-testid="ad-generator-locked">
+            <LockedContent feature="AI Ad Generator" requiredPlan="Starter" blurIntensity="medium">
+              <AdCreativeGenerator productId={id} productName={product.product_name} />
+            </LockedContent>
+          </div>
+        )}
+
+        {/* Trend Timeline */}
+        <TrendTimeline product={product} />
 
         {/* AI Ad Creatives */}
         {isStarterOrAbove ? (
