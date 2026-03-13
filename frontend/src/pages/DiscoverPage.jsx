@@ -73,8 +73,14 @@ export default function DiscoverPage() {
   const [opportunityRating, setOpportunityRating] = useState('all');
   const [earlyTrendFilter, setEarlyTrendFilter] = useState('all');
   const [marketFilter, setMarketFilter] = useState('all');
+  const [competitionLevel, setCompetitionLevel] = useState('all');
+  const [minTrendScore, setMinTrendScore] = useState('');
+  const [maxTrendScore, setMaxTrendScore] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('launch_score');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -94,6 +100,11 @@ export default function DiscoverPage() {
         opportunity_rating: opportunityRating !== 'all' ? opportunityRating : undefined,
         early_trend_label: earlyTrendFilter !== 'all' ? earlyTrendFilter : undefined,
         market_label: marketFilter !== 'all' ? marketFilter : undefined,
+        competition_level: competitionLevel !== 'all' ? competitionLevel : undefined,
+        min_trend_score: minTrendScore !== '' ? parseInt(minTrendScore) : undefined,
+        max_trend_score: maxTrendScore !== '' ? parseInt(maxTrendScore) : undefined,
+        min_price: minPrice !== '' ? parseFloat(minPrice) : undefined,
+        max_price: maxPrice !== '' ? parseFloat(maxPrice) : undefined,
         sortBy,
         sortOrder
       };
@@ -105,7 +116,7 @@ export default function DiscoverPage() {
     
     const debounce = setTimeout(fetchProducts, 300);
     return () => clearTimeout(debounce);
-  }, [search, category, trendStage, opportunityRating, earlyTrendFilter, marketFilter, sortBy, sortOrder]);
+  }, [search, category, trendStage, opportunityRating, earlyTrendFilter, marketFilter, competitionLevel, minTrendScore, maxTrendScore, minPrice, maxPrice, sortBy, sortOrder]);
 
   const handleSaveToggle = async (product, e) => {
     e.preventDefault();
@@ -161,7 +172,7 @@ export default function DiscoverPage() {
         {/* Filters */}
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="p-4">
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               {/* Search */}
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -184,6 +195,19 @@ export default function DiscoverPage() {
                   {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              {/* Competition Level filter */}
+              <Select value={competitionLevel} onValueChange={setCompetitionLevel}>
+                <SelectTrigger className="w-[160px] h-10" data-testid="competition-filter">
+                  <SelectValue placeholder="Competition" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -215,34 +239,6 @@ export default function DiscoverPage() {
                 </SelectContent>
               </Select>
 
-              {/* Early Trend filter */}
-              <Select value={earlyTrendFilter} onValueChange={setEarlyTrendFilter}>
-                <SelectTrigger className="w-[160px] h-10" data-testid="early-trend-filter">
-                  <SelectValue placeholder="Early Trend" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Trends</SelectItem>
-                  <SelectItem value="exploding">🔥 Exploding</SelectItem>
-                  <SelectItem value="rising">📈 Rising</SelectItem>
-                  <SelectItem value="early_trend">🌱 Early Trend</SelectItem>
-                  <SelectItem value="stable">Stable</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Market Opportunity filter */}
-              <Select value={marketFilter} onValueChange={setMarketFilter}>
-                <SelectTrigger className="w-[160px] h-10" data-testid="market-filter">
-                  <SelectValue placeholder="Market Opp." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Markets</SelectItem>
-                  <SelectItem value="massive">Massive Opportunity</SelectItem>
-                  <SelectItem value="strong">Strong Opportunity</SelectItem>
-                  <SelectItem value="competitive">Competitive</SelectItem>
-                  <SelectItem value="saturated">Saturated</SelectItem>
-                </SelectContent>
-              </Select>
-
               {/* Sort */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[140px] h-10" data-testid="sort-by-filter">
@@ -255,6 +251,7 @@ export default function DiscoverPage() {
                   <SelectItem value="early_trend_score">Early Trend Score</SelectItem>
                   <SelectItem value="success_probability">Success Rate</SelectItem>
                   <SelectItem value="estimated_margin">Margin</SelectItem>
+                  <SelectItem value="estimated_retail_price">Price</SelectItem>
                   <SelectItem value="tiktok_views">TikTok Views</SelectItem>
                   <SelectItem value="created_at">Newest</SelectItem>
                 </SelectContent>
@@ -273,7 +270,137 @@ export default function DiscoverPage() {
                   <SortAsc className="h-4 w-4" />
                 )}
               </Button>
+
+              {/* Toggle advanced filters */}
+              <Button
+                variant={showAdvancedFilters ? "secondary" : "outline"}
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="h-10 gap-2"
+                data-testid="toggle-advanced-filters"
+              >
+                <Filter className="h-4 w-4" />
+                Advanced
+              </Button>
             </div>
+
+            {/* Advanced Filters Row */}
+            {showAdvancedFilters && (
+              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-end gap-4">
+                {/* Trend Score Range */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Trend Score</span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      placeholder="Min"
+                      value={minTrendScore}
+                      onChange={(e) => setMinTrendScore(e.target.value)}
+                      className="w-[80px] h-9 text-sm"
+                      data-testid="min-trend-score"
+                    />
+                    <span className="text-slate-400 text-sm">-</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      placeholder="Max"
+                      value={maxTrendScore}
+                      onChange={(e) => setMaxTrendScore(e.target.value)}
+                      className="w-[80px] h-9 text-sm"
+                      data-testid="max-trend-score"
+                    />
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Price Range</span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="Min"
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value)}
+                      className="w-[90px] h-9 text-sm"
+                      data-testid="min-price"
+                    />
+                    <span className="text-slate-400 text-sm">-</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="Max"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                      className="w-[90px] h-9 text-sm"
+                      data-testid="max-price"
+                    />
+                  </div>
+                </div>
+
+                {/* Early Trend filter */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Early Trend</span>
+                  <Select value={earlyTrendFilter} onValueChange={setEarlyTrendFilter}>
+                    <SelectTrigger className="w-[150px] h-9" data-testid="early-trend-filter">
+                      <SelectValue placeholder="Early Trend" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Trends</SelectItem>
+                      <SelectItem value="exploding">Exploding</SelectItem>
+                      <SelectItem value="rising">Rising</SelectItem>
+                      <SelectItem value="early_trend">Early Trend</SelectItem>
+                      <SelectItem value="stable">Stable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Market Opportunity filter */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Market Opp.</span>
+                  <Select value={marketFilter} onValueChange={setMarketFilter}>
+                    <SelectTrigger className="w-[160px] h-9" data-testid="market-filter">
+                      <SelectValue placeholder="Market Opp." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Markets</SelectItem>
+                      <SelectItem value="massive">Massive Opportunity</SelectItem>
+                      <SelectItem value="strong">Strong Opportunity</SelectItem>
+                      <SelectItem value="competitive">Competitive</SelectItem>
+                      <SelectItem value="saturated">Saturated</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Clear All Filters */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 text-slate-500 hover:text-red-600"
+                  data-testid="clear-filters-btn"
+                  onClick={() => {
+                    setSearch('');
+                    setCategory('all');
+                    setTrendStage('all');
+                    setOpportunityRating('all');
+                    setEarlyTrendFilter('all');
+                    setMarketFilter('all');
+                    setCompetitionLevel('all');
+                    setMinTrendScore('');
+                    setMaxTrendScore('');
+                    setMinPrice('');
+                    setMaxPrice('');
+                  }}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Clear All
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

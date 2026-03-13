@@ -93,19 +93,35 @@ class ImageService:
         primary = stored[0]["url"] if stored else existing_url
         gallery = [s["url"] for s in stored]
 
-        # Update product in DB
+        # Calculate confidence based on source quality and image metrics
+        confidence = self._calculate_confidence(stored)
+
+        # Update product in DB with image pipeline fields
+        update_fields = {
+            "image_url": primary,
+            "gallery_images": gallery,
+            "image_enriched": True,
+            "image_sources": [s["source"] for s in stored],
+            "image_confidence": confidence,
+            "candidate_images": stored,
+            "image_enriched_at": __import__('datetime').datetime.now(
+                __import__('datetime').timezone.utc
+            ).isoformat(),
+        }
+
+        # Queue for admin review if confidence is below threshold
+        if confidence < 70:
+            update_fields["image_review_status"] = "pending"
+        elif not product.get("image_review_status"):
+            update_fields["image_review_status"] = "auto_approved"
+
         await self.db.products.update_one(
             {"id": product_id},
-            {"$set": {
-                "image_url": primary,
-                "gallery_images": gallery,
-                "image_enriched": True,
-                "image_sources": [s["source"] for s in stored],
-            }}
+            {"$set": update_fields}
         )
 
-        logger.info(f"Stored {len(stored)} images for: {product_name[:50]}")
-        return {"primary_image": primary, "gallery": gallery}
+        logger.info(f"Stored {len(stored)} images for: {product_name[:50]} (confidence: {confidence})")
+        return {"primary_image": primary, "gallery": gallery, "candidates": stored, "confidence": confidence}
 
     async def batch_enrich(self, limit: int = 20):
         """Background job: enrich products that haven't been image-enriched yet."""
@@ -135,6 +151,45 @@ class ImageService:
         return results
 
     # ── Image Sources ─────────────────────────────────────────
+
+    def _calculate_confidence(self, stored: List[Dict]) -> int:
+        """Calculate image confidence score (0-100) based on source quality and metrics."""
+        if not stored:
+            return 0
+
+        best = stored[0]
+        score = 0
+
+        # Source reliability (0-40)
+        source_scores = {"amazon": 40, "web": 25, "existing": 20, "supplier": 15, "unknown": 10}
+        score += source_scores.get(best.get("source", "unknown"), 10)
+
+        # Resolution quality (0-30)
+        width = best.get("width", 0)
+        height = best.get("height", 0)
+        if width >= 800 and height >= 800:
+            score += 30
+        elif width >= 600 and height >= 600:
+            score += 20
+        elif width >= 400 and height >= 400:
+            score += 10
+
+        # Multiple sources agreement (0-20)
+        sources = set(s.get("source") for s in stored)
+        if len(sources) >= 3:
+            score += 20
+        elif len(sources) >= 2:
+            score += 12
+        elif len(stored) >= 2:
+            score += 6
+
+        # Multiple candidates (0-10)
+        if len(stored) >= 4:
+            score += 10
+        elif len(stored) >= 2:
+            score += 5
+
+        return min(100, score)
 
     async def _search_amazon_images(self, product_name: str) -> List[Dict]:
         """Search Amazon for product images."""

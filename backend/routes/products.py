@@ -152,17 +152,21 @@ async def get_products(
     opportunity_rating: Optional[str] = None,
     early_trend_label: Optional[str] = None,
     market_label: Optional[str] = None,
+    competition_level: Optional[str] = None,
+    min_trend_score: Optional[int] = None,
+    max_trend_score: Optional[int] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
     search: Optional[str] = None,
     sort_by: str = "trend_score",
     sort_order: str = "desc",
     limit: int = 100,
-    include_integrity: bool = False,  # Include data integrity metadata
-    canonical_only: bool = True  # Only return canonical products (not merged duplicates)
+    include_integrity: bool = False,
+    canonical_only: bool = True
 ):
     """Get products with filtering and optional data integrity metadata"""
     query = {}
     
-    # Filter to canonical products only (excludes merged duplicates)
     if canonical_only:
         query["is_canonical"] = {"$ne": False}
     
@@ -176,6 +180,22 @@ async def get_products(
         query["early_trend_label"] = early_trend_label
     if market_label:
         query["market_label"] = market_label
+    if competition_level:
+        query["competition_level"] = competition_level
+    if min_trend_score is not None or max_trend_score is not None:
+        ts_query = {}
+        if min_trend_score is not None:
+            ts_query["$gte"] = min_trend_score
+        if max_trend_score is not None:
+            ts_query["$lte"] = max_trend_score
+        query["trend_score"] = ts_query
+    if min_price is not None or max_price is not None:
+        price_query = {}
+        if min_price is not None:
+            price_query["$gte"] = min_price
+        if max_price is not None:
+            price_query["$lte"] = max_price
+        query["estimated_retail_price"] = price_query
     if search:
         query["$or"] = [
             {"product_name": {"$regex": search, "$options": "i"}},

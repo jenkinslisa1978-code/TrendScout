@@ -11,6 +11,11 @@ export const getProducts = async (filters = {}) => {
     if (filters.opportunity_rating) params.append('opportunity_rating', filters.opportunity_rating);
     if (filters.early_trend_label) params.append('early_trend_label', filters.early_trend_label);
     if (filters.market_label) params.append('market_label', filters.market_label);
+    if (filters.competition_level) params.append('competition_level', filters.competition_level);
+    if (filters.min_trend_score != null) params.append('min_trend_score', filters.min_trend_score);
+    if (filters.max_trend_score != null) params.append('max_trend_score', filters.max_trend_score);
+    if (filters.min_price != null) params.append('min_price', filters.min_price);
+    if (filters.max_price != null) params.append('max_price', filters.max_price);
     if (filters.search) params.append('search', filters.search);
     if (filters.sortBy) params.append('sort_by', filters.sortBy);
     if (filters.sortOrder) params.append('sort_order', filters.sortOrder);

@@ -1258,3 +1258,73 @@ async def send_weekly_radar_digest(db, params: Dict[str, Any] = None) -> Dict[st
             'failed': failed_count,
         }
     }
+
+
+
+# =====================================================
+# IMAGE ENRICHMENT PIPELINE TASK
+# =====================================================
+
+@TaskRegistry.register(
+    name="enrich_product_images",
+    description="Find and validate high-quality images for products missing or with low-confidence images",
+    default_schedule="0 */8 * * *"  # Every 8 hours
+)
+async def enrich_product_images(db, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Image Resolution Pipeline (Parts 20-22):
+    1. Find products missing images or with low confidence
+    2. Source candidate images from multiple providers
+    3. Validate candidates for relevance and quality
+    4. Store best candidate and queue for admin review
+    """
+    from services.image_service import ImageService
+
+    logger.info("Starting image enrichment pipeline...")
+    params = params or {}
+    limit = params.get('limit', 20)
+    min_confidence = params.get('min_confidence', 50)
+
+    svc = ImageService(db)
+
+    # Find products needing image enrichment
+    query = {
+        "$or": [
+            {"image_url": {"$exists": False}},
+            {"image_url": None},
+            {"image_url": ""},
+            {"image_confidence": {"$lt": min_confidence}},
+            {"image_review_status": "rejected"},
+        ]
+    }
+    products = await db.products.find(
+        query, {"_id": 0}
+    ).sort("trend_score", -1).limit(limit).to_list(limit)
+
+    enriched = 0
+    failed = 0
+    candidates_found = 0
+
+    for product in products:
+        try:
+            result = await svc.enrich_product_images(product)
+            if result and result.get("candidates"):
+                candidates_found += len(result["candidates"])
+                enriched += 1
+            else:
+                failed += 1
+        except Exception as e:
+            logger.error(f"Image enrichment failed for {product.get('id')}: {e}")
+            failed += 1
+
+    logger.info(f"Image enrichment complete: {enriched} enriched, {failed} failed, {candidates_found} candidates")
+
+    return {
+        'records_processed': enriched + failed,
+        'details': {
+            'products_processed': len(products),
+            'enriched': enriched,
+            'failed': failed,
+            'candidates_found': candidates_found,
+        }
+    }
