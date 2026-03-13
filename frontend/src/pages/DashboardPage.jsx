@@ -47,6 +47,7 @@ import ShareableProductCard from '@/components/ShareableProductCard';
 import OpportunityFeedPanel from '@/components/dashboard/OpportunityFeedPanel';
 import DailyUsageBanner from '@/components/dashboard/DailyUsageBanner';
 import QuickLaunchFlow from '@/components/dashboard/QuickLaunchFlow';
+import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 
 export default function DashboardPage() {
@@ -149,8 +150,18 @@ export default function DashboardPage() {
     }
   };
 
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const done = localStorage.getItem('trendscout_onboarding_complete');
+    if (!done) setShowOnboarding(true);
+  }, []);
+
   return (
     <DashboardLayout>
+      {showOnboarding && (
+        <OnboardingWalkthrough onComplete={() => setShowOnboarding(false)} />
+      )}
       <div className="space-y-8 max-w-7xl mx-auto" data-testid="dashboard">
         {/* Quick Launch — 3-Click Flow for Beginners */}
         <QuickLaunchFlow />

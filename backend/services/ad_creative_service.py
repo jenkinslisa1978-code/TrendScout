@@ -43,20 +43,31 @@ def _create_chat(session_id: str, system_message: str, provider: str = None) -> 
     return chat
 
 
-SYSTEM_PROMPT = """You are an expert e-commerce marketing copywriter specializing in dropshipping and direct-to-consumer products. 
+SYSTEM_PROMPT = """You are the world's #1 e-commerce direct-response copywriter. You've generated over £50M in revenue for dropshipping and DTC brands.
 
-You create high-converting ad creatives for TikTok, Facebook, Instagram, and other platforms.
+Your ad copy follows proven frameworks:
+- AIDA (Attention → Interest → Desire → Action)
+- PAS (Problem → Agitate → Solution)
+- Before/After/Bridge
 
-Your outputs are always practical, specific to the product, and optimized for conversions.
-Always return valid JSON when asked for JSON output. No markdown, no code blocks, just raw JSON."""
+Rules for EVERY piece of copy you write:
+1. Open with a pattern-interrupt hook that stops the scroll within 1 second
+2. Call out the target buyer specifically (not "everyone")
+3. Focus on outcomes and transformations, NOT features
+4. Create urgency without being sleazy
+5. Every CTA must tell them exactly what happens when they click
+6. TikTok scripts must feel native — NOT like ads — conversational, trending format
+7. Facebook ads must be long-form story-driven with emotional triggers
+8. Instagram captions must be punchy, visual, and hashtag-optimised for reach
+9. Use UK English (£ not $, colour not color)
+10. Include specific numbers, social proof angles, and scarcity elements
+
+Always return valid JSON. No markdown, no code blocks, just raw JSON."""
 
 
 async def generate_ad_creatives(product: Dict[str, Any], provider: str = None) -> Dict[str, Any]:
     """
-    Generate a full suite of ad creatives for a product.
-    
-    Returns: tiktok_scripts, facebook_ads, instagram_captions,
-             product_angles, headlines, video_storyboard, shot_list, voiceover_script
+    Generate a premium suite of ad creatives for a product.
     """
     session_id = f"ad-gen-{uuid.uuid4().hex[:8]}"
     chat = _create_chat(session_id, SYSTEM_PROMPT, provider)
@@ -65,77 +76,105 @@ async def generate_ad_creatives(product: Dict[str, Any], provider: str = None) -
     category = product.get('category', 'General')
     price = product.get('estimated_retail_price', 0)
     cost = product.get('supplier_cost', 0)
-    description = product.get('short_description', product_name)
+    margin = price - cost if price and cost else 0
+    description = product.get('short_description', product.get('description', product_name))
     trend_score = product.get('trend_score', 0)
+    tiktok_views = product.get('tiktok_views', 0)
+    competition = product.get('competition_level', 'unknown')
     
     product_context = f"""Product: {product_name}
 Category: {category}
 Retail Price: £{price:.2f}
-Trend Score: {trend_score}/100
+Supplier Cost: £{cost:.2f}  
+Profit Margin: £{margin:.2f}
+Trend Score: {trend_score}/100 (how viral it is right now)
+TikTok Views: {tiktok_views:,}
+Competition Level: {competition}
 Description: {description}"""
     
-    # Generate all creatives in one comprehensive prompt
     prompt = f"""{product_context}
 
-Generate a complete ad creative package for this product. Return a JSON object with these exact keys:
+Generate a PREMIUM ad creative package that will outperform competitors. This must be the kind of copy that a top agency would charge £5,000+ for. Return a JSON object:
 
 {{
   "product_angles": [
-    {{"angle": "...", "target_audience": "...", "hook": "..."}}
+    {{
+      "angle": "specific unique selling angle",
+      "target_audience": "precise buyer persona with age, interests, pain points",
+      "hook": "pattern-interrupt opening line that stops the scroll",
+      "emotional_trigger": "fear/desire/curiosity/belonging/status"
+    }}
   ],
   "headlines": [
-    "headline 1", "headline 2", "headline 3", "headline 4", "headline 5"
+    "headline using power words and numbers — max 10 words each"
   ],
   "tiktok_scripts": [
     {{
-      "title": "...",
-      "hook": "opening 3-second hook text",
-      "script": "full 30-second script with [ACTIONS] in brackets",
-      "cta": "call to action"
+      "title": "script title",
+      "format": "trending TikTok format name (e.g., 'POV', 'Things I wish I knew', 'Wait for it')",
+      "hook": "first 3 seconds — must create curiosity or shock",
+      "script": "full 30-45 second native TikTok script with [ACTIONS] and [TRANSITIONS]. Must feel like a real person talking, NOT an ad. Include trending audio suggestion.",
+      "cta": "soft CTA that feels organic (link in bio style)",
+      "trending_sound": "suggest a trending sound or audio style"
     }}
   ],
   "facebook_ads": [
     {{
-      "headline": "...",
-      "primary_text": "ad body text (2-3 paragraphs)",
-      "description": "link description",
-      "cta_button": "Shop Now"
+      "headline": "attention-grabbing headline with benefit",
+      "primary_text": "long-form story-driven ad (3-4 paragraphs). Start with a relatable problem, build tension, introduce product as the solution, close with social proof and urgency. Use line breaks for readability.",
+      "description": "one-line benefit under the image",
+      "cta_button": "Shop Now",
+      "targeting_suggestion": "who to target and why"
     }}
   ],
   "instagram_captions": [
     {{
-      "caption": "engaging caption with emojis and hashtags",
-      "hashtags": ["tag1", "tag2"]
+      "caption": "engaging caption that drives saves and shares. Start with a hook, tell a micro-story, end with a question to drive comments.",
+      "hashtags": ["30 relevant hashtags mixing broad and niche"],
+      "best_time_to_post": "day and time recommendation"
     }}
   ],
   "video_storyboard": [
     {{
       "scene": 1,
       "duration": "0-3s",
-      "visual": "what to show",
-      "text_overlay": "on-screen text",
-      "audio": "what audio/music"
+      "visual": "exactly what to film/show",
+      "text_overlay": "large bold text on screen",
+      "audio": "specific audio/music direction",
+      "purpose": "why this scene converts"
     }}
   ],
   "shot_list": [
     {{
       "shot": 1,
-      "type": "close-up/wide/medium/overhead",
-      "description": "what to capture",
-      "purpose": "why this shot matters"
+      "type": "close-up/wide/medium/overhead/POV",
+      "description": "exactly what to capture",
+      "lighting": "lighting direction",
+      "purpose": "what this shot achieves psychologically"
     }}
   ],
-  "voiceover_script": "full voiceover script for a 30-second video"
+  "voiceover_script": "full voiceover with [PAUSE] markers, emphasis in CAPS, and emotional direction in (parentheses)",
+  "email_sequence": [
+    {{
+      "subject_line": "email subject (max 50 chars, create curiosity)",
+      "preview_text": "preview text that complements subject",
+      "body": "short punchy email body with CTA"
+    }}
+  ],
+  "ad_budget_recommendation": {{
+    "daily_budget_gbp": "recommended daily spend",
+    "test_duration_days": "how long to test",
+    "scaling_strategy": "when and how to scale"
+  }}
 }}
 
-Generate 3 product angles, 5 headlines, 2 TikTok scripts, 2 Facebook ads, 2 Instagram captions, 6 storyboard scenes, 5 shots, and 1 voiceover script. Make them specific to this product, not generic."""
+Generate 3 product angles, 5 power headlines, 3 TikTok scripts (different formats), 2 Facebook long-form ads, 3 Instagram captions, 6 storyboard scenes, 5 shots, 1 voiceover, 2 emails, and budget advice. Make EVERY line specific to {product_name} — zero generic filler."""
 
     try:
         response = await chat.send_message(UserMessage(text=prompt))
         
         # Parse JSON from response
         response_text = response.strip()
-        # Remove potential markdown code blocks
         if response_text.startswith('```'):
             response_text = response_text.split('\n', 1)[1] if '\n' in response_text else response_text[3:]
         if response_text.endswith('```'):
@@ -157,7 +196,6 @@ Generate 3 product angles, 5 headlines, 2 TikTok scripts, 2 Facebook ads, 2 Inst
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse LLM response as JSON: {e}")
         logger.debug(f"Raw response: {response_text[:500]}")
-        # Return the raw text as fallback
         return {
             "id": str(uuid.uuid4()),
             "product_id": product.get('id'),
