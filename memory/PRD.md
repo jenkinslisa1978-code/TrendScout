@@ -25,11 +25,18 @@
 - Image optimization: crop to square (800x800), JPEG compression (82%), Pillow processing
 - Local storage served via /api/images/ (30+ images enriched)
 - Multi-image gallery support: gallery_images field in product documents
-- UI: Image carousel with thumbnails, hover zoom (scale-110), click-to-zoom fullscreen modal, nav arrows, dot indicators
-- Confidence score badges: High Confidence (>=75), Emerging Opportunity (>=50), Experimental (<50)
-- Background batch enrichment: POST /api/images/batch-enrich (admin only)
-- Auto-regeneration on startup
-- Verified: iteration_47 — 100% pass (12/12 backend, all frontend)
+- UI: Image carousel with thumbnails, hover zoom, click-to-zoom fullscreen modal
+- Verified: iteration_47 — 100% pass
+
+### Phase 36: Phase C — Viral & Upgrade Features (DONE - March 2026)
+- **Features link fix**: Landing page nav links (#features, #pricing) now smooth-scroll correctly via scrollIntoView
+- **Daily Picks**: Public endpoint GET /api/public/daily-picks returns 5 curated products, deterministic per day (seeded by date). Renders as "Today's Picks" section on /trending-products
+- **Daily Usage Tracking**: GET /api/user/daily-usage + POST /api/user/track-insight endpoints for freemium gating. Free users limited to 2 insights/day, Starter to 5
+- **Feature-access enhanced**: GET /api/stripe/feature-access now returns max_analyses_daily and insights_used_today
+- **Freemium Upgrade Triggers**: Supplier Intelligence and Ad Creative sections locked behind plan checks with blur overlay + UpgradeModal component
+- **Daily Usage Banner**: Dashboard shows remaining insights count with progress bar and upgrade CTA for free/starter users
+- **UpgradeModal**: Context-aware modal showing plan features, pricing, and CTA for supplier, ads, insights, daily_limit, early_trends, launch_simulator
+- Verified: iteration_48 — 100% pass (14/14 backend, all frontend)
 
 ## Key API Endpoints
 
@@ -38,24 +45,31 @@
 - `POST /api/images/batch-enrich` — Batch enrichment (admin only)
 - `GET /api/images/{filename}` — Serve stored images
 
+### Daily & Usage
+- `GET /api/public/daily-picks` — 5 curated daily products (public, cached 30min)
+- `GET /api/user/daily-usage` — User's daily insight usage and limits (auth required)
+- `POST /api/user/track-insight` — Track insight view, returns updated usage (auth required)
+
 ### Public (No Auth)
-- `GET /api/public/trending-products` — Now includes gallery_images, growth_rate, supplier_cost, retail_price
-- `GET /api/public/product/{slug}` — Now includes gallery_images, growth_rate, tiktok_views
+- `GET /api/public/trending-products` — Includes gallery_images, growth_rate, supplier_cost, retail_price
+- `GET /api/public/product/{slug}` — Includes gallery_images, growth_rate, tiktok_views
 - `GET /api/public/categories` — Category list with counts
 - `GET /sitemap.xml` — Static sitemap (regenerated on startup)
 
-## Upcoming Tasks (Phase C — Viral & Upgrade Features)
-- Daily Winning Product Feed on dashboard
-- Viral product leaderboard on public page
-- Free user unlock limits (3/day) with upgrade prompts
-- Enhanced shareable product pages
+## Upcoming Tasks
+- **Trend Alerts Enhancement**: Email/in-app alerts when product virality score crosses threshold
+- **Conversion Doubling (Part 15)**: Full daily unlock limit enforcement across all product pages
+- **Enhanced shareable product pages**: Social sharing with OG images
 
 ## Future Phases
-- **Phase D**: Shopify Store Analyzer
-- **Phase E**: Competitor Store Tracker, TikTok Ad Intelligence
-- **Phase F**: Chrome Extension architecture
+- **Phase D**: Onboarding (3-step personalized flow)
+- **Phase E**: Killer Features — Competitor Store Tracker, TikTok Ad Intelligence
+- **Phase F**: Shopify Store Analyzer
+- **Phase G**: Chrome Extension architecture
+- **Phase H**: AI Product Launch Simulator
 - CDN migration (Cloudflare R2/S3) for image storage
-- Server.py refactoring
+- Server.py refactoring into route modules
+- Redis cache migration
 
 ## Integration Status
 | Source | Status | Mode |
@@ -66,3 +80,9 @@
 | Zendrop | Wired | estimation |
 | AliExpress | Not configured | estimation |
 | Image Enrichment | LIVE | Amazon + web scraping |
+
+## DB Collections
+- **products**: Core product data with launch_score, images, gallery_images
+- **daily_usage**: Tracks per-user daily insight consumption (user_id, date, insights_used)
+- **profiles**: User profiles with plan, is_admin flags
+- **subscriptions**: Stripe subscription data
