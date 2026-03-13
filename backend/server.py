@@ -3,11 +3,14 @@ TrendScout API - Slim Entrypoint
 All route handlers are in /routes/, shared code in /common/.
 """
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import os
 import logging
 from pathlib import Path
@@ -16,8 +19,13 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Rate limiter
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+
 # Create the main app
-app = FastAPI(title="ViralScout API", version="1.0.0")
+app = FastAPI(title="TrendScout API", version="1.0.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Import all route modules  (each exports a list of routers)
 from routes.health import routers as health_routers

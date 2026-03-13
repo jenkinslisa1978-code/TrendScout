@@ -7,6 +7,10 @@ from auth import get_current_user, AuthenticatedUser
 from common.database import db
 from common.helpers import generate_auth_token
 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+limiter = Limiter(key_func=get_remote_address)
+
 auth_router = APIRouter(prefix="/api/auth")
 
 
@@ -29,6 +33,7 @@ async def auth_profile(current_user: AuthenticatedUser = Depends(get_current_use
 
 
 @auth_router.post("/register")
+@limiter.limit("5/minute")
 async def auth_register(request: Request):
     import bcrypt
     body = await request.json()
@@ -78,6 +83,7 @@ async def auth_register(request: Request):
 
 
 @auth_router.post("/login")
+@limiter.limit("10/minute")
 async def auth_login(request: Request):
     import bcrypt
     body = await request.json()

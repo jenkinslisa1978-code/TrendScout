@@ -475,6 +475,27 @@ export default function LandingPage() {
           animation-play-state: paused;
         }
       `}</style>
+
+      {/* ── FOOTER ── */}
+      <footer className="bg-slate-950 text-slate-400 py-12 border-t border-white/[0.05]">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-manrope font-bold text-white text-lg">TrendScout</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm">
+              <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/blog" className="hover:text-white transition-colors">Blog</Link>
+              <Link to="/trending-products" className="hover:text-white transition-colors">Trending</Link>
+            </div>
+            <p className="text-xs text-slate-500">&copy; {new Date().getFullYear()} TrendScout. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </LandingLayout>
   );
 }

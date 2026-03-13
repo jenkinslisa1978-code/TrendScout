@@ -55,6 +55,9 @@ import TikTokIntelligencePage from "@/pages/TikTokIntelligencePage";
 import TopTrendingPage from "@/pages/TopTrendingPage";
 import BlogPage from "@/pages/BlogPage";
 import BlogPostPage from "@/pages/BlogPostPage";
+import NotFoundPage from "@/pages/NotFoundPage";
+import TermsPage from "@/pages/TermsPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -132,6 +135,8 @@ function AppRoutes() {
       <Route path="/top-trending-products" element={<TopTrendingPage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
 
       {/* Protected routes */}
       <Route
@@ -347,7 +352,7 @@ function AppRoutes() {
       />
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
