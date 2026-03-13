@@ -28,6 +28,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getUnreadAlertCount } from '@/services/alertService';
+import {
+  Link2,
+} from 'lucide-react';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 const navigation = [
@@ -35,6 +38,7 @@ const navigation = [
   { name: 'Discover', href: '/discover', icon: Search },
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'My Stores', href: '/stores', icon: Store },
+  { name: 'Connections', href: '/settings/connections', icon: Link2 },
   { name: 'Competitors', href: '/competitor-tracker', icon: Radar },
   { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
   { name: 'Outcomes', href: '/outcomes', icon: Target },

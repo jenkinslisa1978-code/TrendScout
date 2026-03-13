@@ -58,6 +58,7 @@ import BlogPostPage from "@/pages/BlogPostPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
+import PlatformConnectionsPage from "@/pages/PlatformConnectionsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -296,6 +297,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <NotificationSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/connections"
+        element={
+          <ProtectedRoute>
+            <PlatformConnectionsPage />
           </ProtectedRoute>
         }
       />

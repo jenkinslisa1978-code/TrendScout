@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Rocket, Store, Megaphone, ArrowRight, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { Rocket, Store, Megaphone, ArrowRight, CheckCircle2, Loader2, Sparkles, Link2, AlertCircle } from 'lucide-react';
 import { apiGet, apiPost } from '@/lib/api';
 
 export default function QuickLaunchFlow() {
@@ -13,17 +13,26 @@ export default function QuickLaunchFlow() {
   const [launching, setLaunching] = useState(false);
   const [storeCreated, setStoreCreated] = useState(null);
   const [adsGenerated, setAdsGenerated] = useState(false);
+  const [adsPosted, setAdsPosted] = useState(null);
+  const [connections, setConnections] = useState({ stores: [], ads: [] });
   const [step, setStep] = useState(1);
 
   useEffect(() => {
     const fetchTop = async () => {
       try {
-        const response = await apiGet('/api/products?page=1&limit=10&sort_by=launch_score&sort_order=desc');
-        const res = await response.json();
+        const [prodRes, connRes] = await Promise.all([
+          apiGet('/api/products?page=1&limit=10&sort_by=launch_score&sort_order=desc'),
+          apiGet('/api/connections/').catch(() => null),
+        ]);
+        const res = await prodRes.json();
         const products = res?.data || res?.products || [];
         if (products.length > 0) {
           const best = products.sort((a, b) => (b.launch_score || 0) - (a.launch_score || 0))[0];
           setTopProduct(best);
+        }
+        if (connRes) {
+          const connData = await connRes.json();
+          setConnections(connData);
         }
       } catch (err) {
         console.error('Failed to fetch top product:', err);
@@ -34,10 +43,14 @@ export default function QuickLaunchFlow() {
     fetchTop();
   }, []);
 
+  const hasStoreConnection = connections.stores?.length > 0;
+  const hasAdConnection = connections.ads?.length > 0;
+
   const handleSetUpShop = async () => {
     if (!topProduct) return;
     setLaunching(true);
     try {
+      // Create the store
       const response = await apiPost('/api/stores/launch', {
         product_id: topProduct.id,
         store_name: `${topProduct.product_name.split(' ').slice(0, 3).join(' ')} Store`,
@@ -45,6 +58,19 @@ export default function QuickLaunchFlow() {
       const res = await response.json();
       if (res?.store) {
         setStoreCreated(res.store);
+
+        // Auto-publish if connected
+        if (hasStoreConnection) {
+          try {
+            const pubRes = await apiPost(`/api/connections/publish/${res.store.id}`);
+            const pubData = await pubRes.json();
+            if (pubData.success) {
+              setStoreCreated({ ...res.store, published: true, platform: pubData.platform, store_url: pubData.store_url });
+            }
+          } catch (pubErr) {
+            console.error('Auto-publish failed:', pubErr);
+          }
+        }
         setStep(3);
       }
     } catch (err) {
@@ -58,9 +84,23 @@ export default function QuickLaunchFlow() {
     if (!topProduct) return;
     setLaunching(true);
     try {
+      // Generate the ad creatives
       const response = await apiPost(`/api/ad-creatives/generate/${topProduct.id}`);
       await response.json();
       setAdsGenerated(true);
+
+      // Auto-post if connected
+      if (hasAdConnection) {
+        try {
+          const postRes = await apiPost(`/api/connections/post-ads/${topProduct.id}`);
+          const postData = await postRes.json();
+          if (postData.success) {
+            setAdsPosted(postData);
+          }
+        } catch (postErr) {
+          console.error('Auto-post failed:', postErr);
+        }
+      }
       setStep(4);
     } catch (err) {
       console.error('Ad generation failed:', err);
@@ -173,8 +213,19 @@ export default function QuickLaunchFlow() {
                 <div>
                   <h4 className="font-semibold text-slate-900">Set Up Your Shop</h4>
                   <p className="text-sm text-slate-500">
-                    {storeCreated ? `"${storeCreated.name}" is ready` : 'We\'ll create a store with this product ready to sell'}
+                    {storeCreated?.published
+                      ? `Published to your ${storeCreated.platform} store`
+                      : storeCreated
+                      ? `"${storeCreated.name}" created as draft`
+                      : hasStoreConnection
+                      ? 'Auto-publish to your connected store'
+                      : 'Create a store with this product ready to sell'}
                   </p>
+                  {!hasStoreConnection && step === 2 && !storeCreated && (
+                    <button onClick={() => navigate('/settings/connections')} className="text-xs text-indigo-600 hover:underline mt-1">
+                      Connect your Shopify/WooCommerce for auto-publish
+                    </button>
+                  )}
                 </div>
               </div>
               {step === 2 && !storeCreated && (
@@ -209,8 +260,19 @@ export default function QuickLaunchFlow() {
                 <div>
                   <h4 className="font-semibold text-slate-900">Generate Your Ads</h4>
                   <p className="text-sm text-slate-500">
-                    {adsGenerated ? 'Ad concepts ready — view them in Ad Tests' : 'AI will create ad concepts for TikTok, Facebook & Instagram'}
+                    {adsPosted
+                      ? `Ads submitted to ${adsPosted.posted_to?.map(p => p.name).join(', ')}`
+                      : adsGenerated
+                      ? 'Ad concepts ready — view them in Ad Tests'
+                      : hasAdConnection
+                      ? 'Auto-post ads to your connected platforms'
+                      : 'AI will create ad concepts for TikTok, Facebook & Instagram'}
                   </p>
+                  {!hasAdConnection && step === 3 && !adsGenerated && (
+                    <button onClick={() => navigate('/settings/connections')} className="text-xs text-indigo-600 hover:underline mt-1">
+                      Connect your ad accounts for auto-posting
+                    </button>
+                  )}
                 </div>
               </div>
               {step === 3 && !adsGenerated && (

@@ -57,6 +57,7 @@ from routes.workspace import routers as workspace_routers
 from routes.blog import routers as blog_routers
 from routes.admin import routers as admin_routers
 from routes.images import routers as images_routers
+from routes.connections import routers as connections_routers
 
 # Include all routers
 all_router_groups = [
@@ -67,7 +68,7 @@ all_router_groups = [
     ingestion_routers, stores_routers, shopify_routers, suppliers_routers,
     ads_routers, radar_routers, optimizer_routers, system_health_routers,
     tools_routers, workspace_routers, blog_routers, admin_routers,
-    images_routers,
+    images_routers, connections_routers,
 ]
 
 for group in all_router_groups:
