@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   TrendingUp, ArrowRight, Package, Radar, Lock, ArrowLeft,
   BarChart3, Eye, DollarSign, Truck, ShieldCheck, Loader2,
+  ChevronLeft, ChevronRight, Flame, Zap, Clock, ZoomIn,
 } from 'lucide-react';
 import { API_URL } from '@/lib/config';
 
@@ -84,6 +85,19 @@ export default function TrendingProductPage() {
     } : undefined,
   };
 
+  const confidenceLabel = product.launch_score >= 75 ? 'High Confidence' : product.launch_score >= 50 ? 'Emerging Opportunity' : 'Experimental';
+  const confidenceColor = product.launch_score >= 75 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : product.launch_score >= 50 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-slate-400 bg-slate-500/10 border-slate-500/20';
+  const CIcon = product.launch_score >= 75 ? Flame : product.launch_score >= 50 ? Zap : Clock;
+
+  // Build gallery from all available images
+  const allImages = [];
+  if (hasImage) allImages.push(product.image_url);
+  if (product.gallery_images) {
+    product.gallery_images.forEach(url => {
+      if (url && !allImages.includes(url)) allImages.push(url);
+    });
+  }
+
   return (
     <>
       <Helmet>
@@ -136,24 +150,17 @@ export default function TrendingProductPage() {
           </div>
 
           <div className="grid lg:grid-cols-5 gap-8">
-            {/* Left: Image + Score */}
+            {/* Left: Image Gallery + Score */}
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl overflow-hidden" data-testid="product-image-card">
-                <div className="aspect-square bg-gradient-to-br from-slate-800 to-slate-900 relative">
-                  {hasImage ? (
-                    <img src={product.image_url} alt={product.product_name} className="w-full h-full object-contain p-6" />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <Package className="h-20 w-20 text-slate-700" />
-                    </div>
-                  )}
-                  {product.radar_detected && (
-                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-indigo-600/90 backdrop-blur-sm rounded-full px-2.5 py-1">
-                      <Radar className="h-3 w-3 text-white" />
-                      <span className="text-xs text-white font-medium">Radar Detected</span>
-                    </div>
-                  )}
+              <ImageGallery images={allImages} productName={product.product_name} radarDetected={product.radar_detected} />
+
+              {/* Confidence Badge */}
+              <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-4 flex items-center gap-3">
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${confidenceColor}`}>
+                  <CIcon className="h-4 w-4" />
+                  {confidenceLabel}
                 </div>
+                <span className="text-xs text-slate-500">Based on multi-signal AI analysis</span>
               </div>
 
               {/* Score Circle */}
@@ -326,5 +333,122 @@ function MetricCard({ icon: Icon, label, value, color }) {
       <p className="font-mono text-lg font-bold text-white">{value}</p>
       <p className="text-[10px] text-slate-500">{label}</p>
     </div>
+  );
+}
+
+
+/* ── Image Gallery with carousel + zoom ── */
+function ImageGallery({ images, productName, radarDetected }) {
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
+  const hasMultiple = images.length > 1;
+  const currentImage = images[currentIdx] || null;
+
+  const next = (e) => { e.stopPropagation(); setCurrentIdx((i) => (i + 1) % images.length); };
+  const prev = (e) => { e.stopPropagation(); setCurrentIdx((i) => (i - 1 + images.length) % images.length); };
+
+  return (
+    <>
+      <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl overflow-hidden" data-testid="product-image-card">
+        {/* Main Image */}
+        <div
+          className="aspect-square bg-gradient-to-br from-slate-800 to-slate-900 relative group cursor-pointer overflow-hidden"
+          onClick={() => currentImage && setZoomed(true)}
+        >
+          {currentImage ? (
+            <img
+              src={currentImage}
+              alt={productName}
+              className="w-full h-full object-contain p-6 group-hover:scale-110 transition-transform duration-500"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <Package className="h-20 w-20 text-slate-700" />
+            </div>
+          )}
+
+          {/* Radar badge */}
+          {radarDetected && (
+            <div className="absolute top-3 left-3 flex items-center gap-1 bg-indigo-600/90 backdrop-blur-sm rounded-full px-2.5 py-1">
+              <Radar className="h-3 w-3 text-white" />
+              <span className="text-xs text-white font-medium">Radar Detected</span>
+            </div>
+          )}
+
+          {/* Zoom hint */}
+          {currentImage && (
+            <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 backdrop-blur-sm rounded-full p-2">
+              <ZoomIn className="h-4 w-4 text-white" />
+            </div>
+          )}
+
+          {/* Carousel arrows */}
+          {hasMultiple && (
+            <>
+              <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity" data-testid="gallery-prev">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity" data-testid="gallery-next">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Thumbnail strip */}
+        {hasMultiple && (
+          <div className="flex gap-1 p-2 overflow-x-auto scrollbar-hide" data-testid="gallery-thumbs">
+            {images.map((url, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentIdx(idx)}
+                className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
+                  idx === currentIdx ? 'border-indigo-500 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
+                }`}
+              >
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Full-screen zoom modal */}
+      {zoomed && currentImage && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center cursor-zoom-out"
+          onClick={() => setZoomed(false)}
+          data-testid="zoom-modal"
+        >
+          <img
+            src={currentImage}
+            alt={productName}
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+          />
+          <button
+            onClick={() => setZoomed(false)}
+            className="absolute top-6 right-6 text-white/70 hover:text-white text-2xl font-light"
+          >
+            &times;
+          </button>
+          {hasMultiple && (
+            <>
+              <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3"><ChevronLeft className="h-6 w-6" /></button>
+              <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full p-3"><ChevronRight className="h-6 w-6" /></button>
+            </>
+          )}
+          {/* Dots */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+            {images.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => { e.stopPropagation(); setCurrentIdx(idx); }}
+                className={`w-2 h-2 rounded-full transition-all ${idx === currentIdx ? 'bg-white w-6' : 'bg-white/30 hover:bg-white/50'}`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

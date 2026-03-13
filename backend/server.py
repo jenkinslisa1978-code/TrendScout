@@ -2126,6 +2126,7 @@ async def get_trending_products(limit: int = 20):
             "tiktok_views": p.get("tiktok_total_views", 0),
             "detected_at": p.get("radar_detected_at", p.get("created_at", "")),
             "radar_detected": p.get("radar_detected", False),
+            "gallery_images": p.get("gallery_images", []),
         })
 
     from datetime import timedelta
@@ -4958,6 +4959,9 @@ async def public_product_by_slug(slug: str):
         "margin_percent": margin_pct,
         "estimated_retail_price": round(product.get("estimated_retail_price", 0), 2),
         "supplier_cost": round(product.get("supplier_cost", product.get("estimated_supplier_cost", 0)), 2),
+        "growth_rate": round(product.get("growth_rate") or product.get("trend_velocity") or 0, 1),
+        "tiktok_views": product.get("tiktok_total_views", 0),
+        "gallery_images": product.get("gallery_images", []),
         "radar_detected": product.get("radar_detected", False),
         "data_confidence": product.get("data_confidence", "estimated"),
         "related_products": related,
@@ -8806,6 +8810,39 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Image Enrichment Endpoints ──
+# NOTE: These must be defined BEFORE app.mount for /api/images static files
+#       because FastAPI routes take precedence over mounted apps
+
+@app.post("/api/images/enrich/{product_id}")
+async def enrich_product_images(product_id: str, user=Depends(get_current_user)):
+    """Enrich a single product with high-quality images."""
+    from services.image_service import ImageService
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(404, "Product not found")
+    svc = ImageService(db)
+    result = await svc.enrich_product_images(product)
+    return result
+
+@app.post("/api/images/batch-enrich")
+async def batch_enrich_images(user: AuthenticatedUser = Depends(get_current_user)):
+    """Trigger batch image enrichment for products missing images."""
+    # Check if user is admin from profile
+    profile = await db.profiles.find_one({"id": user.user_id}, {"_id": 0, "is_admin": 1})
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(403, "Admin only")
+    from services.image_service import ImageService
+    svc = ImageService(db)
+    result = await svc.batch_enrich(limit=10)
+    return result
+
+# Serve product images from local storage
+IMAGES_DIR = Path(__file__).parent / "static" / "images"
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/api/images", StaticFiles(directory=str(IMAGES_DIR)), name="product-images")
+
 
 # Serve React frontend static files in production
 # The frontend build directory is created during deployment
