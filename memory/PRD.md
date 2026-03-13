@@ -1,8 +1,7 @@
 # TrendScout - Product Requirements Document
 
 ## Positioning
-**TrendScout — The Early Trend Intelligence Platform for Ecommerce**
-"Discover winning products before they go viral."
+**TrendScout — The AI Operating System for Discovering & Launching Winning Ecommerce Products**
 
 ## Tech Stack
 - Frontend: React, TailwindCSS, Shadcn/UI, react-helmet-async
@@ -10,75 +9,80 @@
 - Auth: Custom JWT | Payments: Stripe (GBP, live) | Email: Resend
 - LLM: GPT 5.2 via emergentintegrations (Emergent LLM Key)
 
-## Completed Phases
+## Feature Inventory (All Implemented)
 
-### Phase 1-33: Foundation through Production Readiness (DONE)
-### Phase 34: Landing Page & Product Discovery (DONE)
-### Phase 35: Image Intelligence System (DONE)
-### Phase 36: Phase C — Viral & Upgrade Features (DONE)
-### Phase 37: Trend Alerts & Conversion Doubling (DONE)
-### Phase 38: Shopify Analyzer, Competitor Tracker & Onboarding (DONE)
+### Core Intelligence
+- **AI Trend Score (0-100)**: Dead/Weak/Emerging/Strong/Viral categories, displayed on all cards
+- **AI Launch Simulator (GPT 5.2)**: 3-phase strategy, target audience, revenue projections, risk assessment
+- **AI Ad Creative Generator (GPT 5.2)**: 3 TikTok ad concepts (Unboxing/Problem-Solution/Curiosity) with scenes, hooks, music
+- **Trend Timeline Chart**: SVG 7-day trend visualization with score/TikTok/Google metrics
+- **Product Saturation Meter**: Competition level, stores detected, ad saturation
 
-### Phase 39: AI Simulator, TikTok Intelligence & Weekly Scans (DONE - March 2026)
-- **AI Product Launch Simulator**: GET /api/ad-tests/ai-simulate/{product_id} — GPT 5.2 generates verdict, confidence score, 3-phase launch strategy (Testing/Scaling/Optimization with budgets), target audience, revenue projections (month 1/3/6), risk assessments, creative ad angles. Frontend has "Generate AI Launch Strategy" button that reveals phased strategy, audience, revenue charts, and creative angles.
-- **TikTok Ad Intelligence**: GET /api/tools/tiktok-intelligence (public) — aggregates TikTok data showing viral products (1.1B+ views tracked), category performance with bar charts, trending ad patterns (TikTok Made Me Buy It, Oddly Satisfying, etc.). Dashboard page at /tiktok-intelligence with stats, ranked product list, and pattern cards.
-- **Weekly Competitor Scans**: Scheduled task `weekly_competitor_scan` runs every Monday 6 AM. Re-scans all tracked Shopify stores via products.json, detects product count changes, and creates notifications for users when significant changes occur (3+ products added/removed).
-- Verified: iteration_51 — 100% pass (23/23 backend, all frontend)
+### Discovery & Feed
+- **Daily Picks**: 5 curated daily products, deterministic rotation
+- **Viral Leaderboard**: /top-trending-products — Top 50 products ranked by score, SEO optimized
+- **Trending Products**: Advanced filters (category, margin, sort), confidence badges
+- **TikTok Intelligence Dashboard**: Viral products, category performance, ad patterns
 
-## Key API Endpoints
+### Tools
+- **Shopify Store Analyzer**: /tools/shopify-analyzer — paste any URL for instant analysis
+- **Competitor Store Tracker**: Track stores, refresh scans, product change detection
+- **Product Profit Calculator**: Break-even CPA, margin, daily profit
+- **Saved Products Workspace**: /saved — save, note, track
 
-### AI Simulator
-- `GET /api/ad-tests/simulate/{product_id}` — Base algorithmic simulation (auth)
-- `GET /api/ad-tests/ai-simulate/{product_id}` — AI-powered simulation with GPT 5.2 (auth)
+### Viral Growth Engine
+- **Public SEO pages**: /trending/{slug} with full OG tags, Twitter cards, JSON-LD structured data
+- **Creator Share Feature**: Twitter/X, Facebook, LinkedIn, Reddit, WhatsApp + copy link
+- **Viral Leaderboard**: Top 50 daily-updated public page targeting SEO keywords
 
-### TikTok Intelligence
-- `GET /api/tools/tiktok-intelligence` — Viral products, category performance, patterns (public)
+### Monetisation
+- **Freemium Gating**: Supplier & Ad sections locked for free users, UpgradeModal
+- **Daily Insight Limits**: Free=2/day, Starter=5, Pro=unlimited
+- **Competitor Tracking Limits**: Free=2, Starter=5, Pro=15, Elite=unlimited
+- **Threshold Alert Subscriptions**: User-defined score alerts with email/in-app delivery
 
-### Shopify Analyzer & Competitor Tracker
-- `POST /api/tools/analyze-store` — Analyze any Shopify store (public)
-- `GET /api/competitor-stores` — List tracked stores (auth)
-- `POST /api/competitor-stores` — Add store with initial scan (auth)
-- `POST /api/competitor-stores/{id}/refresh` — Re-scan a store (auth)
-- `DELETE /api/competitor-stores/{id}` — Remove a store (auth)
+### Scheduled Tasks (18 total)
+- weekly_competitor_scan (Monday 6AM)
+- scan_threshold_subscriptions (every 6h)
+- generate_alerts (hourly)
+- Plus 15 data ingestion/enrichment tasks
 
-### Threshold Alerts
-- `GET /api/notifications/threshold-subscription` — Get subscription settings
-- `PUT /api/notifications/threshold-subscription` — Update subscription
+### Image System
+- Fixed 61 broken Amazon placeholder images with curated Unsplash URLs by category
+- Image enrichment pipeline: Amazon + DuckDuckGo, Pillow optimization
+- Local CDN at /api/images/
 
-### Daily & Usage
-- `GET /api/public/daily-picks` — 5 curated daily products (public)
-- `GET /api/user/daily-usage` — Daily insight usage
-- `POST /api/user/track-insight` — Track insight view
-
-## Scheduled Tasks (18 total)
-- `weekly_competitor_scan` — Monday 6 AM, re-scans all tracked stores
-- `scan_threshold_subscriptions` — Every 6 hours, sends threshold alerts
-- `generate_alerts` — Hourly, generates trend notifications
-- Plus 15 other data ingestion, enrichment, and maintenance tasks
+## API Endpoints Summary
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| GET /api/public/top-trending | No | 50 products ranked by score |
+| GET /api/public/daily-picks | No | 5 curated daily products |
+| GET /api/public/trending-products | No | Paginated trending products |
+| GET /api/tools/tiktok-intelligence | No | TikTok viral data |
+| POST /api/tools/analyze-store | No | Shopify store analysis |
+| GET /api/ad-tests/ad-creatives/{id} | Yes | 3 AI ad concepts |
+| GET /api/ad-tests/ai-simulate/{id} | Yes | AI launch simulation |
+| GET/POST/DELETE /api/competitor-stores | Yes | Competitor tracking |
+| GET/PUT /api/notifications/threshold-subscription | Yes | Alert settings |
 
 ## Upcoming Tasks
+- Weekly Trend Report email (Monday digest via Resend)
 - Chrome Extension — "TrendScout – Product & Store Analyzer" (deferred)
-- Weekly Trend Digest email for re-engagement
-- Enhanced shareable product cards with OG images
+- Backend modularization — extract routes from server.py
 
 ## Future / Backlog
 - CDN migration (Cloudflare R2/S3) for image storage
-- Server.py refactoring into route modules
-- Redis cache migration
+- Redis cache for multi-instance scaling
 - Community growth features
 - Advanced competitor diff tracking (product-level changes)
 
-## Integration Status
-| Source | Status | Mode |
-|--------|--------|------|
-| CJ Dropshipping | LIVE | api |
-| TikTok | LIVE | scraper |
-| GPT 5.2 | LIVE | emergentintegrations |
-| Shopify Analyzer | LIVE | products.json |
-| Meta Ad Library | Configured | estimation |
-| Zendrop | Wired | estimation |
-| Image Enrichment | LIVE | Amazon + web scraping |
-
 ## DB Collections
-- products, daily_usage, threshold_subscriptions, competitor_stores
-- notifications, profiles, subscriptions, stores, product_outcomes
+products, daily_usage, threshold_subscriptions, competitor_stores,
+notifications, profiles, subscriptions, stores, product_outcomes
+
+## Testing Status
+- iteration_48: Phase C features — 100% (14/14)
+- iteration_49: Trend alerts + conversion — 100% (17/17)
+- iteration_50: Shopify analyzer + competitor tracker — 100% (15/15)
+- iteration_51: AI simulator + TikTok intel — 100% (23/23)
+- iteration_52: Growth upgrade (leaderboard, ad generator, images, SEO) — 100% (15/15 + all frontend)
