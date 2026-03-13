@@ -233,6 +233,15 @@ async def disconnect_platform(
     return {"success": True, "message": f"{platform} disconnected"}
 
 
+from services.platform_integrations import (
+    publish_to_shopify,
+    publish_to_woocommerce,
+    post_ads_to_meta,
+    post_ads_to_tiktok,
+    post_ads_to_google,
+)
+
+
 @connections_router.post("/publish/{store_id}")
 async def auto_publish_to_store(
     store_id: str,
@@ -241,7 +250,6 @@ async def auto_publish_to_store(
     """Auto-publish a TrendScout store to the user's connected e-commerce platform"""
     user_id = current_user.user_id
 
-    # Get user's store connections
     store_conn = await db.platform_connections.find_one(
         {"user_id": user_id, "connection_type": "store", "status": "active"},
         {"_id": 0},
@@ -253,15 +261,47 @@ async def auto_publish_to_store(
             detail="No store platform connected. Go to Settings → Platform Connections to connect your store.",
         )
 
-    # Get the TrendScout store
     store = await db.stores.find_one({"id": store_id, "owner_id": user_id}, {"_id": 0})
     if not store:
         raise HTTPException(status_code=404, detail="Store not found")
 
-    products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
+    store_products = await db.store_products.find({"store_id": store_id}, {"_id": 0}).to_list(100)
+    if not store_products:
+        # Fall back to main product
+        product = await db.products.find_one({"id": store.get("product_id")}, {"_id": 0})
+        store_products = [product] if product else []
 
     platform = store_conn["platform"]
     store_url = store_conn.get("store_url", "")
+
+    # Call real API based on platform
+    api_result = None
+    try:
+        if platform == "shopify":
+            api_result = await publish_to_shopify(
+                store_url=store_url,
+                access_token=store_conn.get("access_token", ""),
+                product=store,
+                products=store_products,
+            )
+        elif platform == "woocommerce":
+            api_result = await publish_to_woocommerce(
+                store_url=store_url,
+                api_key=store_conn.get("api_key", ""),
+                api_secret=store_conn.get("api_secret", ""),
+                products=store_products,
+            )
+        else:
+            # Etsy, BigCommerce, Squarespace — record intent
+            api_result = {
+                "platform": platform,
+                "total_created": len(store_products),
+                "message": f"Product data prepared for {SUPPORTED_STORES.get(platform,{}).get('name', platform)}. Import via their dashboard using the product details below.",
+                "products": [{"title": p.get("product_name", p.get("title", "")), "success": True} for p in store_products],
+            }
+    except Exception as e:
+        logger.error(f"Publish to {platform} failed: {e}")
+        api_result = {"platform": platform, "total_created": 0, "error": str(e)}
 
     # Update store status
     await db.stores.update_one(
@@ -272,6 +312,7 @@ async def auto_publish_to_store(
                 "published_at": datetime.now(timezone.utc).isoformat(),
                 "published_to": platform,
                 "published_store_url": store_url,
+                "publish_result": api_result,
             }
         },
     )
@@ -280,8 +321,9 @@ async def auto_publish_to_store(
         "success": True,
         "platform": platform,
         "store_url": store_url,
-        "products_published": len(products),
-        "message": f"Published {len(products)} product(s) to your {SUPPORTED_STORES.get(platform,{}).get('name', platform)} store",
+        "products_published": api_result.get("total_created", len(store_products)),
+        "api_result": api_result,
+        "message": api_result.get("message", f"Published to {platform}"),
     }
 
 
@@ -290,10 +332,9 @@ async def auto_post_ads(
     product_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):
-    """Auto-post generated ad creatives to the user's connected ad platforms"""
+    """Auto-post generated ad creatives to the user's connected ad platforms using real APIs"""
     user_id = current_user.user_id
 
-    # Get user's ad connections
     ad_conns = await db.platform_connections.find(
         {"user_id": user_id, "connection_type": "ads", "status": "active"},
         {"_id": 0},
@@ -305,37 +346,87 @@ async def auto_post_ads(
             detail="No ad platform connected. Go to Settings → Platform Connections to connect your ad account.",
         )
 
-    # Get the ad creatives for this product
-    creatives = await db.ad_creatives.find_one(
+    # Get ad creatives
+    creative_doc = await db.ad_creatives.find_one(
         {"product_id": product_id}, {"_id": 0}
     )
 
-    if not creatives:
-        raise HTTPException(status_code=404, detail="No ad creatives found for this product. Generate ads first.")
+    if not creative_doc:
+        raise HTTPException(status_code=404, detail="No ad creatives found. Generate ads first.")
+
+    # Get product data
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    creatives = creative_doc.get("creatives", [])
+
+    # Get user's store URL for ad links
+    store_conn = await db.platform_connections.find_one(
+        {"user_id": user_id, "connection_type": "store", "status": "active"},
+        {"_id": 0},
+    )
+    store_url = store_conn.get("store_url", "") if store_conn else ""
 
     posted_to = []
     for conn in ad_conns:
         platform = conn["platform"]
         platform_name = SUPPORTED_AD_PLATFORMS.get(platform, {}).get("name", platform)
 
-        # Record the ad posting
+        # Call real API based on platform
+        api_result = None
+        try:
+            if platform == "meta":
+                api_result = await post_ads_to_meta(
+                    access_token=conn.get("access_token", ""),
+                    account_id=conn.get("account_id", ""),
+                    product=product,
+                    creatives=creatives,
+                    store_url=store_url,
+                )
+            elif platform == "tiktok":
+                api_result = await post_ads_to_tiktok(
+                    access_token=conn.get("access_token", ""),
+                    account_id=conn.get("account_id", ""),
+                    product=product,
+                    creatives=creatives,
+                )
+            elif platform == "google":
+                api_result = await post_ads_to_google(
+                    access_token=conn.get("access_token", ""),
+                    account_id=conn.get("account_id", ""),
+                    product=product,
+                    creatives=creatives,
+                )
+        except Exception as e:
+            logger.error(f"Post ads to {platform} failed: {e}")
+            api_result = {"platform": platform, "success": False, "error": str(e)}
+
+        # Record the posting
         await db.ad_postings.insert_one({
             "user_id": user_id,
             "product_id": product_id,
             "platform": platform,
             "account_id": conn.get("account_id"),
-            "creatives_count": len(creatives.get("creatives", [])),
-            "status": "submitted",
+            "creatives_count": len(creatives),
+            "status": "submitted" if api_result and api_result.get("success") else "failed",
+            "api_result": api_result,
             "posted_at": datetime.now(timezone.utc).isoformat(),
         })
 
-        posted_to.append({"platform": platform, "name": platform_name, "status": "submitted"})
+        posted_to.append({
+            "platform": platform,
+            "name": platform_name,
+            "success": api_result.get("success", False) if api_result else False,
+            "message": api_result.get("message", "") if api_result else "Failed",
+            "campaign_id": api_result.get("campaign_id") if api_result else None,
+        })
 
     return {
         "success": True,
         "posted_to": posted_to,
-        "creatives_count": len(creatives.get("creatives", [])),
-        "message": f"Ads submitted to {len(posted_to)} platform(s)",
+        "creatives_count": len(creatives),
+        "message": f"Ads processed for {len(posted_to)} platform(s)",
     }
 
 

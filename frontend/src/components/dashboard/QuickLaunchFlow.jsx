@@ -276,15 +276,25 @@ export default function QuickLaunchFlow() {
                 </div>
               </div>
               {step === 3 && !adsGenerated && (
-                <Button
-                  onClick={handleMakeAds}
-                  disabled={launching}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                  data-testid="quick-launch-ads-btn"
-                >
-                  {launching ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Megaphone className="mr-1 h-4 w-4" />}
-                  {launching ? 'Generating...' : 'Make Ads'}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleMakeAds}
+                    disabled={launching}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                    data-testid="quick-launch-ads-btn"
+                  >
+                    {launching ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Megaphone className="mr-1 h-4 w-4" />}
+                    {launching ? 'Generating...' : 'Make Ads'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => { setAdsGenerated(false); setStep(4); }}
+                    className="text-slate-500 text-sm"
+                    data-testid="quick-launch-skip-ads-btn"
+                  >
+                    Skip, I'll do my own
+                  </Button>
+                </div>
               )}
               {step > 3 && (
                 <div className="flex items-center gap-1 text-emerald-600">
@@ -300,8 +310,16 @@ export default function QuickLaunchFlow() {
         {step === 4 && (
           <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-center">
             <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-            <h4 className="font-bold text-emerald-900 text-lg">You're Ready to Launch!</h4>
-            <p className="text-sm text-emerald-700 mb-3">Your shop and ads are set up. View your store to customise and publish.</p>
+            <h4 className="font-bold text-emerald-900 text-lg">
+              {adsGenerated ? "You're Ready to Launch!" : "Shop Created!"}
+            </h4>
+            <p className="text-sm text-emerald-700 mb-3">
+              {adsGenerated
+                ? storeCreated?.published
+                  ? `Published to ${storeCreated.platform} and ads submitted. You're live!`
+                  : 'Your shop and ads are set up. View your store to customise and publish.'
+                : 'Your shop is ready. You can create ads later from the Ad Tests page.'}
+            </p>
             <div className="flex items-center justify-center gap-3">
               {storeCreated && (
                 <Button
