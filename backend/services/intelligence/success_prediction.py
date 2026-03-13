@@ -147,11 +147,11 @@ class SuccessPredictionModel:
     
     def _analyze_trend_velocity(self, product: Dict[str, Any]) -> SuccessFactor:
         """Analyze trend velocity factor"""
-        velocity = product.get("trend_velocity", 0)
+        velocity = product.get("trend_velocity") or product.get("view_growth_rate") or 0
         trend_score = product.get("trend_score", 50)
         
         # Calculate contribution (-1 to +1)
-        if velocity is None:
+        if not velocity and not trend_score:
             contribution = 0
             explanation = "Trend velocity data unavailable"
         elif velocity > 100:
@@ -223,11 +223,15 @@ class SuccessPredictionModel:
     
     def _analyze_supplier_demand(self, product: Dict[str, Any]) -> SuccessFactor:
         """Analyze supplier demand factor"""
-        orders = product.get("supplier_orders", 0)
+        orders = product.get("supplier_orders") or product.get("supplier_order_velocity") or 0
+        supplier_cost = product.get("supplier_cost", 0)
         
-        if not orders:
+        if not orders and not supplier_cost:
             contribution = 0
             explanation = "Supplier demand data unavailable"
+        elif not orders and supplier_cost:
+            contribution = 0.2
+            explanation = f"Supplier available at £{supplier_cost:.2f} cost"
         elif orders > 10000:
             contribution = 0.8
             explanation = f"Very high supplier demand ({orders:,} orders) validates market"

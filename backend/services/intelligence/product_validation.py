@@ -130,9 +130,9 @@ class ProductValidationEngine:
     }
     
     # Thresholds for recommendations
-    LAUNCH_THRESHOLD = 70           # Score >= 70 = Launch Opportunity
-    PROMISING_THRESHOLD = 50        # Score >= 50 = Promising
-    MIN_CONFIDENCE = 40             # Need at least 40% confidence
+    LAUNCH_THRESHOLD = 65           # Score >= 65 = Launch Opportunity
+    PROMISING_THRESHOLD = 45        # Score >= 45 = Promising
+    MIN_CONFIDENCE = 25             # Need at least 25% confidence
     
     def __init__(self, db=None):
         self.db = db
@@ -220,17 +220,22 @@ class ProductValidationEngine:
         """Analyze trend velocity - is the product growing?"""
         trend_score = product.get("trend_score", 0)
         trend_stage = product.get("trend_stage", "unknown")
-        trend_velocity = product.get("trend_velocity", 0)
+        trend_velocity = product.get("trend_velocity") or product.get("view_growth_rate") or 0
         early_trend_score = product.get("early_trend_score", 0)
         
         # Calculate signal score
         score = 0
         reasoning_parts = []
         
-        if trend_velocity is None or trend_velocity == 0:
+        if not trend_velocity and not trend_score:
             score = 30
             strength = SignalStrength.MISSING
             reasoning_parts.append("Trend velocity data unavailable")
+        elif not trend_velocity and trend_score:
+            # Use trend_score as a proxy
+            score = min(90, trend_score + 10)
+            strength = SignalStrength.MODERATE if trend_score > 30 else SignalStrength.WEAK
+            reasoning_parts.append(f"Trend score: {trend_score}/100")
         else:
             # Velocity-based scoring
             if trend_velocity > 100:  # Exploding
@@ -458,17 +463,23 @@ class ProductValidationEngine:
     
     def _analyze_supplier_demand(self, product: Dict[str, Any]) -> ValidationSignal:
         """Analyze supplier demand - is supply reliable?"""
-        supplier_orders = product.get("supplier_orders", 0)
+        supplier_orders = product.get("supplier_orders") or product.get("supplier_order_velocity") or 0
         supplier_demand_score = product.get("supplier_demand_score", 50)
+        supplier_cost = product.get("supplier_cost", 0)
         
         score = 0
         reasoning_parts = []
         strength = SignalStrength.MODERATE
         
-        if not supplier_orders:
+        if not supplier_orders and not supplier_cost:
             score = 40
             strength = SignalStrength.MISSING
             reasoning_parts.append("Supplier demand data unavailable")
+        elif not supplier_orders and supplier_cost:
+            # We have supplier cost data, so suppliers exist
+            score = 55
+            strength = SignalStrength.MODERATE
+            reasoning_parts.append(f"Supplier available at £{supplier_cost:.2f} cost")
         else:
             if supplier_orders > 10000:
                 score = 95
@@ -569,22 +580,26 @@ class ProductValidationEngine:
     def _calculate_confidence(self, product: Dict[str, Any], signals: List[ValidationSignal]) -> int:
         """Calculate confidence in the validation based on data quality"""
         # Start with base confidence
-        confidence = 50
+        confidence = 60
         
         # Data source quality
         data_source = product.get("data_source", "unknown")
         if data_source == "simulated":
-            confidence -= 20
+            confidence -= 15
         elif data_source in ["aliexpress_api", "tiktok_api"]:
-            confidence += 20
+            confidence += 15
         
-        # Signal completeness
+        # Signal completeness - less punishing
         missing_count = len([s for s in signals if s.strength == SignalStrength.MISSING])
-        confidence -= missing_count * 8
+        confidence -= missing_count * 5
         
         # Strong signals boost confidence
         strong_count = len([s for s in signals if s.strength == SignalStrength.STRONG])
-        confidence += strong_count * 5
+        confidence += strong_count * 7
+        
+        # Moderate signals also help
+        moderate_count = len([s for s in signals if s.strength == SignalStrength.MODERATE])
+        confidence += moderate_count * 3
         
         # Data freshness
         last_updated = product.get("last_updated")
@@ -725,8 +740,6 @@ class ProductValidationEngine:
                     weaknesses.append("Limited supplier validation")
                 elif signal.name == "Social Engagement":
                     weaknesses.append("Limited social proof")
-            elif signal.strength == SignalStrength.MISSING:
-                weaknesses.append(f"Missing data: {signal.name}")
         
         return weaknesses
     
