@@ -60,6 +60,14 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 └── App.jsx               # Router configuration
 ```
 
+## Pricing Model (LIVE)
+| Plan | Price | Stripe Price ID Env |
+|------|-------|---------------------|
+| Free | £0/mo | N/A |
+| Starter | £19/mo | STRIPE_STARTER_PRICE_ID |
+| Pro | £39/mo | STRIPE_PRO_PRICE_ID |
+| Elite | £79/mo | STRIPE_ELITE_PRICE_ID |
+
 ## Completed Features (30-Part Spec)
 
 | # | Feature | Status |
@@ -95,14 +103,18 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 | 29 | UX Philosophy | Adhered |
 | 30 | Success Metrics | Defined |
 
-## Launch Readiness (COMPLETED - March 2026)
+## Production Launch (COMPLETED - March 2026)
+- Pricing aligned: Starter £19, Pro £39, Elite £79 (frontend + backend)
+- Stripe Live Mode configured with real Price IDs
+- Resend email configured with trendscout.click domain
 - Favicon, apple-touch-icon, OG meta tags for SEO
 - Rate limiting (slowapi): 200/min global, 5/min register, 10/min login
 - 404 catch-all page with navigation
 - Terms of Service page (/terms)
 - Privacy Policy page (/privacy)
 - Site footer with legal links
-- Production cleanup (removed backup files)
+- No hardcoded secrets in frontend code
+- All secrets managed via backend .env
 
 ## Backend Modularization (COMPLETED - March 2026)
 - Refactored 10,754-line monolithic server.py into 30 route files + 6 common modules
@@ -120,8 +132,8 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 ## 3rd Party Integrations
 - OpenAI GPT-5.2 (via emergentintegrations)
 - MongoDB (primary DB)
-- Stripe (subscriptions)
-- Resend (emails)
+- Stripe (live subscriptions)
+- Resend (production emails via trendscout.click)
 - CJ Dropshipping API (live)
 - Amazon, TikTok, Google Trends (scrapers)
 
@@ -129,10 +141,8 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 - Admin: jenkinslisa1978@gmail.com / admin123456 (auto elite plan)
 - Test user: test_refactor@test.com / test123456
 
-## Upcoming Tasks
-1. Redis cache migration (replace in-memory cache with distributed cache)
-
 ## Backlog
-- API rate limiting per plan tier
-- Real-time WebSocket notifications
-- A/B test analytics dashboard improvements
+- P1: API rate limiting per subscription tier
+- P2: Redis cache migration (replace in-memory cache)
+- P3: Real-time WebSocket notifications
+- P3: A/B test analytics dashboard improvements
