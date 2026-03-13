@@ -1,22 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   TrendingUp, ArrowRight, Package, Zap, Radar, Lock,
-  Sparkles, BarChart3, Eye,
+  Sparkles, BarChart3, Eye, Flame, Clock, Search, ChevronRight,
+  ArrowUpDown, Filter, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
 import { API_URL } from '@/lib/config';
 
 const STAGE_COLORS = {
-  exploding: 'bg-red-100 text-red-700 border-red-200',
-  rising: 'bg-amber-100 text-amber-700 border-amber-200',
-  emerging: 'bg-blue-100 text-blue-700 border-blue-200',
-  early_trend: 'bg-violet-100 text-violet-700 border-violet-200',
-  Rising: 'bg-amber-100 text-amber-700 border-amber-200',
+  Exploding: 'bg-red-500/10 text-red-600 border-red-200',
+  Rising: 'bg-amber-500/10 text-amber-600 border-amber-200',
+  Emerging: 'bg-sky-500/10 text-sky-600 border-sky-200',
+  early_trend: 'bg-violet-500/10 text-violet-600 border-violet-200',
+  Stable: 'bg-slate-100 text-slate-600 border-slate-200',
   Unknown: 'bg-slate-100 text-slate-600 border-slate-200',
 };
+
+const SORT_OPTIONS = [
+  { label: 'Highest Score', value: 'score_desc' },
+  { label: 'Fastest Growing', value: 'growth_desc' },
+  { label: 'Highest Margin', value: 'margin_desc' },
+  { label: 'Newest Trends', value: 'newest' },
+  { label: 'Lowest Supplier Cost', value: 'cost_asc' },
+];
+
+function getConfidence(score) {
+  if (score >= 75) return { label: 'High Confidence', icon: Flame, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+  if (score >= 50) return { label: 'Emerging Opportunity', icon: Zap, color: 'text-amber-600 bg-amber-50 border-amber-200' };
+  return { label: 'Experimental', icon: Clock, color: 'text-slate-500 bg-slate-50 border-slate-200' };
+}
 
 export default function TrendingProductsPage() {
   const [products, setProducts] = useState([]);
@@ -24,6 +39,9 @@ export default function TrendingProductsPage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [sortBy, setSortBy] = useState('score_desc');
+  const [minMargin, setMinMargin] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -35,7 +53,7 @@ export default function TrendingProductsPage() {
     (async () => {
       try {
         const [prodRes, catRes] = await Promise.all([
-          fetch(`${API_URL}/api/public/trending-products?limit=20`),
+          fetch(`${API_URL}/api/public/trending-products?limit=50`),
           fetch(`${API_URL}/api/public/categories`),
         ]);
         if (prodRes.ok) {
@@ -51,100 +69,87 @@ export default function TrendingProductsPage() {
     })();
   }, []);
 
-  const filteredProducts = selectedCategory
-    ? products.filter(p => p.category === selectedCategory)
-    : products;
+  const filteredAndSorted = useMemo(() => {
+    let result = [...products];
 
-  const seoTitle = 'Trending Dropshipping Products — Detected by TrendScout AI';
-  const seoDescription = "Discover trending ecommerce products detected by TrendScout's AI scoring engine. Find winning products before competitors.";
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    // Category filter
+    if (selectedCategory) {
+      result = result.filter(p => p.category === selectedCategory);
+    }
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: seoTitle,
-    description: seoDescription,
-    url: `${siteUrl}/trending-products`,
-    numberOfItems: products.length,
-    itemListElement: products.map((p, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      item: {
-        '@type': 'Product',
-        name: p.product_name,
-        url: `${siteUrl}/trending/${p.slug}`,
-        image: p.image_url,
-        category: p.category,
-      },
-    })),
-  };
+    // Margin filter
+    if (minMargin > 0) {
+      result = result.filter(p => (p.margin_percent || 0) >= minMargin);
+    }
+
+    // Sorting
+    switch (sortBy) {
+      case 'score_desc':
+        result.sort((a, b) => (b.launch_score || 0) - (a.launch_score || 0));
+        break;
+      case 'growth_desc':
+        result.sort((a, b) => (b.growth_rate || 0) - (a.growth_rate || 0));
+        break;
+      case 'margin_desc':
+        result.sort((a, b) => (b.margin_percent || 0) - (a.margin_percent || 0));
+        break;
+      case 'newest':
+        result.sort((a, b) => new Date(b.detected_at || 0) - new Date(a.detected_at || 0));
+        break;
+      case 'cost_asc':
+        result.sort((a, b) => (a.supplier_cost || 999) - (b.supplier_cost || 999));
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [products, selectedCategory, sortBy, minMargin]);
+
+  const highConfCount = products.filter(p => p.launch_score >= 75).length;
 
   return (
-    <>
+    <div className="min-h-screen bg-[#FAFBFC]">
       <Helmet>
-        <title>{seoTitle}</title>
-        <meta name="description" content={seoDescription} />
-        <meta property="og:title" content={seoTitle} />
-        <meta property="og:description" content={seoDescription} />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${siteUrl}/trending-products`} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={seoTitle} />
-        <meta name="twitter:description" content={seoDescription} />
-        <link rel="canonical" href={`${siteUrl}/trending-products`} />
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        <title>Trending Products — Discover Winning Products Before They Go Viral | TrendScout</title>
+        <meta name="description" content="Browse trending ecommerce products detected by TrendScout AI. Find high-margin opportunities before they go viral on TikTok and Amazon." />
+        <meta property="og:title" content="Trending Products — TrendScout" />
+        <meta property="og:description" content="Discover winning products before they go viral. Real-time trend intelligence for ecommerce sellers." />
+        <link rel="canonical" href="https://trendscout.click/trending-products" />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" data-testid="trending-products-page">
-        {/* Nav */}
-        <nav className="border-b border-white/5 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
-          <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-                <Radar className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-manrope font-bold text-white text-lg">TrendScout</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link to="/login">
-                <Button variant="ghost" className="text-slate-400 hover:text-white text-sm">Log in</Button>
-              </Link>
-              <Link to="/signup">
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-sm" data-testid="nav-signup-btn">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </nav>
-
-        {/* Hero */}
-        <header className="mx-auto max-w-7xl px-6 pt-16 pb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-sm font-medium text-emerald-400" data-testid="week-count">
-              {weekCount} products detected this week
-            </span>
-          </div>
-          <h1 className="font-manrope text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight" data-testid="trending-h1">
-            Trending Products Detected by{' '}
-            <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">TrendScout AI</span>
+      {/* Header */}
+      <header className="bg-[#030712] text-white">
+        <div className="mx-auto max-w-7xl px-6 pt-24 pb-12 lg:px-8">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white mb-6 transition-colors">
+            <TrendingUp className="h-4 w-4" /> TrendScout
+          </Link>
+          <h1 className="font-manrope text-3xl font-extrabold sm:text-4xl" data-testid="page-title">
+            Trending Products
           </h1>
-          <p className="mt-4 text-lg text-slate-400 max-w-2xl">
-            Real-time product intelligence powered by AI. These products are scoring high across trend signals, demand, and profitability.
+          <p className="mt-3 text-slate-400 text-base max-w-xl">
+            Products detected with early growth signals. Updated daily from TikTok, Amazon, and social media.
           </p>
-        </header>
+          <div className="flex items-center gap-6 mt-6 text-sm">
+            <span className="text-slate-400"><strong className="text-white">{products.length}</strong> products tracked</span>
+            <span className="text-slate-400"><strong className="text-emerald-400">{highConfCount}</strong> high confidence</span>
+            <span className="text-slate-400"><strong className="text-amber-400">{weekCount}</strong> detected this week</span>
+          </div>
+        </div>
+      </header>
 
-        {/* Category Filter Strip */}
-        {categories.length > 0 && (
-          <div className="mx-auto max-w-7xl px-6 pb-6" data-testid="category-filter">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 py-8">
+        {/* Toolbar: Categories + Sort + Filters */}
+        <div className="flex flex-col gap-4 mb-6">
+          {/* Category pills */}
+          {categories.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="category-filter">
               <button
                 onClick={() => setSelectedCategory(null)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
                   !selectedCategory
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white/[0.06] text-slate-400 hover:bg-white/[0.1] hover:text-white border border-white/[0.08]'
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                 }`}
                 data-testid="category-all"
               >
@@ -154,10 +159,10 @@ export default function TrendingProductsPage() {
                 <button
                   key={cat.name}
                   onClick={() => setSelectedCategory(cat.name === selectedCategory ? null : cat.name)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
                     selectedCategory === cat.name
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white/[0.06] text-slate-400 hover:bg-white/[0.1] hover:text-white border border-white/[0.08]'
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                   }`}
                   data-testid={`category-${cat.slug}`}
                 >
@@ -165,127 +170,201 @@ export default function TrendingProductsPage() {
                 </button>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Product Grid */}
-        <section className="mx-auto max-w-7xl px-6 pb-24">
-          {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-white/5 rounded-2xl h-72 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" data-testid="product-grid">
-              {filteredProducts.map((product, idx) => (
-                <ProductCard key={product.id} product={product} idx={idx} />
-              ))}
-            </div>
           )}
 
-          {/* Bottom CTA */}
-          {!loading && products.length > 0 && (
-            <div className="mt-16 text-center">
-              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-8 py-6 backdrop-blur-sm">
-                <Lock className="h-5 w-5 text-indigo-400" />
-                <div className="text-left ml-2">
-                  <p className="text-white font-semibold">Want the full analysis?</p>
-                  <p className="text-slate-400 text-sm">Unlock detailed supplier data, ad creatives, and launch tools.</p>
+          {/* Sort & Filter bar */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                  showFilters ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+                data-testid="toggle-filters"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Filters
+              </button>
+              {minMargin > 0 && (
+                <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200 rounded-full">
+                  Margin &ge; {minMargin}%
+                  <button onClick={() => setMinMargin(0)} className="ml-1 hover:text-red-500">&times;</button>
+                </Badge>
+              )}
+            </div>
+
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="appearance-none bg-white border border-slate-200 rounded-lg px-3 py-1.5 pr-8 text-xs font-medium text-slate-700 cursor-pointer hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                data-testid="sort-select"
+              >
+                {SORT_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Expanded filters */}
+          {showFilters && (
+            <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-center gap-4" data-testid="filter-panel">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">Min Profit Margin</label>
+                <div className="flex items-center gap-2">
+                  {[0, 30, 50, 60, 70].map(v => (
+                    <button
+                      key={v}
+                      onClick={() => setMinMargin(v)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-all ${
+                        minMargin === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      {v === 0 ? 'Any' : `${v}%+`}
+                    </button>
+                  ))}
                 </div>
-                <Link to="/signup" className="ml-4">
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 whitespace-nowrap" data-testid="bottom-cta-btn">
-                    Start with TrendScout
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </Link>
               </div>
             </div>
           )}
-        </section>
+        </div>
 
-        {/* Footer */}
-        <footer className="border-t border-white/5 py-8">
-          <div className="mx-auto max-w-7xl px-6 flex items-center justify-between">
-            <p className="text-sm text-slate-500">TrendScout — AI-powered product intelligence</p>
-            <div className="flex items-center gap-4 text-sm text-slate-500">
-              <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-              <Link to="/" className="hover:text-white transition-colors">Home</Link>
-            </div>
+        {/* Results count */}
+        <p className="text-xs text-slate-500 mb-4" data-testid="results-count">
+          Showing {filteredAndSorted.length} product{filteredAndSorted.length !== 1 ? 's' : ''}
+          {selectedCategory && <> in <strong>{selectedCategory}</strong></>}
+          {minMargin > 0 && <> with {minMargin}%+ margin</>}
+        </p>
+
+        {/* Product Grid */}
+        {loading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden animate-pulse">
+                <div className="h-40 bg-slate-100" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-slate-100 rounded w-3/4" />
+                  <div className="h-3 bg-slate-100 rounded w-1/2" />
+                  <div className="grid grid-cols-3 gap-2 pt-2">
+                    <div className="h-10 bg-slate-50 rounded-lg" />
+                    <div className="h-10 bg-slate-50 rounded-lg" />
+                    <div className="h-10 bg-slate-50 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </footer>
+        ) : filteredAndSorted.length === 0 ? (
+          <div className="text-center py-20">
+            <Package className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500 font-medium">No products match your filters</p>
+            <button onClick={() => { setSelectedCategory(null); setMinMargin(0); }} className="text-indigo-600 text-sm font-medium mt-2 hover:underline">
+              Clear all filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="product-grid">
+            {filteredAndSorted.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
+
+        {/* CTA */}
+        <div className="text-center mt-16 mb-8">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-lg mx-auto">
+            <Sparkles className="h-8 w-8 text-indigo-500 mx-auto mb-3" />
+            <h3 className="font-manrope text-xl font-bold text-slate-900">Want full product intelligence?</h3>
+            <p className="mt-2 text-sm text-slate-500">Get supplier data, ad insights, and launch tools with a TrendScout account.</p>
+            <Link to="/signup">
+              <Button className="mt-5 bg-slate-900 hover:bg-slate-800 rounded-xl font-semibold" data-testid="cta-signup-btn">
+                Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 
-function ProductCard({ product, idx }) {
-  const stageClass = STAGE_COLORS[product.trend_stage] || STAGE_COLORS.Unknown;
-  const hasImage = product.image_url && !product.image_url.includes('01jrA-8DXYL');
+/* ── Enhanced Product Card ── */
+function ProductCard({ product }) {
+  const conf = getConfidence(product.launch_score);
+  const CIcon = conf.icon;
 
   return (
-    <div
-      className="group bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-indigo-500/30 rounded-2xl overflow-hidden transition-all duration-300"
-      style={{ animationDelay: `${idx * 50}ms` }}
-      data-testid={`trending-card-${idx}`}
+    <Link
+      to={`/trending/${product.slug}`}
+      className="group block bg-white rounded-2xl border border-slate-100 overflow-hidden hover:border-slate-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+      data-testid={`product-card-${product.id}`}
     >
       {/* Image */}
-      <div className="h-36 bg-gradient-to-br from-slate-800 to-slate-900 relative overflow-hidden">
-        {hasImage ? (
-          <img src={product.image_url} alt={product.product_name} className="w-full h-full object-contain p-3 opacity-90 group-hover:opacity-100 transition-opacity" />
+      <div className="relative h-36 bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+        {product.image_url ? (
+          <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
         ) : (
-          <div className="flex items-center justify-center h-full">
-            <Package className="h-12 w-12 text-slate-700" />
+          <div className="w-full h-full flex items-center justify-center">
+            <Package className="h-10 w-10 text-slate-200" />
           </div>
         )}
-        {product.radar_detected && (
-          <div className="absolute top-2 left-2 flex items-center gap-1 bg-indigo-600/90 backdrop-blur-sm rounded-full px-2 py-0.5">
-            <Radar className="h-3 w-3 text-white" />
-            <span className="text-[10px] text-white font-medium">Radar</span>
-          </div>
-        )}
-        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1">
-          <BarChart3 className="h-3 w-3 text-indigo-400" />
-          <span className="font-mono text-sm font-bold text-white">{product.launch_score}</span>
+        {/* Score badge */}
+        <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1 shadow-sm">
+          <span className="font-mono text-sm font-bold text-indigo-600">{product.launch_score}</span>
         </div>
+        {/* Confidence badge */}
+        <div className="absolute top-2.5 right-2.5">
+          <Badge className={`text-[10px] border rounded-full ${conf.color} shadow-sm`}>
+            <CIcon className="h-3 w-3 mr-0.5" />
+            {conf.label}
+          </Badge>
+        </div>
+        {/* Stage */}
+        {product.trend_stage && (
+          <div className="absolute bottom-2.5 left-2.5">
+            <Badge className={`text-[10px] border rounded-full ${STAGE_COLORS[product.trend_stage] || STAGE_COLORS.Unknown}`}>
+              {product.trend_stage}
+            </Badge>
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <h3 className="font-semibold text-white text-sm line-clamp-2 leading-snug mb-2 min-h-[2.5rem]">
-          {product.product_name}
-        </h3>
-        <div className="flex items-center gap-2 mb-3">
-          <Badge className={`text-[10px] border rounded-full ${stageClass}`}>
-            {product.trend_stage}
-          </Badge>
-          {product.category && (
-            <span className="text-[10px] text-slate-500 truncate">{product.category}</span>
-          )}
+      <div className="p-3.5">
+        <h3 className="font-semibold text-slate-900 text-sm line-clamp-1 group-hover:text-indigo-600 transition-colors">{product.product_name}</h3>
+        {product.category && (
+          <p className="text-[11px] text-slate-400 mt-0.5">{product.category}</p>
+        )}
+
+        {/* Key metrics */}
+        <div className="grid grid-cols-3 gap-1.5 mt-3">
+          <MetricCell label="Margin" value={`${product.margin_percent || 0}%`} highlight />
+          <MetricCell label="Supplier" value={`£${(product.supplier_cost || 0).toFixed(0)}`} />
+          <MetricCell label="Retail" value={`£${(product.retail_price || 0).toFixed(0)}`} />
         </div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-1">
-            <TrendingUp className="h-3 w-3 text-emerald-400" />
-            <span className="text-sm font-semibold text-emerald-400">{product.margin_percent}%</span>
-            <span className="text-[10px] text-slate-500 ml-0.5">margin</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Eye className="h-3 w-3 text-slate-500" />
-            <span className="text-[10px] text-slate-500">Score {product.launch_score}</span>
-          </div>
+
+        {/* Bottom row */}
+        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-50">
+          <span className="text-[11px] text-slate-400 flex items-center gap-1">
+            <TrendingUp className="h-3 w-3" />
+            {product.growth_rate || 0}% growth
+          </span>
+          <span className="text-[11px] text-indigo-500 font-medium group-hover:text-indigo-600 flex items-center gap-0.5">
+            Details <ChevronRight className="h-3 w-3" />
+          </span>
         </div>
-        <Link to={`/trending/${product.slug}`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full border-indigo-500/30 text-indigo-400 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all text-xs"
-            data-testid={`unlock-btn-${idx}`}
-          >
-            <Lock className="mr-1.5 h-3 w-3" />
-            Unlock full analysis
-          </Button>
-        </Link>
       </div>
+    </Link>
+  );
+}
+
+function MetricCell({ label, value, highlight }) {
+  return (
+    <div className={`rounded-lg px-2 py-1.5 text-center ${highlight ? 'bg-emerald-50' : 'bg-slate-50'}`}>
+      <p className={`text-xs font-semibold ${highlight ? 'text-emerald-700' : 'text-slate-700'}`}>{value}</p>
+      <p className="text-[10px] text-slate-400">{label}</p>
     </div>
   );
 }

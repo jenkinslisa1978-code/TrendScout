@@ -2120,6 +2120,11 @@ async def get_trending_products(limit: int = 20):
             "launch_score": p.get("launch_score", 0),
             "trend_stage": p.get("trend_stage", p.get("early_trend_label", "Unknown")),
             "margin_percent": margin_pct,
+            "supplier_cost": round(p.get("supplier_cost", p.get("estimated_cogs", 0)), 2),
+            "retail_price": round(p.get("estimated_retail_price", 0), 2),
+            "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
+            "tiktok_views": p.get("tiktok_total_views", 0),
+            "detected_at": p.get("radar_detected_at", p.get("created_at", "")),
             "radar_detected": p.get("radar_detected", False),
         })
 
