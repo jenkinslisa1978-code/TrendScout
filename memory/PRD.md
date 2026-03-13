@@ -22,42 +22,11 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 │   ├── user.py            # Onboarding, admin, daily usage
 │   ├── stripe_routes.py   # Checkout, portal, webhook, plans, feature-access
 │   ├── products.py        # Products CRUD, launch score, proven winners, saturation
-│   ├── automation.py      # Automation pipeline run, logs, stats
-│   ├── jobs.py            # Job queue status, history, trigger, cancel
-│   ├── viral.py           # Referral system, public product views, sharing
-│   ├── public.py          # Daily picks, top-trending, platform-stats, SEO pages
-│   ├── seo.py             # Sitemap.xml, robots.txt
-│   ├── data_quality.py    # Data integrity, source health, confidence
-│   ├── intelligence.py    # Product validation, trend analysis, success prediction
-│   ├── dashboard.py       # Daily winners, opportunity feed, watchlist, radar, summary
-│   ├── reports.py         # Weekly/monthly reports, PDF downloads
-│   ├── email.py           # Email subscriptions, digest, newsletter
-│   ├── notifications.py   # In-app notifications, radar scan, threshold subscriptions
-│   ├── ingestion.py       # TikTok/Amazon/Supplier imports, scraping, dedup
 │   ├── stores.py          # Store CRUD, generation, export, launch
-│   ├── shopify.py         # Shopify OAuth, publish, disconnect
 │   ├── suppliers.py       # Supplier endpoints
 │   ├── ads.py             # Ad creatives, discovery, outcomes, A/B testing, engine
-│   ├── radar.py           # Live market radar events
-│   ├── optimizer.py       # Budget optimizer settings, recommendations
-│   ├── system_health.py   # System health, data integration
-│   ├── tools.py           # Shopify analyzer, competitor store tracker
-│   ├── workspace.py       # Saved products workspace
-│   ├── blog.py            # AI-generated blog posts
-│   ├── admin.py           # Image review, analytics dashboard
-│   └── images.py          # Image enrichment
+│   └── ...                # 20+ more route files
 └── services/              # Business logic services
-```
-
-### Frontend (React)
-```
-/app/frontend/src/
-├── pages/                 # Page components
-├── components/            # Reusable UI components
-│   ├── ui/               # Shadcn components
-│   └── specific/         # App-specific components
-├── services/             # API service layer
-└── App.jsx               # Router configuration
 ```
 
 ## Pricing Model (LIVE)
@@ -68,40 +37,7 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 | Pro | £39/mo | STRIPE_PRO_PRICE_ID |
 | Elite | £79/mo | STRIPE_ELITE_PRICE_ID |
 
-## Completed Features (30-Part Spec)
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1 | Product Vision | Done |
-| 2 | Landing Page CRO | Done |
-| 3 | Pricing Page (3-tier) | Done |
-| 4 | Signup Flow | Done |
-| 5 | Onboarding Checklist | Done |
-| 6 | Advanced Discovery Filters | Done |
-| 7 | AI Trend Score Engine | Done |
-| 8 | Trend Timeline Charts | Done |
-| 9 | Product Saturation Meter | Done |
-| 10 | Profit Calculator | Done |
-| 11 | AI Launch Simulator | Done |
-| 12 | AI Ad Creative Generator | Done |
-| 13 | TikTok Intelligence | Done |
-| 14 | Competitor Store Scanner | Done |
-| 15 | Saved Product Workspace | Done |
-| 16 | Weekly Trend Report | Done |
-| 17 | Viral Product Alerts | Done |
-| 18 | SEO Growth Engine | Done |
-| 19 | Top Trending Page | Done |
-| 20 | Image Resolution Pipeline | Done |
-| 21 | Image Candidate Sources | Done |
-| 22 | Image Validation | Done |
-| 23 | Admin Image Review | Done |
-| 24 | Image Review Detail | Done |
-| 25 | Bulk Image Review | Done |
-| 26 | Image QA Metrics | Done |
-| 27 | Performance (GZip) | Done |
-| 28 | Analytics Pipeline | Done |
-| 29 | UX Philosophy | Adhered |
-| 30 | Success Metrics | Defined |
+## Completed Features (30-Part Spec) - ALL DONE
 
 ## Production Launch (COMPLETED - March 2026)
 - Pricing aligned: Starter £19, Pro £39, Elite £79 (frontend + backend)
@@ -109,25 +45,19 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 - Resend email configured with trendscout.click domain
 - Favicon, apple-touch-icon, OG meta tags for SEO
 - Rate limiting (slowapi): 200/min global, 5/min register, 10/min login
-- 404 catch-all page with navigation
-- Terms of Service page (/terms)
-- Privacy Policy page (/privacy)
+- 404 catch-all page, Terms of Service, Privacy Policy
 - Site footer with legal links
 - No hardcoded secrets in frontend code
-- All secrets managed via backend .env
 
-## Backend Modularization (COMPLETED - March 2026)
-- Refactored 10,754-line monolithic server.py into 30 route files + 6 common modules
-- server.py reduced to 178-line slim entrypoint
-- 41/41 regression tests passed
-- No breaking changes to any API endpoint
+## Bug Fixes (March 13, 2026)
+- LaunchPad: Fixed supplier endpoint mismatch (frontend called wrong URL)
+- LaunchPad: Fixed missing imports in stores.py (StoreGenerator, etc.)
+- LaunchPad: All 5 steps now work end-to-end
 
 ## Key DB Collections
 - products, profiles, auth_users, stores, store_products
-- subscriptions, trend_alerts, automation_logs
-- reports, workspaces, blog_posts
-- analytics_events, notifications, ad_tests
-- optimization_events, optimizer_alerts
+- subscriptions, trend_alerts, automation_logs, ad_creatives
+- reports, workspaces, blog_posts, product_suppliers
 
 ## 3rd Party Integrations
 - OpenAI GPT-5.2 (via emergentintegrations)
@@ -145,4 +75,3 @@ AI operating system for e-commerce product discovery. TrendScout scans TikTok, A
 - P1: API rate limiting per subscription tier
 - P2: Redis cache migration (replace in-memory cache)
 - P3: Real-time WebSocket notifications
-- P3: A/B test analytics dashboard improvements
