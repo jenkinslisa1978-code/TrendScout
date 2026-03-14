@@ -2,8 +2,9 @@
 TrendScout API - Slim Entrypoint
 All route handlers are in /routes/, shared code in /common/.
 """
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -82,13 +83,43 @@ app.add_middleware(
     allow_credentials=True,
     allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "x-csrf-token"],
+    expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "X-RateLimit-Plan"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# Security headers
+from middleware.security_headers import SecurityHeadersMiddleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# CSRF protection (only for cookie-authenticated state-changing routes)
+from middleware.csrf import CSRFMiddleware
+app.add_middleware(CSRFMiddleware)
 
 # Per-user, per-plan rate limiting
 from middleware.rate_limit import RateLimitMiddleware
 app.add_middleware(RateLimitMiddleware)
+
+
+# Global exception handler — standardised error format
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    detail = exc.detail
+    if isinstance(detail, dict):
+        return JSONResponse(status_code=exc.status_code, content={"success": False, "error": detail})
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"success": False, "error": {"code": f"HTTP_{exc.status_code}", "message": str(detail)}},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logging.getLogger(__name__).error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"success": False, "error": {"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"}},
+    )
 
 # Serve product images from local storage
 IMAGES_DIR = ROOT_DIR / "static" / "images"

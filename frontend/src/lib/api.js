@@ -1,6 +1,6 @@
 /**
- * API Client - Centralized API calls with authentication
- * Uses stored JWT token from backend auth.
+ * API Client - Centralized API calls with authentication.
+ * Includes automatic token refresh on 401.
  */
 
 import { API_URL } from '@/lib/config';
@@ -12,6 +12,24 @@ const TOKEN_KEY = 'trendscout_token';
  */
 export const getAccessToken = async () => {
   return localStorage.getItem(TOKEN_KEY) || null;
+};
+
+/**
+ * Attempt to refresh the access token via the refresh cookie
+ */
+const tryRefreshToken = async () => {
+  try {
+    const res = await fetch(`${API_URL}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      localStorage.setItem(TOKEN_KEY, data.token);
+      return data.token;
+    }
+  } catch {}
+  return null;
 };
 
 /**
@@ -27,16 +45,29 @@ export const getAuthHeaders = async () => {
 };
 
 /**
- * Make an authenticated API request
+ * Make an authenticated API request with auto-refresh on 401
  */
 export const apiRequest = async (endpoint, options = {}) => {
   const authHeaders = await getAuthHeaders();
   const config = {
     ...options,
+    credentials: 'include',
     headers: { ...authHeaders, ...options.headers },
   };
   const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
-  return fetch(url, config);
+  let response = await fetch(url, config);
+
+  // If 401, try to refresh the token and retry once
+  if (response.status === 401 && !options._retried) {
+    const newToken = await tryRefreshToken();
+    if (newToken) {
+      config.headers['Authorization'] = `Bearer ${newToken}`;
+      config._retried = true;
+      response = await fetch(url, config);
+    }
+  }
+
+  return response;
 };
 
 export const apiGet = async (endpoint) => apiRequest(endpoint, { method: 'GET' });

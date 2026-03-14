@@ -14,6 +14,10 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
+    // Report to monitoring (Sentry-ready hook)
+    if (window.__ERROR_REPORTER) {
+      window.__ERROR_REPORTER(error, errorInfo);
+    }
   }
 
   render() {

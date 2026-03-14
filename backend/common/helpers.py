@@ -42,17 +42,65 @@ async def require_admin(current_user: AuthenticatedUser):
         raise HTTPException(status_code=403, detail="Admin access required")
 
 
-def generate_auth_token(user_id: str, email: str) -> str:
-    """Generate a JWT compatible with the existing auth middleware."""
+def generate_auth_token(user_id: str, email: str, ttl_seconds: int = 900) -> str:
+    """Generate a short-lived JWT access token (default 15 min)."""
     secret = os.environ.get("SUPABASE_JWT_SECRET")
     payload = {
         "sub": user_id,
         "email": email,
         "role": "authenticated",
+        "type": "access",
+        "iat": int(time.time()),
+        "exp": int(time.time()) + ttl_seconds,
+    }
+    return jwt.encode(payload, secret, algorithm="HS256")
+
+
+def generate_refresh_token(user_id: str, email: str) -> str:
+    """Generate a long-lived refresh token (7 days)."""
+    secret = os.environ.get("SUPABASE_JWT_SECRET")
+    payload = {
+        "sub": user_id,
+        "email": email,
+        "type": "refresh",
         "iat": int(time.time()),
         "exp": int(time.time()) + 60 * 60 * 24 * 7,
     }
     return jwt.encode(payload, secret, algorithm="HS256")
+
+
+def verify_refresh_token(token: str) -> dict:
+    """Verify and decode a refresh token. Returns payload or raises."""
+    secret = os.environ.get("SUPABASE_JWT_SECRET")
+    payload = jwt.decode(token, secret, algorithms=["HS256"], options={"require": ["sub", "exp"]})
+    if payload.get("type") != "refresh":
+        raise jwt.InvalidTokenError("Not a refresh token")
+    return payload
+
+
+def set_auth_cookies(response, user_id: str, email: str):
+    """Set __Host-refresh and __Host-csrf cookies on a response."""
+    from middleware.csrf import generate_csrf_token
+    refresh = generate_refresh_token(user_id, email)
+    response.set_cookie(
+        key="__Host-refresh",
+        value=refresh,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        path="/",
+        max_age=60 * 60 * 24 * 7,
+    )
+    response.set_cookie(
+        key="__Host-csrf",
+        value=generate_csrf_token(),
+        httponly=False,
+        secure=True,
+        samesite="lax",
+        path="/",
+        max_age=60 * 60 * 24 * 7,
+    )
+    return response
 
 
 def build_winning_reasons(product: dict) -> list:
