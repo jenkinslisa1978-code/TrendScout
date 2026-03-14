@@ -43,6 +43,12 @@ AI product validation for ecommerce. Find products worth launching before you sp
 ## Test Credentials
 - Admin: jenkinslisa1978@gmail.com / admin123456
 
+### Weekly Email Digest with "What Should I Do Next?" (March 14, 2026)
+- Expanded `EmailService` class with `send_email`, `send_weekly_digest`, `send_product_alert_email`, `send_product_of_the_week`
+- Weekly digest now includes personalised "What Should You Do Next?" section per user
+- Scheduled task `send_weekly_email_digest` generates per-user next-steps recommendations
+- Module-level `email_service` instance + backward-compatible `send_password_reset_email` function
+
 ### CSP Enforcement (March 14, 2026)
 - Switched Content-Security-Policy from report-only to enforcing mode
 - Feature flag `FEATURE_CSP_ENFORCE=true` in backend .env

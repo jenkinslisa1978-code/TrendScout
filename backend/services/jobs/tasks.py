@@ -912,6 +912,53 @@ async def run_deduplication(db, params: Dict[str, Any]) -> Dict[str, Any]:
 # WEEKLY EMAIL DIGEST TASK
 # =====================================================
 
+async def _generate_user_next_steps(db, user_id: str) -> list:
+    """Generate lightweight per-user next-step recommendations for email digest."""
+    if not user_id:
+        return []
+    steps = []
+    saved = await db.saved_products.count_documents({"user_id": user_id})
+    stores = await db.stores.count_documents({"user_id": user_id})
+    watchlist = await db.watchlist.count_documents({"user_id": user_id})
+    unread = await db.alerts.count_documents({"user_id": user_id, "is_read": False})
+
+    if unread > 0:
+        steps.append({
+            "title": f"You have {unread} unread alert{'s' if unread != 1 else ''}",
+            "description": "New trend alerts may contain time-sensitive opportunities.",
+            "action": {"label": "View Alerts", "href": "/dashboard?tab=alerts"},
+        })
+    if saved == 0:
+        steps.append({
+            "title": "Save your first product",
+            "description": "Browse trending products and save ones you like.",
+            "action": {"label": "Discover", "href": "/discover"},
+        })
+    if saved > 0 and stores == 0:
+        steps.append({
+            "title": "Build your first store",
+            "description": f"You have {saved} saved product{'s' if saved != 1 else ''}. Create a store around your best pick.",
+            "action": {"label": "Build Store", "href": "/discover"},
+        })
+    top = await db.products.find_one(
+        {"launch_score": {"$gte": 70}},
+        {"_id": 0, "id": 1, "product_name": 1, "launch_score": 1},
+    )
+    if top:
+        steps.append({
+            "title": f"Launch \"{top.get('product_name', 'Top Product')}\"",
+            "description": f"Scored {top.get('launch_score', 0)}/100 — a strong launch candidate.",
+            "action": {"label": "Start Launch", "href": f"/launch/{top['id']}"},
+        })
+    if watchlist == 0:
+        steps.append({
+            "title": "Start your watchlist",
+            "description": "Track price and trend changes over time.",
+            "action": {"label": "Browse", "href": "/discover"},
+        })
+    return steps[:3]
+
+
 @TaskRegistry.register(
     name="send_weekly_email_digest",
     description="Send weekly winning products digest to all subscribed users",
@@ -950,14 +997,14 @@ async def send_weekly_email_digest(db, params: Dict[str, Any] = None) -> Dict[st
     # Get all users subscribed to weekly digest
     subscribed_users = await db.profiles.find(
         {"email_preferences.weekly_digest": True},
-        {"_id": 0, "email": 1, "name": 1}
+        {"_id": 0, "id": 1, "email": 1, "name": 1}
     ).to_list(None)
     
     # If no explicit subscribers, get users with verified emails (limit for safety)
     if not subscribed_users:
         subscribed_users = await db.profiles.find(
             {"email": {"$exists": True, "$ne": None}},
-            {"_id": 0, "email": 1, "name": 1}
+            {"_id": 0, "id": 1, "email": 1, "name": 1}
         ).to_list(100)
     
     sent_count = 0
@@ -966,10 +1013,14 @@ async def send_weekly_email_digest(db, params: Dict[str, Any] = None) -> Dict[st
     
     for user in subscribed_users:
         try:
+            # Generate personalised next-steps for this user
+            next_steps = await _generate_user_next_steps(db, user.get("id"))
+
             result = await email_service.send_weekly_digest(
                 to_email=user.get('email'),
                 user_name=user.get('name', user.get('email', '').split('@')[0]),
-                report_data=report
+                report_data=report,
+                next_steps=next_steps,
             )
             
             if result.get('status') == 'success':
