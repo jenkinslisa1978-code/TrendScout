@@ -1,7 +1,7 @@
 # TrendScout - Product Requirements Document
 
 ## Product Vision
-AI operating system for e-commerce product discovery. Scans TikTok, Amazon, and ecommerce stores with AI to identify products ready to scale. One-stop shop: "tell you what to sell, set up the shop and produce adverts all in a couple of clicks".
+AI operating system for e-commerce product discovery. One-stop shop: find winning products, set up shop, create ads — all in a couple of clicks.
 
 ## Pricing Model (LIVE)
 | Plan | Price | API Rate Limit |
@@ -13,77 +13,69 @@ AI operating system for e-commerce product discovery. Scans TikTok, Amazon, and 
 
 ## ALL Features — COMPLETED
 
-### Redis Cache (March 13, 2026)
-- Redis-backed caching with automatic in-memory fallback
-- Rate limiting uses Redis atomic INCR for distributed support
-- API response caching migrated from in-memory to Redis
-- `redis_cache.py`: cache_get, cache_set, cache_delete, cache_incr, cache_get_ttl
+### Part 1: Shopify OAuth Connection (March 14, 2026)
+- OAuth 2.0 flow: `POST /api/shopify/oauth/init` generates auth URL with state token
+- Callback: `GET /api/shopify/oauth/callback` exchanges code, verifies HMAC, encrypts token
+- Status check: `GET /api/shopify/oauth/status`
+- Disconnect: `DELETE /api/shopify/oauth/disconnect`
+- Frontend: Domain input + "Connect Shopify Store" button on Connections page
+- Requires: SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET env vars from Shopify Partner app
 
-### Real-Time SSE Notifications (March 13, 2026)
-- Server-Sent Events endpoint: `GET /api/notifications/stream`
-- Accepts auth via query param (for EventSource) or Authorization header
-- Pushes new notifications, unread counts in real-time
-- Frontend NotificationCenter connects via SSE with polling fallback
-- In-memory event queue (production: Redis pub/sub)
+### Part 2: Image Validation Service (March 14, 2026)
+- Validates product images against supplier source domains
+- Rejects stock/placeholder images (unsplash, via.placeholder.com, etc.)
+- Detects category mismatches (e.g., drill image on ring product)
+- Flags products as `image_missing` when no valid images found
+- Integrated into Shopify export pipeline
 
-### Multi-Step Ad Generation Pipeline (March 13, 2026)
-- 7-step pipeline for higher quality ad creatives:
-  1. Product angles & target audiences
-  2. Headlines & hooks
-  3. TikTok scripts
-  4. Facebook ads (story-driven, AIDA/PAS)
-  5. Instagram captions
-  6. Video storyboard + shot list + voiceover
-  7. Email sequence + budget advice
-- Endpoint: `POST /api/ad-creatives/generate-pipeline/{product_id}`
-- Partial success support (returns what was generated before failure)
+### Part 3: Enhanced Shopify Export (March 14, 2026)
+- Structured HTML descriptions: benefit headline, features list, shipping info
+- Pricing logic: supplier_cost × 2.5, snapped to £x.99 price points
+- Exports as DRAFT (user reviews before publishing)
+- Validates and exports minimum 3 images when available
+- Uses image_validation_service for quality control
 
-### Connection Health Check (March 13, 2026)
-- `POST /api/connections/health-check` pings all connected platforms
-- Tests Shopify, WooCommerce, Etsy, BigCommerce, Squarespace, Meta, TikTok
-- Updates health_status in DB for each connection
-- Frontend: Health Check button on Connections page with results grid
+### Part 4: Beginner Mode (March 14, 2026)
+- BeginnerPanel on dashboard: "New to TrendScout? Start here." with 4 steps
+- Simplified nav labels: Find Products, Ad Ideas, Profit Estimate
+- PageExplanation banners on key pages (dismissible per-page)
 
-### Profitability Calculator (March 13, 2026)
-- `POST /api/profitability-calculator` — ROI estimation
-- Inputs: daily_ad_budget, conversion_rate, avg_cpc, days
-- Returns: projections (revenue, profit, ROI%), break_even analysis, verdict
-- Verdict: green (ROI>100%), amber (0-100%), red (negative)
-- Frontend widget on Product Detail page with 4 input fields
+### Part 5: Winning Product Indicator (March 14, 2026)
+- SVG score ring on product detail page (0-100)
+- Color-coded verdict: Strong/Good/Worth investigating/High risk
+- Lists strengths and risks with bullet points
+- Suggested test budget based on margins
 
-### Data Trust & Transparency
-- Scoring Methodology endpoint with 7 signals, 6 data sources, honest limitations
-- "How Our Scores Work" section on Product Detail pages
-- Data Trust Banner on Dashboard
+### Part 6: Product Launch Playbook (March 14, 2026)
+- `GET /api/launch-playbook/{product_id}` returns full playbook
+- 5 steps: Create page → Review → Create ads → Launch campaign → Evaluate
+- 3 ad angles: Problem→Solution, Demonstration, Before/After
+- Target audiences based on product category
+- Testing budget: £20-80 range, 3 creatives, 48-hour test
 
-### Platform Connections — ALL 5 STORES + 3 AD PLATFORMS
-- Shopify, WooCommerce, Etsy, BigCommerce, Squarespace — Full Automation
-- Meta, TikTok — Auto-Post Ads (PAUSED)
-- Google Ads — Draft Only
-- Platform automation badges on Connections page
+### Part 7: Security (March 14, 2026)
+- Fernet token encryption for stored access tokens
+- HMAC-SHA256 verification on Shopify OAuth callbacks
+- Secure state tokens stored in DB with CSRF validation
+- API rate limiting via Redis middleware
+- All existing: CORS, JWT auth, input validation
 
-### Onboarding Walkthrough
-- 4-step modal for first-time users
-
-### Quick Launch Flow
-- "Launch a Product in 3 Clicks" dashboard widget
-
-### Premium Ad Creative Generation
-- Single-shot: OpenAI GPT-4.1-mini via Emergent LLM Key
-- Pipeline: 7-step multi-LLM pipeline
-
-### API Rate Limiting
-- Per-user, per-plan via Redis with in-memory fallback
-- X-RateLimit headers on all authenticated responses
+### Previous Features (All Completed)
+- Redis Cache, SSE Notifications, Multi-step Ad Pipeline
+- 5 E-Commerce Platforms (Shopify, WooCommerce, Etsy, BigCommerce, Squarespace)
+- 3 Ad Platforms (Meta, TikTok, Google Ads)
+- Onboarding Walkthrough, Quick Launch Flow, Data Trust Banner
+- Scoring Methodology Transparency, Profitability Calculator
+- Connection Health Check
 
 ## Architecture
-- Backend: FastAPI + MongoDB + Redis (32 route files)
+- Backend: FastAPI + MongoDB + Redis (33 route files)
 - Frontend: React + Shadcn/UI
-- Integrations: OpenAI, Stripe, Resend, CJ Dropshipping, Shopify, WooCommerce, Etsy, BigCommerce, Squarespace, Meta, TikTok, Google Ads
+- Security: Fernet encryption, HMAC verification, JWT auth, Redis rate limiting
 
 ## Test Credentials
 - Admin: jenkinslisa1978@gmail.com / admin123456
 
 ## Backlog
-- P3: Real-time WebSocket notifications (replace SSE with WebSocket for bidirectional comms)
-- P3: Redis pub/sub for multi-instance SSE event distribution
+- P2: Redis pub/sub for multi-instance SSE
+- P3: WebSocket upgrade for bidirectional comms

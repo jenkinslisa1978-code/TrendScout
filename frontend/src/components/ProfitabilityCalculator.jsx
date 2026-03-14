@@ -18,7 +18,7 @@ export default function ProfitabilityCalculator({ productId, productName }) {
   const calculate = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('trendscout_token');
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/profitability-calculator`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
