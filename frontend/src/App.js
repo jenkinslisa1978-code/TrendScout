@@ -61,6 +61,8 @@ import NotFoundPage from "@/pages/NotFoundPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import PlatformConnectionsPage from "@/pages/PlatformConnectionsPage";
+import HelpPage from "@/pages/HelpPage";
+import DemoPage from "@/pages/DemoPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -144,6 +146,8 @@ function AppRoutes() {
       <Route path="/blog/:slug" element={<BlogPostPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/help" element={<HelpPage />} />
+      <Route path="/demo" element={<DemoPage />} />
 
       {/* Protected routes */}
       <Route

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TrendingUp, Eye, EyeOff, Loader2, Gift } from 'lucide-react';
+import { TrendingUp, Eye, EyeOff, Loader2, Gift, Check, X as XIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_URL } from '@/lib/config';
 import { trackEvent, EVENTS } from '@/services/analytics';
@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -20,12 +21,26 @@ export default function SignupPage() {
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
 
+  const passwordRules = useMemo(() => [
+    { label: 'Minimum 8 characters', met: password.length >= 8 },
+    { label: 'At least one number', met: /\d/.test(password) },
+  ], [password]);
+
+  const allRulesMet = passwordRules.every(r => r.met);
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (!allRulesMet) {
+      toast.error('Password does not meet requirements');
+      setLoading(false);
+      return;
+    }
+
+    if (!passwordsMatch) {
+      toast.error('Passwords do not match');
       setLoading(false);
       return;
     }
@@ -38,15 +53,10 @@ export default function SignupPage() {
       return;
     }
 
-    // Track referral if code present
     if (referralCode && data?.user?.id) {
       try {
-        await fetch(`${API_URL}/api/viral/referral/track?referral_code=${encodeURIComponent(referralCode)}&referred_user_id=${encodeURIComponent(data.user.id)}`, {
-          method: 'POST',
-        });
-      } catch (err) {
-        console.error('Failed to track referral:', err);
-      }
+        await fetch(`${API_URL}/api/viral/referral/track?referral_code=${encodeURIComponent(referralCode)}&referred_user_id=${encodeURIComponent(data.user.id)}`, { method: 'POST' });
+      } catch {}
     }
 
     toast.success('Welcome to TrendScout!');
@@ -56,35 +66,35 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Left Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 p-12 flex-col justify-between">
         <div>
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
             <span className="text-2xl font-bold text-white">TrendScout</span>
-          </div>
+          </Link>
         </div>
         <div>
           <h1 className="text-4xl font-bold text-white mb-4">
-            Start finding winning products today
+            Find products worth launching before you spend money on ads.
           </h1>
           <p className="text-indigo-200 text-lg">
-            Join thousands of e-commerce sellers using AI to discover trending products.
+            AI product validation for ecommerce entrepreneurs.
           </p>
         </div>
-        <p className="text-indigo-300 text-sm">Free plan available - no credit card required</p>
+        <p className="text-indigo-300 text-sm">Free plan available — no credit card required</p>
       </div>
 
-      {/* Right Panel - Signup Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-slate-900">TrendScout</span>
+            <Link to="/" className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-slate-900">TrendScout</span>
+            </Link>
           </div>
 
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Start Free Product Discovery</h2>
@@ -100,28 +110,11 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Doe"
-                data-testid="signup-name-input"
-                className="mt-1.5 h-11"
-              />
+              <Input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Smith" data-testid="signup-name-input" className="mt-1.5 h-11" />
             </div>
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                data-testid="signup-email-input"
-                className="mt-1.5 h-11"
-              />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required data-testid="signup-email-input" className="mt-1.5 h-11" />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
@@ -131,43 +124,51 @@ export default function SignupPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 6 characters"
+                  placeholder="Create a password"
                   required
                   data-testid="signup-password-input"
                   className="h-11 pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {password.length > 0 && (
+                <div className="mt-2 space-y-1" data-testid="password-rules">
+                  {passwordRules.map((rule, i) => (
+                    <div key={i} className={`flex items-center gap-1.5 text-xs ${rule.met ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {rule.met ? <Check className="h-3 w-3" /> : <XIcon className="h-3 w-3" />}
+                      {rule.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter your password"
+                required
+                data-testid="signup-confirm-password-input"
+                className={`mt-1.5 h-11 ${confirmPassword.length > 0 ? (passwordsMatch ? 'border-emerald-300' : 'border-red-300') : ''}`}
+              />
+              {confirmPassword.length > 0 && !passwordsMatch && (
+                <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+              )}
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              data-testid="signup-submit-btn"
-              className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 font-semibold"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                'Start Free Product Discovery'
-              )}
+            <Button type="submit" disabled={loading || !allRulesMet || !passwordsMatch} data-testid="signup-submit-btn" className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 font-semibold disabled:opacity-50">
+              {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating account...</> : 'Create Free Account'}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
-              Sign in
-            </Link>
+            <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">Sign in</Link>
           </p>
         </div>
       </div>

@@ -72,7 +72,10 @@ export default function LandingPage() {
               style={{ animation: 'fadeSlideUp 0.7s ease forwards' }}
               data-testid="hero-subheadline"
             >
-              TrendScout helps ecommerce sellers discover trending products, evaluate their potential, and get simple launch ideas quickly.
+              TrendScout analyzes trending ecommerce products and predicts whether they are worth launching{' '}
+              <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
+                using a multi-signal AI launch score.
+              </span>
             </p>
 
             <div
@@ -87,7 +90,7 @@ export default function LandingPage() {
                   onClick={() => trackEvent(EVENTS.TRENDING_VIEW, { source: 'hero' })}
                 >
                   <Search className="mr-2 h-5 w-5" />
-                  See Trending Products
+                  Browse Trending Products
                 </Button>
               </Link>
               <a href="#how-it-works">
@@ -98,7 +101,7 @@ export default function LandingPage() {
                   data-testid="hero-secondary-btn"
                 >
                   <ArrowDown className="mr-2 h-4 w-4" />
-                  How It Works
+                  See How It Works
                 </Button>
               </a>
             </div>
@@ -133,8 +136,8 @@ export default function LandingPage() {
               {
                 step: '2',
                 icon: Eye,
-                title: 'Check potential',
-                description: 'See whether a product looks worth testing.',
+                title: 'Check the launch score',
+                description: 'TrendScout analyzes demand, competition, and ad potential.',
                 gradient: 'from-violet-500 to-purple-500',
               },
               {
@@ -196,6 +199,77 @@ export default function LandingPage() {
                   >
                     Start Now
                     <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── WINNING PRODUCT EXAMPLE ── */}
+      <section className="py-20 bg-gradient-to-b from-white to-slate-50/50" data-testid="product-example-section">
+        <div className="mx-auto max-w-5xl px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
+              See what a product analysis looks like
+            </h2>
+            <p className="mt-4 text-base text-slate-500">
+              Every product gets scored across multiple signals. Here's a real example.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-lg overflow-hidden" data-testid="example-product-card">
+            <div className="grid md:grid-cols-2">
+              <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 p-8 flex items-center justify-center">
+                <div className="relative w-full max-w-[280px] aspect-square rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">
+                  <Package className="h-20 w-20 text-slate-200" />
+                  <div className="absolute top-3 left-3 bg-indigo-600 text-white rounded-xl px-3 py-1 shadow-md">
+                    <span className="font-mono text-lg font-bold">78</span>
+                    <span className="text-xs ml-0.5 opacity-80">/100</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-8">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Strong Candidate</span>
+                </div>
+                <h3 className="font-manrope text-2xl font-bold text-slate-900">Magnetic Spice Rack</h3>
+                <p className="text-slate-500 text-sm mt-2 mb-6">Home &amp; Kitchen</p>
+
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  <div className="bg-slate-50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-slate-500 mb-1">Demand</p>
+                    <p className="font-semibold text-emerald-600 text-sm">Rising</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-slate-500 mb-1">Competition</p>
+                    <p className="font-semibold text-amber-600 text-sm">Moderate</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-slate-500 mb-1">Est. Profit</p>
+                    <p className="font-semibold text-indigo-600 text-sm">$12-$18/unit</p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Why it works</h4>
+                  <ul className="space-y-1.5">
+                    <li className="flex items-center gap-2 text-sm text-slate-600">
+                      <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" /> Strong TikTok engagement
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-slate-600">
+                      <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" /> Visually satisfying demo
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-slate-600">
+                      <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" /> Broad household audience
+                    </li>
+                  </ul>
+                </div>
+
+                <Link to="/trending-products">
+                  <Button className="bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl" data-testid="example-cta-btn">
+                    View Full Analysis <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
               </div>

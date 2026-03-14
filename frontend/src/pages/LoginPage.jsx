@@ -45,10 +45,10 @@ export default function LoginPage() {
         </div>
         <div>
           <h1 className="text-4xl font-bold text-white mb-4">
-            Find winning products before they go viral
+            Find products worth launching before you spend money on ads.
           </h1>
           <p className="text-indigo-200 text-lg">
-            AI-powered product intelligence for e-commerce entrepreneurs.
+            AI product validation for ecommerce entrepreneurs.
           </p>
         </div>
         <p className="text-indigo-300 text-sm">Trusted by 1,000+ e-commerce sellers</p>
@@ -125,6 +125,11 @@ export default function LoginPage() {
             Don't have an account?{' '}
             <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-500">
               Sign up for free
+            </Link>
+          </p>
+          <p className="mt-2 text-center text-sm">
+            <Link to="/forgot-password" className="text-slate-400 hover:text-indigo-500 transition-colors">
+              Forgot your password?
             </Link>
           </p>
         </div>

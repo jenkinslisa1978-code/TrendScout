@@ -37,11 +37,11 @@ import PageExplanation from '@/components/PageExplanation';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Find Products', href: '/discover', icon: Search },
-  { name: 'My Stores', href: '/stores', icon: Store },
+  { name: 'Product Analysis', href: '/stores', icon: Store },
   { name: 'Ad Ideas', href: '/ad-tests', icon: Zap },
   { name: 'Connections', href: '/settings/connections', icon: Link2 },
   { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Competitors', href: '/competitor-tracker', icon: Radar },
+  { name: 'Market Data', href: '/competitor-tracker', icon: Radar },
   { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
   { name: 'Profit Estimate', href: '/outcomes', icon: Target },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },

@@ -11,12 +11,11 @@ export default function LandingLayout({ children }) {
   const navigate = useNavigate();
 
   const navigation = [
-    { name: 'Trending', href: '/trending-products' },
+    { name: 'Find Products', href: '/trending-products' },
     { name: 'Leaderboard', href: '/top-trending-products' },
-    { name: 'Tools', href: '/tools' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Features', href: '/#features' },
-    { name: 'Pricing', href: '/#pricing' },
+    { name: 'Examples', href: '/demo' },
+    { name: 'Pricing', href: '/pricing' },
+    { name: 'Help', href: '/help' },
   ];
 
   const handleNavClick = useCallback((e, href) => {
@@ -148,23 +147,50 @@ export default function LandingLayout({ children }) {
       {/* Footer */}
       <footer className="border-t border-slate-100 bg-white">
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600">
-                <TrendingUp className="h-4 w-4 text-white" />
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600">
+                  <TrendingUp className="h-4 w-4 text-white" />
+                </div>
+                <span className="font-manrope text-lg font-bold text-slate-900">TrendScout</span>
               </div>
-              <span className="font-manrope text-lg font-bold text-slate-900">TrendScout</span>
+              <p className="text-sm text-slate-400 leading-relaxed">AI product validation for ecommerce. Find products worth launching before you spend money on ads.</p>
             </div>
-            <div className="flex items-center gap-6 text-sm text-slate-400">
-              <Link to="/tools" className="hover:text-slate-600 transition-colors">Free Tools</Link>
-              <Link to="/trending-products" className="hover:text-slate-600 transition-colors">Trending Products</Link>
-              <Link to="/trending-products-today" className="hover:text-slate-600 transition-colors">Trending Today</Link>
-              <Link to="/top-trending-products" className="hover:text-slate-600 transition-colors">Leaderboard</Link>
-              <Link to="/blog" className="hover:text-slate-600 transition-colors">Blog</Link>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Products</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/trending-products" className="text-slate-400 hover:text-slate-600 transition-colors">Find Products</Link></li>
+                <li><Link to="/top-trending-products" className="text-slate-400 hover:text-slate-600 transition-colors">Leaderboard</Link></li>
+                <li><Link to="/trending-products-today" className="text-slate-400 hover:text-slate-600 transition-colors">Trending Today</Link></li>
+                <li><Link to="/demo" className="text-slate-400 hover:text-slate-600 transition-colors">Examples</Link></li>
+              </ul>
             </div>
-            <p className="text-sm text-slate-400">
-              &copy; {new Date().getFullYear()} TrendScout. All rights reserved.
-            </p>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resources</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/help" className="text-slate-400 hover:text-slate-600 transition-colors">Help &amp; FAQ</Link></li>
+                <li><Link to="/blog" className="text-slate-400 hover:text-slate-600 transition-colors">Blog</Link></li>
+                <li><Link to="/pricing" className="text-slate-400 hover:text-slate-600 transition-colors">Pricing</Link></li>
+                <li><Link to="/tools" className="text-slate-400 hover:text-slate-600 transition-colors">Free Tools</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Legal</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/privacy" className="text-slate-400 hover:text-slate-600 transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="text-slate-400 hover:text-slate-600 transition-colors">Terms of Service</Link></li>
+                <li><a href="mailto:support@trendscout.click" className="text-slate-400 hover:text-slate-600 transition-colors">support@trendscout.click</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-slate-100 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-slate-400">&copy; {new Date().getFullYear()} TrendScout Ltd. All rights reserved.</p>
+            <div className="flex items-center gap-4 text-xs text-slate-400">
+              <Link to="/privacy" className="hover:text-slate-600 transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
+              <Link to="/sitemap.xml" className="hover:text-slate-600 transition-colors">Sitemap</Link>
+            </div>
           </div>
         </div>
       </footer>
