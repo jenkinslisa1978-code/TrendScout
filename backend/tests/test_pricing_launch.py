@@ -213,8 +213,8 @@ class TestCheckoutSession:
             headers={"Authorization": f"Bearer {admin_token}"},
             json={
                 "plan": "starter",
-                "success_url": "https://trend-pages.preview.emergentagent.com/pricing",
-                "cancel_url": "https://trend-pages.preview.emergentagent.com/pricing"
+                "success_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing",
+                "cancel_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing"
             }
         )
         # Admin should be blocked from checkout
@@ -230,8 +230,8 @@ class TestCheckoutSession:
             headers={"Authorization": f"Bearer {test_user_token}"},
             json={
                 "plan": "starter",
-                "success_url": "https://trend-pages.preview.emergentagent.com/pricing",
-                "cancel_url": "https://trend-pages.preview.emergentagent.com/pricing"
+                "success_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing",
+                "cancel_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing"
             }
         )
         assert response.status_code == 200
@@ -247,8 +247,8 @@ class TestCheckoutSession:
             headers={"Authorization": f"Bearer {test_user_token}"},
             json={
                 "plan": "pro",
-                "success_url": "https://trend-pages.preview.emergentagent.com/pricing",
-                "cancel_url": "https://trend-pages.preview.emergentagent.com/pricing"
+                "success_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing",
+                "cancel_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing"
             }
         )
         assert response.status_code == 200
@@ -263,8 +263,8 @@ class TestCheckoutSession:
             headers={"Authorization": f"Bearer {test_user_token}"},
             json={
                 "plan": "elite",
-                "success_url": "https://trend-pages.preview.emergentagent.com/pricing",
-                "cancel_url": "https://trend-pages.preview.emergentagent.com/pricing"
+                "success_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing",
+                "cancel_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing"
             }
         )
         assert response.status_code == 200
@@ -279,8 +279,8 @@ class TestCheckoutSession:
             headers={"Authorization": f"Bearer {test_user_token}"},
             json={
                 "plan": "free",
-                "success_url": "https://trend-pages.preview.emergentagent.com/pricing",
-                "cancel_url": "https://trend-pages.preview.emergentagent.com/pricing"
+                "success_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing",
+                "cancel_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing"
             }
         )
         assert response.status_code == 400
@@ -293,8 +293,8 @@ class TestCheckoutSession:
             headers={"Authorization": f"Bearer {test_user_token}"},
             json={
                 "plan": "growth",  # Old plan name that shouldn't exist
-                "success_url": "https://trend-pages.preview.emergentagent.com/pricing",
-                "cancel_url": "https://trend-pages.preview.emergentagent.com/pricing"
+                "success_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing",
+                "cancel_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing"
             }
         )
         assert response.status_code == 400
@@ -306,8 +306,8 @@ class TestCheckoutSession:
             f"{BASE_URL}/api/stripe/create-checkout-session",
             json={
                 "plan": "pro",
-                "success_url": "https://trend-pages.preview.emergentagent.com/pricing",
-                "cancel_url": "https://trend-pages.preview.emergentagent.com/pricing"
+                "success_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing",
+                "cancel_url": "https://ecommerce-guide-11.preview.emergentagent.com/pricing"
             }
         )
         assert response.status_code == 401
