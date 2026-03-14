@@ -137,13 +137,19 @@ export default function PlatformConnectionsPage() {
   };
 
   const [shopifyDomain, setShopifyDomain] = useState('');
+  const [shopifyClientId, setShopifyClientId] = useState('');
+  const [shopifyClientSecret, setShopifyClientSecret] = useState('');
   const [shopifyOAuthLoading, setShopifyOAuthLoading] = useState(false);
 
   const handleShopifyOAuth = async () => {
-    if (!shopifyDomain.trim()) return;
+    if (!shopifyDomain.trim() || !shopifyClientId.trim() || !shopifyClientSecret.trim()) return;
     setShopifyOAuthLoading(true);
     try {
-      const res = await apiPost('/api/shopify/oauth/init', { shop_domain: shopifyDomain.trim() });
+      const res = await apiPost('/api/shopify/oauth/init', {
+        shop_domain: shopifyDomain.trim(),
+        client_id: shopifyClientId.trim(),
+        client_secret: shopifyClientSecret.trim(),
+      });
       const data = await res.json();
       if (data.oauth_url) {
         window.location.href = data.oauth_url;
@@ -274,11 +280,28 @@ export default function PlatformConnectionsPage() {
                             className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             data-testid="shopify-domain-input"
                           />
+                          <input
+                            type="text"
+                            placeholder="Shopify Client ID"
+                            value={shopifyClientId}
+                            onChange={(e) => setShopifyClientId(e.target.value)}
+                            className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            data-testid="shopify-client-id-input"
+                          />
+                          <input
+                            type="password"
+                            placeholder="Shopify Client Secret"
+                            value={shopifyClientSecret}
+                            onChange={(e) => setShopifyClientSecret(e.target.value)}
+                            className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            data-testid="shopify-client-secret-input"
+                          />
+                          <p className="text-[10px] text-slate-400">Get these from <a href="https://partners.shopify.com" target="_blank" rel="noreferrer" className="text-indigo-500 underline">Shopify Partners</a> &gt; Apps &gt; Create app</p>
                           <Button
                             size="sm"
                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs"
                             onClick={handleShopifyOAuth}
-                            disabled={shopifyOAuthLoading || !shopifyDomain.trim()}
+                            disabled={shopifyOAuthLoading || !shopifyDomain.trim() || !shopifyClientId.trim() || !shopifyClientSecret.trim()}
                             data-testid="connect-shopify-oauth"
                           >
                             {shopifyOAuthLoading ? (

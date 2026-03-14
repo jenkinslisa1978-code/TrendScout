@@ -44,6 +44,8 @@ def _verify_hmac(query_params: dict) -> bool:
 
 class ShopifyOAuthInitRequest(BaseModel):
     shop_domain: str
+    client_id: str
+    client_secret: str
 
 
 @shopify_oauth_router.post("/oauth/init")
@@ -52,32 +54,32 @@ async def init_oauth(
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
-    Start Shopify OAuth: generates the authorization URL.
-    Stores a secure state token in DB for verification on callback.
+    Start Shopify OAuth using the user's own client_id and client_secret.
+    Stores credentials encrypted in DB for the callback phase.
     """
-    if not SHOPIFY_CLIENT_ID:
-        raise HTTPException(status_code=503, detail="Shopify OAuth not configured. Set SHOPIFY_CLIENT_ID in environment.")
-
     shop = req.shop_domain.strip().lower()
     if not shop.endswith(".myshopify.com"):
         shop = f"{shop}.myshopify.com"
 
     state = secrets.token_urlsafe(32)
 
-    # Store state in DB for CSRF validation
+    # Encrypt and store the user's credentials + state for the callback
     await db.oauth_states.insert_one({
         "state": state,
         "user_id": current_user.user_id,
         "shop": shop,
+        "client_id": req.client_id,
+        "client_secret_encrypted": encrypt_token(req.client_secret),
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
 
     redirect_uri = f"{SITE_URL}/api/shopify/oauth/callback"
+    scopes = SHOPIFY_SCOPES
 
     oauth_url = (
         f"https://{shop}/admin/oauth/authorize?"
-        f"client_id={SHOPIFY_CLIENT_ID}"
-        f"&scope={SHOPIFY_SCOPES}"
+        f"client_id={req.client_id}"
+        f"&scope={scopes}"
         f"&redirect_uri={redirect_uri}"
         f"&state={state}"
     )
@@ -103,24 +105,31 @@ async def oauth_callback(request: Request):
     if not code or not shop or not state:
         raise HTTPException(status_code=400, detail="Missing required OAuth parameters")
 
-    # 1. HMAC verification
-    if SHOPIFY_CLIENT_SECRET and not _verify_hmac(params):
-        logger.warning(f"HMAC verification failed for shop {shop}")
-        raise HTTPException(status_code=403, detail="HMAC verification failed")
-
-    # 2. State validation
+    # 2. State validation — also retrieves user's stored credentials
     state_record = await db.oauth_states.find_one_and_delete({"state": state})
     if not state_record:
         raise HTTPException(status_code=403, detail="Invalid or expired state token")
 
     user_id = state_record["user_id"]
+    client_id = state_record.get("client_id", SHOPIFY_CLIENT_ID)
+    client_secret = decrypt_token(state_record["client_secret_encrypted"]) if state_record.get("client_secret_encrypted") else SHOPIFY_CLIENT_SECRET
+
+    # 1. HMAC verification (uses the user's client_secret)
+    if client_secret:
+        received_hmac = params.get("hmac", "")
+        params_to_sign = {k: v for k, v in params.items() if k != "hmac"}
+        sorted_params = "&".join(f"{k}={v}" for k, v in sorted(params_to_sign.items()))
+        computed = hmac.new(client_secret.encode(), sorted_params.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(computed, received_hmac):
+            logger.warning(f"HMAC verification failed for shop {shop}")
+            raise HTTPException(status_code=403, detail="HMAC verification failed")
 
     # 3. Exchange code for access token
     import httpx
     token_url = f"https://{shop}/admin/oauth/access_token"
     payload = {
-        "client_id": SHOPIFY_CLIENT_ID,
-        "client_secret": SHOPIFY_CLIENT_SECRET,
+        "client_id": client_id,
+        "client_secret": client_secret,
         "code": code,
     }
 
