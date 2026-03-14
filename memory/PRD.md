@@ -13,63 +13,57 @@ AI operating system for e-commerce product discovery. One-stop shop: find winnin
 
 ## ALL Features — COMPLETED
 
+### Programmatic SEO System (March 14, 2026)
+- **Part 1: Core SEO Pages:** `/trending-products-today`, `/trending-products-this-week`, `/trending-products-this-month` — public pages listing top products by time period with breadcrumbs, time-period nav, category links, product grid
+- **Part 2: Category Trend Pages:** `/category/{slug}` — dynamic pages showing trending products within a specific category, interlinked with other categories
+- **Part 3: Product Page Enhancement:** Added "Market Opportunity" section with supplier costs, retail price, margin analysis, growth rate, TikTok views
+- **Part 4: Internal Linking:** Cross-links between all SEO pages via time-period nav, category pills, footer link grids, and breadcrumb navigation
+- **Part 5: Sitemap Upgrade:** Updated `/api/sitemap.xml` to include all new core SEO pages and 19+ category pages (285 total URLs)
+- **Part 6: Structured Data:** Added Product, BreadcrumbList, and FAQ JSON-LD schema to product pages; added BreadcrumbList and ItemList schema to SEO listing pages
+- **Part 7: Performance:** All API endpoints cached with 5-minute TTL, lazy-loading images
+
 ### Part 1: Shopify OAuth Connection (March 14, 2026)
 - OAuth 2.0 flow: `POST /api/shopify/oauth/init` generates auth URL with state token
 - Callback: `GET /api/shopify/oauth/callback` exchanges code, verifies HMAC, encrypts token
 - Status check: `GET /api/shopify/oauth/status`
 - Disconnect: `DELETE /api/shopify/oauth/disconnect`
 - Frontend: Domain input + "Connect Shopify Store" button on Connections page
-- Requires: SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET env vars from Shopify Partner app
 
 ### Part 2: Image Validation Service (March 14, 2026)
 - Validates product images against supplier source domains
-- Rejects stock/placeholder images (unsplash, via.placeholder.com, etc.)
-- Detects category mismatches (e.g., drill image on ring product)
-- Flags products as `image_missing` when no valid images found
+- Rejects stock/placeholder images
 - Integrated into Shopify export pipeline
 
 ### Part 3: Enhanced Shopify Export (March 14, 2026)
 - Structured HTML descriptions: benefit headline, features list, shipping info
 - Pricing logic: supplier_cost × 2.5, snapped to £x.99 price points
-- Exports as DRAFT (user reviews before publishing)
-- Validates and exports minimum 3 images when available
-- Uses image_validation_service for quality control
+- Exports as DRAFT, validates images
 
 ### Part 4: Beginner Mode (March 14, 2026)
-- BeginnerPanel on dashboard: "New to TrendScout? Start here." with 4 steps
-- Simplified nav labels: Find Products, Ad Ideas, Profit Estimate
-- PageExplanation banners on key pages (dismissible per-page)
+- BeginnerPanel on dashboard with 4 steps
+- Simplified nav labels
+- PageExplanation banners (dismissible)
 
 ### Part 5: Winning Product Indicator (March 14, 2026)
-- SVG score ring on product detail page (0-100)
-- Color-coded verdict: Strong/Good/Worth investigating/High risk
-- Lists strengths and risks with bullet points
-- Suggested test budget based on margins
+- SVG score ring (0-100), color-coded verdict
+- Strengths/risks bullet points, suggested test budget
 
 ### Part 6: Product Launch Playbook (March 14, 2026)
-- `GET /api/launch-playbook/{product_id}` returns full playbook
-- 5 steps: Create page → Review → Create ads → Launch campaign → Evaluate
-- 3 ad angles: Problem→Solution, Demonstration, Before/After
-- Target audiences based on product category
-- Testing budget: £20-80 range, 3 creatives, 48-hour test
+- 5-step launch plan with ad angles and target audiences
+- Testing budget: £20-80 range
 
 ### Part 7: Security (March 14, 2026)
-- Fernet token encryption for stored access tokens
-- HMAC-SHA256 verification on Shopify OAuth callbacks
-- Secure state tokens stored in DB with CSRF validation
-- API rate limiting via Redis middleware
-- All existing: CORS, JWT auth, input validation
+- Fernet encryption, HMAC-SHA256, Redis rate limiting, JWT auth
 
 ### Previous Features (All Completed)
 - Redis Cache, SSE Notifications, Multi-step Ad Pipeline
 - 5 E-Commerce Platforms (Shopify, WooCommerce, Etsy, BigCommerce, Squarespace)
 - 3 Ad Platforms (Meta, TikTok, Google Ads)
 - Onboarding Walkthrough, Quick Launch Flow, Data Trust Banner
-- Scoring Methodology Transparency, Profitability Calculator
-- Connection Health Check
+- Scoring Methodology, Profitability Calculator, Connection Health Check
 
 ## Architecture
-- Backend: FastAPI + MongoDB + Redis (33 route files)
+- Backend: FastAPI + MongoDB + Redis (33+ route files)
 - Frontend: React + Shadcn/UI
 - Security: Fernet encryption, HMAC verification, JWT auth, Redis rate limiting
 
