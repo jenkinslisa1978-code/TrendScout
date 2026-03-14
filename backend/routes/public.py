@@ -521,6 +521,152 @@ async def get_daily_opportunities(
     }
 
 
+# =====================
+# PROGRAMMATIC SEO ENDPOINTS
+# =====================
+
+def _format_product_card(p, rank=None):
+    """Format a product for SEO page display."""
+    margin = p.get("estimated_margin", 0)
+    retail = p.get("estimated_retail_price", 1)
+    margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+    d = {
+        "id": p.get("id"),
+        "slug": slugify(p.get("product_name", "")),
+        "product_name": p.get("product_name", "Unknown"),
+        "category": p.get("category", ""),
+        "image_url": p.get("image_url", ""),
+        "launch_score": p.get("launch_score", 0),
+        "trend_stage": p.get("trend_stage") or p.get("early_trend_label", "Unknown"),
+        "margin_percent": margin_pct,
+        "short_description": (p.get("short_description") or p.get("description") or "")[:160],
+        "supplier_cost": round(p.get("supplier_cost", 0), 2),
+        "retail_price": round(p.get("estimated_retail_price", 0), 2),
+        "tiktok_views": p.get("tiktok_total_views", p.get("tiktok_views", 0)),
+        "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
+    }
+    if rank:
+        d["rank"] = rank
+    return d
+
+
+@public_router.get("/seo/trending-today")
+async def seo_trending_today():
+    """Products trending today, ordered by trend_score."""
+    cached = get_cached("seo_trending_today")
+    if cached:
+        return cached
+
+    products = await db.products.find(
+        {"launch_score": {"$gte": 20}}, {"_id": 0}
+    ).sort("launch_score", -1).limit(100).to_list(100)
+
+    result = {
+        "title": "Trending Products Today",
+        "products": [_format_product_card(p, i + 1) for i, p in enumerate(products)],
+        "count": len(products),
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+    }
+    set_cached("seo_trending_today", result)
+    return result
+
+
+@public_router.get("/seo/trending-this-week")
+async def seo_trending_this_week():
+    """Products trending this week."""
+    cached = get_cached("seo_trending_week")
+    if cached:
+        return cached
+
+    one_week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    products = await db.products.find(
+        {"launch_score": {"$gte": 20}}, {"_id": 0}
+    ).sort("launch_score", -1).limit(100).to_list(100)
+
+    result = {
+        "title": "Trending Products This Week",
+        "products": [_format_product_card(p, i + 1) for i, p in enumerate(products)],
+        "count": len(products),
+        "week_of": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+    }
+    set_cached("seo_trending_week", result)
+    return result
+
+
+@public_router.get("/seo/trending-this-month")
+async def seo_trending_this_month():
+    """Products trending this month."""
+    cached = get_cached("seo_trending_month")
+    if cached:
+        return cached
+
+    products = await db.products.find(
+        {"launch_score": {"$gte": 15}}, {"_id": 0}
+    ).sort("launch_score", -1).limit(100).to_list(100)
+
+    result = {
+        "title": "Trending Products This Month",
+        "products": [_format_product_card(p, i + 1) for i, p in enumerate(products)],
+        "count": len(products),
+        "month": datetime.now(timezone.utc).strftime("%B %Y"),
+    }
+    set_cached("seo_trending_month", result)
+    return result
+
+
+@public_router.get("/seo/category/{category_slug}")
+async def seo_category_page(category_slug: str):
+    """Trending products in a specific category."""
+    cache_key = f"seo_cat_{category_slug}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+
+    # Find the category by slug match
+    all_cats = await db.products.distinct("category")
+    category_name = None
+    for c in all_cats:
+        if c and slugify(c) == category_slug:
+            category_name = c
+            break
+
+    if not category_name:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    products = await db.products.find(
+        {"category": category_name, "launch_score": {"$gte": 15}}, {"_id": 0}
+    ).sort("launch_score", -1).limit(100).to_list(100)
+
+    result = {
+        "category": category_name,
+        "category_slug": category_slug,
+        "title": f"Trending {category_name} Products",
+        "products": [_format_product_card(p, i + 1) for i, p in enumerate(products)],
+        "count": len(products),
+    }
+    set_cached(cache_key, result)
+    return result
+
+
+@public_router.get("/seo/all-categories")
+async def seo_all_categories():
+    """List all categories with counts for sitemap and internal linking."""
+    cached = get_cached("seo_all_cats")
+    if cached:
+        return cached
+
+    pipeline = [
+        {"$match": {"category": {"$ne": None}, "launch_score": {"$gte": 15}}},
+        {"$group": {"_id": "$category", "count": {"$sum": 1}, "avg_score": {"$avg": "$launch_score"}}},
+        {"$sort": {"count": -1}},
+    ]
+    results = await db.products.aggregate(pipeline).to_list(50)
+    categories = [
+        {"name": r["_id"], "slug": slugify(r["_id"]), "count": r["count"], "avg_score": round(r["avg_score"], 1)}
+        for r in results if r["_id"]
+    ]
+    set_cached("seo_all_cats", categories)
+    return categories
 
 
 routers = [public_router, api_router]

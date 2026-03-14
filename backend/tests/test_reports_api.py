@@ -14,7 +14,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ad-quality-hub.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://trend-pages.preview.emergentagent.com').rstrip('/')
 DEMO_AUTH_TOKEN = "Bearer demo_demo-user-id"
 
 
