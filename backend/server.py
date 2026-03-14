@@ -9,8 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 import os
 import logging
@@ -21,7 +20,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # Rate limiter
-limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+from common.limiter import limiter
 
 # Create the main app
 app = FastAPI(title="TrendScout API", version="1.0.0")
@@ -91,6 +90,10 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 # Security headers
 from middleware.security_headers import SecurityHeadersMiddleware
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Structured request logging + X-Request-ID + X-App-Version
+from middleware.request_logging import RequestLoggingMiddleware
+app.add_middleware(RequestLoggingMiddleware)
 
 # CSRF protection (only for cookie-authenticated state-changing routes)
 from middleware.csrf import CSRFMiddleware

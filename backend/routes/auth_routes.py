@@ -8,10 +8,7 @@ import os
 from auth import get_current_user, AuthenticatedUser
 from common.database import db
 from common.helpers import generate_auth_token, generate_refresh_token, verify_refresh_token, set_auth_cookies
-
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-limiter = Limiter(key_func=get_remote_address)
+from common.limiter import limiter
 
 auth_router = APIRouter(prefix="/api/auth")
 
@@ -114,6 +111,7 @@ async def auth_login(request: Request):
 
 
 @auth_router.post("/refresh")
+@limiter.limit("5/minute")
 async def auth_refresh(request: Request):
     """Exchange a valid __Host-refresh cookie for a new short-lived access token."""
     refresh_cookie = request.cookies.get("__Host-refresh")

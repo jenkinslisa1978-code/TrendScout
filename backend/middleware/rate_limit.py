@@ -8,6 +8,7 @@ import os
 from typing import Optional
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 from common.database import db
 from common.redis_cache import cache_incr, cache_get_ttl
 
@@ -25,10 +26,16 @@ PLAN_LIMITS = {
 # Paths exempt from rate limiting
 EXEMPT_PATHS = {
     "/api/health",
-    "/api/auth/login",
-    "/api/auth/register",
-    "/api/auth/forgot-password",
     "/api/scoring/methodology",
+}
+
+# Auth routes with stricter IP-based limits (per-IP, not per-user)
+AUTH_RATE_PATHS = {
+    "/api/auth/login": 10,       # 10 per minute
+    "/api/auth/register": 5,     # 5 per minute
+    "/api/auth/refresh": 10,     # 10 per minute
+    "/api/auth/login-submit": 10,
+    "/api/auth/signup-submit": 5,
 }
 
 WINDOW_SECONDS = 60
@@ -45,6 +52,36 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if not path.startswith("/api") or path in EXEMPT_PATHS:
             return await call_next(request)
 
+        # --- Auth route IP-based rate limiting ---
+        if path in AUTH_RATE_PATHS:
+            client_ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (request.client.host if request.client else "unknown")
+            auth_limit = AUTH_RATE_PATHS[path]
+            auth_key = f"auth_rate:{client_ip}:{path}"
+            count = cache_incr(auth_key, WINDOW_SECONDS)
+            reset_in = cache_get_ttl(auth_key) or WINDOW_SECONDS
+
+            if count > auth_limit:
+                logger.warning(f"Auth rate limit exceeded for {client_ip} on {path}")
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "success": False,
+                        "error": {
+                            "code": "RATE_LIMITED",
+                            "message": "Too many requests. Please try again later.",
+                            "retry_after": reset_in,
+                        },
+                    },
+                    headers={"Retry-After": str(reset_in)},
+                )
+
+            response = await call_next(request)
+            response.headers["X-RateLimit-Limit"] = str(auth_limit)
+            response.headers["X-RateLimit-Remaining"] = str(max(0, auth_limit - count))
+            response.headers["X-RateLimit-Reset"] = str(reset_in)
+            return response
+
+        # --- Per-user, per-plan rate limiting ---
         auth_header = request.headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
             return await call_next(request)
@@ -65,15 +102,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         if count > limit:
             logger.warning(f"Rate limit exceeded for user {user_id} (plan: {plan}, limit: {limit}/min)")
-            raise HTTPException(
+            return JSONResponse(
                 status_code=429,
-                detail={
-                    "error": "Rate limit exceeded",
-                    "plan": plan,
-                    "limit": f"{limit} requests per minute",
-                    "retry_after": reset_in,
-                    "upgrade_message": f"Upgrade your plan for higher limits. Current: {plan} ({limit}/min)",
+                content={
+                    "success": False,
+                    "error": {
+                        "code": "RATE_LIMITED",
+                        "message": f"Rate limit exceeded. Upgrade your plan for higher limits. Current: {plan} ({limit}/min)",
+                        "retry_after": reset_in,
+                    },
                 },
+                headers={"Retry-After": str(reset_in)},
             )
 
         response = await call_next(request)

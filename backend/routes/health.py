@@ -12,11 +12,7 @@ async def root():
 
 @api_router.get("/health")
 async def health_check():
-    return {
-        "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "database": "connected"
-    }
+    return {"status": "ok"}
 
 
 routers = [api_router]
