@@ -43,8 +43,23 @@ AI product validation for ecommerce. Find products worth launching before you sp
 ## Test Credentials
 - Admin: jenkinslisa1978@gmail.com / admin123456
 
+## Bug Fixes
+### P0: Free Trial Upgrade Fix (March 14, 2026)
+- **Root Cause 1:** CSRF middleware blocked POST /api/stripe/create-checkout-session because frontend api.js wasn't sending x-csrf-token header
+- **Root Cause 2:** PricingPage.jsx didn't check response.ok, so error responses were silently swallowed
+- **Fix:** Added getCsrfToken() to api.js to read __Host-csrf cookie and include x-csrf-token header on all authenticated requests. Added response.ok check in PricingPage.jsx with toast.error() for error messages
+- **Verified:** Full flow tested — free user now redirected to Stripe checkout
+
 ## Backlog
+- P0: Shopify OAuth 2.0 Connection (Part 7)
+- P1: Product Launch Score (Part 10)
+- P1: Profit Predictor (Part 11)
 - P1: Add Sentry DSN for production error tracking
 - P1: CSP enforcement after 48hr burn-in
+- P2: Public Trending Products Feed (Part 8)
+- P2: Product SEO Pages (Part 9)
+- P2: Product Decision Panel (Part 12)
+- P2: Launch Playbook (Part 13)
+- P2: Ad Creative Generator (Part 14)
 - P2: Redis pub/sub for multi-instance SSE
 - P3: WebSocket upgrade
