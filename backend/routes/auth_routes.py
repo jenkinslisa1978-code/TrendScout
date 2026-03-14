@@ -182,14 +182,21 @@ async def forgot_password(request: Request):
     site_url = os.environ.get("SITE_URL", request.headers.get("origin", ""))
     reset_link = f"{site_url}/reset-password?token={reset_token}"
 
-    import logging
-    logging.getLogger(__name__).info(f"Password reset link generated for {email}: {reset_link}")
+    # Send email via Resend
+    from services.email_service import send_password_reset_email
+    email_sent = await send_password_reset_email(email, reset_link)
 
-    return {
+    import logging
+    logging.getLogger(__name__).info(f"Password reset requested for {email} (email_sent={email_sent})")
+
+    result = {
         "success": True,
         "message": "If an account with that email exists, a reset link has been sent.",
-        "reset_link": reset_link,
     }
+    # Include reset_link in response for dev/testing (remove in production)
+    if not email_sent:
+        result["reset_link"] = reset_link
+    return result
 
 
 @auth_router.post("/reset-password")
