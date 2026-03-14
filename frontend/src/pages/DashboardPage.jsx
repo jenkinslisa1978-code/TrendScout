@@ -51,6 +51,7 @@ import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import DataTrustBanner from '@/components/dashboard/DataTrustBanner';
 import BeginnerPanel from '@/components/dashboard/BeginnerPanel';
+import ProductDecisionPanel from '@/components/dashboard/ProductDecisionPanel';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
@@ -201,6 +202,9 @@ export default function DashboardPage() {
 
         {/* Beginner Panel */}
         <BeginnerPanel />
+
+        {/* Product Decision Panel — What Should I Do Next? */}
+        <ProductDecisionPanel />
 
         {/* Daily Usage Banner (Free/Starter users) */}
         <DailyUsageBanner />

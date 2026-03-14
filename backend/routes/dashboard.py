@@ -738,4 +738,142 @@ def filter_report_by_access(report: dict, user_plan: str) -> dict:
 
 
 
+@dashboard_router.get("/next-steps")
+async def get_next_steps(
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    Product Decision Panel — personalised "What should I do next?" recommendations.
+    Analyses saved products, stores, activity and returns prioritised actions.
+    """
+    user_id = current_user.user_id
+    profile = await db.profiles.find_one({"id": user_id}, {"_id": 0})
+    plan = profile.get("plan", "free") if profile else "free"
+
+    saved_count = await db.saved_products.count_documents({"user_id": user_id})
+    store_count = await db.stores.count_documents({"user_id": user_id})
+    watchlist_count = await db.watchlist.count_documents({"user_id": user_id})
+    unread_alerts = await db.alerts.count_documents({"user_id": user_id, "is_read": False})
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    usage_doc = await db.daily_usage.find_one(
+        {"user_id": user_id, "date": today}, {"_id": 0}
+    )
+    insights_used = usage_doc.get("insights_used", 0) if usage_doc else 0
+
+    # Top product candidate
+    top_product = await db.products.find_one(
+        {"launch_score": {"$gte": 70}},
+        {"_id": 0, "id": 1, "product_name": 1, "launch_score": 1, "category": 1, "image_url": 1}
+    )
+
+    steps = []
+    # Priority 1: Unread alerts
+    if unread_alerts > 0:
+        steps.append({
+            "id": "check-alerts",
+            "priority": 1,
+            "title": f"Review {unread_alerts} unread alert{'s' if unread_alerts != 1 else ''}",
+            "description": "New trend alerts may contain time-sensitive opportunities.",
+            "action": {"label": "View Alerts", "href": "/dashboard?tab=alerts"},
+            "icon": "bell",
+        })
+
+    # Priority 2: No saved products yet
+    if saved_count == 0:
+        steps.append({
+            "id": "save-first-product",
+            "priority": 2,
+            "title": "Save your first product",
+            "description": "Browse trending products and save ones you want to research further.",
+            "action": {"label": "Discover Products", "href": "/discover"},
+            "icon": "bookmark",
+        })
+
+    # Priority 3: Has saved products but no store
+    if saved_count > 0 and store_count == 0:
+        steps.append({
+            "id": "create-store",
+            "priority": 3,
+            "title": "Create your first store",
+            "description": f"You have {saved_count} saved product{'s' if saved_count != 1 else ''}. Build a store around your best pick.",
+            "action": {"label": "Build Store", "href": "/discover"},
+            "icon": "store",
+        })
+
+    # Priority 4: High-scoring product to launch
+    if top_product:
+        steps.append({
+            "id": "launch-top-product",
+            "priority": 4,
+            "title": f"Launch \"{top_product.get('product_name', 'Top Product')}\"",
+            "description": f"This product scored {top_product.get('launch_score', 0)}/100 — a strong launch candidate.",
+            "action": {"label": "Start Launch Wizard", "href": f"/launch/{top_product['id']}"},
+            "icon": "rocket",
+            "product": {
+                "id": top_product.get("id"),
+                "name": top_product.get("product_name"),
+                "score": top_product.get("launch_score", 0),
+                "category": top_product.get("category"),
+                "image_url": top_product.get("image_url"),
+            },
+        })
+
+    # Priority 5: Empty watchlist
+    if watchlist_count == 0:
+        steps.append({
+            "id": "start-watchlist",
+            "priority": 5,
+            "title": "Start your watchlist",
+            "description": "Add products to your watchlist to track price and trend changes over time.",
+            "action": {"label": "Browse Products", "href": "/discover"},
+            "icon": "eye",
+        })
+
+    # Priority 6: Upgrade nudge for free users
+    if plan == "free" and insights_used >= 2:
+        steps.append({
+            "id": "upgrade-plan",
+            "priority": 6,
+            "title": "Unlock unlimited insights",
+            "description": "You've used your free daily insights. Upgrade to keep discovering.",
+            "action": {"label": "See Plans", "href": "/pricing"},
+            "icon": "zap",
+        })
+
+    # Priority 7: Explore ads (for pro/elite)
+    if plan in ("pro", "elite") and store_count > 0:
+        steps.append({
+            "id": "generate-ads",
+            "priority": 7,
+            "title": "Generate ad creatives",
+            "description": "Use the AI ad generator to create high-converting creatives for your store.",
+            "action": {"label": "Ad Generator", "href": "/optimization"},
+            "icon": "sparkles",
+        })
+
+    # Always: daily discovery nudge
+    if not any(s["id"] == "save-first-product" for s in steps):
+        steps.append({
+            "id": "daily-discovery",
+            "priority": 8,
+            "title": "Explore today's trending products",
+            "description": "New products are scored daily. See what's trending now.",
+            "action": {"label": "Discover", "href": "/discover"},
+            "icon": "trending-up",
+        })
+
+    steps.sort(key=lambda s: s["priority"])
+
+    return {
+        "steps": steps[:5],
+        "stats": {
+            "saved_products": saved_count,
+            "stores": store_count,
+            "watchlist": watchlist_count,
+            "insights_used_today": insights_used,
+        },
+    }
+
+
 routers = [dashboard_router]
