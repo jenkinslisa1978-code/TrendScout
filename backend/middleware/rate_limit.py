@@ -36,6 +36,8 @@ AUTH_RATE_PATHS = {
     "/api/auth/refresh": 10,     # 10 per minute
     "/api/auth/login-submit": 10,
     "/api/auth/signup-submit": 5,
+    "/api/auth/forgot-password": 5,
+    "/api/auth/reset-password": 5,
 }
 
 WINDOW_SECONDS = 60

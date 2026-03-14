@@ -155,3 +155,72 @@ test('/trending-products-today page loads with products', async ({ page }) => {
   await page.waitForLoadState('networkidle');
   await expect(page.locator('[data-testid="seo-trending-page"]')).toBeVisible({ timeout: 10000 });
 });
+
+// --- Forgot/Reset password ---
+
+test('forgot password flow works', async ({ request }) => {
+  // Request reset
+  const forgotRes = await request.post(`${API}/api/auth/forgot-password`, {
+    data: { email: 'jenkinslisa1978@gmail.com' },
+  });
+  expect(forgotRes.status()).toBe(200);
+  const forgotBody = await forgotRes.json();
+  expect(forgotBody.success).toBe(true);
+  expect(forgotBody.reset_link).toBeDefined();
+
+  // Extract token
+  const token = forgotBody.reset_link.split('token=')[1];
+  expect(token).toBeTruthy();
+
+  // Reset with bad password (too short)
+  const badRes = await request.post(`${API}/api/auth/reset-password`, {
+    data: { token, password: 'short' },
+  });
+  expect(badRes.status()).toBe(400);
+
+  // Reset with valid password
+  const resetRes = await request.post(`${API}/api/auth/reset-password`, {
+    data: { token, password: 'testpassword1' },
+  });
+  expect(resetRes.status()).toBe(200);
+  const resetBody = await resetRes.json();
+  expect(resetBody.success).toBe(true);
+
+  // Login with new password
+  const loginRes = await request.post(`${API}/api/auth/login`, {
+    data: { email: 'jenkinslisa1978@gmail.com', password: 'testpassword1' },
+  });
+  expect(loginRes.status()).toBe(200);
+
+  // Restore original password
+  const restore = await request.post(`${API}/api/auth/forgot-password`, {
+    data: { email: 'jenkinslisa1978@gmail.com' },
+  });
+  const restoreBody = await restore.json();
+  const restoreToken = restoreBody.reset_link.split('token=')[1];
+  await request.post(`${API}/api/auth/reset-password`, {
+    data: { token: restoreToken, password: 'admin123456' },
+  });
+});
+
+test('/forgot-password page renders', async ({ page }) => {
+  await page.goto('/forgot-password');
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('[data-testid="forgot-password-form"]')).toBeVisible({ timeout: 5000 });
+});
+
+test('/help page renders with FAQ', async ({ page }) => {
+  await page.goto('/help');
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('[data-testid="help-page"]')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('[data-testid="faq-section"]')).toBeVisible();
+});
+
+test('/demo page renders with examples', async ({ page }) => {
+  await page.goto('/demo');
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('[data-testid="demo-page"]')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('[data-testid="demo-analysis"]')).toBeVisible();
+  await expect(page.locator('[data-testid="demo-launch-plan"]')).toBeVisible();
+  await expect(page.locator('[data-testid="demo-ad-ideas"]')).toBeVisible();
+});

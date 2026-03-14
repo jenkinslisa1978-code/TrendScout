@@ -63,6 +63,8 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import PlatformConnectionsPage from "@/pages/PlatformConnectionsPage";
 import HelpPage from "@/pages/HelpPage";
 import DemoPage from "@/pages/DemoPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -131,6 +133,8 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/trending-products" element={<TrendingProductsPage />} />
       <Route path="/trending/:slug" element={<TrendingProductPage />} />

@@ -147,6 +147,91 @@ async def auth_logout():
     return response
 
 
+# --- Forgot / Reset Password ---
+
+@auth_router.post("/forgot-password")
+@limiter.limit("5/minute")
+async def forgot_password(request: Request):
+    """Generate a password reset token. Returns the reset link in response (no email service configured)."""
+    import secrets
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
+
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Valid email is required")
+
+    user = await db.auth_users.find_one({"email": email}, {"_id": 0, "id": 1, "email": 1})
+
+    # Always return success to prevent email enumeration
+    if not user:
+        return {"success": True, "message": "If an account with that email exists, a reset link has been sent."}
+
+    reset_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc).isoformat()
+
+    # Store reset token (expires in 1 hour)
+    await db.password_resets.delete_many({"user_id": user["id"]})
+    await db.password_resets.insert_one({
+        "user_id": user["id"],
+        "email": email,
+        "token": reset_token,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at_epoch": int(datetime.now(timezone.utc).timestamp()) + 3600,
+    })
+
+    site_url = os.environ.get("SITE_URL", request.headers.get("origin", ""))
+    reset_link = f"{site_url}/reset-password?token={reset_token}"
+
+    import logging
+    logging.getLogger(__name__).info(f"Password reset link generated for {email}: {reset_link}")
+
+    return {
+        "success": True,
+        "message": "If an account with that email exists, a reset link has been sent.",
+        "reset_link": reset_link,
+    }
+
+
+@auth_router.post("/reset-password")
+@limiter.limit("5/minute")
+async def reset_password(request: Request):
+    """Reset password using a valid reset token."""
+    import bcrypt
+    body = await request.json()
+    token = body.get("token", "").strip()
+    new_password = body.get("password", "")
+
+    if not token:
+        raise HTTPException(status_code=400, detail="Reset token is required")
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if not any(c.isdigit() for c in new_password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one number")
+
+    # Find reset record
+    reset = await db.password_resets.find_one({"token": token}, {"_id": 0})
+    if not reset:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    # Check expiry
+    import time
+    if reset.get("expires_at_epoch", 0) < int(time.time()):
+        await db.password_resets.delete_one({"token": token})
+        raise HTTPException(status_code=400, detail="Reset token has expired. Please request a new one.")
+
+    # Update password
+    password_hash = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+    await db.auth_users.update_one(
+        {"id": reset["user_id"]},
+        {"$set": {"password_hash": password_hash}},
+    )
+
+    # Clean up token
+    await db.password_resets.delete_many({"user_id": reset["user_id"]})
+
+    return {"success": True, "message": "Password has been reset. You can now log in."}
+
+
 # --- Server-rendered auth forms (work without JavaScript) ---
 
 _FORM_STYLE = """
