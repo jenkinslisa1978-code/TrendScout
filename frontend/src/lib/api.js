@@ -33,6 +33,14 @@ const tryRefreshToken = async () => {
 };
 
 /**
+ * Read the __Host-csrf cookie value for CSRF double-submit
+ */
+const getCsrfToken = () => {
+  const match = document.cookie.match(/(?:^|;\s*)__Host-csrf=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
+/**
  * Get headers for authenticated API requests
  */
 export const getAuthHeaders = async () => {
@@ -40,6 +48,10 @@ export const getAuthHeaders = async () => {
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+  const csrf = getCsrfToken();
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
   }
   return headers;
 };

@@ -98,6 +98,11 @@ export default function PricingPage() {
         success_url: `${window.location.origin}/pricing?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${window.location.origin}/pricing`,
       });
+      if (!response.ok) {
+        const msg = response.data?.error?.message || response.data?.detail || 'Failed to start checkout';
+        toast.error(msg);
+        return;
+      }
       if (response.data.demo_mode) {
         toast.info('Demo mode: Stripe checkout simulated');
         navigate('/dashboard');
