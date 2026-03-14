@@ -60,6 +60,8 @@ import ProductProfitCalculator from '@/components/ProductProfitCalculator';
 import ShareableProductCard from '@/components/ShareableProductCard';
 import ScoringMethodology from '@/components/ScoringMethodology';
 import ProfitabilityCalculator from '@/components/ProfitabilityCalculator';
+import WinningProductIndicator from '@/components/WinningProductIndicator';
+import ProductLaunchPlaybook from '@/components/ProductLaunchPlaybook';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -388,6 +390,9 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
+        {/* Winning Product Indicator (Part 5) */}
+        <WinningProductIndicator product={product} />
+
         {/* Launch Recommendation - KEY DECISION CARD */}
         {intelligenceData && (
           <Card className="border-2 border-indigo-200 bg-indigo-50/30 shadow-sm" data-testid="launch-recommendation">
@@ -622,6 +627,9 @@ export default function ProductDetailPage() {
 
         {/* Profitability Calculator */}
         <ProfitabilityCalculator productId={id} productName={product?.product_name} />
+
+        {/* Launch Playbook */}
+        <ProductLaunchPlaybook productId={id} />
 
         {/* Saturation Radar + Competitor Intelligence — side by side */}
         <div className="grid lg:grid-cols-2 gap-6">

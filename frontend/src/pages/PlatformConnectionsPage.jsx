@@ -88,6 +88,15 @@ export default function PlatformConnectionsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Check for Shopify OAuth callback success
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('shopify') === 'connected') {
+      window.history.replaceState({}, '', window.location.pathname);
+      fetchData();
+    }
+  }, [fetchData]);
+
   const openConnect = (type, platformKey, platformData) => {
     setConnectModal({ type, key: platformKey, ...platformData });
     setFormData({});
@@ -117,10 +126,34 @@ export default function PlatformConnectionsPage() {
 
   const handleDisconnect = async (type, platform) => {
     try {
+      if (platform === 'shopify') {
+        await apiDelete('/api/shopify/oauth/disconnect');
+      }
       await apiDelete(`/api/connections/${type}/${platform}`);
       fetchData();
     } catch (err) {
       console.error('Disconnect failed:', err);
+    }
+  };
+
+  const [shopifyDomain, setShopifyDomain] = useState('');
+  const [shopifyOAuthLoading, setShopifyOAuthLoading] = useState(false);
+
+  const handleShopifyOAuth = async () => {
+    if (!shopifyDomain.trim()) return;
+    setShopifyOAuthLoading(true);
+    try {
+      const res = await apiPost('/api/shopify/oauth/init', { shop_domain: shopifyDomain.trim() });
+      const data = await res.json();
+      if (data.oauth_url) {
+        window.location.href = data.oauth_url;
+      } else {
+        setError(data.detail || 'Failed to initiate Shopify connection');
+        setShopifyOAuthLoading(false);
+      }
+    } catch {
+      setError('Failed to connect to Shopify. Please try again.');
+      setShopifyOAuthLoading(false);
     }
   };
 
@@ -231,6 +264,30 @@ export default function PlatformConnectionsPage() {
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </>
+                      ) : key === 'shopify' ? (
+                        <div className="w-full space-y-2">
+                          <input
+                            type="text"
+                            placeholder="your-store.myshopify.com"
+                            value={shopifyDomain}
+                            onChange={(e) => setShopifyDomain(e.target.value)}
+                            className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            data-testid="shopify-domain-input"
+                          />
+                          <Button
+                            size="sm"
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs"
+                            onClick={handleShopifyOAuth}
+                            disabled={shopifyOAuthLoading || !shopifyDomain.trim()}
+                            data-testid="connect-shopify-oauth"
+                          >
+                            {shopifyOAuthLoading ? (
+                              <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Connecting...</>
+                            ) : (
+                              <><Plus className="h-3 w-3 mr-1" /> Connect Shopify Store</>
+                            )}
+                          </Button>
+                        </div>
                       ) : (
                         <Button
                           size="sm"

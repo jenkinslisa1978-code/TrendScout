@@ -50,6 +50,7 @@ import QuickLaunchFlow from '@/components/dashboard/QuickLaunchFlow';
 import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import DataTrustBanner from '@/components/dashboard/DataTrustBanner';
+import BeginnerPanel from '@/components/dashboard/BeginnerPanel';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
@@ -197,6 +198,9 @@ export default function DashboardPage() {
 
         {/* Data Trust Banner */}
         <DataTrustBanner />
+
+        {/* Beginner Panel */}
+        <BeginnerPanel />
 
         {/* Daily Usage Banner (Free/Starter users) */}
         <DailyUsageBanner />

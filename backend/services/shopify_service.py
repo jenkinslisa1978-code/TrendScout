@@ -26,9 +26,9 @@ from urllib.parse import urlencode
 import aiohttp
 
 # Configuration - set via environment variables
-SHOPIFY_API_KEY = os.environ.get('SHOPIFY_API_KEY', '')
-SHOPIFY_API_SECRET = os.environ.get('SHOPIFY_API_SECRET', '')
-SHOPIFY_SCOPES = 'write_products,read_products,write_inventory,read_inventory'
+SHOPIFY_API_KEY = os.environ.get('SHOPIFY_CLIENT_ID', os.environ.get('SHOPIFY_API_KEY', ''))
+SHOPIFY_API_SECRET = os.environ.get('SHOPIFY_CLIENT_SECRET', os.environ.get('SHOPIFY_API_SECRET', ''))
+SHOPIFY_SCOPES = os.environ.get('SHOPIFY_SCOPES', 'write_products,read_products,write_inventory,read_inventory')
 SHOPIFY_API_VERSION = '2024-01'
 
 

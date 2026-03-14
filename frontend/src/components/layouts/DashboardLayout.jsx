@@ -32,17 +32,18 @@ import {
   Link2,
 } from 'lucide-react';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
+import PageExplanation from '@/components/PageExplanation';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Discover', href: '/discover', icon: Search },
-  { name: 'Reports', href: '/reports', icon: FileText },
+  { name: 'Find Products', href: '/discover', icon: Search },
   { name: 'My Stores', href: '/stores', icon: Store },
+  { name: 'Ad Ideas', href: '/ad-tests', icon: Zap },
   { name: 'Connections', href: '/settings/connections', icon: Link2 },
+  { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Competitors', href: '/competitor-tracker', icon: Radar },
   { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
-  { name: 'Outcomes', href: '/outcomes', icon: Target },
-  { name: 'Ad Tests', href: '/ad-tests', icon: Zap },
+  { name: 'Profit Estimate', href: '/outcomes', icon: Target },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
   { name: 'Referrals', href: '/referrals', icon: Gift },
 ];
@@ -238,6 +239,7 @@ export default function DashboardLayout({ children }) {
       {/* Main content */}
       <main className="ml-72 min-h-screen">
         <div className="p-8 animate-fade-in">
+          <PageExplanation pathname={location.pathname} />
           {children}
         </div>
       </main>

@@ -988,4 +988,130 @@ async def calculate_profitability(req: ProfitCalcRequest):
     }
 
 
+@api_router.get("/launch-playbook/{product_id}")
+async def get_launch_playbook(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Generate a step-by-step launch playbook for a product.
+    Tells the user exactly what to do next.
+    """
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    name = product.get("product_name", "This product")
+    category = product.get("category", "general")
+    retail_price = float(product.get("estimated_retail_price", 0))
+    supplier_cost = float(product.get("supplier_cost", 0))
+    margin = retail_price - supplier_cost
+    score = product.get("launch_score") or product.get("trend_score", 50)
+    competition = product.get("competition_level", "moderate")
+
+    # Budget recommendation based on margin and score
+    if margin > 15:
+        budget_low, budget_high = 50, 80
+    elif margin > 8:
+        budget_low, budget_high = 40, 60
+    else:
+        budget_low, budget_high = 20, 40
+
+    return {
+        "product_name": name,
+        "product_id": product_id,
+        "launch_steps": [
+            {
+                "step": 1,
+                "title": "Create your product page",
+                "description": f"Import {name} to your Shopify store. Use the 'Export to Shopify' button — we'll generate a professional description, set pricing at £{retail_price:.2f}, and add validated images.",
+                "action": "export_to_shopify",
+                "estimated_time": "2 minutes",
+            },
+            {
+                "step": 2,
+                "title": "Review your listing",
+                "description": "Products are exported as DRAFT. Open your Shopify admin, review the description, images, and pricing. Make any tweaks, then publish when ready.",
+                "action": "review_in_shopify",
+                "estimated_time": "5 minutes",
+            },
+            {
+                "step": 3,
+                "title": "Create 3 ad creatives",
+                "description": "Use the 'Generate Ads' button to create ad copy. We'll generate 3 different angles: a problem-solution ad, a product demonstration, and a curiosity hook.",
+                "action": "generate_ads",
+                "estimated_time": "3 minutes",
+            },
+            {
+                "step": 4,
+                "title": "Launch TikTok test campaign",
+                "description": f"Post your ad creatives to TikTok or Meta. Start with a £{budget_low}-£{budget_high} test budget over 48 hours. Target the suggested audiences below.",
+                "action": "launch_campaign",
+                "estimated_time": "10 minutes",
+            },
+            {
+                "step": 5,
+                "title": "Evaluate results after 48 hours",
+                "description": "After 48 hours, check your ad performance. If Cost Per Purchase is below your margin (£{:.2f}), scale up. If not, try different creatives or audiences.".format(margin),
+                "action": "evaluate",
+                "estimated_time": "48 hours wait",
+            },
+        ],
+        "ad_angles": [
+            {
+                "angle": "Problem → Solution",
+                "description": f"Show the frustration without {name}, then the relief when using it.",
+                "example": f"Tired of [problem]? {name} fixes it in seconds.",
+            },
+            {
+                "angle": "Product Demonstration",
+                "description": f"Satisfying close-up of {name} in action. Let the product sell itself.",
+                "example": f"Watch how {name} works — no commentary needed.",
+            },
+            {
+                "angle": "Before/After Transformation",
+                "description": f"Show the dramatic difference {name} makes. Curiosity-driven hook.",
+                "example": f"I can't believe this is the same [item] after using {name}.",
+            },
+        ],
+        "audience_suggestions": _get_audience_suggestions(category, name),
+        "testing_budget": {
+            "recommended_daily": f"£{budget_low // 2}-£{budget_high // 2}",
+            "total_test_budget": f"£{budget_low}-£{budget_high}",
+            "creatives": 3,
+            "test_period": "48 hours",
+            "note": "Start small. If profitable after 48h, double the budget every 2 days.",
+        },
+    }
+
+
+def _get_audience_suggestions(category: str, name: str):
+    """Generate audience suggestions based on category."""
+    base = [
+        {"name": "TikTok impulse shoppers", "age": "18-34", "interests": "Online shopping, trending products"},
+    ]
+    cat = category.lower()
+    if "home" in cat or "kitchen" in cat or "garden" in cat:
+        base.extend([
+            {"name": "Home improvement enthusiasts", "age": "25-55", "interests": "DIY, home decor, renovation"},
+            {"name": "New homeowners", "age": "25-45", "interests": "Interior design, home organisation"},
+        ])
+    elif "beauty" in cat or "health" in cat or "fitness" in cat:
+        base.extend([
+            {"name": "Beauty & wellness fans", "age": "18-40", "interests": "Skincare, self-care, wellness"},
+            {"name": "Fitness enthusiasts", "age": "20-45", "interests": "Gym, healthy living, body care"},
+        ])
+    elif "tech" in cat or "electronic" in cat or "gadget" in cat:
+        base.extend([
+            {"name": "Tech early adopters", "age": "18-45", "interests": "Gadgets, tech reviews, innovation"},
+            {"name": "Productivity optimisers", "age": "25-50", "interests": "Productivity, smart home, efficiency"},
+        ])
+    else:
+        base.extend([
+            {"name": "General online shoppers", "age": "18-50", "interests": f"{category}, trending products"},
+            {"name": "Gift buyers", "age": "25-55", "interests": "Unique gifts, novelty items"},
+        ])
+    return base
+
+
 routers = [api_router]

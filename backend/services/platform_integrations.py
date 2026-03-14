@@ -5,12 +5,63 @@ Uses httpx for async HTTP calls to external APIs.
 import httpx
 import logging
 import base64
+import math
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
+from services.image_validation_service import get_validated_images
 
 logger = logging.getLogger(__name__)
 
 SHOPIFY_API_VERSION = "2024-07"
+
+
+def _calculate_retail_price(supplier_cost: float) -> str:
+    """Calculate retail price from supplier cost using 2.5x markup, rounded to x.99"""
+    if not supplier_cost or supplier_cost <= 0:
+        return "19.99"
+    raw = supplier_cost * 2.5
+    rounded = math.ceil(raw) - 0.01
+    # Snap to nearest friendly price point
+    if rounded < 15:
+        return "14.99"
+    elif rounded < 20:
+        return "19.99"
+    elif rounded < 25:
+        return "24.99"
+    elif rounded < 30:
+        return "29.99"
+    elif rounded < 40:
+        return "39.99"
+    elif rounded < 50:
+        return "49.99"
+    else:
+        return f"{math.ceil(rounded) - 0.01:.2f}"
+
+
+def _generate_product_description(prod: Dict[str, Any]) -> str:
+    """Generate a structured Shopify-ready HTML description."""
+    name = prod.get("product_name") or prod.get("title", "Product")
+    desc = prod.get("description") or prod.get("short_description", "")
+    category = prod.get("category", "")
+    features = prod.get("key_features", [])
+
+    # Build feature bullets from description or generate generic ones
+    if not features and desc:
+        sentences = [s.strip() for s in desc.replace(". ", ".\n").split("\n") if len(s.strip()) > 10]
+        features = sentences[:5]
+
+    html = f'<h3>Why Customers Love {name}</h3>\n'
+    if features:
+        html += '<ul>\n'
+        for f in features[:5]:
+            html += f'  <li>{f}</li>\n'
+        html += '</ul>\n'
+    if desc:
+        html += f'<p>{desc}</p>\n'
+    html += f'<p><strong>Category:</strong> {category}</p>\n' if category else ''
+    html += '<h4>Shipping Information</h4>\n'
+    html += '<p>Orders are processed within 1-3 business days. Standard delivery takes 7-14 business days.</p>\n'
+    return html
 
 
 # ==================== E-COMMERCE STORE INTEGRATIONS ====================
@@ -21,7 +72,7 @@ async def publish_to_shopify(
     product: Dict[str, Any],
     products: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    """Create a product on the user's Shopify store via Admin REST API"""
+    """Create professional products on the user's Shopify store via Admin REST API."""
     base_url = store_url.rstrip("/")
     if not base_url.startswith("http"):
         base_url = f"https://{base_url}"
@@ -34,28 +85,35 @@ async def publish_to_shopify(
 
     results = []
     async with httpx.AsyncClient(timeout=30) as client:
-        for prod in products[:10]:  # Limit to 10 products per batch
+        for prod in products[:10]:
+            title = prod.get("product_name") or prod.get("title", "Product")
+            supplier_cost = float(prod.get("supplier_cost", 0) or 0)
+            retail_price = _calculate_retail_price(supplier_cost)
+            body_html = _generate_product_description(prod)
+
+            # Get validated images (min 3)
+            validated_images = get_validated_images(prod, min_count=3)
+            shopify_images = [{"src": img_url} for img_url in validated_images]
+
             product_data = {
                 "product": {
-                    "title": prod.get("product_name") or prod.get("title", "Product"),
-                    "body_html": prod.get("description") or prod.get("body_html", ""),
-                    "vendor": "TrendScout",
+                    "title": title,
+                    "body_html": body_html,
+                    "vendor": prod.get("vendor", "TrendScout"),
                     "product_type": prod.get("category", "General"),
-                    "status": "active",
+                    "status": "draft",
                     "variants": [
                         {
-                            "price": str(prod.get("price") or prod.get("estimated_retail_price", "0")),
+                            "price": retail_price,
                             "sku": prod.get("sku", ""),
                             "inventory_management": "shopify",
                             "inventory_quantity": 100,
+                            "requires_shipping": True,
                         }
                     ],
-                    "images": [],
+                    "images": shopify_images,
                 }
             }
-
-            if prod.get("image_url"):
-                product_data["product"]["images"].append({"src": prod["image_url"]})
 
             try:
                 response = await client.post(url, json=product_data, headers=headers)
@@ -68,8 +126,11 @@ async def publish_to_shopify(
                         "title": shopify_product.get("title"),
                         "handle": shopify_product.get("handle"),
                         "url": f"{base_url}/products/{shopify_product.get('handle', '')}",
+                        "status": "draft",
+                        "price": retail_price,
+                        "images_count": len(shopify_images),
                     })
-                    logger.info(f"Created Shopify product: {shopify_product.get('title')}")
+                    logger.info(f"Created Shopify product (draft): {shopify_product.get('title')}")
                 else:
                     error_msg = response.text[:200]
                     results.append({
@@ -88,6 +149,7 @@ async def publish_to_shopify(
         "total_created": len(successful),
         "products": results,
         "store_url": base_url,
+        "note": "Products created as DRAFT. Review in your Shopify admin before publishing.",
     }
 
 
