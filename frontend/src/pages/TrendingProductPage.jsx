@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   TrendingUp, ArrowRight, Package, Radar, Lock, ArrowLeft,
   BarChart3, Eye, DollarSign, Truck, ShieldCheck, Loader2,
-  ChevronLeft, ChevronRight, Flame, Zap, Clock, ZoomIn,
+  ChevronLeft, ChevronRight, Flame, Zap, Clock, ZoomIn, Tag,
 } from 'lucide-react';
 import { API_URL } from '@/lib/config';
 
@@ -82,10 +82,44 @@ export default function TrendingProductPage() {
       '@type': 'Offer',
       price: product.estimated_retail_price,
       priceCurrency: 'GBP',
+      availability: 'https://schema.org/InStock',
     } : undefined,
   };
 
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Trending Products', item: `${siteUrl}/trending-products` },
+      ...(product.category ? [{ '@type': 'ListItem', position: 3, name: product.category, item: `${siteUrl}/category/${encodeURIComponent(product.category.toLowerCase().replace(/\s+/g, '-'))}` }] : []),
+      { '@type': 'ListItem', position: product.category ? 4 : 3, name: product.product_name, item: `${siteUrl}/trending/${slug}` },
+    ],
+  };
+
   const confidenceLabel = product.launch_score >= 75 ? 'High Confidence' : product.launch_score >= 50 ? 'Emerging Opportunity' : 'Experimental';
+
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `What is the TrendScout score for ${product.product_name}?`,
+        acceptedAnswer: { '@type': 'Answer', text: `${product.product_name} has a TrendScout Launch Score of ${product.launch_score}/100, placing it in the ${product.trend_stage} stage.` },
+      },
+      {
+        '@type': 'Question',
+        name: `What is the profit margin for ${product.product_name}?`,
+        acceptedAnswer: { '@type': 'Answer', text: `The estimated profit margin is ${product.margin_percent}%. Supplier cost is £${product.supplier_cost} with an estimated retail price of £${product.estimated_retail_price}.` },
+      },
+      {
+        '@type': 'Question',
+        name: `Is ${product.product_name} a good product to sell?`,
+        acceptedAnswer: { '@type': 'Answer', text: `With a Launch Score of ${product.launch_score}/100${product.success_probability > 0 ? ` and a ${product.success_probability}% success probability` : ''}, ${product.product_name} is rated as "${confidenceLabel}" by our AI analysis.` },
+      },
+    ],
+  };
   const confidenceColor = product.launch_score >= 75 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : product.launch_score >= 50 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-slate-400 bg-slate-500/10 border-slate-500/20';
   const CIcon = product.launch_score >= 75 ? Flame : product.launch_score >= 50 ? Zap : Clock;
 
@@ -113,6 +147,8 @@ export default function TrendingProductPage() {
         <meta name="twitter:description" content={seoDesc} />
         <link rel="canonical" href={`${siteUrl}/trending/${slug}`} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(breadcrumbLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(faqLd)}</script>
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" data-testid="trending-product-page">
@@ -143,11 +179,21 @@ export default function TrendingProductPage() {
         {/* Content */}
         <div className="mx-auto max-w-5xl px-6 py-12">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-slate-500 mb-8">
+          <nav className="flex items-center gap-2 text-sm text-slate-500 mb-8" data-testid="breadcrumb">
+            <Link to="/" className="hover:text-indigo-400 transition-colors">Home</Link>
+            <span className="text-slate-600">/</span>
             <Link to="/trending-products" className="hover:text-indigo-400 transition-colors">Trending Products</Link>
-            <span>/</span>
+            {product.category && (
+              <>
+                <span className="text-slate-600">/</span>
+                <Link to={`/category/${encodeURIComponent(product.category.toLowerCase().replace(/\s+/g, '-'))}`} className="hover:text-indigo-400 transition-colors">
+                  {product.category}
+                </Link>
+              </>
+            )}
+            <span className="text-slate-600">/</span>
             <span className="text-slate-400 truncate max-w-[300px]">{product.product_name}</span>
-          </div>
+          </nav>
 
           <div className="grid lg:grid-cols-5 gap-8">
             {/* Left: Image Gallery + Score */}
@@ -234,6 +280,49 @@ export default function TrendingProductPage() {
                 </CardContent>
               </Card>
 
+              {/* Market Opportunity */}
+              <Card className="bg-white/[0.04] border-white/[0.06]" data-testid="market-opportunity-card">
+                <CardContent className="p-5">
+                  <h2 className="font-semibold text-white text-sm mb-3 flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-emerald-400" />
+                    Market Opportunity
+                  </h2>
+                  <div className="space-y-3 text-sm text-slate-400">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/[0.04] rounded-lg p-3">
+                        <p className="text-xs text-slate-500">Supplier Cost</p>
+                        <p className="text-lg font-bold text-white">{product.supplier_cost > 0 ? `£${product.supplier_cost}` : '—'}</p>
+                      </div>
+                      <div className="bg-white/[0.04] rounded-lg p-3">
+                        <p className="text-xs text-slate-500">Est. Retail Price</p>
+                        <p className="text-lg font-bold text-white">{product.estimated_retail_price > 0 ? `£${product.estimated_retail_price}` : '—'}</p>
+                      </div>
+                    </div>
+                    {product.margin_percent > 0 && (
+                      <p>
+                        With a <span className="font-semibold text-emerald-400">{product.margin_percent}% profit margin</span>,
+                        sellers can expect approximately <span className="text-white font-semibold">
+                        £{(product.estimated_retail_price - product.supplier_cost).toFixed(2)}
+                        </span> profit per unit sold.
+                      </p>
+                    )}
+                    {product.growth_rate > 0 && (
+                      <p>
+                        Currently showing <span className="text-amber-400 font-semibold">{product.growth_rate}% growth</span>,
+                        indicating strong market demand and trending momentum.
+                      </p>
+                    )}
+                    {product.tiktok_views > 0 && (
+                      <p>
+                        This product has accumulated <span className="text-rose-400 font-semibold">
+                        {product.tiktok_views >= 1e6 ? `${(product.tiktok_views / 1e6).toFixed(1)}M` : product.tiktok_views >= 1e3 ? `${(product.tiktok_views / 1e3).toFixed(0)}K` : product.tiktok_views}
+                        </span> TikTok views, demonstrating viral potential and social proof.
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Locked CTA */}
               <div className="bg-gradient-to-r from-indigo-600/20 to-violet-600/20 border border-indigo-500/20 rounded-2xl p-6" data-testid="unlock-cta">
                 <div className="flex items-start gap-3">
@@ -298,6 +387,43 @@ export default function TrendingProductPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Internal SEO Links */}
+        <div className="mx-auto max-w-5xl px-6 mt-16 pt-8 border-t border-white/5" data-testid="seo-internal-links">
+          <h2 className="font-semibold text-white text-sm mb-4">Explore More Trending Products</h2>
+          <div className="grid sm:grid-cols-3 gap-6">
+            <div>
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">By Time Period</h3>
+              <ul className="space-y-1.5">
+                <li><Link to="/trending-products-today" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Trending Today</Link></li>
+                <li><Link to="/trending-products-this-week" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Trending This Week</Link></li>
+                <li><Link to="/trending-products-this-month" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Trending This Month</Link></li>
+                <li><Link to="/top-trending-products" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Top Trending Leaderboard</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Popular Categories</h3>
+              <ul className="space-y-1.5">
+                {['beauty', 'health', 'home', 'electronics', 'fashion'].map(cat => (
+                  <li key={cat}>
+                    <Link to={`/category/${cat}`} className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors capitalize">
+                      {cat} Products
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Resources</h3>
+              <ul className="space-y-1.5">
+                <li><Link to="/trending-products" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">All Trending Products</Link></li>
+                <li><Link to="/blog" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Blog</Link></li>
+                <li><Link to="/tools" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Free Tools</Link></li>
+                <li><Link to="/pricing" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Pricing</Link></li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

@@ -18,8 +18,13 @@ SITE_BASE = "https://trendscout.click"
 STATIC_PAGES = [
     {"loc": "/", "priority": "1.0", "changefreq": "weekly"},
     {"loc": "/trending-products", "priority": "0.9", "changefreq": "daily"},
+    {"loc": "/trending-products-today", "priority": "0.9", "changefreq": "daily"},
+    {"loc": "/trending-products-this-week", "priority": "0.8", "changefreq": "weekly"},
+    {"loc": "/trending-products-this-month", "priority": "0.8", "changefreq": "monthly"},
+    {"loc": "/top-trending-products", "priority": "0.9", "changefreq": "daily"},
     {"loc": "/pricing", "priority": "0.7", "changefreq": "monthly"},
     {"loc": "/tools", "priority": "0.6", "changefreq": "monthly"},
+    {"loc": "/blog", "priority": "0.7", "changefreq": "weekly"},
     {"loc": "/login", "priority": "0.3", "changefreq": "monthly"},
     {"loc": "/register", "priority": "0.3", "changefreq": "monthly"},
     {"loc": "/reports/weekly-winning-products", "priority": "0.7", "changefreq": "weekly"},
@@ -48,8 +53,25 @@ async def _build_sitemap_xml() -> str:
     # Dynamic product pages — include all trending products
     products = await db.products.find(
         {"launch_score": {"$gte": 20}},
-        {"_id": 0, "id": 1, "product_name": 1, "last_updated": 1, "launch_score": 1},
+        {"_id": 0, "id": 1, "product_name": 1, "last_updated": 1, "launch_score": 1, "category": 1},
     ).sort("launch_score", -1).limit(500).to_list(500)
+
+    # Category pages
+    categories_seen = set()
+    for prod in products:
+        cat = prod.get("category")
+        if cat and cat not in categories_seen:
+            categories_seen.add(cat)
+            cat_slug = slugify(cat)
+            if cat_slug:
+                entries.append(
+                    f"  <url>\n"
+                    f"    <loc>{base}/category/{cat_slug}</loc>\n"
+                    f"    <lastmod>{today}</lastmod>\n"
+                    f"    <changefreq>weekly</changefreq>\n"
+                    f"    <priority>0.7</priority>\n"
+                    f"  </url>"
+                )
 
     seen = set()
     for prod in products:

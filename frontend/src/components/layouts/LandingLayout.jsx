@@ -158,6 +158,9 @@ export default function LandingLayout({ children }) {
             <div className="flex items-center gap-6 text-sm text-slate-400">
               <Link to="/tools" className="hover:text-slate-600 transition-colors">Free Tools</Link>
               <Link to="/trending-products" className="hover:text-slate-600 transition-colors">Trending Products</Link>
+              <Link to="/trending-products-today" className="hover:text-slate-600 transition-colors">Trending Today</Link>
+              <Link to="/top-trending-products" className="hover:text-slate-600 transition-colors">Leaderboard</Link>
+              <Link to="/blog" className="hover:text-slate-600 transition-colors">Blog</Link>
             </div>
             <p className="text-sm text-slate-400">
               &copy; {new Date().getFullYear()} TrendScout. All rights reserved.

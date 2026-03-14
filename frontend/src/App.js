@@ -53,6 +53,8 @@ import ShopifyAnalyzerPage from "@/pages/ShopifyAnalyzerPage";
 import CompetitorTrackerPage from "@/pages/CompetitorTrackerPage";
 import TikTokIntelligencePage from "@/pages/TikTokIntelligencePage";
 import TopTrendingPage from "@/pages/TopTrendingPage";
+import SeoTrendingPage from "@/pages/SeoTrendingPage";
+import SeoCategoryPage from "@/pages/SeoCategoryPage";
 import BlogPage from "@/pages/BlogPage";
 import BlogPostPage from "@/pages/BlogPostPage";
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -134,6 +136,10 @@ function AppRoutes() {
       <Route path="/tools" element={<FreeToolsPage />} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />
       <Route path="/top-trending-products" element={<TopTrendingPage />} />
+      <Route path="/trending-products-today" element={<SeoTrendingPage />} />
+      <Route path="/trending-products-this-week" element={<SeoTrendingPage />} />
+      <Route path="/trending-products-this-month" element={<SeoTrendingPage />} />
+      <Route path="/category/:slug" element={<SeoCategoryPage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
       <Route path="/terms" element={<TermsPage />} />
