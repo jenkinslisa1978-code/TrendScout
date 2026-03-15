@@ -66,6 +66,12 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Fix:** Added getCsrfToken() to api.js to read __Host-csrf cookie and include x-csrf-token header on all authenticated requests. Added response.ok check in PricingPage.jsx with toast.error() for error messages
 - **Verified:** Full flow tested — free user now redirected to Stripe checkout
 
+### Shopify Connection Fix (March 15, 2026)
+- Same CSRF root cause as upgrade bug — handleShopifyOAuth POST was blocked
+- Added dedicated `shopifyError` state + inline error display near Shopify form
+- Added `res.ok` check with proper error message extraction
+- Verified: Shopify OAuth redirect works end-to-end
+
 ## Backlog
 - P0: Shopify OAuth 2.0 Connection — needs user credentials (SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET)
 - P1: Sentry integration — needs user DSN

@@ -140,10 +140,12 @@ export default function PlatformConnectionsPage() {
   const [shopifyClientId, setShopifyClientId] = useState('');
   const [shopifyClientSecret, setShopifyClientSecret] = useState('');
   const [shopifyOAuthLoading, setShopifyOAuthLoading] = useState(false);
+  const [shopifyError, setShopifyError] = useState('');
 
   const handleShopifyOAuth = async () => {
     if (!shopifyDomain.trim() || !shopifyClientId.trim() || !shopifyClientSecret.trim()) return;
     setShopifyOAuthLoading(true);
+    setShopifyError('');
     try {
       const res = await apiPost('/api/shopify/oauth/init', {
         shop_domain: shopifyDomain.trim(),
@@ -151,14 +153,19 @@ export default function PlatformConnectionsPage() {
         client_secret: shopifyClientSecret.trim(),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setShopifyError(data.detail || data.error?.message || 'Failed to initiate Shopify connection');
+        setShopifyOAuthLoading(false);
+        return;
+      }
       if (data.oauth_url) {
         window.location.href = data.oauth_url;
       } else {
-        setError(data.detail || 'Failed to initiate Shopify connection');
+        setShopifyError(data.detail || 'Failed to initiate Shopify connection');
         setShopifyOAuthLoading(false);
       }
     } catch {
-      setError('Failed to connect to Shopify. Please try again.');
+      setShopifyError('Failed to connect to Shopify. Please try again.');
       setShopifyOAuthLoading(false);
     }
   };
@@ -297,6 +304,11 @@ export default function PlatformConnectionsPage() {
                             data-testid="shopify-client-secret-input"
                           />
                           <p className="text-[10px] text-slate-400">Get these from <a href="https://partners.shopify.com" target="_blank" rel="noreferrer" className="text-indigo-500 underline">Shopify Partners</a> &gt; Apps &gt; Create app</p>
+                          {shopifyError && (
+                            <div className="bg-red-50 border border-red-200 rounded-md p-2 text-xs text-red-700" data-testid="shopify-error">
+                              {shopifyError}
+                            </div>
+                          )}
                           <Button
                             size="sm"
                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs"
