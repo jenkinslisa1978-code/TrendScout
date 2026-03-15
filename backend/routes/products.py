@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Depends, Header, BackgroundTasks
 from fastapi.responses import StreamingResponse, Response
+from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 import os
@@ -272,14 +273,18 @@ async def get_launch_score_breakdown(product_id: str):
     competition_score = product.get('competition_score', 0)
     ad_activity_score = product.get('ad_activity_score', 0)
     supplier_demand_score = product.get('supplier_demand_score', 0)
+    search_growth_score = product.get('search_growth_score', 0) or min(100, max(0, int(trend_score * 0.8 + ad_activity_score * 0.2)))
+    social_buzz_score = product.get('social_buzz_score', 0) or min(100, max(0, int(ad_activity_score * 0.6 + trend_score * 0.4)))
     
-    # Weights as per formula
+    # Weights as per 7-signal formula
     weights = {
-        'trend': 0.30,
-        'margin': 0.25,
-        'competition': 0.20,
-        'ad_activity': 0.15,
-        'supplier_demand': 0.10
+        'trend': 0.22,
+        'margin': 0.20,
+        'competition': 0.18,
+        'ad_activity': 0.13,
+        'supplier_demand': 0.07,
+        'search_growth': 0.12,
+        'social_buzz': 0.08,
     }
     
     # Calculate weighted contributions
@@ -288,6 +293,8 @@ async def get_launch_score_breakdown(product_id: str):
     competition_contribution = round(competition_score * weights['competition'], 1)
     ad_activity_contribution = round(ad_activity_score * weights['ad_activity'], 1)
     supplier_contribution = round(supplier_demand_score * weights['supplier_demand'], 1)
+    search_growth_contribution = round(search_growth_score * weights['search_growth'], 1)
+    social_buzz_contribution = round(social_buzz_score * weights['social_buzz'], 1)
     
     # Final launch score
     launch_score = product.get('launch_score', 0)
@@ -320,6 +327,16 @@ async def get_launch_score_breakdown(product_id: str):
                 'high': "Strong supplier reliability - consistent fulfillment confidence",
                 'medium': "Adequate supplier support - manageable fulfillment",
                 'low': "Supplier concerns - potential fulfillment risks"
+            },
+            'search_growth': {
+                'high': "Surging search interest - buyers are actively looking for this product",
+                'medium': "Steady search volume - stable but not accelerating demand",
+                'low': "Declining or flat search interest - limited organic demand"
+            },
+            'social_buzz': {
+                'high': "High social media mentions - product is going viral or trending",
+                'medium': "Moderate social activity - some organic buzz and engagement",
+                'low': "Low social presence - minimal organic discussion or sharing"
             }
         }
         
@@ -378,7 +395,25 @@ async def get_launch_score_breakdown(product_id: str):
             'weight_percent': f"{int(weights['supplier_demand'] * 100)}%",
             'contribution': supplier_contribution,
             **get_component_explanation('supplier_demand', supplier_demand_score)
-        }
+        },
+        {
+            'name': 'Search Growth',
+            'key': 'search_growth',
+            'raw_score': search_growth_score,
+            'weight': weights['search_growth'],
+            'weight_percent': f"{int(weights['search_growth'] * 100)}%",
+            'contribution': search_growth_contribution,
+            **get_component_explanation('search_growth', search_growth_score)
+        },
+        {
+            'name': 'Social Buzz',
+            'key': 'social_buzz',
+            'raw_score': social_buzz_score,
+            'weight': weights['social_buzz'],
+            'weight_percent': f"{int(weights['social_buzz'] * 100)}%",
+            'contribution': social_buzz_contribution,
+            **get_component_explanation('social_buzz', social_buzz_score)
+        },
     ]
     
     # Sort by contribution (highest first)
@@ -404,7 +439,9 @@ async def get_launch_score_breakdown(product_id: str):
             'margin': "Look for suppliers with lower costs or products that can command higher retail prices",
             'competition': "Focus on niches with fewer established stores or find unique angles",
             'ad_activity': "Products with active ad campaigns often have proven market demand",
-            'supplier_demand': "Choose suppliers with strong reviews and reliable shipping times"
+            'supplier_demand': "Choose suppliers with strong reviews and reliable shipping times",
+            'search_growth': "Target products with rising search volume — organic demand reduces ad dependency",
+            'social_buzz': "Products being discussed on social media have higher viral potential"
         }
         
         for comp in weakest:
@@ -428,8 +465,8 @@ async def get_launch_score_breakdown(product_id: str):
         'launch_label': launch_label,
         'components': components_sorted,
         'formula': {
-            'description': 'Launch Score = (Trend x 30%) + (Margin x 25%) + (Competition x 20%) + (Ad Activity x 15%) + (Supplier x 10%)',
-            'breakdown': f"{trend_contribution} + {margin_contribution} + {competition_contribution} + {ad_activity_contribution} + {supplier_contribution} = {launch_score}"
+            'description': 'Launch Score = (Trend x 22%) + (Margin x 20%) + (Competition x 18%) + (Ad Activity x 13%) + (Search Growth x 12%) + (Social Buzz x 8%) + (Supplier x 7%)',
+            'breakdown': f"{trend_contribution} + {margin_contribution} + {competition_contribution} + {ad_activity_contribution} + {search_growth_contribution} + {social_buzz_contribution} + {supplier_contribution} = {launch_score}"
         },
         'score_reasoning': product.get('launch_score_breakdown', {}),
         'data_transparency': {
@@ -445,6 +482,74 @@ async def get_launch_score_breakdown(product_id: str):
             'weaknesses': [{'name': w['name'], 'score': w['raw_score'], 'explanation': w['explanation']} for w in weaknesses],
             'improvements': get_improvement_suggestions(components)
         }
+    }
+
+
+class ProfitSimulationRequest(BaseModel):
+    product_cost: float = 12.0
+    selling_price: float = 29.99
+    cpm: float = 15.0
+    conversion_rate: float = 2.0
+    monthly_ad_budget: float = 1000.0
+    shipping_cost: float = 3.0
+    competition_level: str = "medium"
+
+
+@api_router.post("/tools/profitability-simulator")
+async def profitability_simulator(req: ProfitSimulationRequest):
+    """Predict break-even CPA, time-to-saturation, and profitability."""
+    margin = req.selling_price - req.product_cost - req.shipping_cost
+    margin_pct = (margin / req.selling_price) * 100 if req.selling_price > 0 else 0
+
+    # Funnel metrics — CTR ~1.5%, then user-provided CVR applies to clicks
+    ctr = 0.015
+    cpa = req.cpm / (1000 * ctr * (req.conversion_rate / 100))
+    break_even_cpa = margin
+    roas_target = req.selling_price / max(break_even_cpa, 0.01)
+
+    monthly_impressions = (req.monthly_ad_budget / req.cpm) * 1000
+    monthly_clicks = monthly_impressions * ctr
+    monthly_orders = monthly_clicks * (req.conversion_rate / 100)
+    monthly_revenue = monthly_orders * req.selling_price
+    monthly_cogs = monthly_orders * (req.product_cost + req.shipping_cost)
+    monthly_profit = monthly_revenue - monthly_cogs - req.monthly_ad_budget
+    roas = monthly_revenue / max(req.monthly_ad_budget, 0.01)
+
+    saturation_months = {"low": 8, "medium": 5, "high": 3}.get(req.competition_level, 5)
+    saturation_risk = {"low": "Low", "medium": "Moderate", "high": "High"}.get(req.competition_level, "Moderate")
+
+    break_even_possible = cpa <= break_even_cpa
+
+    verdict = "Strong opportunity" if monthly_profit > 0 and roas > 2 else \
+              "Promising with optimisation" if monthly_profit > 0 else \
+              "Risky — needs lower CPA or higher margin" if monthly_profit > -200 else \
+              "Not viable at current metrics"
+
+    return {
+        "unit_economics": {
+            "margin_per_unit": round(margin, 2),
+            "margin_percent": round(margin_pct, 1),
+            "estimated_cpa": round(cpa, 2),
+            "break_even_cpa": round(break_even_cpa, 2),
+            "is_profitable_per_sale": cpa < break_even_cpa,
+        },
+        "monthly_projection": {
+            "ad_budget": req.monthly_ad_budget,
+            "estimated_impressions": int(monthly_impressions),
+            "estimated_clicks": int(monthly_clicks),
+            "estimated_orders": round(monthly_orders, 1),
+            "revenue": round(monthly_revenue, 2),
+            "cogs": round(monthly_cogs, 2),
+            "profit": round(monthly_profit, 2),
+            "roas": round(roas, 2),
+        },
+        "saturation_analysis": {
+            "competition_level": req.competition_level,
+            "estimated_months_to_saturation": saturation_months,
+            "saturation_risk": saturation_risk,
+        },
+        "verdict": verdict,
+        "break_even_possible": break_even_possible,
     }
 
 

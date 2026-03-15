@@ -65,6 +65,8 @@ import HelpPage from "@/pages/HelpPage";
 import DemoPage from "@/pages/DemoPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import ProfitabilitySimulatorPage from "@/pages/ProfitabilitySimulatorPage";
+import AdSpyPage from "@/pages/AdSpyPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -370,6 +372,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AdTestsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profitability-simulator"
+        element={
+          <ProtectedRoute>
+            <ProfitabilitySimulatorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ad-spy"
+        element={
+          <ProtectedRoute>
+            <AdSpyPage />
           </ProtectedRoute>
         }
       />

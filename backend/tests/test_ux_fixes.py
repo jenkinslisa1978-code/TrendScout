@@ -14,7 +14,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ecommerce-guide-11.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ad-spy-hub.preview.emergentagent.com')
 
 class TestProductValidationAPI:
     """Test that product validation returns real recommendations"""

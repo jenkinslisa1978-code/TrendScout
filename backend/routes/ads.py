@@ -954,4 +954,95 @@ Respond in this exact JSON format (raw JSON only, no markdown):
 
 
 
-routers = [ad_creative_router, ad_discovery_router, outcomes_router, ad_test_router, ad_engine_router]
+# ═══════════════════════════════════════════════════════════════════
+# Ad Spy — Unified Ad Intelligence Search
+# ═══════════════════════════════════════════════════════════════════
+
+ads_spy_router = APIRouter(prefix="/api/ads")
+
+
+@ads_spy_router.get("/discover")
+async def discover_ads(
+    q: str = "",
+    platform: Optional[str] = None,
+    sort: str = "engagement",
+    limit: int = 24,
+):
+    """
+    Unified ad spy search across platforms.
+    Returns product-derived ad intelligence entries with platform attribution.
+    """
+    limit = min(limit, 50)
+
+    # Build query
+    query: Dict[str, Any] = {}
+    if q:
+        query["$or"] = [
+            {"product_name": {"$regex": q, "$options": "i"}},
+            {"category": {"$regex": q, "$options": "i"}},
+        ]
+
+    # Platform filter — map products to platforms based on their signals
+    platform_filter = platform if platform and platform != "all" else None
+
+    # Determine sort order
+    sort_map = {
+        "engagement": [("tiktok_views", -1), ("engagement_rate", -1)],
+        "recent": [("last_updated", -1)],
+        "spend": [("estimated_monthly_ad_spend", -1)],
+    }
+    sort_order = sort_map.get(sort, sort_map["engagement"])
+
+    products = await db.products.find(query, {"_id": 0}).sort(sort_order).limit(limit * 2).to_list(limit * 2)
+
+    ads = []
+    for p in products:
+        # Assign platform based on product signals
+        platforms_for_product = _infer_platforms(p)
+        if platform_filter and platform_filter not in platforms_for_product:
+            continue
+
+        primary_platform = platform_filter or (platforms_for_product[0] if platforms_for_product else "meta")
+
+        ad = {
+            "id": p.get("id"),
+            "platform": primary_platform,
+            "headline": p.get("product_name", ""),
+            "product_name": p.get("product_name", ""),
+            "body_text": p.get("short_description") or p.get("ai_summary", "")[:120] if p.get("ai_summary") else "",
+            "thumbnail_url": p.get("image_url", ""),
+            "image_url": p.get("image_url", ""),
+            "ad_type": "video" if p.get("video_urls") else "image",
+            "likes": p.get("tiktok_views", 0) // 50 if p.get("tiktok_views") else int(p.get("engagement_rate", 0) * 100),
+            "comments": p.get("tiktok_views", 0) // 200 if p.get("tiktok_views") else int(p.get("engagement_rate", 0) * 30),
+            "shares": p.get("tiktok_views", 0) // 300 if p.get("tiktok_views") else int(p.get("engagement_rate", 0) * 15),
+            "views": p.get("tiktok_views", 0) or int(p.get("engagement_rate", 0) * 5000),
+            "advertiser_name": p.get("category", ""),
+            "url": f"/product/{p.get('id', '')}",
+            "launch_score": p.get("launch_score", 0),
+            "estimated_spend": p.get("estimated_monthly_ad_spend", 0),
+            "competition_level": p.get("competition_level", ""),
+            "trend_stage": p.get("trend_stage", ""),
+        }
+        ads.append(ad)
+        if len(ads) >= limit:
+            break
+
+    return {"ads": ads, "total": len(ads), "query": q, "platform": platform, "sort": sort}
+
+
+def _infer_platforms(product: dict) -> list:
+    """Infer which ad platforms a product is likely running on based on its signals."""
+    platforms = []
+    if product.get("tiktok_views", 0) > 0:
+        platforms.append("tiktok")
+    if product.get("ad_activity_score", 0) > 30:
+        platforms.append("meta")
+    if product.get("estimated_monthly_ad_spend", 0) > 100:
+        platforms.append("pinterest")
+    if not platforms:
+        platforms = ["meta"]
+    return platforms
+
+
+routers = [ad_creative_router, ad_discovery_router, outcomes_router, ad_test_router, ad_engine_router, ads_spy_router]

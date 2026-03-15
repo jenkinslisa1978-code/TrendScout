@@ -1,283 +1,85 @@
 <analysis>**original_problem_statement:**
-The user has provided a comprehensive, multi-part vision to transform the TrendScout platform into a guided, user-friendly ecommerce launch system. The core goal is to improve clarity, usability, and onboarding to help new users instantly understand the product's value, moving them from discovery to validation and launch.
+The user provided a comprehensive, multi-part vision to transform the TrendScout platform into a guided, user-friendly ecommerce launch system. This was recently superseded by a new, more detailed 9-part strategic brief focusing on making TrendScout a decision and launch engine for dropshippers.
 
-**PRODUCT REQUIREMENTS (based on the latest 19-part prompt):**
--   **Clarity & Onboarding (Parts 1-6, 15-17, 19):** Overhaul the homepage, simplify navigation, add a Beginner Mode dashboard, improve the signup flow, and add trust signals (Help page, footer links, demo pages).
--   **Core Functionality & Differentiation (Parts 10-14):** Implement a Product Launch Score, a Profit Predictor, a Product Decision Panel to guide user actions, a step-by-step Launch Playbook, and an Ad Creative Generator.
--   **Growth & SEO (Parts 8-9, 18):** Create a public trending products feed and programmatic SEO pages for individual products. Ensure  and  are functional.
--   **Platform Hardening & Security:** Implement a full production-hardening suite including secure cookie-based authentication (refresh tokens), CSRF protection, security headers, rate limiting, structured logging, a health endpoint, and global error handling.
--   **Integrations (Part 7):** Replace the manual Shopify API key setup with a full Shopify OAuth 2.0 connection. Integrate a real email service (Resend) for transactional emails like password resets.
--   **Testing & Monitoring:** Implement a comprehensive QA automation suite using Playwright and add monitoring/error tracking (Sentry).
+**PRODUCT REQUIREMENTS (based on the latest 9-part strategic brief):**
+1.  **Product Discovery & AI Scoring Overhaul:** Expose the 7-Signal launch score, blend multiple data sources (ad signals, search trends), and add a profitability/saturation predictor.
+2.  **Multi-platform Ad Intelligence:** Create a unified ad spy tool (TikTok, Meta, Pinterest) and track competitor creatives/hooks.
+3.  **Competitor Store Intelligence & Alerts:** Build a comprehensive dashboard for competitor analysis (traffic, revenue, etc.) and add a supplier risk score.
+4.  **Store-launch & Fulfillment Automation:** Implement one-click product import to Shopify, generate full-funnel store pages, and automate order fulfillment.
+5.  **Real-time Monitoring & Alerts:** Deliver push notifications for competitor/product metric changes and create a smart budget optimizer.
+6.  **Community & Data Flywheel:** Create a Verified Winners feature where users can submit proof of success to build a proprietary database.
+7.  **UX & Onboarding:** Improve signup friction and make pricing/quotas more transparent.
+8.  **SEO & Virality:** Generate public product insight pages for SEO and add social sharing snippets.
+9.  **Integration & Ecosystem:** Build a Shopify App and offer API access for power users.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The platform has undergone significant hardening and feature development. Key systems in place include:
--   **Production Hardening:** A robust security and reliability layer has been added, featuring secure cookie-based authentication (short-lived access tokens, HttpOnly refresh tokens), CSRF protection, auth rate limiting, structured request logging, and standard security headers (HSTS, CSP-Report-Only, etc.).
--   **Programmatic SEO (Part 1):** The initial phase is complete. Backend endpoints and frontend pages for time-based (, , ) and category-based () trending product pages have been implemented and tested. The sitemap is updated dynamically.
--   **UI/UX Overhaul:** The homepage hero, How it Works section, and navigation have been updated for clarity. A  page and a  page have been created. The signup page now includes password confirmation and validation rules.
--   **Forgot Password Flow:** A complete, end-to-end Forgot Password feature has been implemented, including backend logic and frontend pages, fully integrated with Resend for sending password reset emails.
--   **QA Automation:** A Playwright test suite () has been created, covering 18 critical user flows, including registration, login, authenticated access, and the full forgot password journey.
+The platform is a functional product research tool with a hardened backend, including secure cookie-based auth, CSRF protection, rate limiting, and structured logging. A Playwright E2E test suite ensures core functionality.
+
+**Key features completed in the last session:**
+-   **P0 Upgrade Bug Fix:** Resolved a critical bug preventing users on a free trial from upgrading to a paid plan. The fix involved adding a missing CSRF token to frontend API calls.
+-   **Shopify Connection Rework:** Redesigned the entire Shopify connection flow away from a confusing OAuth process to a simpler, more practical **Admin API Access Token** method, which is what real store owners use. This involved diagnosing and fixing a complex CORS issue with the  API for 4xx error responses.
+-   **Product Decision Panel:** A new What should I do next? panel was added to the user dashboard, providing personalized recommendations.
+-   **CSP Enforcement:** The Content-Security-Policy was switched from Report-Only to full enforcement mode.
+-   **Enhanced Weekly Digest Email:** The scheduled weekly email was upgraded to include personalized next-step recommendations for each user.
+-   **Phase 1 of New Vision (Started):** The backend for the 7-signal score, profitability simulator, and the frontend page/component scaffolds for the Ad Spy tool, Profitability Simulator, and Score Breakdown have been created.
 
 **Last working item**:
--   **Last item agent was working:** Investigating a critical bug reported by the user: if i sign up for a gree trial and then try to upgrade, nothing happens. The agent was tracing the code path from the frontend  to the backend Stripe  to diagnose why the checkout session is not being created or why the user is not being redirected.
+-   **Last item agent was working:** Implementing Phase 1 of the new strategic vision. The agent had just created the new frontend pages and components but introduced a bug: an incorrect import path in , which breaks the frontend build.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** both. The backend testing agent (or a  test) should verify that  returns a valid Stripe session URL. The frontend testing agent (or an update to the Playwright suite) must confirm that clicking the Upgrade button triggers the API call and correctly redirects the user to the Stripe URL.
+-   **Which testing method agent to use?** frontend testing agent. First, use the screenshot tool on the  route to confirm the import fix works and the page renders. After confirming all new pages render, call the  to test the complete Phase 1 functionality (e.g., ensure the profit simulator calculates correctly, the new 7-signal score breakdown displays data, etc.).
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Upgrade from Free Trial fails (P0)**
-    -   **Description:** When a user on a free trial attempts to upgrade to a paid plan, the action fails silently. The user is not redirected to the Stripe checkout page. This is a critical blocker preventing user conversion and revenue generation.
-    -   **Attempted fixes:** None. Investigation is in progress.
+-   **Issue 1: Frontend build broken due to incorrect import path (P0)**
+    -   **Description:** The agent used an incorrect import path ( instead of ) in the newly created  file. This causes the React application to fail compilation.
+    -   **Attempted fixes:** None. The issue was identified just as the session was ending.
     -   **Next debug checklist:**
-        1.  Finish reviewing  to understand how the checkout session is created.
-        2.  Inspect  to see the exact API call made by the frontend.
-        3.  Examine the browser's developer tools (network tab and console) via a screenshot or by adding a Playwright test to observe the API request and response when the Upgrade button is clicked.
-        4.  Check the backend logs (==> /var/log/supervisor/backend.err.log <==
-2026-03-14 22:19:47,755 - services.jobs.tasks - INFO - Registered task: recompute_scores
-2026-03-14 22:19:47,755 - services.jobs.tasks - INFO - Registered task: run_deduplication
-2026-03-14 22:19:47,755 - services.jobs.tasks - INFO - Registered task: send_weekly_email_digest
-2026-03-14 22:19:47,755 - services.jobs.tasks - INFO - Registered task: send_product_of_the_week
-2026-03-14 22:19:47,755 - services.jobs.tasks - INFO - Registered task: send_weekly_radar_digest
-2026-03-14 22:19:47,756 - services.jobs.tasks - INFO - Registered task: enrich_product_images
-2026-03-14 22:19:47,770 - services.jobs.worker - INFO - Background worker started
-2026-03-14 22:19:47,770 - services.jobs.worker - INFO - Worker loop started
-2026-03-14 22:19:47,772 - services.jobs.queue - INFO - Job queue indexes created
-2026-03-14 22:19:47,772 - services.jobs.scheduler - INFO - Registered scheduled task: ingest_trending_products (0 */4 * * *)
-2026-03-14 22:19:47,772 - services.jobs.scheduler - INFO - Registered scheduled task: update_market_scores (0 */2 * * *)
-2026-03-14 22:19:47,772 - services.jobs.scheduler - INFO - Registered scheduled task: update_competitor_data (0 */6 * * *)
-2026-03-14 22:19:47,772 - services.jobs.scheduler - INFO - Registered scheduled task: update_ad_activity (0 */4 * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: update_supplier_data (0 */6 * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: generate_alerts (0 * * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: scan_threshold_subscriptions (0 */6 * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: weekly_competitor_scan (0 6 * * 1)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: weekly_blog_generation (0 8 * * 1)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: cleanup_stale_jobs (*/15 * * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: generate_weekly_report (0 6 * * 1)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: generate_monthly_report (0 6 1 * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: scrape_real_data (0 */4 * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: enrich_google_trends (0 */6 * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: recompute_scores (0 */4 * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: run_deduplication (0 8 * * *)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: send_weekly_email_digest (0 10 * * 1)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: send_product_of_the_week (0 11 * * 3)
-2026-03-14 22:19:47,773 - services.jobs.scheduler - INFO - Registered scheduled task: send_weekly_radar_digest (0 8 * * 1)
-2026-03-14 22:19:47,774 - services.jobs.scheduler - INFO - Registered scheduled task: enrich_product_images (0 */8 * * *)
-2026-03-14 22:19:47,774 - services.jobs.scheduler - INFO - Scheduler started with 20 scheduled tasks
-2026-03-14 22:19:47,774 - server - INFO - Background worker and scheduler started
-INFO:     Application startup complete.
-2026-03-14 22:19:47,775 - services.jobs.queue - INFO - Job queue indexes created
-2026-03-14 22:19:50,055 - common.redis_cache - WARNING - Redis unavailable (Error 99 connecting to localhost:6379. Cannot assign requested address.), using in-memory fallback
-2026-03-14 22:19:50,056 - common.redis_cache - WARNING - Redis unavailable (Error 99 connecting to localhost:6379. Cannot assign requested address.), using in-memory fallback
-2026-03-14 22:19:50,267 - services.email_service - INFO - Password reset email sent to jenkinslisa1978@gmail.com (id: 6b5d597d-5d6b-4f67-acbb-ab2c359f97f3)
-2026-03-14 22:19:50,267 - routes.auth_routes - INFO - Password reset requested for jenkinslisa1978@gmail.com (email_sent=True)
-2026-03-14 22:19:50,268 - request_log - INFO - {"request_id": "186363fe-49d", "timestamp": "2026-03-14T22:19:50Z", "method": "POST", "path": "/api/auth/forgot-password", "status": 200, "latency_ms": 212}
-2026-03-14 22:30:00,002 - services.jobs.scheduler - INFO - Scheduler triggering task: cleanup_stale_jobs
-2026-03-14 22:30:00,004 - services.jobs.queue - INFO - Enqueued job cleanup_stale_jobs (id=ecommerce-guide-11, trigger=scheduled)
-2026-03-14 22:30:00,004 - services.jobs.scheduler - INFO - Scheduled task enqueued: cleanup_stale_jobs (job_id=ecommerce-guide-11)
-2026-03-14 22:30:02,969 - services.jobs.worker - INFO - Processing job cleanup_stale_jobs (id=ecommerce-guide-11)
-2026-03-14 22:30:02,971 - services.jobs.queue - INFO - Job e55756c0-3f9f-4e1e-ad9b-03811ed59dd8 completed: 0 records in 0.00s
-2026-03-14 22:30:02,971 - services.jobs.worker - INFO - Job cleanup_stale_jobs completed successfully
-INFO:     Will watch for changes in these directories: ['/app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [46] using WatchFiles
-INFO:     Started server process [83]
-INFO:     Waiting for application startup.
-2026-03-14 22:34:22,163 - server - INFO - Database indexes created
-2026-03-14 22:34:22,264 - common.redis_cache - WARNING - Redis unavailable (Error 99 connecting to localhost:6379. Cannot assign requested address.), using in-memory fallback
-2026-03-14 22:34:22,264 - routes.seo - INFO - Sitemap regenerated: 285 URLs
-2026-03-14 22:34:22,268 - services.jobs.tasks - INFO - Registered task: ingest_trending_products
-2026-03-14 22:34:22,268 - services.jobs.tasks - INFO - Registered task: update_market_scores
-2026-03-14 22:34:22,268 - services.jobs.tasks - INFO - Registered task: update_competitor_data
-2026-03-14 22:34:22,268 - services.jobs.tasks - INFO - Registered task: update_ad_activity
-2026-03-14 22:34:22,268 - services.jobs.tasks - INFO - Registered task: update_supplier_data
-2026-03-14 22:34:22,268 - services.jobs.tasks - INFO - Registered task: generate_alerts
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: scan_threshold_subscriptions
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: weekly_competitor_scan
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: weekly_blog_generation
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: full_pipeline
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: cleanup_stale_jobs
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: generate_weekly_report
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: generate_monthly_report
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: scrape_real_data
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: enrich_google_trends
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: recompute_scores
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: run_deduplication
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: send_weekly_email_digest
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: send_product_of_the_week
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: send_weekly_radar_digest
-2026-03-14 22:34:22,269 - services.jobs.tasks - INFO - Registered task: enrich_product_images
-2026-03-14 22:34:22,327 - services.jobs.worker - INFO - Background worker started
-2026-03-14 22:34:22,327 - services.jobs.worker - INFO - Worker loop started
-2026-03-14 22:34:22,329 - services.jobs.queue - INFO - Job queue indexes created
-2026-03-14 22:34:22,329 - services.jobs.scheduler - INFO - Registered scheduled task: ingest_trending_products (0 */4 * * *)
-2026-03-14 22:34:22,329 - services.jobs.scheduler - INFO - Registered scheduled task: update_market_scores (0 */2 * * *)
-2026-03-14 22:34:22,329 - services.jobs.scheduler - INFO - Registered scheduled task: update_competitor_data (0 */6 * * *)
-2026-03-14 22:34:22,329 - services.jobs.scheduler - INFO - Registered scheduled task: update_ad_activity (0 */4 * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: update_supplier_data (0 */6 * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: generate_alerts (0 * * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: scan_threshold_subscriptions (0 */6 * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: weekly_competitor_scan (0 6 * * 1)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: weekly_blog_generation (0 8 * * 1)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: cleanup_stale_jobs (*/15 * * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: generate_weekly_report (0 6 * * 1)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: generate_monthly_report (0 6 1 * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: scrape_real_data (0 */4 * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: enrich_google_trends (0 */6 * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: recompute_scores (0 */4 * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: run_deduplication (0 8 * * *)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: send_weekly_email_digest (0 10 * * 1)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: send_product_of_the_week (0 11 * * 3)
-2026-03-14 22:34:22,330 - services.jobs.scheduler - INFO - Registered scheduled task: send_weekly_radar_digest (0 8 * * 1)
-2026-03-14 22:34:22,331 - services.jobs.scheduler - INFO - Registered scheduled task: enrich_product_images (0 */8 * * *)
-2026-03-14 22:34:22,332 - services.jobs.scheduler - INFO - Scheduler started with 20 scheduled tasks
-2026-03-14 22:34:22,332 - server - INFO - Background worker and scheduler started
-INFO:     Application startup complete.
-2026-03-14 22:34:22,333 - services.jobs.queue - INFO - Job queue indexes created
-
-==> /var/log/supervisor/backend.out.log <==
-INFO:     10.79.137.66:38212 - "GET /api/images/ad47e7bd-0d30-4d5e-b57d-85bc38246717_a21dd61a.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "GET /api/auth/login-page HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "GET /api/auth/signup-page HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/nonexistent-route HTTP/1.1" 404 Not Found
-INFO:     10.79.132.74:45360 - "GET /api/auth/profile HTTP/1.1" 401 Unauthorized
-INFO:     10.79.137.66:43096 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "POST /api/auth/refresh HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "POST /api/auth/logout HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "GET /api/auth/profile HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/public/categories HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/public/trending-products?limit=50 HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "GET /api/public/categories HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/public/trending-products?limit=50 HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/images/38b43e62-308a-481e-a394-754e22a8eac5_eb291980.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/images/414a12fe-36d7-4469-890f-74d556a1b56b_748a8bd6.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "GET /api/images/0f62ae8b-4b1f-4ff7-a09e-28efce4091a7_b42f4452.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45370 - "GET /api/images/db5b1d77-84b0-4e74-afff-2b0dcd21e686_a3d23ffb.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45398 - "GET /api/public/daily-picks HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45372 - "GET /api/images/ad47e7bd-0d30-4d5e-b57d-85bc38246717_a21dd61a.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43110 - "GET /api/images/21aae6ef-7a18-41cf-be72-04da4019cdb8_56f3b9c1.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45384 - "GET /api/images/8d30ca45-97af-4c7a-82b0-f211a84e45f2_71de1072.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45388 - "GET /api/images/0b2182e0-af6e-44d5-8cde-aea3f78a9f38_5ea72b94.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45410 - "GET /api/images/f5a4579b-4c0b-4e80-a08b-c07f5c92ed90_47a4b31f.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45418 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/images/0bf84fc4-17ce-4979-857d-39ebce48e407_99cf355d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45360 - "GET /api/images/4affc790-b270-47cc-b95c-b82f7eb2833d_7ae2e24b.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45398 - "GET /api/public/daily-picks HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43110 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43110 - "GET /api/public/seo/all-categories HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/public/seo/trending-today HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/public/seo/all-categories HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/public/seo/trending-today HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45398 - "GET /api/images/0bf84fc4-17ce-4979-857d-39ebce48e407_99cf355d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45370 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43110 - "GET /api/images/0b2182e0-af6e-44d5-8cde-aea3f78a9f38_5ea72b94.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:56126 - "GET /api/images/0f62ae8b-4b1f-4ff7-a09e-28efce4091a7_b42f4452.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43120 - "GET /api/images/db5b1d77-84b0-4e74-afff-2b0dcd21e686_a3d23ffb.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:56122 - "GET /api/images/8d30ca45-97af-4c7a-82b0-f211a84e45f2_71de1072.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43122 - "GET /api/images/ad47e7bd-0d30-4d5e-b57d-85bc38246717_a21dd61a.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:56132 - "GET /api/images/21aae6ef-7a18-41cf-be72-04da4019cdb8_56f3b9c1.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43138 - "GET /api/images/38b43e62-308a-481e-a394-754e22a8eac5_eb291980.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "POST /api/auth/forgot-password HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "POST /api/auth/reset-password HTTP/1.1" 400 Bad Request
-INFO:     10.79.132.74:45370 - "POST /api/auth/reset-password HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.137.66:43096 - "POST /api/auth/forgot-password HTTP/1.1" 200 OK
-INFO:     10.79.132.74:45370 - "POST /api/auth/reset-password HTTP/1.1" 200 OK
-INFO:     10.79.132.74:34708 - "POST /api/auth/forgot-password HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/auth/login-page HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "GET /api/auth/signup-page HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/nonexistent-route HTTP/1.1" 404 Not Found
-INFO:     10.79.132.74:39766 - "GET /api/auth/profile HTTP/1.1" 401 Unauthorized
-INFO:     10.79.137.66:35112 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "POST /api/auth/refresh HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "POST /api/auth/logout HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/auth/profile HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "GET /api/public/categories HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/public/trending-products?limit=50 HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/public/categories HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/public/trending-products?limit=50 HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "GET /api/images/21aae6ef-7a18-41cf-be72-04da4019cdb8_56f3b9c1.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53168 - "GET /api/images/8d30ca45-97af-4c7a-82b0-f211a84e45f2_71de1072.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "GET /api/images/38b43e62-308a-481e-a394-754e22a8eac5_eb291980.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53168 - "GET /api/images/0bf84fc4-17ce-4979-857d-39ebce48e407_99cf355d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/images/4affc790-b270-47cc-b95c-b82f7eb2833d_7ae2e24b.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53184 - "GET /api/images/0f62ae8b-4b1f-4ff7-a09e-28efce4091a7_b42f4452.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60200 - "GET /api/images/0b2182e0-af6e-44d5-8cde-aea3f78a9f38_5ea72b94.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53200 - "GET /api/public/daily-picks HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60208 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53172 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53170 - "GET /api/images/db5b1d77-84b0-4e74-afff-2b0dcd21e686_a3d23ffb.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60210 - "GET /api/images/f5a4579b-4c0b-4e80-a08b-c07f5c92ed90_47a4b31f.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60216 - "GET /api/images/ad47e7bd-0d30-4d5e-b57d-85bc38246717_a21dd61a.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53188 - "GET /api/images/414a12fe-36d7-4469-890f-74d556a1b56b_748a8bd6.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60200 - "GET /api/public/daily-picks HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60200 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60200 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60200 - "GET /api/public/seo/all-categories HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53200 - "GET /api/public/seo/trending-today HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "GET /api/public/seo/all-categories HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "GET /api/public/seo/trending-today HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60200 - "GET /api/images/0b2182e0-af6e-44d5-8cde-aea3f78a9f38_5ea72b94.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60200 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:35112 - "GET /api/images/21aae6ef-7a18-41cf-be72-04da4019cdb8_56f3b9c1.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:39766 - "GET /api/images/ad47e7bd-0d30-4d5e-b57d-85bc38246717_a21dd61a.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60226 - "GET /api/images/8d30ca45-97af-4c7a-82b0-f211a84e45f2_71de1072.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60218 - "GET /api/images/0f62ae8b-4b1f-4ff7-a09e-28efce4091a7_b42f4452.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53200 - "GET /api/images/0bf84fc4-17ce-4979-857d-39ebce48e407_99cf355d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60242 - "GET /api/images/db5b1d77-84b0-4e74-afff-2b0dcd21e686_a3d23ffb.jpg HTTP/1.1" 200 OK
-INFO:     10.79.132.74:60234 - "GET /api/images/38b43e62-308a-481e-a394-754e22a8eac5_eb291980.jpg HTTP/1.1" 200 OK
-INFO:     10.79.137.66:53200 - "POST /api/auth/forgot-password HTTP/1.1" 200 OK
-INFO:     10.79.137.66:51758 - "POST /api/auth/forgot-password HTTP/1.1" 200 OK) for any errors during the  API call.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a P0 issue. Fixing it will unblock the core business model, allowing users to subscribe to paid plans.
+        1.  In , use  to change the import path for  to the correct one: .
+        2.  Take a screenshot of the  URL to verify the fix and ensure the page renders without errors.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a P0 blocker. Fixing it will unblock the frontend, allowing the agent to complete and test the Phase 1 features.
     -   **Status:** IN PROGRESS
     -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Both.
+    -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 
 **In progress Task List**:
--   There are no other tasks in progress. The current focus is entirely on the P0 bug fix.
+-   **Task 1: Complete and Test Phase 1 Implementation (P0)**
+    -   **Where to resume:**
+        1.  Fix the import path bug listed in Pending/In progress Issue list.
+        2.  Add navigation links for the new Ad Spy () and Profit Simulator () pages into the main sidebar by editing .
+        3.  Verify all new Phase 1 UI elements render correctly (Score Breakdown panel, Profit Simulator page, Ad Spy page, Share Snippet).
+        4.  Run a full test suite using  to validate the end-to-end functionality of all new Phase 1 features.
+    -   **What will be achieved with this?** The first major milestone of the user's new strategic vision will be completed and verified.
+    -   **Status:** IN PROGRESS
+    -   **Blocked on something:** Issue 1: Broken frontend build.
 
 **Upcoming and Future Tasks**
-The following tasks are derived from the user's 19-part product vision and are yet to be implemented:
--   **Upcoming Tasks:**
-    -   **(P0) Shopify OAuth Connection (Part 7):** Replace the manual API token setup with a full, secure OAuth 2.0 flow.
-    -   **(P1) Product Launch Score (Part 10):** Implement the core 0-100 scoring mechanism based on various data signals.
-    -   **(P1) Profit Predictor (Part 11):** Add the profit simulation feature, a key differentiator for the platform.
-    -   **(P1) Sentry Integration:** Implement Sentry for frontend and backend error monitoring (user has requested this multiple times).
--   **Future Tasks:**
-    -   **(P2) Public Trending Products Feed (Part 8):** Create the  page to display products without login.
-    -   **(P2) Product SEO Pages (Part 9):** Create programmatic pages for individual products (e.g., ).
-    -   **(P2) Product Decision Panel (Part 12):** Add the What should I do next? recommendations panel.
-    -   **(P2) Launch Playbook (Part 13):** Implement the step-by-step guide for launching a product.
-    -   **(P2) Ad Creative Generator (Part 14):** Add the feature to generate ad angles.
-    -   **(P2) CSP Enforcement:** Switch the  header to enforcing mode after monitoring for violations.
+Based on the user's 9-part strategic brief, the roadmap is as follows:
+-   **Upcoming Tasks (Phase 2):**
+    -   **(P1) Full Ad Spy Implementation (Part 2):** Build out the full functionality of the Ad Spy page to search and filter ads from TikTok, Meta, and Pinterest.
+    -   **(P1) Competitor Intelligence Dashboard (Part 3):** Implement the dashboard to analyze competitor stores by URL, showing traffic, top products, and revenue estimates.
+    -   **(P1) Sentry Integration:** Implement Sentry for frontend and backend error monitoring (carried over from previous PRD).
+
+-   **Future Tasks (Phase 3 & Beyond):**
+    -   **(P2) 1-Click Product Import & Store Generation (Part 4):** Allow users to push products directly to their Shopify store.
+    -   **(P2) Real-time Radar Alerts (Part 5):** Implement push notifications for competitor and product metric changes.
+    -   **(P2) Verified Winners Community Feature (Part 6):** Build the system for users to anonymously submit proof of winning products.
+    -   **(P2) Public Product SEO Pages (Part 8):** Generate indexable pages for trending products to capture organic traffic.
+    -   **(P2) Shopify App & API Access (Part 9):** Package the solution as a Shopify App and offer a public API for power users.
 
 **Completed work in this session**
--   **Programmatic SEO System:** Implemented frontend pages, backend logic, and sitemap updates for trending/category pages.
--   **Production Hardening:**
-    -   Implemented secure cookie-based authentication (access/refresh tokens).
-    -   Added CSRF protection on state-changing routes.
-    -   Established robust auth route rate limiting.
-    -   Implemented structured JSON logging with request IDs.
-    -   Added critical security headers (HSTS, CSP-Report-Only, etc.) and a version header.
-    -   Created a lightweight  endpoint.
--   **Comprehensive QA Automation:** Built a suite of 18 Playwright smoke tests covering critical user journeys.
--   **User Experience Overhaul:**
-    -   Redesigned the homepage for clarity and added Help/Demo pages.
-    -   Implemented a full-stack Forgot Password flow.
--   **3rd Party Integration:** Integrated **Resend** for sending password reset emails.
+-   **Shopify Connection Rework:** Overhauled the Shopify integration from a confusing OAuth flow to a user-friendly Admin API Token method, fixing a complex CORS bug in the process.
+-   **Critical Bug Fix (Upgrade Flow):** Fixed the P0 bug that prevented free trial users from upgrading to a paid plan.
+-   **Product Decision Panel:** Implemented a new dashboard panel providing personalized next steps to users.
+-   **CSP Enforcement:** Enabled the  header in enforcing mode.
+-   **Enhanced Weekly Digest:** Upgraded the weekly summary email to include personalized action items.
+-   **Phase 1 Foundation:** Built the backend endpoints and frontend scaffolds for the 7-Signal Score, Profitability Simulator, and Ad Spy features.
 
 **Earlier issues found/mentioned but not fixed**
--   None.
+-   **Mixed Content Notification Bug:** The agent observed a pre-existing mixed content warning ( vs ) in browser logs related to the notification system but deferred fixing it as it was unrelated to the current tasks.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -286,73 +88,78 @@ The following tasks are derived from the user's 19-part product vision and are y
 
 
 **Key Technical Concepts**
--   **Secure Cookie-based Authentication:** Using short-lived access tokens stored in-memory and long-lived, , ,  refresh tokens stored in cookies for session management.
--   **CSRF Protection:** Implemented using the double-submit cookie pattern, where a  cookie is verified against a value submitted in the request body for all authenticated, state-changing POST requests.
--   **API Rate Limiting:** A custom middleware provides both plan-based limits for general API usage and stricter IP-based limits for sensitive authentication endpoints (, , ).
--   **E2E Testing with Playwright:** A comprehensive smoke test suite validates critical user flows from an end-user perspective, ensuring high confidence in deployments.
--   **Email Integration (Resend):** Using a third-party service for reliable transactional email delivery.
+-   **Shopify Admin API Token Auth:** The connection method was changed from OAuth to a simpler token-based approach better suited for individual merchants.
+-   **CORS  API Workaround:** A critical bug was diagnosed where the  API (with ) cannot read the body of a 4xx error response due to a strict CORS policy. The workaround was to change the backend validation endpoints to return a  status with a  payload instead of a 4xx status code.
+-   **Dynamic CSP:** The Content-Security-Policy can be toggled between Report-Only and enforce modes via an environment variable.
 
 **key DB schema**
--   No new database schemas were introduced in this session.
+-   **stores**: The schema for this collection was implicitly changed. It now stores an encrypted Shopify  instead of OAuth credentials.
 
 **changes in tech stack**
--   ****: Added for end-to-end testing.
--   ****: Added to the frontend for performance monitoring preparation.
--   ****: Now actively used for sending emails.
+-   No new technologies or packages were added in this session.
 
 **All files of reference**
--   : **Under Investigation.** Key file for the current P0 bug.
--   : The UI where the failing Upgrade action is initiated.
--   : The FastAPI router that handles the checkout creation request.
--   : The Playwright test suite, which should be updated with a test for the upgrade flow once the bug is fixed.
--   : Contains the robust rate-limiting logic.
--   : Contains the CSRF and security header logic.
+-   : **Contains P0 bug.** New file, needs import path fix.
+-   : **Needs update.** The new pages need to be added to the sidebar navigation here.
+-   : Contains the updated Shopify connection logic.
+-   : Contains the updated Shopify connection UI.
+-   : Contains the crucial  configuration that fixed the  API issue.
+-   : Contains the global CSRF token fix that resolved multiple silent failures.
 
 **Areas that need refactoring**:
--   The initial attempts to implement rate limiting with  decorators proved unreliable and were removed. The final implementation inside a custom middleware is more robust but consolidates a lot of logic. No immediate refactoring is needed, but this file is complex.
+-   The naming convention for new pages and components is slightly inconsistent (e.g.,  exists as both a page and a component in different directories). This could be clarified in the future to improve maintainability (e.g., , ).
 
 **key api endpoints**
--   : **(Under Investigation)** The endpoint that is likely failing for the free-trial upgrade.
--   : Exchanges a valid refresh token cookie for a new access token.
--   : Clears the authentication cookies.
--   : Initiates the password reset flow and sends an email.
--   : Sets a new password using a valid reset token.
--   : A lightweight endpoint returning  for uptime checks.
+-   : **Reworked.** Now accepts a  and  for Shopify Admin API authentication.
+-   : **New.** Provides personalized next step recommendations.
+-   : **New.** Powers the interactive profit calculator.
 
 **Critical Info for New Agent**
--   **Your immediate and only priority is to fix the P0 bug preventing users from upgrading their plan.** Trace the flow from the Upgrade button click to the Stripe API call and resolve the failure.
--   **Leverage the Playwright test suite.** After fixing the bug, add a new test to  that signs up for a free trial and successfully upgrades to a paid plan. This will prevent regressions. Run the full suite before finishing.
--   Once the bug is fixed, refer to the **Upcoming and Future Tasks** section and the original 19-part user request. Propose a plan to the user, likely starting with the Shopify OAuth integration (P0).
+-   **Your immediate priority is to fix the broken frontend build.** The P0 bug in  must be resolved first.
+-   After fixing the build, you must **add the new pages to the sidebar navigation** in  to make them accessible.
+-   The user has provided a new, detailed 9-part strategic vision that is now the source of truth for all future work. Your current task is to complete **Phase 1** of that vision.
+-   The backend now returns  with a JSON error payload for validation failures on certain endpoints (like Shopify connect) to work around a  API/CORS issue. Remember this pattern if you encounter similar body already used errors on 4xx responses.
 
 **documents and test reports created in this job**
+-    (Continuously updated with progress)
+-   
 -   
 -   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Reports a critical bug: if i sign up for a gree trial and then try to upgrade, nothing happens.
-2.  **Agent:** Acknowledges the bug report and begins investigating the upgrade flow, starting with the frontend pricing page.
+1.  **User:** Provides a detailed 9-part strategic vision to overhaul the platform.
+2.  **Agent:** Acknowledges the new vision, confirms understanding, and proposes a Phase 1 plan to tackle the highest-impact initial items.
+3.  **User:** proceed with phase 1
+4.  **Agent:** Begins implementing the backend for Phase 1 (7-signal score, profitability simulator).
+5.  **Agent:** Creates all the required new frontend components and pages as scaffolds.
+6.  **Agent:** Adds the new routes to .
+7.  **User:** continue
+8.  **Agent:** Integrates the new  and  into the product detail page.
+9.  **Agent:** Attempts to take a screenshot to verify the new UI.
+10. **Agent:** The screenshot command fails, revealing a build error caused by an incorrect import path in the new  file.
 
 **Project Health Check:**
--   **Broken:** Yes. The core monetization flow (upgrading from free to paid) is broken.
--   **Mocked:** No.
--   **Live:** Yes, but with a critical business-impacting bug.
+-   **Broken:** Yes. The frontend build is currently broken due to an incorrect import path in a new file.
+-   **Mocked:** Yes. The  is a scaffold and not yet functional.
+-   **Live:** Yes, but in a non-functional state due to the build error.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4o:** Used for ad generation (Emergent LLM Key).
--   **Shopify, WooCommerce, etc.:** Existing integrations, with Shopify OAuth pending.
+-   **Shopify:** Connection method was significantly changed from OAuth to Admin API Access Token.
 -   **Stripe:** For subscription billing.
--   **Redis:** For backend caching and rate limiting.
--   **Resend:** For transactional emails (requires User API Key).
+-   **Resend:** For transactional emails.
 -   **Playwright:** For E2E testing.
+-   **OpenAI GPT-4o:** Used for ad generation.
+-   **Redis:** For backend caching and rate limiting.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES.
+-   **Testing agent used after significant changes:** YES. The agent successfully used the testing agent to validate the Shopify and Upgrade bug fixes.
 -   **Troubleshoot agent used after agent stuck in loop:** NO.
--   **Test files created:** []
--   **Known regressions:** None, but the newly discovered bug is a major issue.
+-   **Test files created:** None. The existing  was relied upon.
+-   **Known regressions:** None.
 
 **Credentials to test flow:**
--   **Registration:** Use email  to register an admin account with the Elite plan (or register a new user for the free trial to reproduce the bug).
+-   **Registration/Login:** A standard user account is sufficient for testing most features. The admin user  has special privileges.
+-   **Shopify Connection:** Requires a valid Shopify store URL and an Admin API Access Token from a custom app within that store's settings.
 
 **What agent forgot to execute**
--   The agent has not forgotten any tasks. It was actively investigating the user's most recent and highest-priority bug report when the session ended.</analysis>
+-   The agent did not forget to execute anything. It was actively implementing Phase 1 and was interrupted by the bug it introduced. The next logical step, after fixing the bug, is to add the new pages to the navigation sidebar.</analysis>

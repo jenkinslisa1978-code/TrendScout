@@ -20,7 +20,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ecommerce-guide-11.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ad-spy-hub.preview.emergentagent.com')
 
 class TestProductValidationFix:
     """Tests for product validation 'Insufficient Data' bug fix"""

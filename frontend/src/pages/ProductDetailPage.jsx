@@ -93,6 +93,8 @@ import {
   QuickValidationSummary
 } from '@/components/intelligence';
 import { ExplainScoreButton } from '@/components/LaunchScoreExplainerModal';
+import ScoreBreakdownPanel from '@/components/product/ScoreBreakdownPanel';
+import ShareSnippet from '@/components/product/ShareSnippet';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -507,108 +509,26 @@ export default function ProductDetailPage() {
           </TooltipProvider>
         </div>
 
-        {/* Transparent Score Breakdown */}
-        {product.launch_score_breakdown && Object.keys(product.launch_score_breakdown).length > 0 && (
-          isFree ? (
-            <LockedContent feature="Score Breakdown" requiredPlan="Pro" blurIntensity="medium">
-              <Card className="border-slate-200 shadow-sm" data-testid="score-breakdown-card">
-                <CardHeader className="border-b border-slate-100 pb-4">
-                  <CardTitle className="font-manrope text-lg font-semibold text-slate-900 flex items-center gap-2">
-                    <PieChart className="h-5 w-5 text-indigo-500" />
-                    Launch Score Breakdown
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    {['Trend', 'Margin', 'Competition', 'Ad Activity', 'Supplier'].map((label) => (
-                      <div key={label} className="space-y-2 p-3 rounded-lg bg-slate-50">
-                        <span className="text-xs font-semibold text-slate-600">{label}</span>
-                        <div className="font-mono text-2xl font-bold text-slate-400">--</div>
-                        <div className="w-full h-1.5 bg-slate-200 rounded-full" />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </LockedContent>
-          ) : (
-          <Card className="border-slate-200 shadow-sm" data-testid="score-breakdown-card">
-            <CardHeader className="border-b border-slate-100 pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="font-manrope text-lg font-semibold text-slate-900 flex items-center gap-2">
-                  <PieChart className="h-5 w-5 text-indigo-500" />
-                  Launch Score Breakdown
-                </CardTitle>
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <span>Formula: 30% Trend + 25% Margin + 20% Competition + 15% Ad + 10% Supplier</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {[
-                  { key: 'trend', label: 'Trend', icon: TrendingUp, color: 'indigo', help: 'Is this product getting more popular?' },
-                  { key: 'margin', label: 'Margin', icon: PoundSterling, color: 'emerald', help: 'How much profit can you make per sale?' },
-                  { key: 'competition', label: 'Competition', icon: Users, color: 'amber', help: 'How many other sellers are there?' },
-                  { key: 'ad_activity', label: 'Ad Activity', icon: Megaphone, color: 'rose', help: 'How hard is it to advertise this product?' },
-                  { key: 'supplier_demand', label: 'Supplier', icon: Package, color: 'sky', help: 'Is there a reliable supplier for this?' },
-                ].map(({ key, label, icon: Icon, color, help }) => {
-                  const data = product.launch_score_breakdown?.[key];
-                  if (!data) return null;
-                  const scoreVal = data.score || 0;
-                  const barColor = scoreVal >= 70 ? 'bg-emerald-500' : scoreVal >= 40 ? 'bg-amber-500' : 'bg-red-400';
-                  return (
-                    <div key={key} className="space-y-2 p-3 rounded-lg bg-slate-50" data-testid={`score-${key}`}>
-                      <div className="flex items-center gap-2">
-                        <Icon className={`h-4 w-4 text-${color}-500`} />
-                        <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{label}</span>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="font-mono text-2xl font-bold text-slate-900">{scoreVal}</span>
-                        <span className="text-xs text-slate-400">/ 100</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-slate-200 rounded-full">
-                        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${scoreVal}%` }} />
-                      </div>
-                      <p className="text-xs text-slate-500 leading-relaxed">{help}</p>
-                      {data.reasoning && (
-                        <p className="text-xs text-slate-400 leading-relaxed mt-1">{data.reasoning}</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {/* Data Transparency */}
-              <div className="mt-4 pt-4 border-t border-slate-100" data-testid="data-transparency">
-                <div className="flex flex-wrap gap-4 text-xs text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <Activity className="h-3 w-3" />
-                    Sources: {(product.data_sources || [product.data_source || 'unknown']).join(', ')}
-                  </span>
-                  <span>Confidence: {product.confidence_score || 0}%</span>
-                  {product.last_updated && (
-                    <span>Updated: {new Date(product.last_updated).toLocaleString()}</span>
-                  )}
-                  {product.data_confidence && (
-                    <SourceTrustBadge confidence={product.data_confidence} size="xs" />
-                  )}
-                </div>
-                {/* Source breakdown per signal */}
-                {product.scoring_metadata?.source_breakdown && (
-                  <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-                    {Object.entries(product.scoring_metadata.source_breakdown).map(([key, info]) => (
-                      <div key={key} className="flex items-center gap-1 text-[10px] bg-slate-50 rounded px-1.5 py-0.5">
-                        <SourceDot confidence={info.confidence} />
-                        <span className="text-slate-500 capitalize truncate">{key.replace(/_/g, ' ')}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          )
+        {/* 7-Signal Score Breakdown */}
+        {isFree ? (
+          <LockedContent feature="7-Signal Score Breakdown" requiredPlan="Pro" blurIntensity="medium">
+            <ScoreBreakdownPanel productId={id} />
+          </LockedContent>
+        ) : (
+          <ScoreBreakdownPanel productId={id} />
+        )}
+
+        {/* Social Share */}
+        {product.product_name && (
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-400">Share this product's score</p>
+            <ShareSnippet
+              productName={product.product_name}
+              score={product.launch_score || 0}
+              category={product.category}
+              productId={id}
+            />
+          </div>
         )}
 
         {/* Supplier Section */}

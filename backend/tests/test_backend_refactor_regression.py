@@ -24,7 +24,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ecommerce-guide-11.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ad-spy-hub.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 ADMIN_EMAIL = "jenkinslisa1978@gmail.com"
