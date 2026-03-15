@@ -74,9 +74,24 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - Descriptive error messages: "Store not found", "Invalid access token", "Could not reach store"
 - Verified end-to-end with testing agent (100% pass rate)
 
+### Phase 1: Strategic Vision — Decision & Launch Engine (March 15, 2026)
+- **Ad Intelligence (Ad Spy) Page:** `/ad-spy` — unified ad search across TikTok, Meta, Pinterest with keyword search, platform filters, sort by engagement/recent/spend. Backend `GET /api/ads/discover` returns product-derived ad intelligence.
+- **Profitability Simulator Page:** `/profitability-simulator` — interactive calculator with product cost, selling price, CPM, CVR, ad budget, competition level inputs. Backend `POST /api/tools/profitability-simulator` returns unit economics, monthly projection, saturation analysis, and verdict.
+- **7-Signal Score Breakdown Panel:** `ScoreBreakdownPanel` component on product detail pages. Backend `GET /api/products/{id}/launch-score-breakdown` returns 7 weighted signal components (trend, margin, competition, ad_activity, supplier_demand, search_growth, social_buzz) with explanations.
+- **Social Share Snippet:** `ShareSnippet` component on product detail pages with Tweet and Copy Link buttons for sharing product scores.
+- **Sidebar Navigation:** Added "Ad Intelligence" and "Profit Simulator" links.
+- **Verified:** 100% pass rate — 21/21 backend tests, all frontend features verified.
+
 ## Backlog
 - P0: Shopify OAuth 2.0 Connection — DONE (replaced with Admin API token approach)
 - P1: Sentry integration — needs user DSN
+- P1: Full Ad Spy Implementation (Phase 2) — real multi-platform ad data from TikTok, Meta, Pinterest APIs
+- P1: Competitor Intelligence Dashboard (Phase 2) — analyze competitor stores by URL (traffic, products, revenue)
+- P2: 1-Click Product Import to Shopify (Phase 3)
+- P2: Real-time "Radar" Alerts & Push Notifications (Phase 3)
+- P2: Verified Winners Community Feature (Phase 3)
+- P2: Public Product SEO Pages (Phase 3)
+- P2: Shopify App & API Access (Phase 3)
 - P2: Redis pub/sub for multi-instance SSE
 - P2: Fix mixed content notification issue (HTTP SSE blocked on HTTPS)
 - P3: WebSocket upgrade
