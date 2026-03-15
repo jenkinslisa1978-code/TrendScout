@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import JSONResponse
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 from pydantic import BaseModel
 import logging
+import httpx
 
 from auth import get_current_user, AuthenticatedUser
 from common.database import db
@@ -17,7 +19,7 @@ connections_router = APIRouter(prefix="/api/connections")
 class StoreConnectionRequest(BaseModel):
     platform: str  # shopify, woocommerce, etsy, bigcommerce, squarespace
     store_url: str
-    api_key: str
+    api_key: Optional[str] = None
     api_secret: Optional[str] = None
     access_token: Optional[str] = None
 
@@ -147,6 +149,30 @@ async def connect_store(
 
     if req.platform not in SUPPORTED_STORES:
         raise HTTPException(status_code=400, detail=f"Unsupported platform: {req.platform}. Supported: {list(SUPPORTED_STORES.keys())}")
+
+    # Verify Shopify token before saving
+    if req.platform == "shopify":
+        if not req.access_token:
+            return JSONResponse(content={"success": False, "error": {"code": "VALIDATION", "message": "Admin API access token is required for Shopify"}})
+        domain = req.store_url.replace("https://", "").replace("http://", "").rstrip("/")
+        if not domain.endswith(".myshopify.com"):
+            domain = f"{domain}.myshopify.com"
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get(
+                    f"https://{domain}/admin/api/2024-01/shop.json",
+                    headers={"X-Shopify-Access-Token": req.access_token},
+                )
+            if resp.status_code == 401:
+                return JSONResponse(content={"success": False, "error": {"code": "AUTH_FAILED", "message": "Invalid access token. Please check your token and try again."}})
+            if resp.status_code == 404:
+                return JSONResponse(content={"success": False, "error": {"code": "NOT_FOUND", "message": f"Store '{domain}' not found. Please check your store domain."}})
+            if resp.status_code != 200:
+                return JSONResponse(content={"success": False, "error": {"code": "SHOPIFY_ERROR", "message": f"Could not verify store connection (Shopify returned {resp.status_code})"}})
+            shop_data = resp.json().get("shop", {})
+            logger.info(f"Verified Shopify store: {shop_data.get('name', domain)}")
+        except httpx.RequestError:
+            return JSONResponse(content={"success": False, "error": {"code": "UNREACHABLE", "message": f"Could not reach Shopify store '{domain}'. Please check the domain."}})
 
     # Upsert the connection
     connection = {

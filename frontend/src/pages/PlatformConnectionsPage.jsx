@@ -16,7 +16,7 @@ import {
   Store, Megaphone, Plus, Check, X, ExternalLink, Trash2,
   ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse,
 } from 'lucide-react';
-import { apiGet, apiPost, apiDelete } from '@/lib/api';
+import api, { apiGet, apiPost, apiDelete } from '@/lib/api';
 
 const STORE_ICONS = {
   shopify: '🟢',
@@ -137,36 +137,36 @@ export default function PlatformConnectionsPage() {
   };
 
   const [shopifyDomain, setShopifyDomain] = useState('');
-  const [shopifyClientId, setShopifyClientId] = useState('');
-  const [shopifyClientSecret, setShopifyClientSecret] = useState('');
-  const [shopifyOAuthLoading, setShopifyOAuthLoading] = useState(false);
+  const [shopifyAccessToken, setShopifyAccessToken] = useState('');
+  const [shopifyLoading, setShopifyLoading] = useState(false);
   const [shopifyError, setShopifyError] = useState('');
 
-  const handleShopifyOAuth = async () => {
-    if (!shopifyDomain.trim() || !shopifyClientId.trim() || !shopifyClientSecret.trim()) return;
-    setShopifyOAuthLoading(true);
+  const handleShopifyConnect = async () => {
+    if (!shopifyDomain.trim() || !shopifyAccessToken.trim()) return;
+    setShopifyLoading(true);
     setShopifyError('');
     try {
-      const res = await apiPost('/api/shopify/oauth/init', {
-        shop_domain: shopifyDomain.trim(),
-        client_id: shopifyClientId.trim(),
-        client_secret: shopifyClientSecret.trim(),
+      let domain = shopifyDomain.trim().toLowerCase();
+      if (!domain.endsWith('.myshopify.com')) {
+        domain = `${domain}.myshopify.com`;
+      }
+      const response = await api.post('/api/connections/store', {
+        platform: 'shopify',
+        store_url: `https://${domain}`,
+        access_token: shopifyAccessToken.trim(),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setShopifyError(data.detail || data.error?.message || 'Failed to initiate Shopify connection');
-        setShopifyOAuthLoading(false);
+      if (!response.ok || !response.data.success) {
+        setShopifyError(response.data.detail || response.data.error?.message || 'Failed to connect Shopify store');
         return;
       }
-      if (data.oauth_url) {
-        window.location.href = data.oauth_url;
-      } else {
-        setShopifyError(data.detail || 'Failed to initiate Shopify connection');
-        setShopifyOAuthLoading(false);
-      }
-    } catch {
+      setShopifyDomain('');
+      setShopifyAccessToken('');
+      fetchData();
+    } catch (err) {
+      console.error('Shopify connect error:', err);
       setShopifyError('Failed to connect to Shopify. Please try again.');
-      setShopifyOAuthLoading(false);
+    } finally {
+      setShopifyLoading(false);
     }
   };
 
@@ -288,22 +288,16 @@ export default function PlatformConnectionsPage() {
                             data-testid="shopify-domain-input"
                           />
                           <input
-                            type="text"
-                            placeholder="Shopify Client ID"
-                            value={shopifyClientId}
-                            onChange={(e) => setShopifyClientId(e.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            data-testid="shopify-client-id-input"
-                          />
-                          <input
                             type="password"
-                            placeholder="Shopify Client Secret"
-                            value={shopifyClientSecret}
-                            onChange={(e) => setShopifyClientSecret(e.target.value)}
+                            placeholder="Admin API access token"
+                            value={shopifyAccessToken}
+                            onChange={(e) => setShopifyAccessToken(e.target.value)}
                             className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            data-testid="shopify-client-secret-input"
+                            data-testid="shopify-access-token-input"
                           />
-                          <p className="text-[10px] text-slate-400">Get these from <a href="https://partners.shopify.com" target="_blank" rel="noreferrer" className="text-indigo-500 underline">Shopify Partners</a> &gt; Apps &gt; Create app</p>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">
+                            In your Shopify admin: <span className="font-medium text-slate-500">Settings &gt; Apps &gt; Develop apps &gt; Create app &gt; Configure Admin API scopes &gt; Install</span>, then copy the Admin API access token.
+                          </p>
                           {shopifyError && (
                             <div className="bg-red-50 border border-red-200 rounded-md p-2 text-xs text-red-700" data-testid="shopify-error">
                               {shopifyError}
@@ -312,11 +306,11 @@ export default function PlatformConnectionsPage() {
                           <Button
                             size="sm"
                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs"
-                            onClick={handleShopifyOAuth}
-                            disabled={shopifyOAuthLoading || !shopifyDomain.trim() || !shopifyClientId.trim() || !shopifyClientSecret.trim()}
-                            data-testid="connect-shopify-oauth"
+                            onClick={handleShopifyConnect}
+                            disabled={shopifyLoading || !shopifyDomain.trim() || !shopifyAccessToken.trim()}
+                            data-testid="connect-shopify-btn"
                           >
-                            {shopifyOAuthLoading ? (
+                            {shopifyLoading ? (
                               <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Connecting...</>
                             ) : (
                               <><Plus className="h-3 w-3 mr-1" /> Connect Shopify Store</>
