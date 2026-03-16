@@ -82,11 +82,19 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Sidebar Navigation:** Added "Ad Intelligence" and "Profit Simulator" links.
 - **Verified:** 100% pass rate — 21/21 backend tests, all frontend features verified.
 
+### Phase 2: Enhanced Ad Spy + Competitor Intelligence (March 16, 2026)
+- **Enhanced Ad Intelligence:** Save/bookmark ads, ad detail modal with rich metrics (launch score, est. spend, trend stage, engagement), category filter dropdown (25 categories), platform filters.
+  - Backend: `POST /api/ads/save`, `GET /api/ads/saved`, `DELETE /api/ads/saved/{id}`, `GET /api/ads/categories`
+- **Competitor Intelligence Dashboard:** `/competitor-intel` — deep-analyze any Shopify store by URL.
+  - Revenue estimates (monthly revenue, daily orders), pricing strategy (Premium/Mid-Range/Value), supplier risk scoring (Low/Medium/High), category breakdown with progress bars, top products by price.
+  - Store comparison: side-by-side metrics for 2-3 stores.
+  - Analysis history: recent analyses saved per user.
+  - Backend: `POST /api/competitor-intel/analyze`, `POST /api/competitor-intel/compare`, `GET /api/competitor-intel/history`
+- **Verified:** 100% pass rate — 19/19 backend tests, all frontend features verified.
+
 ## Backlog
 - P0: Shopify OAuth 2.0 Connection — DONE (replaced with Admin API token approach)
-- P1: Sentry integration — needs user DSN
-- P1: Full Ad Spy Implementation (Phase 2) — real multi-platform ad data from TikTok, Meta, Pinterest APIs
-- P1: Competitor Intelligence Dashboard (Phase 2) — analyze competitor stores by URL (traffic, products, revenue)
+- P1: Sentry integration — needs user DSN (monitors React frontend + FastAPI backend)
 - P2: 1-Click Product Import to Shopify (Phase 3)
 - P2: Real-time "Radar" Alerts & Push Notifications (Phase 3)
 - P2: Verified Winners Community Feature (Phase 3)
