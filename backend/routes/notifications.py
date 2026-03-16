@@ -616,6 +616,190 @@ async def notification_stream(
 
 
 # =====================
+# WebSocket Real-Time Notifications
+# =====================
+
+from fastapi import WebSocket, WebSocketDisconnect
+
+# Active WebSocket connections per user
+_ws_connections: Dict[str, list] = {}
+
+
+@notifications_router.websocket("/ws")
+async def websocket_notifications(websocket: WebSocket, token: str = None):
+    """
+    WebSocket endpoint for real-time notifications.
+    Authenticates via token query param.
+    Supports Redis pub/sub for cross-instance delivery.
+    """
+    # Authenticate
+    user_id = None
+    if token:
+        import jwt as pyjwt
+        try:
+            secret = os.environ.get("SUPABASE_JWT_SECRET")
+            payload = pyjwt.decode(token, secret, algorithms=["HS256"])
+            user_id = payload.get("sub")
+        except Exception:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+
+    if not user_id:
+        await websocket.close(code=4001, reason="Authentication required")
+        return
+
+    await websocket.accept()
+
+    # Register connection
+    if user_id not in _ws_connections:
+        _ws_connections[user_id] = []
+    _ws_connections[user_id].append(websocket)
+
+    # Send initial connected event
+    await websocket.send_json({"type": "connected", "user_id": user_id})
+
+    # Set up Redis subscriber
+    redis_sub = None
+    try:
+        from common.redis_cache import _get_redis
+        rc = _get_redis()
+        if rc:
+            redis_sub = rc.pubsub()
+            redis_sub.subscribe(f"{_REDIS_CHANNEL}:{user_id}")
+    except Exception:
+        pass
+
+    last_check = datetime.now(timezone.utc)
+
+    try:
+        while True:
+            # 1. Check Redis pub/sub
+            if redis_sub:
+                try:
+                    message = redis_sub.get_message(ignore_subscribe_messages=True, timeout=0.01)
+                    if message and message.get("type") == "message":
+                        event = json.loads(message["data"])
+                        await websocket.send_json(event)
+                except Exception:
+                    pass
+
+            # 2. Check in-memory queue
+            events = _event_queues.pop(user_id, [])
+            for event in events:
+                await websocket.send_json(event)
+
+            # 3. Check DB for new notifications
+            new_notifs = await db.notifications.find(
+                {
+                    "user_id": user_id,
+                    "is_read": False,
+                    "created_at": {"$gt": last_check.isoformat()},
+                },
+                {"_id": 0},
+            ).sort("created_at", -1).limit(5).to_list(5)
+
+            for notif in new_notifs:
+                await websocket.send_json({"type": "notification", "data": notif})
+
+            if new_notifs:
+                last_check = datetime.now(timezone.utc)
+
+            # 4. Send unread count
+            unread = await db.notifications.count_documents(
+                {"user_id": user_id, "is_read": False}
+            )
+            await websocket.send_json({"type": "unread_count", "data": {"count": unread}})
+
+            # 5. Handle incoming messages (ping/pong, mark-read, etc.)
+            try:
+                msg = await asyncio.wait_for(websocket.receive_json(), timeout=15)
+                if msg.get("type") == "ping":
+                    await websocket.send_json({"type": "pong"})
+                elif msg.get("type") == "mark_read":
+                    ids = msg.get("ids", [])
+                    if ids:
+                        await db.notifications.update_many(
+                            {"id": {"$in": ids}, "user_id": user_id},
+                            {"$set": {"is_read": True}},
+                        )
+            except asyncio.TimeoutError:
+                # No message received — send heartbeat
+                await websocket.send_json({"type": "heartbeat"})
+            except Exception:
+                break
+
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        # Cleanup connection
+        if user_id in _ws_connections:
+            _ws_connections[user_id] = [
+                ws for ws in _ws_connections[user_id] if ws != websocket
+            ]
+            if not _ws_connections[user_id]:
+                del _ws_connections[user_id]
+        if redis_sub:
+            try:
+                redis_sub.unsubscribe()
+                redis_sub.close()
+            except Exception:
+                pass
+
+
+def push_ws_event(user_id: str, event: Dict[str, Any]):
+    """Push event to active WebSocket connections for a user."""
+    conns = _ws_connections.get(user_id, [])
+    for ws in conns:
+        try:
+            asyncio.create_task(ws.send_json(event))
+        except Exception:
+            pass
+
+
+# Update push_event to also push to WebSocket connections
+_original_push_event = push_event
+
+
+def push_event_ws(user_id: str, event_type: str, data: Dict[str, Any]):
+    """Push event via WebSocket, Redis pub/sub, and in-memory queue."""
+    event = {
+        "type": event_type,
+        "data": data,
+        "user_id": user_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    # 1. Push to active WebSocket connections on this instance
+    push_ws_event(user_id, event)
+
+    # 2. Redis pub/sub for cross-instance
+    try:
+        from common.redis_cache import _get_redis
+        redis_client = _get_redis()
+        if redis_client:
+            redis_client.publish(
+                f"{_REDIS_CHANNEL}:{user_id}",
+                json.dumps(event, default=str),
+            )
+            return
+    except Exception:
+        pass
+
+    # 3. Fallback to in-memory queue (for SSE consumers)
+    if user_id not in _event_queues:
+        _event_queues[user_id] = []
+    _event_queues[user_id].append(event)
+    if len(_event_queues[user_id]) > 100:
+        _event_queues[user_id] = _event_queues[user_id][-50:]
+
+
+# Replace the module-level push_event
+push_event = push_event_ws
+
+
+# =====================
 # ROUTES - User / Onboarding
 # =====================
 
