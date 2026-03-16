@@ -475,25 +475,44 @@ async def scan_thresholds_for_alerts(
 
 
 # =====================
-# SSE Real-Time Notifications
+# SSE Real-Time Notifications with Redis Pub/Sub
 # =====================
 
 import asyncio
 
-# In-memory event queues per user (production: use Redis pub/sub)
+# In-memory event queues per user (fallback when Redis unavailable)
 _event_queues: Dict[str, list] = {}
+
+# Redis pub/sub channel prefix
+_REDIS_CHANNEL = "trendscout:notifications"
 
 
 def push_event(user_id: str, event_type: str, data: Dict[str, Any]):
-    """Push an event to a user's SSE queue."""
-    if user_id not in _event_queues:
-        _event_queues[user_id] = []
-    _event_queues[user_id].append({
+    """Push an event to a user's SSE queue. Uses Redis pub/sub if available."""
+    event = {
         "type": event_type,
         "data": data,
+        "user_id": user_id,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-    })
-    # Keep queue bounded
+    }
+
+    # Try Redis pub/sub first
+    try:
+        from common.redis_cache import _get_redis
+        redis_client = _get_redis()
+        if redis_client:
+            redis_client.publish(
+                f"{_REDIS_CHANNEL}:{user_id}",
+                json.dumps(event, default=str),
+            )
+            return
+    except Exception:
+        pass
+
+    # Fallback to in-memory queue
+    if user_id not in _event_queues:
+        _event_queues[user_id] = []
+    _event_queues[user_id].append(event)
     if len(_event_queues[user_id]) > 100:
         _event_queues[user_id] = _event_queues[user_id][-50:]
 
@@ -529,11 +548,34 @@ async def notification_stream(
         last_check = datetime.now(timezone.utc)
         heartbeat_interval = 30  # seconds
 
+        # Try to set up Redis subscriber
+        redis_sub = None
+        try:
+            from common.redis_cache import _get_redis
+            rc = _get_redis()
+            if rc:
+                redis_sub = rc.pubsub()
+                redis_sub.subscribe(f"{_REDIS_CHANNEL}:{user_id}")
+        except Exception:
+            pass
+
         # Send initial connection event
         yield f"data: {json.dumps({'type': 'connected', 'user_id': user_id})}\n\n"
 
         while True:
-            # Check for queued events
+            # 1. Check Redis pub/sub messages
+            if redis_sub:
+                try:
+                    message = redis_sub.get_message(ignore_subscribe_messages=True, timeout=0.1)
+                    if message and message.get("type") == "message":
+                        event = json.loads(message["data"])
+                        etype = event.get("type", "notification")
+                        edata = event.get("data", event)
+                        yield f"event: {etype}\ndata: {json.dumps(edata, default=str)}\n\n"
+                except Exception:
+                    pass
+
+            # 2. Check in-memory queue fallback
             events = _event_queues.pop(user_id, [])
             for event in events:
                 yield f"event: {event['type']}\ndata: {json.dumps(event['data'], default=str)}\n\n"

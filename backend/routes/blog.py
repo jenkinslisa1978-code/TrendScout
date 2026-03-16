@@ -283,6 +283,31 @@ async def get_digest_archive(limit: int = 12):
     return {"digests": digests, "total": len(digests)}
 
 
+@digest_router.get("/subscriber-count")
+async def get_subscriber_count():
+    """Public: Get active subscriber count for social proof."""
+    count = await db.digest_subscribers.count_documents({"active": True})
+    return {"count": count}
+
+
+@digest_router.get("/subscribers")
+async def get_digest_subscribers(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Admin: Get subscriber list and count."""
+    profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0})
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    active_count = await db.digest_subscribers.count_documents({"active": True})
+    total_count = await db.digest_subscribers.count_documents({})
+    recent = await db.digest_subscribers.find(
+        {"active": True}, {"_id": 0}
+    ).sort("subscribed_at", -1).limit(20).to_list(20)
+
+    return {"active_count": active_count, "total_count": total_count, "recent": recent}
+
+
 @digest_router.get("/{digest_id}")
 async def get_digest_by_id(digest_id: str):
     """Get a specific digest by ID (public)."""
@@ -394,6 +419,53 @@ async def generate_weekly_digest(
     await db.weekly_digests.insert_one(digest)
     digest.pop("_id", None)
     return {"digest": digest}
+
+
+# ── Digest Email Subscription ──────────────────────────────────
+
+@digest_router.post("/subscribe")
+async def subscribe_to_digest(request: Request):
+    """Subscribe an email to the weekly digest (public)."""
+    body = await request.json()
+    email = (body.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Valid email required")
+
+    existing = await db.digest_subscribers.find_one({"email": email})
+    if existing:
+        if existing.get("active"):
+            return {"subscribed": True, "message": "Already subscribed"}
+        # Reactivate
+        await db.digest_subscribers.update_one(
+            {"email": email},
+            {"$set": {"active": True, "resubscribed_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        return {"subscribed": True, "message": "Re-subscribed successfully"}
+
+    doc = {
+        "id": str(uuid.uuid4()),
+        "email": email,
+        "active": True,
+        "subscribed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.digest_subscribers.insert_one(doc)
+    doc.pop("_id", None)
+    return {"subscribed": True, "message": "Subscribed! You'll get the weekly digest every Monday."}
+
+
+@digest_router.post("/unsubscribe")
+async def unsubscribe_from_digest(request: Request):
+    """Unsubscribe from the weekly digest."""
+    body = await request.json()
+    email = (body.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required")
+
+    result = await db.digest_subscribers.update_one(
+        {"email": email},
+        {"$set": {"active": False, "unsubscribed_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"unsubscribed": result.matched_count > 0}
 
 
 routers = [blog_router, digest_router]

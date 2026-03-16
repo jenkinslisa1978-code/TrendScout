@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   TrendingUp, Zap, Calendar, ArrowRight, Share2,
   Loader2, CheckCircle, Eye, Tag, Star, Copy, Twitter,
-  ChevronRight, BookOpen,
+  ChevronRight, BookOpen, Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -109,6 +109,9 @@ export default function WeeklyDigestPage() {
             </button>
           </div>
 
+          {/* Email Subscription */}
+          <DigestSubscribeForm />
+
           {/* Products */}
           <div className="space-y-5" data-testid="digest-products">
             {(digest.products || []).map((p, idx) => (
@@ -184,6 +187,85 @@ export default function WeeklyDigestPage() {
         </div>
       </div>
     </>
+  );
+}
+
+function DigestSubscribeForm() {
+  const [email, setEmail] = React.useState('');
+  const [subscribing, setSubscribing] = React.useState(false);
+  const [subscribed, setSubscribed] = React.useState(false);
+  const [subCount, setSubCount] = React.useState(0);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/digest/subscriber-count`);
+        if (res.ok) { const d = await res.json(); setSubCount(d.count || 0); }
+      } catch {}
+    })();
+  }, []);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubscribing(true);
+    try {
+      const res = await fetch(`${API}/api/digest/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json();
+      if (data.subscribed) {
+        setSubscribed(true);
+        setSubCount(c => c + 1);
+        toast.success(data.message);
+      } else {
+        toast.error(data.detail || 'Failed to subscribe');
+      }
+    } catch { toast.error('Failed to subscribe'); }
+    setSubscribing(false);
+  };
+
+  if (subscribed) {
+    return (
+      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center" data-testid="subscribed-confirmation">
+        <CheckCircle className="h-5 w-5 text-emerald-600 mx-auto mb-2" />
+        <p className="text-sm font-semibold text-emerald-700">You're subscribed!</p>
+        <p className="text-xs text-emerald-600 mt-1">You'll get the weekly digest every Monday.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5 max-w-lg mx-auto" data-testid="digest-subscribe-form">
+      <div className="text-center mb-3">
+        <Mail className="h-5 w-5 text-indigo-500 mx-auto mb-1.5" />
+        <p className="text-sm font-bold text-slate-900">Get this in your inbox every Monday</p>
+        {subCount > 0 && (
+          <p className="text-[10px] text-slate-400 mt-0.5">Join {subCount} subscriber{subCount !== 1 ? 's' : ''}</p>
+        )}
+      </div>
+      <form onSubmit={handleSubscribe} className="flex gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none"
+          required
+          data-testid="subscribe-email-input"
+        />
+        <button
+          type="submit"
+          disabled={subscribing}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+          data-testid="subscribe-btn"
+        >
+          {subscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Subscribe'}
+        </button>
+      </form>
+    </div>
   );
 }
 

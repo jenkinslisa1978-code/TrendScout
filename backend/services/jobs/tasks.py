@@ -1379,3 +1379,105 @@ async def enrich_product_images(db, params: Dict[str, Any] = None) -> Dict[str, 
             'candidates_found': candidates_found,
         }
     }
+
+
+# ── Weekly Digest Auto-Generation ────────────────────────────
+
+@TaskRegistry.register(
+    name="generate_weekly_digest",
+    description="Auto-generate weekly trending product digest every Monday at 9am UTC",
+    default_schedule="0 9 * * 1"  # Monday 9:00 UTC
+)
+async def generate_weekly_digest(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate and publish the weekly trending product digest."""
+    from common.cache import slugify
+
+    products = await db.products.find(
+        {"launch_score": {"$gte": 50}},
+        {"_id": 0, "id": 1, "product_name": 1, "category": 1, "launch_score": 1,
+         "trend_stage": 1, "image_url": 1, "ai_summary": 1, "tiktok_views": 1,
+         "competition_level": 1, "estimated_retail_price": 1, "engagement_rate": 1,
+         "slug": 1, "verified_winner": 1}
+    ).sort("launch_score", -1).limit(20).to_list(20)
+
+    # Pick top 5 with category diversity
+    seen_cats = set()
+    top5 = []
+    for p in products:
+        cat = p.get("category", "")
+        if cat not in seen_cats or len(top5) < 3:
+            top5.append(p)
+            seen_cats.add(cat)
+        if len(top5) >= 5:
+            break
+    for p in products:
+        if len(top5) >= 5:
+            break
+        if p not in top5:
+            top5.append(p)
+
+    if not top5:
+        return {"records_processed": 0, "details": {"error": "Not enough products"}}
+
+    for p in top5:
+        if not p.get("slug"):
+            p["slug"] = slugify(p.get("product_name", ""))
+
+    now = datetime.now(timezone.utc)
+    week_label = now.strftime("Week of %B %d, %Y")
+    avg_score = round(sum(p.get("launch_score", 0) for p in top5) / len(top5), 1)
+    categories_featured = list(set(p.get("category", "") for p in top5 if p.get("category")))
+
+    intro = (
+        f"This week's top trending products for dropshipping, scored by our AI-powered 7-signal analysis. "
+        f"Average launch score: {avg_score}/100 across {len(categories_featured)} categories."
+    )
+
+    enriched = []
+    for i, p in enumerate(top5):
+        insight = []
+        if p.get("tiktok_views", 0) > 100000:
+            insight.append(f"Strong TikTok presence with {p['tiktok_views']:,} views")
+        if p.get("competition_level") in ("low", "medium"):
+            insight.append(f"{p['competition_level'].capitalize()} competition")
+        if p.get("trend_stage") == "emerging":
+            insight.append("Emerging trend")
+        if p.get("verified_winner"):
+            insight.append("Community-verified winner")
+        enriched.append({
+            **p,
+            "rank": i + 1,
+            "insight": " | ".join(insight) if insight else f"Launch score: {p.get('launch_score', 0)}/100",
+        })
+
+    digest = {
+        "id": str(uuid.uuid4()),
+        "title": f"Top 5 Trending Products — {week_label}",
+        "slug": slugify(f"top-5-trending-products-{now.strftime('%Y-%m-%d')}"),
+        "week_label": week_label,
+        "intro": intro,
+        "products": enriched,
+        "avg_score": avg_score,
+        "categories_featured": categories_featured,
+        "product_count": len(enriched),
+        "status": "published",
+        "published_at": now.isoformat(),
+        "seo": {
+            "title": f"Top 5 Trending Dropshipping Products — {week_label} | TrendScout",
+            "description": f"AI-scored trending products for {week_label}. Average launch score: {avg_score}/100.",
+            "og_image": enriched[0].get("image_url", "") if enriched else "",
+        },
+    }
+
+    await db.weekly_digests.insert_one(digest)
+    logger.info(f"Weekly digest published: {digest['title']}")
+
+    return {
+        "records_processed": len(enriched),
+        "details": {
+            "digest_id": digest["id"],
+            "title": digest["title"],
+            "products": len(enriched),
+            "avg_score": avg_score,
+        },
+    }

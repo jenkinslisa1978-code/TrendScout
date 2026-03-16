@@ -201,7 +201,7 @@ export default function NotificationCenter() {
   // SSE real-time listener
   useEffect(() => {
     if (!user) return;
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('trendscout_token');
     if (!token) return;
 
     let eventSource;
