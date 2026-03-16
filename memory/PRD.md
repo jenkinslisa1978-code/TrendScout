@@ -97,6 +97,13 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Backend:** `sentry-sdk[fastapi]` — captures Python exceptions, performance traces (30%), profiles (10%).
 - DSNs configured via `REACT_APP_SENTRY_DSN` (frontend) and `SENTRY_DSN` (backend).
 
+### Phase 3: Shopify Push + Radar Alerts + Verified Winners (March 16, 2026)
+- **1-Click Product Import to Shopify:** "Push to Shopify" button on product detail pages. Pushes product as draft with title, description, images, pricing, tags via Admin API. Backend: `POST /api/shopify/push-product`, `GET /api/shopify/exports`.
+- **Real-time Radar Alerts:** `/radar-alerts` — Live signal feed (trend spikes, ad activity, supplier demand, competition drops). Custom watches with create/toggle/delete. Watch types: product_score, category_trend, competitor_new_products. Backend: `POST/GET/PUT/DELETE /api/radar/watches`, `GET /api/radar/live-events`, `GET /api/radar/alert-feed`.
+- **Verified Winners Community:** `/verified-winners` — Anonymous winner submissions with revenue range, timeframe, proof. Admin verification workflow. Upvote/downvote system. Leaderboard with sort and category filters. Backend: `POST /api/winners/submit`, `GET /api/winners/`, `POST /api/winners/{id}/upvote`, `GET /api/winners/my-submissions`, `POST /api/winners/{id}/verify`.
+- **Product Search API:** `GET /api/products/search?q=&limit=` for autocomplete/selection.
+- **Verified:** 100% pass rate — 21/21 backend tests, all frontend features verified.
+
 ## Backlog
 - P2: 1-Click Product Import to Shopify (Phase 3)
 - P2: Real-time "Radar" Alerts & Push Notifications (Phase 3)

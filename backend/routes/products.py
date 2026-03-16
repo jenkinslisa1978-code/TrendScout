@@ -31,6 +31,19 @@ data_integrity_service = DataIntegrityService(db)
 
 api_router = APIRouter(prefix="/api")
 
+
+@api_router.get("/products/search")
+async def search_products(q: str = "", limit: int = 10):
+    """Search products by name for autocomplete/selection."""
+    query = {}
+    if q:
+        query["product_name"] = {"$regex": q, "$options": "i"}
+    products = await db.products.find(
+        query, {"_id": 0, "id": 1, "product_name": 1, "image_url": 1, "category": 1, "launch_score": 1}
+    ).sort("launch_score", -1).limit(min(limit, 20)).to_list(min(limit, 20))
+    return {"products": products, "total": len(products)}
+
+
 @api_router.get("/products/find-winning")
 async def find_winning_product(
     current_user: AuthenticatedUser = Depends(get_current_user)
