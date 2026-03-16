@@ -10,6 +10,7 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - Email: Resend (transactional emails — password resets)
 - Security: HSTS, CSP-Report-Only, CSRF double-submit cookie, Fernet encryption
 - Monitoring: web-vitals, structured JSON request logging, X-Request-ID correlation
+- Real-time: WebSocket notifications (upgraded from SSE)
 
 ## ALL Features — COMPLETED
 
@@ -125,5 +126,26 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Redis Pub/Sub for SSE:** `push_event()` now tries Redis pub/sub first for cross-instance notification propagation, falls back to in-memory queues when Redis unavailable.
 - **Verified:** 100% pass rate — 15/15 backend, all frontend features verified.
 
+### WebSocket Upgrade (March 16, 2026)
+- **Backend:** Replaced SSE `/api/notifications/stream` with WebSocket `/api/notifications/ws`. Token-based auth via query param. Supports Redis pub/sub for cross-instance delivery, in-memory queue fallback. Bi-directional messaging: ping/pong, mark_read. Heartbeat every 15 seconds.
+- **Frontend:** `NotificationCenter.jsx` upgraded from EventSource to WebSocket with exponential backoff reconnection (max 10 retries, up to 30s delay). URL scheme conversion (https→wss, http→ws).
+- **push_event():** Unified function pushes to active WebSocket connections first, then Redis pub/sub, then in-memory queue fallback.
+- **SSE removed:** Old `/api/notifications/stream` endpoint fully removed.
+- **Verified:** 100% pass rate — iteration_85.json, all backend + frontend tests passed.
+
+### Shopify App Packaging (March 16, 2026)
+- **GDPR Compliance Endpoints (mandatory for Shopify App Store):**
+  - `POST /api/shopify/app/webhooks/customers/data_request` — handles customer data requests
+  - `POST /api/shopify/app/webhooks/customers/redact` — handles customer data erasure
+  - `POST /api/shopify/app/webhooks/shop/redact` — handles shop data erasure (deletes all shop-related data)
+- **App Lifecycle Webhooks:**
+  - `POST /api/shopify/app/webhooks/app/uninstalled` — marks connections as uninstalled on app removal
+- **Webhook Security:** HMAC-SHA256 verification when `SHOPIFY_CLIENT_SECRET` is set
+- **App Manifest:** `shopify.app.toml` with scopes, webhook subscriptions, auth config
+- **App Info Endpoint:** `GET /api/shopify/app/info` returns public metadata, features, scopes, endpoints
+- **Frontend:** `/shopify-app` public page with hero, 6 feature cards, 4-step installation guide, GDPR compliance section, toggleable API docs table (10 endpoints)
+- **Verified:** 100% pass rate — iteration_86.json, 17/17 backend + all frontend tests passed.
+
 ## Backlog
-- P3: WebSocket upgrade (SSE works fine for current scale)
+- No major features remaining from original 9-part strategic brief. All requirements implemented.
+- P3: Naming convention cleanup (ProductLaunchWizard.jsx, SystemHealthDashboard.jsx don't follow *Page.jsx pattern) — cosmetic only
