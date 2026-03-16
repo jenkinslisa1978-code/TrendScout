@@ -67,6 +67,7 @@ import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import ProfitabilitySimulatorPage from "@/pages/ProfitabilitySimulatorPage";
 import AdSpyPage from "@/pages/AdSpyPage";
+import CompetitorIntelPage from "@/pages/CompetitorIntelPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -388,6 +389,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AdSpyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/competitor-intel"
+        element={
+          <ProtectedRoute>
+            <CompetitorIntelPage />
           </ProtectedRoute>
         }
       />

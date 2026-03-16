@@ -43,7 +43,7 @@ const navigation = [
   { name: 'Profit Simulator', href: '/profitability-simulator', icon: Target },
   { name: 'Connections', href: '/settings/connections', icon: Link2 },
   { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Market Data', href: '/competitor-tracker', icon: Radar },
+  { name: 'Competitor Intel', href: '/competitor-intel', icon: Radar },
   { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
   { name: 'Referrals', href: '/referrals', icon: Gift },

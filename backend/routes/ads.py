@@ -7,6 +7,7 @@ import uuid
 import json
 import logging
 import re
+import aiohttp
 
 from auth import get_current_user, get_optional_user, AuthenticatedUser
 from common.database import db
@@ -1028,7 +1029,79 @@ async def discover_ads(
         if len(ads) >= limit:
             break
 
-    return {"ads": ads, "total": len(ads), "query": q, "platform": platform, "sort": sort}
+    # Get available categories for filter
+    all_categories = await db.products.distinct("category")
+
+    return {
+        "ads": ads,
+        "total": len(ads),
+        "query": q,
+        "platform": platform,
+        "sort": sort,
+        "categories": sorted([c for c in all_categories if c]),
+    }
+
+
+@ads_spy_router.get("/categories")
+async def get_ad_categories():
+    """Get list of product categories for filtering."""
+    cats = await db.products.distinct("category")
+    return {"categories": sorted([c for c in cats if c])}
+
+
+@ads_spy_router.post("/save")
+async def save_ad(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Bookmark/save an ad for later reference."""
+    body = await request.json()
+    ad_id = body.get("ad_id")
+    if not ad_id:
+        raise HTTPException(status_code=400, detail="ad_id is required")
+
+    existing = await db.saved_ads.find_one(
+        {"user_id": current_user.user_id, "ad_id": ad_id}
+    )
+    if existing:
+        return {"saved": True, "message": "Already saved"}
+
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user.user_id,
+        "ad_id": ad_id,
+        "ad_data": body.get("ad_data", {}),
+        "notes": body.get("notes", ""),
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.saved_ads.insert_one(doc)
+    doc.pop("_id", None)
+    return {"saved": True, "item": doc}
+
+
+@ads_spy_router.get("/saved")
+async def get_saved_ads(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get all saved/bookmarked ads for the current user."""
+    items = await db.saved_ads.find(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    ).sort("saved_at", -1).to_list(100)
+    return {"saved_ads": items, "total": len(items)}
+
+
+@ads_spy_router.delete("/saved/{item_id}")
+async def unsave_ad(
+    item_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Remove a saved ad."""
+    result = await db.saved_ads.delete_one(
+        {"$or": [{"id": item_id}, {"ad_id": item_id}], "user_id": current_user.user_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Saved ad not found")
+    return {"removed": True}
 
 
 def _infer_platforms(product: dict) -> list:
@@ -1045,4 +1118,292 @@ def _infer_platforms(product: dict) -> list:
     return platforms
 
 
-routers = [ad_creative_router, ad_discovery_router, outcomes_router, ad_test_router, ad_engine_router, ads_spy_router]
+# ═══════════════════════════════════════════════════════════════════
+# Competitor Intelligence — Deep Store Analysis
+# ═══════════════════════════════════════════════════════════════════
+
+competitor_intel_router = APIRouter(prefix="/api/competitor-intel")
+
+
+@competitor_intel_router.post("/analyze")
+async def analyze_store_deep(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Deep analysis of a Shopify store: products, pricing, revenue estimates,
+    category breakdown, top products, supplier risk indicators.
+    """
+    body = await request.json()
+    url = (body.get("url") or "").strip().rstrip("/")
+    if not url:
+        raise HTTPException(status_code=400, detail="url is required")
+
+    if not url.startswith("http"):
+        url = "https://" + url
+
+    domain_match = re.match(r"https?://([^/]+)", url)
+    if not domain_match:
+        raise HTTPException(status_code=400, detail="Invalid URL format")
+    domain = domain_match.group(1)
+
+    products_url = f"https://{domain}/products.json?limit=250"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                products_url,
+                timeout=aiohttp.ClientTimeout(total=15),
+                headers={"User-Agent": "TrendScout/1.0 Competitor Intel"},
+            ) as resp:
+                if resp.status == 404:
+                    return {"success": False, "error": "Not a Shopify store or products endpoint disabled."}
+                if resp.status != 200:
+                    return {"success": False, "error": f"Could not reach store (HTTP {resp.status})."}
+                data = await resp.json()
+    except aiohttp.ClientError:
+        return {"success": False, "error": "Could not connect. Check the URL."}
+
+    raw = data.get("products", [])
+    if not raw:
+        return {
+            "success": True,
+            "domain": domain,
+            "store_url": f"https://{domain}",
+            "product_count": 0,
+            "analysis": {"status": "empty", "message": "No products found."},
+        }
+
+    # --- Process products ---
+    products = []
+    all_prices = []
+    category_counts = {}
+    vendor_counts = {}
+    creation_dates = []
+
+    for p in raw:
+        variants = p.get("variants", [])
+        prices = [float(v.get("price", 0)) for v in variants if v.get("price")]
+        avg_price = sum(prices) / len(prices) if prices else 0
+        all_prices.extend(prices)
+
+        ptype = (p.get("product_type") or "").strip() or "Uncategorized"
+        category_counts[ptype] = category_counts.get(ptype, 0) + 1
+
+        vendor = (p.get("vendor") or "").strip()
+        if vendor:
+            vendor_counts[vendor] = vendor_counts.get(vendor, 0) + 1
+
+        created = p.get("created_at", "")
+        if created:
+            creation_dates.append(created)
+
+        img = p.get("images", [{}])
+        image_url = img[0].get("src", "") if img else ""
+
+        products.append({
+            "title": p.get("title", ""),
+            "product_type": ptype,
+            "vendor": vendor,
+            "price": round(avg_price, 2),
+            "variants_count": len(variants),
+            "image_url": image_url,
+            "created_at": created,
+            "tags": p.get("tags", "").split(", ")[:5] if isinstance(p.get("tags"), str) else [],
+        })
+
+    # Sort by price desc for top products
+    products_by_price = sorted(products, key=lambda x: x["price"], reverse=True)
+    top_products = products_by_price[:8]
+
+    categories = sorted(
+        [{"name": k, "count": v, "pct": round(v / len(raw) * 100, 1)} for k, v in category_counts.items()],
+        key=lambda c: c["count"], reverse=True,
+    )
+
+    min_price = min(all_prices) if all_prices else 0
+    max_price = max(all_prices) if all_prices else 0
+    avg_price_all = sum(all_prices) / len(all_prices) if all_prices else 0
+    median_price = sorted(all_prices)[len(all_prices) // 2] if all_prices else 0
+
+    # --- Revenue estimation ---
+    product_count = len(raw)
+    avg_p = avg_price_all
+
+    # Heuristic: estimate daily orders from product count and price range
+    if product_count > 100:
+        est_daily_orders = product_count * 0.8
+        store_tier = "Enterprise"
+    elif product_count > 50:
+        est_daily_orders = product_count * 0.5
+        store_tier = "Established"
+    elif product_count > 20:
+        est_daily_orders = product_count * 0.3
+        store_tier = "Growing"
+    elif product_count > 5:
+        est_daily_orders = product_count * 0.2
+        store_tier = "Early Stage"
+    else:
+        est_daily_orders = product_count * 0.1
+        store_tier = "Micro"
+
+    est_monthly_revenue = round(est_daily_orders * 30 * avg_p, 0)
+    est_monthly_orders = round(est_daily_orders * 30)
+
+    # --- Store age estimate ---
+    if creation_dates:
+        oldest = min(creation_dates)
+        try:
+            from dateutil.parser import parse as parse_date
+            age_days = (datetime.now(timezone.utc) - parse_date(oldest)).days
+            store_age_months = round(age_days / 30, 1)
+        except Exception:
+            store_age_months = None
+    else:
+        store_age_months = None
+
+    # --- Supplier risk ---
+    vendor_count = len(vendor_counts)
+    single_vendor = vendor_count <= 1
+    supplier_risk = "High" if single_vendor else ("Medium" if vendor_count <= 3 else "Low")
+    supplier_risk_reason = (
+        "Single vendor dependency — supply chain disruption risk"
+        if single_vendor
+        else f"{vendor_count} vendors — {'moderate' if vendor_count <= 3 else 'good'} diversification"
+    )
+
+    # --- Pricing strategy ---
+    if avg_p > 80:
+        pricing_strategy = "Premium"
+    elif avg_p > 30:
+        pricing_strategy = "Mid-Range"
+    else:
+        pricing_strategy = "Value / Budget"
+
+    price_spread = max_price - min_price if all_prices else 0
+    price_consistency = "Tight" if price_spread < avg_p * 0.5 else ("Moderate" if price_spread < avg_p * 2 else "Wide")
+
+    # Save analysis to DB
+    analysis_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user.user_id,
+        "domain": domain,
+        "analyzed_at": datetime.now(timezone.utc).isoformat(),
+        "product_count": product_count,
+        "est_monthly_revenue": est_monthly_revenue,
+    }
+    await db.competitor_analyses.update_one(
+        {"user_id": current_user.user_id, "domain": domain},
+        {"$set": analysis_doc},
+        upsert=True,
+    )
+
+    return {
+        "success": True,
+        "domain": domain,
+        "store_url": f"https://{domain}",
+        "store_tier": store_tier,
+        "store_age_months": store_age_months,
+        "product_count": product_count,
+        "categories": categories[:12],
+        "top_products": top_products,
+        "pricing": {
+            "min": round(min_price, 2),
+            "max": round(max_price, 2),
+            "avg": round(avg_p, 2),
+            "median": round(median_price, 2),
+            "strategy": pricing_strategy,
+            "consistency": price_consistency,
+        },
+        "revenue_estimate": {
+            "monthly_revenue": est_monthly_revenue,
+            "monthly_orders": est_monthly_orders,
+            "daily_orders": round(est_daily_orders, 1),
+            "confidence": "Low — based on catalog size heuristics",
+        },
+        "suppliers": {
+            "vendor_count": vendor_count,
+            "top_vendors": sorted(
+                [{"name": k, "count": v} for k, v in vendor_counts.items()],
+                key=lambda v: v["count"], reverse=True,
+            )[:5],
+            "risk_level": supplier_risk,
+            "risk_reason": supplier_risk_reason,
+        },
+    }
+
+
+@competitor_intel_router.post("/compare")
+async def compare_stores(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Compare two Shopify stores side by side."""
+    body = await request.json()
+    urls = body.get("urls", [])
+    if len(urls) < 2:
+        raise HTTPException(status_code=400, detail="Provide at least 2 store URLs")
+
+    results = []
+    for url in urls[:3]:
+        try:
+            # Re-use the analyze logic inline
+            clean = url.strip().rstrip("/")
+            if not clean.startswith("http"):
+                clean = "https://" + clean
+            dm = re.match(r"https?://([^/]+)", clean)
+            if not dm:
+                results.append({"url": url, "error": "Invalid URL"})
+                continue
+            domain = dm.group(1)
+            pu = f"https://{domain}/products.json?limit=250"
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get(pu, timeout=aiohttp.ClientTimeout(total=15),
+                                    headers={"User-Agent": "TrendScout/1.0"}) as r:
+                    if r.status != 200:
+                        results.append({"domain": domain, "error": f"HTTP {r.status}"})
+                        continue
+                    d = await r.json()
+            raw = d.get("products", [])
+            prices = []
+            cats = {}
+            for p in raw:
+                for v in p.get("variants", []):
+                    try:
+                        prices.append(float(v["price"]))
+                    except (ValueError, TypeError, KeyError):
+                        pass
+                pt = (p.get("product_type") or "").strip() or "Uncategorized"
+                cats[pt] = cats.get(pt, 0) + 1
+
+            avg_p = sum(prices) / len(prices) if prices else 0
+            count = len(raw)
+            est_daily = count * (0.8 if count > 100 else 0.5 if count > 50 else 0.3 if count > 20 else 0.2 if count > 5 else 0.1)
+            results.append({
+                "domain": domain,
+                "product_count": count,
+                "avg_price": round(avg_p, 2),
+                "min_price": round(min(prices), 2) if prices else 0,
+                "max_price": round(max(prices), 2) if prices else 0,
+                "categories": len(cats),
+                "top_category": max(cats, key=cats.get) if cats else "N/A",
+                "est_monthly_revenue": round(est_daily * 30 * avg_p),
+                "est_daily_orders": round(est_daily, 1),
+            })
+        except Exception as e:
+            results.append({"domain": url, "error": str(e)[:100]})
+
+    return {"stores": results, "compared_at": datetime.now(timezone.utc).isoformat()}
+
+
+@competitor_intel_router.get("/history")
+async def get_analysis_history(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get previously analyzed stores."""
+    items = await db.competitor_analyses.find(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    ).sort("analyzed_at", -1).to_list(20)
+    return {"analyses": items, "total": len(items)}
+
+
+routers = [ad_creative_router, ad_discovery_router, outcomes_router, ad_test_router, ad_engine_router, ads_spy_router, competitor_intel_router]
