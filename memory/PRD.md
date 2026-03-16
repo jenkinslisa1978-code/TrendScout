@@ -92,9 +92,12 @@ AI product validation for ecommerce. Find products worth launching before you sp
   - Backend: `POST /api/competitor-intel/analyze`, `POST /api/competitor-intel/compare`, `GET /api/competitor-intel/history`
 - **Verified:** 100% pass rate — 19/19 backend tests, all frontend features verified.
 
+### Sentry Error Monitoring (March 16, 2026)
+- **Frontend:** `@sentry/react` v10.43 — captures JS errors, React error boundaries, browser tracing, session replay (10% normal, 100% on error).
+- **Backend:** `sentry-sdk[fastapi]` — captures Python exceptions, performance traces (30%), profiles (10%).
+- DSNs configured via `REACT_APP_SENTRY_DSN` (frontend) and `SENTRY_DSN` (backend).
+
 ## Backlog
-- P0: Shopify OAuth 2.0 Connection — DONE (replaced with Admin API token approach)
-- P1: Sentry integration — needs user DSN (monitors React frontend + FastAPI backend)
 - P2: 1-Click Product Import to Shopify (Phase 3)
 - P2: Real-time "Radar" Alerts & Push Notifications (Phase 3)
 - P2: Verified Winners Community Feature (Phase 3)

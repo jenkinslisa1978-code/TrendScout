@@ -13,11 +13,21 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 import os
 import logging
+import sentry_sdk
 from pathlib import Path
 
 # Load environment BEFORE importing anything else
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Sentry — error monitoring & performance
+if os.environ.get("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=os.environ["SENTRY_DSN"],
+        traces_sample_rate=0.3,
+        profiles_sample_rate=0.1,
+        environment=os.environ.get("ENV", "production"),
+    )
 
 # Rate limiter
 from common.limiter import limiter
