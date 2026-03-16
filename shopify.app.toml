@@ -1,0 +1,45 @@
+# TrendScout — Shopify App Configuration
+# This manifest defines the app for Shopify Partner Dashboard submission.
+
+name = "TrendScout"
+client_id = ""  # Set from Shopify Partners dashboard
+
+[access_scopes]
+scopes = "read_products,write_products,read_inventory,write_inventory"
+
+[auth]
+redirect_urls = [
+  "https://trendscout.click/api/shopify/oauth/callback",
+]
+
+[webhooks]
+api_version = "2024-01"
+
+  [webhooks.subscriptions]
+
+  [[webhooks.subscriptions.compliance]]
+  topic = "customers/data_request"
+  uri = "/api/shopify/app/webhooks/customers/data_request"
+
+  [[webhooks.subscriptions.compliance]]
+  topic = "customers/redact"
+  uri = "/api/shopify/app/webhooks/customers/redact"
+
+  [[webhooks.subscriptions.compliance]]
+  topic = "shop/redact"
+  uri = "/api/shopify/app/webhooks/shop/redact"
+
+  [[webhooks.subscriptions.topics]]
+  topic = "app/uninstalled"
+  uri = "/api/shopify/app/webhooks/app/uninstalled"
+
+[app_proxy]
+url = "https://trendscout.click/api/shopify/proxy"
+subpath = "trendscout"
+prefix = "apps"
+
+[pos]
+embedded = false
+
+[build]
+include_config_on_deploy = true

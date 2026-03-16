@@ -54,6 +54,7 @@ import AdTestsPage from "@/pages/AdTestsPage";
 import SystemHealthDashboard from "@/pages/SystemHealthDashboard";
 import IntegrationStatusPage from "@/pages/IntegrationStatusPage";
 import ShopifyAnalyzerPage from "@/pages/ShopifyAnalyzerPage";
+import ShopifyAppPage from "@/pages/ShopifyAppPage";
 import CompetitorTrackerPage from "@/pages/CompetitorTrackerPage";
 import TikTokIntelligencePage from "@/pages/TikTokIntelligencePage";
 import TopTrendingPage from "@/pages/TopTrendingPage";
@@ -150,6 +151,7 @@ function AppRoutes() {
       <Route path="/p/:id" element={<PublicProductPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />
+      <Route path="/shopify-app" element={<ShopifyAppPage />} />
       <Route path="/top-trending-products" element={<TopTrendingPage />} />
       <Route path="/trending-products-today" element={<SeoTrendingPage />} />
       <Route path="/trending-products-this-week" element={<SeoTrendingPage />} />
