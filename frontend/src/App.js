@@ -26,6 +26,8 @@ import TrendingProductsPage from "@/pages/TrendingProductsPage";
 import TrendingProductPage from "@/pages/TrendingProductPage";
 import TrendingIndexPage from "@/pages/TrendingIndexPage";
 import ApiDocsPage from "@/pages/ApiDocsPage";
+import WeeklyDigestPage from "@/pages/WeeklyDigestPage";
+import DigestArchivePage from "@/pages/DigestArchivePage";
 import PublicProductPage from "@/pages/PublicProductPage";
 import ReferralPage from "@/pages/ReferralPage";
 
@@ -160,6 +162,9 @@ function AppRoutes() {
       <Route path="/help" element={<HelpPage />} />
       <Route path="/demo" element={<DemoPage />} />
       <Route path="/trending" element={<TrendingIndexPage />} />
+      <Route path="/weekly-digest" element={<WeeklyDigestPage />} />
+      <Route path="/weekly-digest/archive" element={<DigestArchivePage />} />
+      <Route path="/weekly-digest/:digestId" element={<WeeklyDigestPage />} />
 
       {/* Protected routes */}
       <Route

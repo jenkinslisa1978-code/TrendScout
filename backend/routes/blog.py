@@ -255,4 +255,145 @@ async def require_admin(current_user: AuthenticatedUser):
 
 
 
-routers = [blog_router]
+# ═══════════════════════════════════════════════════════════════════
+# Weekly SEO Digest — Auto-generated trending product roundups
+# ═══════════════════════════════════════════════════════════════════
+
+digest_router = APIRouter(prefix="/api/digest")
+
+
+@digest_router.get("/latest")
+async def get_latest_digest():
+    """Get the most recent weekly digest (public)."""
+    digest = await db.weekly_digests.find_one(
+        {"status": "published"}, {"_id": 0}
+    , sort=[("published_at", -1)])
+    if not digest:
+        raise HTTPException(status_code=404, detail="No digests published yet")
+    return digest
+
+
+@digest_router.get("/archive")
+async def get_digest_archive(limit: int = 12):
+    """Get past weekly digests (public)."""
+    digests = await db.weekly_digests.find(
+        {"status": "published"},
+        {"_id": 0, "products": 0}
+    ).sort("published_at", -1).limit(min(limit, 24)).to_list(min(limit, 24))
+    return {"digests": digests, "total": len(digests)}
+
+
+@digest_router.get("/{digest_id}")
+async def get_digest_by_id(digest_id: str):
+    """Get a specific digest by ID (public)."""
+    digest = await db.weekly_digests.find_one(
+        {"id": digest_id, "status": "published"}, {"_id": 0}
+    )
+    if not digest:
+        raise HTTPException(status_code=404, detail="Digest not found")
+    return digest
+
+
+@digest_router.post("/generate")
+async def generate_weekly_digest(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Admin: Generate a new weekly digest from top rising products."""
+    profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0})
+    if not profile or not profile.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    # Get top 5 rising products (high score + recent activity)
+    products = await db.products.find(
+        {"launch_score": {"$gte": 50}},
+        {"_id": 0, "id": 1, "product_name": 1, "category": 1, "launch_score": 1,
+         "trend_stage": 1, "image_url": 1, "ai_summary": 1, "tiktok_views": 1,
+         "competition_level": 1, "estimated_retail_price": 1, "engagement_rate": 1,
+         "slug": 1, "verified_winner": 1}
+    ).sort("launch_score", -1).limit(20).to_list(20)
+
+    # Pick top 5 with diversity (different categories preferred)
+    seen_cats = set()
+    top5 = []
+    for p in products:
+        cat = p.get("category", "")
+        if cat not in seen_cats or len(top5) < 3:
+            top5.append(p)
+            seen_cats.add(cat)
+        if len(top5) >= 5:
+            break
+    # Fill remaining if needed
+    for p in products:
+        if len(top5) >= 5:
+            break
+        if p not in top5:
+            top5.append(p)
+
+    if not top5:
+        raise HTTPException(status_code=400, detail="Not enough products to generate digest")
+
+    # Add slugs
+    for p in top5:
+        if not p.get("slug"):
+            p["slug"] = slugify(p.get("product_name", ""))
+
+    now = datetime.now(timezone.utc)
+    week_label = now.strftime("Week of %B %d, %Y")
+
+    # Build digest
+    avg_score = round(sum(p.get("launch_score", 0) for p in top5) / len(top5), 1)
+    categories_featured = list(set(p.get("category", "") for p in top5 if p.get("category")))
+
+    # Generate intro text
+    intro = (
+        f"This week's top trending products for dropshipping, scored by our AI-powered 7-signal analysis. "
+        f"Average launch score: {avg_score}/100 across {len(categories_featured)} categories. "
+        f"These products show strong signals in ad activity, search growth, and social buzz."
+    )
+
+    # Generate per-product insights
+    enriched = []
+    for i, p in enumerate(top5):
+        insight = []
+        if p.get("tiktok_views", 0) > 100000:
+            insight.append(f"Strong TikTok presence with {p['tiktok_views']:,} views")
+        if p.get("competition_level") in ("low", "medium"):
+            insight.append(f"{p['competition_level'].capitalize()} competition — good entry window")
+        if p.get("engagement_rate", 0) > 0.05:
+            insight.append(f"High engagement rate ({p['engagement_rate']*100:.1f}%)")
+        if p.get("trend_stage") == "emerging":
+            insight.append("Emerging trend — early mover advantage")
+        if p.get("verified_winner"):
+            insight.append("Community-verified winner")
+
+        enriched.append({
+            **p,
+            "rank": i + 1,
+            "insight": " | ".join(insight) if insight else f"Launch score: {p.get('launch_score', 0)}/100",
+        })
+
+    digest = {
+        "id": str(uuid.uuid4()),
+        "title": f"Top 5 Trending Products — {week_label}",
+        "slug": slugify(f"top-5-trending-products-{now.strftime('%Y-%m-%d')}"),
+        "week_label": week_label,
+        "intro": intro,
+        "products": enriched,
+        "avg_score": avg_score,
+        "categories_featured": categories_featured,
+        "product_count": len(enriched),
+        "status": "published",
+        "published_at": now.isoformat(),
+        "seo": {
+            "title": f"Top 5 Trending Dropshipping Products — {week_label} | TrendScout",
+            "description": f"AI-scored trending products for {week_label}. Average launch score: {avg_score}/100. Discover the best dropshipping opportunities this week.",
+            "og_image": enriched[0].get("image_url", "") if enriched else "",
+        },
+    }
+
+    await db.weekly_digests.insert_one(digest)
+    digest.pop("_id", None)
+    return {"digest": digest}
+
+
+routers = [blog_router, digest_router]

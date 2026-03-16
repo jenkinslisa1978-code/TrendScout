@@ -47,11 +47,14 @@ export default function TrendingIndexPage() {
         {/* Nav */}
         <nav className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
           <Link to="/" className="text-lg font-bold text-slate-900">TrendScout</Link>
-          <Link to="/register">
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" data-testid="seo-signup-btn">
-              Start Free Trial
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/weekly-digest" className="text-xs text-slate-500 hover:text-indigo-600">Weekly Digest</Link>
+            <Link to="/register">
+              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" data-testid="seo-signup-btn">
+                Start Free Trial
+              </Button>
+            </Link>
+          </div>
         </nav>
 
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
