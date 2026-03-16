@@ -669,4 +669,116 @@ async def seo_all_categories():
     return categories
 
 
+@public_router.get("/trending/{slug}")
+async def get_trending_product_seo(slug: str):
+    """
+    Public SEO-optimized product page data.
+    Returns full product info + structured data for search engines.
+    """
+    cached = get_cached(f"seo_product_{slug}")
+    if cached:
+        return cached
+
+    # Try slug match first, then fuzzy
+    product = await db.products.find_one(
+        {"slug": slug}, {"_id": 0}
+    )
+    if not product:
+        # Try matching by slugified product name
+        all_products = await db.products.find(
+            {"launch_score": {"$gte": 40}}, {"_id": 0}
+        ).sort("launch_score", -1).limit(500).to_list(500)
+        for p in all_products:
+            if slugify(p.get("product_name", "")) == slug:
+                product = p
+                break
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Build structured data (JSON-LD)
+    json_ld = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": product.get("product_name", ""),
+        "description": product.get("ai_summary") or product.get("short_description", ""),
+        "image": product.get("image_url", ""),
+        "category": product.get("category", ""),
+        "brand": {"@type": "Brand", "name": "TrendScout"},
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": min(5, round((product.get("launch_score", 0) / 20), 1)),
+            "bestRating": 5,
+            "ratingCount": max(1, product.get("tiktok_views", 0) // 10000 + 1),
+        },
+    }
+    if product.get("estimated_retail_price"):
+        json_ld["offers"] = {
+            "@type": "Offer",
+            "price": str(product["estimated_retail_price"]),
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+        }
+
+    # Meta tags
+    title = f"{product.get('product_name', '')} — Trending Product Analysis | TrendScout"
+    description = (product.get("ai_summary") or product.get("short_description", ""))[:160]
+    og_image = product.get("image_url", "")
+
+    # Related products
+    related = await db.products.find(
+        {"category": product.get("category"), "id": {"$ne": product.get("id")}, "launch_score": {"$gte": 40}},
+        {"_id": 0, "id": 1, "product_name": 1, "image_url": 1, "launch_score": 1, "category": 1, "slug": 1}
+    ).sort("launch_score", -1).limit(4).to_list(4)
+
+    # Verified winner badge
+    is_verified_winner = product.get("verified_winner", False)
+
+    result = {
+        "product": product,
+        "seo": {
+            "title": title,
+            "description": description,
+            "og_image": og_image,
+            "json_ld": json_ld,
+            "canonical_url": f"/trending/{slug}",
+        },
+        "related_products": related,
+        "is_verified_winner": is_verified_winner,
+    }
+    set_cached(f"seo_product_{slug}", result)
+    return result
+
+
+@public_router.get("/trending-index")
+async def get_trending_products_index():
+    """
+    Public indexable directory of trending products for SEO.
+    """
+    cached = get_cached("seo_trending_index")
+    if cached:
+        return cached
+
+    products = await db.products.find(
+        {"launch_score": {"$gte": 50}},
+        {"_id": 0, "id": 1, "product_name": 1, "image_url": 1, "launch_score": 1,
+         "category": 1, "slug": 1, "trend_stage": 1, "ai_summary": 1, "verified_winner": 1}
+    ).sort("launch_score", -1).limit(50).to_list(50)
+
+    # Add slugs if missing
+    for p in products:
+        if not p.get("slug"):
+            p["slug"] = slugify(p.get("product_name", ""))
+
+    categories = list(set(p.get("category", "") for p in products if p.get("category")))
+
+    result = {
+        "products": products,
+        "total": len(products),
+        "categories": sorted(categories),
+    }
+    set_cached("seo_trending_index", result)
+    return result
+
+
 routers = [public_router, api_router]

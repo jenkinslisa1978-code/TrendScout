@@ -157,6 +157,7 @@ export default function VerifiedWinnersPage() {
 
 function WinnerCard({ winner, rank, onUpvote }) {
   const w = winner;
+  const badge = w.badge;
   return (
     <Card className="border-0 shadow-md hover:shadow-lg transition-shadow" data-testid="winner-card">
       <CardContent className="py-4">
@@ -179,11 +180,16 @@ function WinnerCard({ winner, rank, onUpvote }) {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm font-bold text-slate-900 truncate">{w.product_name}</p>
               {w.status === 'verified' && (
                 <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
                   <CheckCircle className="h-3 w-3 mr-0.5" /> Verified
+                </Badge>
+              )}
+              {badge && (
+                <Badge className="text-[10px] border" style={{ backgroundColor: badge.color + '15', color: badge.color, borderColor: badge.color + '40' }} data-testid="winner-badge">
+                  <Star className="h-3 w-3 mr-0.5" /> {badge.label}
                 </Badge>
               )}
             </div>

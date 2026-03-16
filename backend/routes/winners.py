@@ -10,6 +10,19 @@ from common.database import db
 
 winners_router = APIRouter(prefix="/api/winners")
 
+BADGE_TIERS = [
+    {"min_wins": 10, "tier": "gold", "label": "Gold Seller", "color": "#D97706"},
+    {"min_wins": 5, "tier": "silver", "label": "Silver Seller", "color": "#6B7280"},
+    {"min_wins": 3, "tier": "bronze", "label": "Bronze Seller", "color": "#B45309"},
+]
+
+
+def get_badge_tier(verified_count: int) -> dict:
+    for tier in BADGE_TIERS:
+        if verified_count >= tier["min_wins"]:
+            return tier
+    return None
+
 
 class SubmitWinnerRequest(BaseModel):
     product_id: str
@@ -84,8 +97,18 @@ async def get_verified_winners(
     sort_order = sort_map.get(sort, sort_map["upvotes"])
 
     items = await db.verified_winners.find(
-        query, {"_id": 0, "user_id": 0, "upvoted_by": 0}
+        query, {"_id": 0, "upvoted_by": 0}
     ).sort(sort_order).limit(min(limit, 50)).to_list(min(limit, 50))
+
+    # Enrich with badge info per submitter
+    for item in items:
+        uid = item.get("user_id")
+        if uid:
+            win_count = await db.verified_winners.count_documents({"user_id": uid, "status": "verified"})
+            badge = get_badge_tier(win_count)
+            item["badge"] = badge
+            item["win_count"] = win_count
+        item.pop("user_id", None)
 
     # Get all pending + verified for stats
     total_verified = await db.verified_winners.count_documents({"status": "verified"})
@@ -137,7 +160,25 @@ async def get_my_submissions(
     items = await db.verified_winners.find(
         {"user_id": current_user.user_id}, {"_id": 0, "upvoted_by": 0}
     ).sort("submitted_at", -1).to_list(20)
-    return {"submissions": items, "total": len(items)}
+    # Get badge
+    verified_count = await db.verified_winners.count_documents({"user_id": current_user.user_id, "status": "verified"})
+    badge = get_badge_tier(verified_count)
+    return {"submissions": items, "total": len(items), "verified_count": verified_count, "badge": badge}
+
+
+@winners_router.get("/my-badge")
+async def get_my_badge(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get current user's winner streak badge."""
+    verified_count = await db.verified_winners.count_documents({"user_id": current_user.user_id, "status": "verified"})
+    badge = get_badge_tier(verified_count)
+    return {
+        "verified_count": verified_count,
+        "badge": badge,
+        "next_tier": next((t for t in reversed(BADGE_TIERS) if verified_count < t["min_wins"]), None),
+        "tiers": BADGE_TIERS,
+    }
 
 
 @winners_router.post("/{winner_id}/verify")
@@ -163,7 +204,7 @@ async def verify_winner(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Submission not found")
 
-    # If verified, badge the product
+    # If verified, badge the product and update user badge
     if new_status == "verified":
         winner = await db.verified_winners.find_one({"id": winner_id}, {"_id": 0})
         if winner:
@@ -171,6 +212,15 @@ async def verify_winner(
                 {"id": winner["product_id"]},
                 {"$set": {"verified_winner": True, "verified_winner_at": datetime.now(timezone.utc).isoformat()}},
             )
+            # Update submitter's badge in profile
+            uid = winner.get("user_id")
+            if uid:
+                win_count = await db.verified_winners.count_documents({"user_id": uid, "status": "verified"})
+                badge = get_badge_tier(win_count)
+                await db.profiles.update_one(
+                    {"id": uid},
+                    {"$set": {"winner_badge": badge, "verified_wins": win_count}},
+                )
 
     return {"status": new_status, "winner_id": winner_id}
 

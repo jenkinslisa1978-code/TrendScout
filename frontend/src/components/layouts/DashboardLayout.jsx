@@ -46,6 +46,7 @@ const navigation = [
   { name: 'Radar Alerts', href: '/radar-alerts', icon: Activity },
   { name: 'Verified Winners', href: '/verified-winners', icon: Trophy },
   { name: 'Connections', href: '/settings/connections', icon: Link2 },
+  { name: 'API Access', href: '/api-docs', icon: Shield },
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },

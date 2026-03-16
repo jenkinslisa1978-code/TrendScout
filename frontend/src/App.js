@@ -24,6 +24,8 @@ import StoreDetailPage from "@/pages/StoreDetailPage";
 import StorePreviewPage from "@/pages/StorePreviewPage";
 import TrendingProductsPage from "@/pages/TrendingProductsPage";
 import TrendingProductPage from "@/pages/TrendingProductPage";
+import TrendingIndexPage from "@/pages/TrendingIndexPage";
+import ApiDocsPage from "@/pages/ApiDocsPage";
 import PublicProductPage from "@/pages/PublicProductPage";
 import ReferralPage from "@/pages/ReferralPage";
 
@@ -157,8 +159,17 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/help" element={<HelpPage />} />
       <Route path="/demo" element={<DemoPage />} />
+      <Route path="/trending" element={<TrendingIndexPage />} />
 
       {/* Protected routes */}
+      <Route
+        path="/api-docs"
+        element={
+          <ProtectedRoute>
+            <ApiDocsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/dashboard"
         element={
