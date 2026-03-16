@@ -68,6 +68,8 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import ProfitabilitySimulatorPage from "@/pages/ProfitabilitySimulatorPage";
 import AdSpyPage from "@/pages/AdSpyPage";
 import CompetitorIntelPage from "@/pages/CompetitorIntelPage";
+import RadarAlertsPage from "@/pages/RadarAlertsPage";
+import VerifiedWinnersPage from "@/pages/VerifiedWinnersPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -397,6 +399,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CompetitorIntelPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/radar-alerts"
+        element={
+          <ProtectedRoute>
+            <RadarAlertsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/verified-winners"
+        element={
+          <ProtectedRoute>
+            <VerifiedWinnersPage />
           </ProtectedRoute>
         }
       />

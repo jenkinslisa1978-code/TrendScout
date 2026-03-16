@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Depends, Header, BackgroundTasks
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import StreamingResponse, Response, JSONResponse
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 import os
@@ -223,6 +223,143 @@ class LaunchStoreRequest(BaseModel):
     store_name: Optional[str] = None
     supplier_id: Optional[str] = None
 
+
+# ═══════════════════════════════════════════════════════════════════
+# 1-Click Product Push to Shopify via Admin API
+# ═══════════════════════════════════════════════════════════════════
+
+@shopify_integration_router.post("/push-product")
+async def push_product_to_shopify(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Push a product from TrendScout directly to the user's connected Shopify store.
+    Creates a Shopify product with title, description, images, pricing, and tags.
+    """
+    import httpx
+
+    body = await request.json()
+    product_id = body.get("product_id")
+    if not product_id:
+        raise HTTPException(status_code=400, detail="product_id is required")
+
+    # 1. Get user's Shopify connection
+    conn = await db.platform_connections.find_one(
+        {"user_id": current_user.user_id, "platform": "shopify", "connection_type": "store", "status": "active"},
+        {"_id": 0},
+    )
+    if not conn or not conn.get("access_token"):
+        return JSONResponse(content={"success": False, "error": "No active Shopify connection. Go to Settings → Connections to connect your store."})
+
+    # 2. Fetch the product from our DB
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # 3. Build the Shopify product payload
+    domain = conn["store_url"].replace("https://", "").replace("http://", "").rstrip("/")
+    if not domain.endswith(".myshopify.com"):
+        domain = f"{domain}.myshopify.com"
+
+    # Build description
+    desc = product.get("ai_summary") or product.get("short_description") or ""
+    if product.get("estimated_retail_price"):
+        desc += f"\n\nSuggested retail: ${product['estimated_retail_price']}"
+
+    # Build tags
+    tags = [
+        product.get("category", ""),
+        product.get("trend_stage", ""),
+        f"launch-score-{product.get('launch_score', 0)}",
+        "trendscout-import",
+    ]
+    tags = [t for t in tags if t]
+
+    # Determine pricing
+    retail_price = product.get("estimated_retail_price") or product.get("price_usd") or 29.99
+    cost_price = product.get("estimated_cost") or product.get("supplier_price") or 0
+
+    shopify_product = {
+        "product": {
+            "title": product.get("product_name", "Untitled Product"),
+            "body_html": desc.replace("\n", "<br>"),
+            "vendor": "TrendScout Import",
+            "product_type": product.get("category", ""),
+            "tags": ", ".join(tags),
+            "status": "draft",
+            "variants": [
+                {
+                    "price": str(round(float(retail_price), 2)),
+                    "sku": f"TS-{product_id[:8]}",
+                    "inventory_management": "shopify",
+                    "inventory_quantity": 0,
+                    "requires_shipping": True,
+                }
+            ],
+        }
+    }
+    if cost_price:
+        shopify_product["product"]["variants"][0]["cost"] = str(round(float(cost_price), 2))
+
+    # Add images
+    images = []
+    if product.get("image_url"):
+        images.append({"src": product["image_url"], "position": 1})
+    for i, url in enumerate((product.get("image_urls") or [])[:4], start=2):
+        images.append({"src": url, "position": i})
+    if images:
+        shopify_product["product"]["images"] = images
+
+    # 4. Push to Shopify
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.post(
+                f"https://{domain}/admin/api/2024-01/products.json",
+                headers={
+                    "X-Shopify-Access-Token": conn["access_token"],
+                    "Content-Type": "application/json",
+                },
+                json=shopify_product,
+            )
+        if resp.status_code == 201:
+            created = resp.json().get("product", {})
+            # Track the export
+            await db.shopify_exports.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": current_user.user_id,
+                "product_id": product_id,
+                "shopify_product_id": str(created.get("id", "")),
+                "shopify_domain": domain,
+                "status": "draft",
+                "exported_at": datetime.now(timezone.utc).isoformat(),
+            })
+            return {
+                "success": True,
+                "shopify_product_id": created.get("id"),
+                "admin_url": f"https://{domain}/admin/products/{created.get('id')}",
+                "title": created.get("title"),
+                "status": "draft",
+            }
+        elif resp.status_code == 401:
+            return JSONResponse(content={"success": False, "error": "Shopify token expired or invalid. Reconnect in Settings."})
+        else:
+            err = resp.text[:200]
+            logging.error(f"Shopify push failed ({resp.status_code}): {err}")
+            return JSONResponse(content={"success": False, "error": f"Shopify returned {resp.status_code}. Check your store permissions."})
+    except httpx.RequestError as e:
+        return JSONResponse(content={"success": False, "error": f"Could not reach Shopify: {str(e)[:100]}"})
+
+
+@shopify_integration_router.get("/exports")
+async def get_shopify_exports(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get user's Shopify export history."""
+    exports = await db.shopify_exports.find(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    ).sort("exported_at", -1).to_list(50)
+    return {"exports": exports, "total": len(exports)}
 
 
 routers = [shopify_integration_router]

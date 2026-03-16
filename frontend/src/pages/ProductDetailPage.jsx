@@ -30,6 +30,7 @@ import {
   XCircle,
   Info,
   Share2,
+  ShoppingBag,
 } from 'lucide-react';
 import { getProductById, getProductCompetitors } from '@/services/productService';
 import { getCompleteAnalysis } from '@/services/intelligenceService';
@@ -110,6 +111,7 @@ export default function ProductDetailPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [showStoreBuilder, setShowStoreBuilder] = useState(false);
   const [launching, setLaunching] = useState(false);
+  const [pushingToShopify, setPushingToShopify] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
   const [upgradeModal, setUpgradeModal] = useState({ open: false, feature: 'insights' });
 
@@ -197,6 +199,31 @@ export default function ProductDetailPage() {
       toast.error('Failed to launch store');
     } finally {
       setLaunching(false);
+    }
+  };
+
+  const handlePushToShopify = async () => {
+    setPushingToShopify(true);
+    try {
+      const token = localStorage.getItem('trendscout_token');
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/shopify/push-product`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ product_id: id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Product pushed to Shopify as draft! View it in your store admin.`);
+      } else {
+        toast.error(data.error || 'Failed to push to Shopify');
+      }
+    } catch {
+      toast.error('Failed to push to Shopify');
+    } finally {
+      setPushingToShopify(false);
     }
   };
 
@@ -353,6 +380,19 @@ export default function ProductDetailPage() {
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Launching...</>
               ) : (
                 <><Rocket className="mr-2 h-4 w-4" /> Launch Store</>
+              )}
+            </Button>
+            <Button
+              onClick={handlePushToShopify}
+              disabled={pushingToShopify}
+              data-testid="push-to-shopify-btn"
+              variant="outline"
+              className="border-green-200 text-green-700 hover:bg-green-50"
+            >
+              {pushingToShopify ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Pushing...</>
+              ) : (
+                <><ShoppingBag className="mr-2 h-4 w-4" /> Push to Shopify</>
               )}
             </Button>
             <Button

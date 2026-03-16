@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { getUnreadAlertCount } from '@/services/alertService';
 import {
   Link2,
+  Trophy,
 } from 'lucide-react';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import PageExplanation from '@/components/PageExplanation';
@@ -41,9 +42,11 @@ const navigation = [
   { name: 'Ad Intelligence', href: '/ad-spy', icon: Radar },
   { name: 'Ad Ideas', href: '/ad-tests', icon: Zap },
   { name: 'Profit Simulator', href: '/profitability-simulator', icon: Target },
+  { name: 'Competitor Intel', href: '/competitor-intel', icon: Shield },
+  { name: 'Radar Alerts', href: '/radar-alerts', icon: Activity },
+  { name: 'Verified Winners', href: '/verified-winners', icon: Trophy },
   { name: 'Connections', href: '/settings/connections', icon: Link2 },
   { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Competitor Intel', href: '/competitor-intel', icon: Radar },
   { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
   { name: 'Referrals', href: '/referrals', icon: Gift },

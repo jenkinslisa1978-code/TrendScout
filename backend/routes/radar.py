@@ -134,9 +134,113 @@ async def get_live_radar_events(
 
 
 # ═══════════════════════════════════════════════════════════════════
-# P2: Saturation Radar
+# Radar Watches — User-configurable alert conditions
 # ═══════════════════════════════════════════════════════════════════
 
+
+class CreateWatchRequest(BaseModel):
+    name: str
+    watch_type: str  # product_score, category_trend, competitor_new_products
+    condition: Dict[str, Any]  # e.g. {"product_id": "...", "operator": "below", "value": 60}
+    notify_email: bool = True
+    notify_in_app: bool = True
+
+
+@radar_router.post("/watches")
+async def create_watch(
+    req: CreateWatchRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Create a new radar watch (alert condition)."""
+    watch = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user.user_id,
+        "name": req.name,
+        "watch_type": req.watch_type,
+        "condition": req.condition,
+        "notify_email": req.notify_email,
+        "notify_in_app": req.notify_in_app,
+        "active": True,
+        "triggered_count": 0,
+        "last_triggered": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.radar_watches.insert_one(watch)
+    watch.pop("_id", None)
+    return {"watch": watch}
+
+
+@radar_router.get("/watches")
+async def get_watches(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get all radar watches for the current user."""
+    watches = await db.radar_watches.find(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    return {"watches": watches, "total": len(watches)}
+
+
+@radar_router.put("/watches/{watch_id}")
+async def update_watch(
+    watch_id: str,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Toggle active status or update a watch."""
+    body = await request.json()
+    updates = {k: v for k, v in body.items() if k in ("name", "active", "condition", "notify_email", "notify_in_app")}
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    result = await db.radar_watches.update_one(
+        {"id": watch_id, "user_id": current_user.user_id},
+        {"$set": updates},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Watch not found")
+    watch = await db.radar_watches.find_one({"id": watch_id}, {"_id": 0})
+    return {"watch": watch}
+
+
+@radar_router.delete("/watches/{watch_id}")
+async def delete_watch(
+    watch_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Delete a radar watch."""
+    result = await db.radar_watches.delete_one(
+        {"id": watch_id, "user_id": current_user.user_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Watch not found")
+    return {"deleted": True}
+
+
+@radar_router.get("/alert-feed")
+async def get_alert_feed(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+    limit: int = 30,
+):
+    """
+    Get recent alert feed — combines radar events + triggered watch alerts.
+    """
+    # Triggered watch alerts
+    triggered = await db.watch_alerts.find(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    ).sort("triggered_at", -1).limit(limit).to_list(limit)
+
+    # Recent radar detections (from notification system)
+    notifs = await db.notifications.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+
+    return {
+        "alerts": triggered,
+        "notifications": notifs,
+        "total_alerts": len(triggered),
+        "total_notifications": len(notifs),
+    }
 
 
 routers = [radar_router]
