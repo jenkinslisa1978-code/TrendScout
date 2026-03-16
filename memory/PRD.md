@@ -104,6 +104,13 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Product Search API:** `GET /api/products/search?q=&limit=` for autocomplete/selection.
 - **Verified:** 100% pass rate — 21/21 backend tests, all frontend features verified.
 
+### Phase 4: SEO Pages + API Access + Winner Streak Badges (March 16, 2026)
+- **Winner Streak Badge System:** Badge tiers — Bronze (3 wins), Silver (5), Gold (10). Badges displayed on winner submissions in leaderboard. Profile updated on verification. Backend: `GET /api/winners/my-badge` returns tier, count, next tier.
+- **Public SEO Trending Index:** `/trending` — public, no auth, 19 products with launch scores, category filters, JSON-LD, OG meta tags, "Start Free Trial" CTAs. Backend: `GET /api/public/trending-index`.
+- **Public SEO Product Pages:** `/trending/:slug` — full product detail with score, AI summary, related products, structured data (schema.org Product), canonical URLs. Backend: `GET /api/public/trending/:slug`.
+- **API Access for Power Users:** API key management (generate, list, revoke, max 3 keys). Rate-limited REST API v1 (100 req/min per key). Endpoints: `GET /api/v1/products/search`, `GET /api/v1/products/{id}/score`, `GET /api/v1/trends/categories`, `GET /api/v1/trends/top`. Frontend: `/api-docs` page with key management + reference docs.
+- **Verified:** 100% pass rate — 15/15 backend tests, all frontend features verified.
+
 ## Backlog
 - P2: 1-Click Product Import to Shopify (Phase 3)
 - P2: Real-time "Radar" Alerts & Push Notifications (Phase 3)
