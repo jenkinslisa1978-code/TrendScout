@@ -159,7 +159,7 @@ export default function NotificationCenter() {
     if (!user) return;
     
     try {
-      const response = await api.get('/api/notifications?limit=20');
+      const response = await api.get('/api/notifications/?limit=20');
       if (response.data) {
         setNotifications(response.data.notifications || []);
         setUnreadCount(response.data.unread_count || 0);
@@ -198,43 +198,57 @@ export default function NotificationCenter() {
     }
   }, [user, fetchUnreadCount]);
 
-  // SSE real-time listener
+  // WebSocket real-time listener with reconnection
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem('trendscout_token');
     if (!token) return;
 
-    let eventSource;
-    try {
-      eventSource = new EventSource(
-        `${process.env.REACT_APP_BACKEND_URL}/api/notifications/stream?token=${token}`
-      );
+    let ws;
+    let reconnectTimer;
+    let retryCount = 0;
+    const MAX_RETRIES = 10;
+    let alive = true;
 
-      eventSource.addEventListener('notification', (e) => {
+    function connect() {
+      if (!alive) return;
+      const base = process.env.REACT_APP_BACKEND_URL
+        .replace(/^https:/, 'wss:')
+        .replace(/^http:/, 'ws:');
+      ws = new WebSocket(`${base}/api/notifications/ws?token=${token}`);
+
+      ws.onopen = () => { retryCount = 0; };
+
+      ws.onmessage = (evt) => {
         try {
-          const notif = JSON.parse(e.data);
-          setNotifications((prev) => [notif, ...prev].slice(0, 20));
-          setUnreadCount((prev) => prev + 1);
-        } catch {}
-      });
-
-      eventSource.addEventListener('unread_count', (e) => {
-        try {
-          const { count } = JSON.parse(e.data);
-          setUnreadCount(count);
-        } catch {}
-      });
-
-      eventSource.onerror = () => {
-        // SSE disconnected, polling will keep working
-        eventSource.close();
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'notification') {
+            const notif = msg.data || msg;
+            setNotifications((prev) => [notif, ...prev].slice(0, 20));
+            setUnreadCount((c) => c + 1);
+          } else if (msg.type === 'unread_count') {
+            setUnreadCount(msg.data?.count ?? msg.count ?? 0);
+          }
+          // heartbeat/pong ignored silently
+        } catch { /* ignore bad frames */ }
       };
-    } catch {
-      // SSE not supported, polling handles it
+
+      ws.onclose = () => {
+        if (!alive) return;
+        const delay = Math.min(1000 * 2 ** retryCount, 30000);
+        retryCount = Math.min(retryCount + 1, MAX_RETRIES);
+        reconnectTimer = setTimeout(connect, delay);
+      };
+
+      ws.onerror = () => { ws.close(); };
     }
 
+    connect();
+
     return () => {
-      if (eventSource) eventSource.close();
+      alive = false;
+      clearTimeout(reconnectTimer);
+      if (ws) ws.close();
     };
   }, [user]);
   

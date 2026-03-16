@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Depends, Header, BackgroundTasks
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import Response
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 import os
@@ -8,7 +8,7 @@ import json
 import logging
 import re
 
-from auth import get_current_user, get_optional_user, AuthenticatedUser
+from auth import get_current_user, AuthenticatedUser
 from common.database import db
 from common.cache import get_cached, set_cached, slugify, get_margin_range
 from common.helpers import (
@@ -475,151 +475,17 @@ async def scan_thresholds_for_alerts(
 
 
 # =====================
-# SSE Real-Time Notifications with Redis Pub/Sub
+# WebSocket Real-Time Notifications with Redis Pub/Sub
 # =====================
 
 import asyncio
+from fastapi import WebSocket, WebSocketDisconnect
 
 # In-memory event queues per user (fallback when Redis unavailable)
 _event_queues: Dict[str, list] = {}
 
 # Redis pub/sub channel prefix
 _REDIS_CHANNEL = "trendscout:notifications"
-
-
-def push_event(user_id: str, event_type: str, data: Dict[str, Any]):
-    """Push an event to a user's SSE queue. Uses Redis pub/sub if available."""
-    event = {
-        "type": event_type,
-        "data": data,
-        "user_id": user_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-
-    # Try Redis pub/sub first
-    try:
-        from common.redis_cache import _get_redis
-        redis_client = _get_redis()
-        if redis_client:
-            redis_client.publish(
-                f"{_REDIS_CHANNEL}:{user_id}",
-                json.dumps(event, default=str),
-            )
-            return
-    except Exception:
-        pass
-
-    # Fallback to in-memory queue
-    if user_id not in _event_queues:
-        _event_queues[user_id] = []
-    _event_queues[user_id].append(event)
-    if len(_event_queues[user_id]) > 100:
-        _event_queues[user_id] = _event_queues[user_id][-50:]
-
-
-@notifications_router.get("/stream")
-async def notification_stream(
-    request: Request,
-    token: Optional[str] = None,
-    current_user: AuthenticatedUser = Depends(get_optional_user),
-):
-    """
-    Server-Sent Events endpoint for real-time notifications.
-    Accepts token via query param (for EventSource which can't send headers)
-    or via Authorization header.
-    """
-    # Resolve user from query token or header
-    user_id = None
-    if current_user and current_user.user_id:
-        user_id = current_user.user_id
-    elif token:
-        import jwt as pyjwt
-        try:
-            secret = os.environ.get("SUPABASE_JWT_SECRET")
-            payload = pyjwt.decode(token, secret, algorithms=["HS256"])
-            user_id = payload.get("sub")
-        except Exception:
-            pass
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
-    async def event_generator():
-        last_check = datetime.now(timezone.utc)
-        heartbeat_interval = 30  # seconds
-
-        # Try to set up Redis subscriber
-        redis_sub = None
-        try:
-            from common.redis_cache import _get_redis
-            rc = _get_redis()
-            if rc:
-                redis_sub = rc.pubsub()
-                redis_sub.subscribe(f"{_REDIS_CHANNEL}:{user_id}")
-        except Exception:
-            pass
-
-        # Send initial connection event
-        yield f"data: {json.dumps({'type': 'connected', 'user_id': user_id})}\n\n"
-
-        while True:
-            # 1. Check Redis pub/sub messages
-            if redis_sub:
-                try:
-                    message = redis_sub.get_message(ignore_subscribe_messages=True, timeout=0.1)
-                    if message and message.get("type") == "message":
-                        event = json.loads(message["data"])
-                        etype = event.get("type", "notification")
-                        edata = event.get("data", event)
-                        yield f"event: {etype}\ndata: {json.dumps(edata, default=str)}\n\n"
-                except Exception:
-                    pass
-
-            # 2. Check in-memory queue fallback
-            events = _event_queues.pop(user_id, [])
-            for event in events:
-                yield f"event: {event['type']}\ndata: {json.dumps(event['data'], default=str)}\n\n"
-
-            # Check DB for new notifications since last check
-            new_notifs = await db.notifications.find(
-                {
-                    "user_id": user_id,
-                    "is_read": False,
-                    "created_at": {"$gt": last_check.isoformat()},
-                },
-                {"_id": 0},
-            ).sort("created_at", -1).limit(5).to_list(5)
-
-            for notif in new_notifs:
-                yield f"event: notification\ndata: {json.dumps(notif, default=str)}\n\n"
-
-            if new_notifs:
-                last_check = datetime.now(timezone.utc)
-
-            # Get unread count
-            unread = await db.notifications.count_documents(
-                {"user_id": user_id, "is_read": False}
-            )
-            yield f"event: unread_count\ndata: {json.dumps({'count': unread})}\n\n"
-
-            await asyncio.sleep(heartbeat_interval)
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        },
-    )
-
-
-# =====================
-# WebSocket Real-Time Notifications
-# =====================
-
-from fastapi import WebSocket, WebSocketDisconnect
 
 # Active WebSocket connections per user
 _ws_connections: Dict[str, list] = {}
@@ -632,7 +498,6 @@ async def websocket_notifications(websocket: WebSocket, token: str = None):
     Authenticates via token query param.
     Supports Redis pub/sub for cross-instance delivery.
     """
-    # Authenticate
     user_id = None
     if token:
         import jwt as pyjwt
@@ -710,7 +575,7 @@ async def websocket_notifications(websocket: WebSocket, token: str = None):
             )
             await websocket.send_json({"type": "unread_count", "data": {"count": unread}})
 
-            # 5. Handle incoming messages (ping/pong, mark-read, etc.)
+            # 5. Handle incoming messages (ping/pong, mark-read)
             try:
                 msg = await asyncio.wait_for(websocket.receive_json(), timeout=15)
                 if msg.get("type") == "ping":
@@ -723,7 +588,6 @@ async def websocket_notifications(websocket: WebSocket, token: str = None):
                             {"$set": {"is_read": True}},
                         )
             except asyncio.TimeoutError:
-                # No message received — send heartbeat
                 await websocket.send_json({"type": "heartbeat"})
             except Exception:
                 break
@@ -733,7 +597,6 @@ async def websocket_notifications(websocket: WebSocket, token: str = None):
     except Exception:
         pass
     finally:
-        # Cleanup connection
         if user_id in _ws_connections:
             _ws_connections[user_id] = [
                 ws for ws in _ws_connections[user_id] if ws != websocket
@@ -748,22 +611,8 @@ async def websocket_notifications(websocket: WebSocket, token: str = None):
                 pass
 
 
-def push_ws_event(user_id: str, event: Dict[str, Any]):
-    """Push event to active WebSocket connections for a user."""
-    conns = _ws_connections.get(user_id, [])
-    for ws in conns:
-        try:
-            asyncio.create_task(ws.send_json(event))
-        except Exception:
-            pass
-
-
-# Update push_event to also push to WebSocket connections
-_original_push_event = push_event
-
-
-def push_event_ws(user_id: str, event_type: str, data: Dict[str, Any]):
-    """Push event via WebSocket, Redis pub/sub, and in-memory queue."""
+def push_event(user_id: str, event_type: str, data: Dict[str, Any]):
+    """Push event via WebSocket connections and Redis pub/sub."""
     event = {
         "type": event_type,
         "data": data,
@@ -772,7 +621,11 @@ def push_event_ws(user_id: str, event_type: str, data: Dict[str, Any]):
     }
 
     # 1. Push to active WebSocket connections on this instance
-    push_ws_event(user_id, event)
+    for ws in _ws_connections.get(user_id, []):
+        try:
+            asyncio.create_task(ws.send_json(event))
+        except Exception:
+            pass
 
     # 2. Redis pub/sub for cross-instance
     try:
@@ -787,16 +640,12 @@ def push_event_ws(user_id: str, event_type: str, data: Dict[str, Any]):
     except Exception:
         pass
 
-    # 3. Fallback to in-memory queue (for SSE consumers)
+    # 3. Fallback to in-memory queue
     if user_id not in _event_queues:
         _event_queues[user_id] = []
     _event_queues[user_id].append(event)
     if len(_event_queues[user_id]) > 100:
         _event_queues[user_id] = _event_queues[user_id][-50:]
-
-
-# Replace the module-level push_event
-push_event = push_event_ws
 
 
 # =====================
