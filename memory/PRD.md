@@ -146,6 +146,15 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Frontend:** `/shopify-app` public page with hero, 6 feature cards, 4-step installation guide, GDPR compliance section, toggleable API docs table (10 endpoints)
 - **Verified:** 100% pass rate — iteration_86.json, 17/17 backend + all frontend tests passed.
 
+### Shopify App Bridge — Embedded App (March 16, 2026)
+- **Embedded Dashboard:** `/embedded?shop=xxx&host=yyy` — streamlined panel showing top 10 trending products with launch scores, 1-click "Push to Store" buttons, 3-stat summary (trending/exports/radar), radar detections feed, recent export history
+- **Session Token Auth:** `POST /api/shopify/app/session-token` verifies Shopify session JWTs signed with `SHOPIFY_CLIENT_SECRET`, issues internal TrendScout JWT for embedded operations
+- **Dashboard Data API:** `GET /api/shopify/app/embedded/dashboard?shop=xxx` returns trending products, exports, radar detections for any shop
+- **Dynamic App Bridge Loading:** CDN script (`app-bridge.js`) loaded only when inside Shopify Admin iframe (detected via `window.self !== window.top`), preventing redirect loops on standalone access
+- **Shopify App Page Updated:** New "Embedded App Mode" section with feature list and preview card
+- **Client ID:** Configured via `REACT_APP_SHOPIFY_CLIENT_ID` env var
+- **Verified:** 100% pass rate — iteration_87.json, 13/13 backend + all frontend tests passed.
+
 ## Backlog
 - No major features remaining from original 9-part strategic brief. All requirements implemented.
 - P3: Naming convention cleanup (ProductLaunchWizard.jsx, SystemHealthDashboard.jsx don't follow *Page.jsx pattern) — cosmetic only
