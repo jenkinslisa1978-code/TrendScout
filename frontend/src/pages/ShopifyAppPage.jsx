@@ -223,6 +223,61 @@ export default function ShopifyAppPage() {
         </div>
       </div>
 
+      {/* Embedded App */}
+      <div className="bg-white border-y border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-2 rounded-lg bg-indigo-50">
+              <Store className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Embedded App Mode</h2>
+              <p className="text-sm text-slate-500">TrendScout runs directly inside your Shopify Admin</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-semibold text-slate-900 text-sm mb-3">What you get inside Shopify Admin</h3>
+              <ul className="space-y-2">
+                {[
+                  'Top trending products with real-time launch scores',
+                  '1-click "Push to Store" — products imported as drafts instantly',
+                  'Radar detection alerts for score spikes and trend changes',
+                  'Recent export history at a glance',
+                  'Direct link to full TrendScout dashboard for deep analysis',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-2 text-xs text-slate-600">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mt-0.5 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Card className="border-slate-200 bg-slate-50" data-testid="embedded-preview-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="h-4 w-4 text-indigo-600" />
+                  <span className="text-sm font-bold text-slate-900">TrendScout</span>
+                  <Badge className="bg-indigo-50 text-indigo-600 border-indigo-200 text-[10px]">Embedded</Badge>
+                </div>
+                <div className="space-y-2">
+                  {[85, 78, 72].map(score => (
+                    <div key={score} className="flex items-center justify-between p-2 bg-white rounded border border-slate-200">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded bg-slate-100" />
+                        <div className="h-2 w-20 bg-slate-200 rounded" />
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-mono bg-green-50 text-green-700 border-green-200">{score}</Badge>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 text-center mt-3">Preview — actual data shown in your Shopify Admin</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
       {/* API Docs Toggle */}
       <div className="bg-white border-y border-slate-200">
         <div className="max-w-6xl mx-auto px-6 py-8">
