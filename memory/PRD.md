@@ -111,12 +111,15 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **API Access for Power Users:** API key management (generate, list, revoke, max 3 keys). Rate-limited REST API v1 (100 req/min per key). Endpoints: `GET /api/v1/products/search`, `GET /api/v1/products/{id}/score`, `GET /api/v1/trends/categories`, `GET /api/v1/trends/top`. Frontend: `/api-docs` page with key management + reference docs.
 - **Verified:** 100% pass rate — 15/15 backend tests, all frontend features verified.
 
+### Weekly SEO Digest Enhancement (March 16, 2026)
+- **Weekly Digest:** `/weekly-digest` — auto-generated top 5 trending products with category diversity, per-product insights, launch scores, share buttons (Tweet + Copy Link), and signup CTAs. Public, SEO-optimized.
+- **Digest Archive:** `/weekly-digest/archive` — browse past weekly roundups.
+- **Admin Generate:** `POST /api/digest/generate` — manually trigger digest creation. Selects top products with category diversity, generates insights from signals.
+- **Cross-linking:** `/trending` page nav links to weekly digest. Digest links to individual product SEO pages.
+- **Verified:** 100% pass rate — 8/8 backend, all frontend features verified.
+
 ## Backlog
-- P2: 1-Click Product Import to Shopify (Phase 3)
-- P2: Real-time "Radar" Alerts & Push Notifications (Phase 3)
-- P2: Verified Winners Community Feature (Phase 3)
-- P2: Public Product SEO Pages (Phase 3)
-- P2: Shopify App & API Access (Phase 3)
+- P2: Automate weekly digest via cron/scheduler (currently admin-triggered)
 - P2: Redis pub/sub for multi-instance SSE
 - P2: Fix mixed content notification issue (HTTP SSE blocked on HTTPS)
 - P3: WebSocket upgrade
