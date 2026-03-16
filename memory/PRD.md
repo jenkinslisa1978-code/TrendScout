@@ -118,8 +118,12 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Cross-linking:** `/trending` page nav links to weekly digest. Digest links to individual product SEO pages.
 - **Verified:** 100% pass rate — 8/8 backend, all frontend features verified.
 
+### Digest Email Subscription + Backlog Cleanup (March 16, 2026)
+- **Email Subscription:** Subscribe form on `/weekly-digest` with social proof (subscriber count), email validation, duplicate handling, re-subscribe support. Backend: `POST /api/digest/subscribe`, `POST /api/digest/unsubscribe`, `GET /api/digest/subscriber-count` (public), `GET /api/digest/subscribers` (admin).
+- **Automated Weekly Digest:** Scheduled task `generate_weekly_digest` runs every Monday at 9am UTC via cron (`0 9 * * 1`). Auto-selects top 5 category-diverse products with insights.
+- **SSE Notification Fix:** Fixed mixed content issue — NotificationCenter was using wrong localStorage key (`'token'` vs `'trendscout_token'`), causing SSE stream to never authenticate.
+- **Redis Pub/Sub for SSE:** `push_event()` now tries Redis pub/sub first for cross-instance notification propagation, falls back to in-memory queues when Redis unavailable.
+- **Verified:** 100% pass rate — 15/15 backend, all frontend features verified.
+
 ## Backlog
-- P2: Automate weekly digest via cron/scheduler (currently admin-triggered)
-- P2: Redis pub/sub for multi-instance SSE
-- P2: Fix mixed content notification issue (HTTP SSE blocked on HTTPS)
-- P3: WebSocket upgrade
+- P3: WebSocket upgrade (SSE works fine for current scale)
