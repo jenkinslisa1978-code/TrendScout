@@ -185,6 +185,12 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - Updated `shopify.app.toml` API version from `2024-01` to `2026-01`
 - Created reviewer account: `reviewer@trendscout.click` / `ShopifyReview2026!`
 - Created comprehensive `/app/SHOPIFY_APP_LISTING.md` with full app listing copy, features, pricing, API scopes, GDPR endpoints, URLs, screenshot requirements, and 14-item submission checklist
+
+### Shopify App Store Assets — Complete (March 17, 2026)
+- Generated app icon (1024x1024): indigo background with trend arrow + magnifying glass
+- Captured 6 submission screenshots: Dashboard, Product Detail (7-Signal Score), CJ Sourcing (live search), Ad Intelligence (multi-platform), Profit Simulator, Shopify App Page
+- Created reviewer account: reviewer@trendscout.click / ShopifyReview2026!
+- Only remaining item: Final QA on production domain
 - **Verified:** 100% backend (9/9), 100% frontend — iteration_91.json
   - `GET /api/cj/product/{pid}` — get detailed product info with variants and properties
   - `POST /api/cj/import/{pid}` — import CJ product into TrendScout with launch score calculation
@@ -202,7 +208,6 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Verified:** 100% backend (12/12), 100% frontend — iteration_90.json.
 
 ## Backlog
-- P1: Pexels API key for admin image refresh tool (waiting for user key)
-- P1: Generate app icon (1200x1200) for Shopify App Store submission
-- P1: Capture 6 submission screenshots for Shopify App Store listing
-- P2: Final QA on production domain before Shopify submission
+- P1: Final QA on production domain before Shopify App Store submission
+- P2: Pexels API key for admin image refresh tool
+- P2: Additional supplier integrations (AliExpress, Zendrop)

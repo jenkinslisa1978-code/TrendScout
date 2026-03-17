@@ -103,7 +103,7 @@ TrendScout is the decision engine built for dropshippers. Stop guessing which pr
 - [x] API documentation (10 endpoints)
 - [x] Encrypted token storage (Fernet)
 - [x] Support email configured (info@trendscout.click)
-- [ ] App icon (1200x1200) — generate before submission
-- [ ] Screenshots (6 required) — capture before submission
-- [ ] Test reviewer account — create before submission
+- [x] App icon (1024x1024) — generated (indigo background with trend arrow + magnifying glass)
+- [x] Screenshots (6 captured): Dashboard, Product Detail, CJ Sourcing, Ad Intelligence, Profit Simulator, Shopify App Page
+- [x] Test reviewer account — reviewer@trendscout.click / ShopifyReview2026!
 - [ ] Final QA on production domain
