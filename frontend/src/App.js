@@ -76,6 +76,7 @@ import AdSpyPage from "@/pages/AdSpyPage";
 import CompetitorIntelPage from "@/pages/CompetitorIntelPage";
 import RadarAlertsPage from "@/pages/RadarAlertsPage";
 import VerifiedWinnersPage from "@/pages/VerifiedWinnersPage";
+import CJSourcingPage from "@/pages/CJSourcingPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -435,6 +436,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <VerifiedWinnersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cj-sourcing"
+        element={
+          <ProtectedRoute>
+            <CJSourcingPage />
           </ProtectedRoute>
         }
       />

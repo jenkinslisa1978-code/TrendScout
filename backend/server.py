@@ -73,6 +73,7 @@ from routes.shopify_app import routers as shopify_app_routers
 from routes.winners import routers as winners_routers
 from routes.api_access import routers as api_access_routers
 from routes.admin_images import routers as admin_images_routers
+from routes.cj_dropshipping import routers as cj_routers
 
 # Include all routers
 all_router_groups = [
@@ -88,6 +89,7 @@ all_router_groups = [
     winners_routers,
     api_access_routers,
     admin_images_routers,
+    cj_routers,
 ]
 
 for group in all_router_groups:

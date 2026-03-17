@@ -31,6 +31,7 @@ import {
   Info,
   Share2,
   ShoppingBag,
+  Truck,
 } from 'lucide-react';
 import { getProductById, getProductCompetitors } from '@/services/productService';
 import { getCompleteAnalysis } from '@/services/intelligenceService';
@@ -335,6 +336,11 @@ export default function ProductDetailPage() {
                 )}
               </div>
               <p className="mt-1 text-slate-500">{product.category}</p>
+              {product.data_source === 'cj_dropshipping' && (
+                <Badge className="mt-1 bg-emerald-50 text-emerald-700 border-emerald-200 text-xs" data-testid="cj-source-badge">
+                  <Truck className="h-3 w-3 mr-1" /> Sourced from CJ Dropshipping
+                </Badge>
+              )}
               <p className="mt-3 text-slate-600 max-w-2xl">{product.short_description}</p>
               
               {/* Badges */}
