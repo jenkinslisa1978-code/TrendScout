@@ -76,7 +76,7 @@ export default function TikTokIntelligencePage() {
                 return (
                   <Link
                     key={p.id}
-                    to={`/trending/${p.slug}`}
+                    to={`/product/${p.id}`}
                     className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors group"
                     data-testid={`viral-product-${p.id}`}
                   >

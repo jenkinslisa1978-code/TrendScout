@@ -155,6 +155,18 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Client ID:** Configured via `REACT_APP_SHOPIFY_CLIENT_ID` env var
 - **Verified:** 100% pass rate — iteration_87.json, 13/13 backend + all frontend tests passed.
 
+### P0 Bug Fixes & Data Quality (March 17, 2026)
+- **Nav routing fix:** "Product Analysis" sidebar link corrected from `/stores` to `/discover`
+- **Product images (all 146):** Replaced all generic Unsplash stock photos and old-job images with AI-generated product-specific images (Imagen 4.0). Zero mismatched images remain.
+- **British English audit:** Converted all user-facing text from American to British English (analyse, optimise, organise, colour, favourite, etc.). Renamed `BudgetOptimizerCard` → `BudgetOptimiserCard`.
+- **TikTok Intel page fix:** Fixed "No data available" — switched from raw `fetch()` to `api.get()` helper with proper CORS credentials.
+- **TikTok product links fix:** Changed `/trending/:slug` links to `/product/:id` (slugs weren't populated).
+- **Launch score recalibration:** Added saturation penalty that deducts up to 25pts for heavy ad competition, high market saturation, and many active competitor stores. Ad activity score converted to "ad opportunity" score that penalises oversaturation. Score distribution now realistic: 0 at 80+, 12 at 60-79, 54 at 40-59, 80 below 40.
+- **Supplier data added:** All 146 products now have 1-3 embedded suppliers with name, country, rating, unit cost, min order, lead time, shipping cost. Supplier service reads embedded data and caches to `product_suppliers` collection.
+- **Admin image refresh tool:** `GET /api/admin/images/stats`, `POST /api/admin/images/refresh/{product_id}`, `POST /api/admin/images/refresh-batch`. Requires PEXELS_API_KEY env var for actual image refresh.
+- **Verified:** 100% backend (19/19), 95% frontend — iteration_88.json.
+
 ## Backlog
-- No major features remaining from original 9-part strategic brief. All requirements implemented.
-- P3: Naming convention cleanup (ProductLaunchWizard.jsx, SystemHealthDashboard.jsx don't follow *Page.jsx pattern) — cosmetic only
+- P2: Connect real product data API (CJ Dropshipping, AliExpress) for live data
+- P2: Connect Ad Tests to real ad platform APIs
+- P3: Naming convention cleanup (2 cosmetic files)
