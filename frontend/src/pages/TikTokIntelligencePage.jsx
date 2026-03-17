@@ -8,8 +8,7 @@ import {
   Loader2, Hash, Zap, ChevronRight, ArrowUpRight, Clock,
   Sparkles, Target,
 } from 'lucide-react';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+import api from '@/lib/api';
 
 function formatViews(n) {
   if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
@@ -23,10 +22,10 @@ export default function TikTokIntelligencePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/tools/tiktok-intelligence`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    api.get('/api/tools/tiktok-intelligence')
+      .then(res => { if (res.ok) setData(res.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
