@@ -345,6 +345,9 @@ export default function ShopifyAppPage() {
             </>
           )}
         </div>
+        <p className="text-xs text-slate-400 mt-6">
+          Questions? <a href="mailto:info@trendscout.click" className="underline hover:text-slate-600">info@trendscout.click</a> &middot; <Link to="/privacy" className="underline hover:text-slate-600">Privacy Policy</Link> &middot; <Link to="/terms" className="underline hover:text-slate-600">Terms of Service</Link>
+        </p>
       </div>
     </div>
   );

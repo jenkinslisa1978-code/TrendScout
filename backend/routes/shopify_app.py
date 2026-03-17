@@ -213,7 +213,7 @@ async def app_info():
         "webhooks": {
             "app_uninstalled": "/api/shopify/app/webhooks/app/uninstalled",
         },
-        "support_email": "support@trendscout.click",
+        "support_email": "info@trendscout.click",
         "privacy_policy": "/privacy",
         "terms_of_service": "/terms",
     }

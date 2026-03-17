@@ -293,7 +293,7 @@ export default function PricingPage() {
               {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-amber-400" />)}
             </div>
             <p className="text-slate-600 text-sm font-medium">Trusted by 2,400+ ecommerce sellers</p>
-            <p className="text-slate-400 text-xs">Questions? support@trendscout.click</p>
+            <p className="text-slate-400 text-xs">Questions? info@trendscout.click</p>
           </div>
         </div>
       </div>

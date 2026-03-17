@@ -35,33 +35,39 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">5. Data & Accuracy</h2>
+            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">5. Shopify Integration</h2>
+            <p>When you connect a Shopify store to TrendScout: (a) you authorise us to access your store's product catalogue and inventory data via the Shopify Admin API; (b) we may create draft products in your store at your request; (c) your Admin API access token is encrypted at rest and never stored in plaintext; (d) you may disconnect at any time via Settings, which revokes our access.</p>
+            <p>TrendScout operates as an independent application and is not endorsed by or affiliated with Shopify Inc. Use of Shopify's API is subject to Shopify's own terms of service.</p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">6. Data & Accuracy</h2>
             <p>Product data, trend scores, and market analysis provided by the Service are for informational purposes only. While we strive for accuracy, we do not guarantee the completeness or reliability of any data. Business decisions should not be based solely on our data.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">6. Intellectual Property</h2>
+            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">7. Intellectual Property</h2>
             <p>All content, features, and functionality of the Service are owned by TrendScout and are protected by intellectual property laws. You may not copy, modify, or distribute any part of the Service without permission.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">7. Prohibited Conduct</h2>
+            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">8. Prohibited Conduct</h2>
             <p>You may not: (a) use the Service for any unlawful purpose; (b) attempt to reverse-engineer or scrape the Service; (c) interfere with or disrupt the Service; (d) use automated tools to access the Service beyond normal usage.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">8. Limitation of Liability</h2>
+            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">9. Limitation of Liability</h2>
             <p>TrendScout shall not be liable for any indirect, incidental, or consequential damages arising from your use of the Service. Our total liability shall not exceed the amount you paid in the 12 months preceding the claim.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">9. Changes to Terms</h2>
+            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">10. Changes to Terms</h2>
             <p>We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance of the new Terms. Material changes will be communicated via email or in-app notification.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">10. Contact</h2>
-            <p>For questions about these Terms, contact us at support@trendscout.app.</p>
+            <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">11. Contact</h2>
+            <p>For questions about these Terms, contact us at info@trendscout.click.</p>
           </section>
         </div>
       </div>

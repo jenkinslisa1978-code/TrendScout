@@ -86,7 +86,7 @@ export default function HelpPage() {
           <Mail className="h-8 w-8 text-indigo-500 mx-auto mb-3" />
           <h2 className="font-manrope text-xl font-bold text-slate-900 mb-2">Still have questions?</h2>
           <p className="text-slate-500 text-sm mb-4">Our support team is here to help.</p>
-          <a href="mailto:support@trendscout.click" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors" data-testid="contact-support-btn">
+          <a href="mailto:info@trendscout.click" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors" data-testid="contact-support-btn">
             <Mail className="h-4 w-4" /> Contact Support
           </a>
         </section>

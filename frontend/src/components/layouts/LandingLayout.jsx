@@ -180,7 +180,7 @@ export default function LandingLayout({ children }) {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/privacy" className="text-slate-400 hover:text-slate-600 transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/terms" className="text-slate-400 hover:text-slate-600 transition-colors">Terms of Service</Link></li>
-                <li><a href="mailto:support@trendscout.click" className="text-slate-400 hover:text-slate-600 transition-colors">support@trendscout.click</a></li>
+                <li><a href="mailto:info@trendscout.click" className="text-slate-400 hover:text-slate-600 transition-colors">info@trendscout.click</a></li>
               </ul>
             </div>
           </div>
