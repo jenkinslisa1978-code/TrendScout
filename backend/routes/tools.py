@@ -356,7 +356,7 @@ async def get_tiktok_intelligence():
     products = await db.products.find(
         {"tiktok_views": {"$gt": 0}},
         {"_id": 0}
-    ).sort("tiktok_views", -1).limit(30).to_list(30)
+    ).sort("tiktok_views", -1).limit(150).to_list(150)
 
     # Build category performance from TikTok data
     category_perf = {}
@@ -391,7 +391,7 @@ async def get_tiktok_intelligence():
         viral.append({
             "id": p.get("id"),
             "slug": slugify(p.get("product_name", "")),
-            "product_name": p.get("product_name", "Unknown"),
+            "product_name": p.get("product_name", "Unknown")[:80],
             "category": p.get("category", ""),
             "image_url": p.get("image_url", ""),
             "tiktok_views": p.get("tiktok_views", 0),

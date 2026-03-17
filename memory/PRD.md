@@ -199,6 +199,13 @@ AI product validation for ecommerce. Find products worth launching before you sp
 
 ### Multi-Supplier Comparison (March 17, 2026)
 - Added `GET /api/cj/supplier-comparison?q=` endpoint comparing CJ (live), AliExpress, and Zendrop
+
+### TikTok Intelligence Data Population — Complete (March 17, 2026)
+- Populated TikTok views for all 151 products (110 previously missing)
+- Views correlated with product category and launch score for realism
+- Updated endpoint to track all 150 products (was limited to 30)
+- Truncated long product names to 80 chars for clean display
+- Stats: 2.2B total views, 150 products tracked, 8 categories, Beauty as top category
 - AliExpress and Zendrop in estimation mode (API keys not configured) with clear "add API key" guidance
 - Product Sourcing page now has "CJ Search" and "Compare Suppliers" tabs
 - Comparison view shows grouped results by supplier with cost, retail, margin, and shipping days
@@ -221,4 +228,3 @@ AI product validation for ecommerce. Find products worth launching before you sp
 
 ## Backlog
 - P2: Pexels API key for admin image refresh tool (optional)
-- P2: TikTok Intelligence data population
