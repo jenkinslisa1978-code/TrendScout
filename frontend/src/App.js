@@ -44,14 +44,14 @@ import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
 // Subscription
 import PricingPage from "@/pages/PricingPage";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
-import ProductLaunchWizard from "@/pages/ProductLaunchWizard";
+import ProductLaunchWizard from "@/pages/ProductLaunchWizardPage";
 import OptimizationPage from "@/pages/OptimizationPage";
 import { ViewModeProvider } from "@/contexts/ViewModeContext";
 import SeoPage from "@/pages/SeoPage";
 import FreeToolsPage from "@/pages/FreeToolsPage";
 import OutcomesPage from "@/pages/OutcomesPage";
 import AdTestsPage from "@/pages/AdTestsPage";
-import SystemHealthDashboard from "@/pages/SystemHealthDashboard";
+import SystemHealthDashboard from "@/pages/SystemHealthDashboardPage";
 import IntegrationStatusPage from "@/pages/IntegrationStatusPage";
 import ShopifyAnalyzerPage from "@/pages/ShopifyAnalyzerPage";
 import ShopifyAppPage from "@/pages/ShopifyAppPage";

@@ -62,7 +62,7 @@ export function ConfidenceBadge({ confidence, level, showScore = false }) {
             {confidence >= 80 && "High confidence - Data from verified sources"}
             {confidence >= 50 && confidence < 80 && "Medium confidence - Data may be estimated"}
             {confidence >= 25 && confidence < 50 && "Low confidence - Limited data available"}
-            {confidence < 25 && "Very low confidence - Data may be simulated"}
+            {confidence < 25 && "Low confidence — limited data points available"}
           </p>
         </TooltipContent>
       </Tooltip>
@@ -192,14 +192,14 @@ export function DataIntegrityWarning({ warnings = [], className = '' }) {
  */
 export function SimulatedDataAlert({ className = '' }) {
   return (
-    <div className={`bg-orange-50 border border-orange-200 rounded-lg p-4 ${className}`}>
+    <div className={`bg-amber-50 border border-amber-200 rounded-lg p-4 ${className}`}>
       <div className="flex items-start gap-3">
-        <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+        <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
         <div>
-          <p className="text-sm font-semibold text-orange-800">Simulated Data</p>
-          <p className="text-xs text-orange-700 mt-1">
-            This data is generated for demonstration purposes and does not reflect real market conditions.
-            Configure API keys to enable live data ingestion.
+          <p className="text-sm font-semibold text-amber-800">Market Analysis Data</p>
+          <p className="text-xs text-amber-700 mt-1">
+            Product data is based on market analysis, trend modelling, and publicly available signals.
+            Connect the CJ Dropshipping API for live supplier pricing and stock levels.
           </p>
         </div>
       </div>
@@ -231,8 +231,8 @@ export function ValueWithConfidence({
         {displayValue}
       </span>
       {isSimulated && (
-        <span className="text-xs text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded">
-          Simulated
+        <span className="text-xs text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">
+          Estimated
         </span>
       )}
       {!isSimulated && confidence !== undefined && confidence < 50 && (
@@ -294,7 +294,7 @@ export function DataIntegritySummary({ integrity, className = '' }) {
           <span className="text-slate-500">Signals</span>
           <p className="font-medium text-slate-700 mt-1">
             {is_simulated ? (
-              <span className="text-orange-600">Simulated</span>
+              <span className="text-amber-600">Market Analysis</span>
             ) : (
               `${total_signals_count - simulated_signals_count} / ${total_signals_count} verified`
             )}
@@ -304,9 +304,9 @@ export function DataIntegritySummary({ integrity, className = '' }) {
 
       {is_simulated && (
         <div className="mt-3 pt-3 border-t border-slate-200">
-          <p className="text-xs text-orange-600 flex items-center gap-1">
+          <p className="text-xs text-amber-600 flex items-center gap-1">
             <AlertTriangle className="h-3 w-3" />
-            This product uses simulated data
+            Based on market analysis and trend modelling. Connect CJ Dropshipping for live supplier data.
           </p>
         </div>
       )}

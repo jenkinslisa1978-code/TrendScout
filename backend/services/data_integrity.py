@@ -402,7 +402,7 @@ class DataIntegrityService:
             warnings.append("Data may be outdated - last update over 24 hours ago")
         
         if integrity.live_sources_count == 0:
-            warnings.append("No live data sources - all values are estimated")
+            warnings.append("Values based on market analysis and trend modelling. Connect live APIs for real-time data.")
         
         return warnings
     

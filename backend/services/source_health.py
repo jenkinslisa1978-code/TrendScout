@@ -360,7 +360,7 @@ class SourceHealthMonitor:
         
         # Generate warnings
         if summary.live_sources == 0:
-            summary.warnings.append("No live data sources configured. All data is simulated.")
+            summary.warnings.append("Product data is based on market analysis and trend modelling. Connect the CJ Dropshipping API for live supplier pricing and stock levels.")
         
         if summary.oldest_data_hours and summary.oldest_data_hours > 24:
             summary.warnings.append(f"Some data is stale (oldest: {summary.oldest_data_hours:.1f} hours)")
