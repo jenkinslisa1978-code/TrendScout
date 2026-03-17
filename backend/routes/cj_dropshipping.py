@@ -115,11 +115,11 @@ async def supplier_comparison(
                     "rating": p.get("rating", 0),
                 })
         else:
-            # Estimation mode
+            # Estimation mode — show as external reference
             suppliers.append({
                 "source": "aliexpress",
                 "source_label": "AliExpress",
-                "mode": "estimation",
+                "mode": "reference",
                 "product_name": q,
                 "image_url": "",
                 "supplier_cost": 0,
@@ -132,7 +132,7 @@ async def supplier_comparison(
                 "variants_count": 0,
                 "source_id": "",
                 "source_url": f"https://www.aliexpress.com/w/wholesale-{q.replace(' ', '-')}.html",
-                "note": "Add ALIEXPRESS_API_KEY to .env for live pricing",
+                "note": "Visit AliExpress to compare prices directly",
             })
     except Exception:
         pass
@@ -163,11 +163,11 @@ async def supplier_comparison(
                     "source_url": "",
                 })
         else:
-            # Estimation mode
+            # Estimation mode — show as external reference
             suppliers.append({
                 "source": "zendrop",
                 "source_label": "Zendrop",
-                "mode": "estimation",
+                "mode": "reference",
                 "product_name": q,
                 "image_url": "",
                 "supplier_cost": 0,
@@ -180,7 +180,7 @@ async def supplier_comparison(
                 "variants_count": 0,
                 "source_id": "",
                 "source_url": "https://www.zendrop.com",
-                "note": "Add ZENDROP_API_KEY to .env for live pricing",
+                "note": "Visit Zendrop to compare prices directly",
             })
     except Exception:
         pass

@@ -346,7 +346,7 @@ const SOURCE_COLORS = {
 
 function SupplierComparisonCard({ supplier }) {
   const colors = SOURCE_COLORS[supplier.source] || SOURCE_COLORS.cj_dropshipping;
-  const isEstimation = supplier.mode === 'estimation';
+  const isEstimation = supplier.mode !== 'live';
 
   return (
     <Card className="border border-slate-200/60 hover:shadow-md transition-all" data-testid={`supplier-${supplier.source}`}>
@@ -364,8 +364,8 @@ function SupplierComparisonCard({ supplier }) {
               <Badge className={`text-[10px] ${colors.bg} ${colors.text} ${colors.border}`}>
                 {colors.label}
               </Badge>
-              <Badge variant="outline" className={`text-[10px] ${isEstimation ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
-                {isEstimation ? 'Estimated' : 'Live'}
+              <Badge variant="outline" className={`text-[10px] ${isEstimation ? 'bg-slate-50 text-slate-500 border-slate-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                {isEstimation ? 'Compare externally' : 'Live'}
               </Badge>
             </div>
             <h3 className="text-sm font-semibold text-slate-900 line-clamp-1">{supplier.product_name}</h3>
@@ -396,8 +396,8 @@ function SupplierComparisonCard({ supplier }) {
               </div>
             </div>
             {supplier.note && (
-              <p className="text-[10px] text-amber-600 mt-1.5 flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" /> {supplier.note}
+              <p className="text-[10px] text-slate-500 mt-1.5 flex items-center gap-1">
+                <ExternalLink className="h-3 w-3" /> {supplier.note}
               </p>
             )}
           </div>

@@ -220,6 +220,5 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Verified:** 100% backend (12/12), 100% frontend — iteration_90.json.
 
 ## Backlog
-- P2: Pexels API key for admin image refresh tool
-- P2: AliExpress API key (ALIEXPRESS_API_KEY + ALIEXPRESS_API_SECRET) for live supplier pricing
-- P2: Zendrop API key (ZENDROP_API_KEY) for live supplier pricing
+- P2: Pexels API key for admin image refresh tool (optional)
+- P2: TikTok Intelligence data population
