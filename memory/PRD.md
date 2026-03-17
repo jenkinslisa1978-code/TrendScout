@@ -177,6 +177,15 @@ AI product validation for ecommerce. Find products worth launching before you sp
 ### CJ Dropshipping Integration — Complete (March 17, 2026)
 - **Backend:**
   - `GET /api/cj/search?q=&page=&page_size=` — search CJ Dropshipping products by keyword
+
+### Shopify App Store Submission Prep — Complete (March 17, 2026)
+- Replaced all `support@trendscout.click` and `*@trendscout.app` emails with `info@trendscout.click` across 7 files
+- Privacy Policy: Added Shopify store data collection (Section 1), data retention for Shopify (Section 6), full GDPR compliance section (Section 7) covering customer data requests, erasure, and shop data erasure
+- Terms of Service: Added Shopify Integration section (Section 5) covering API access, draft products, token encryption
+- Updated `shopify.app.toml` API version from `2024-01` to `2026-01`
+- Created reviewer account: `reviewer@trendscout.click` / `ShopifyReview2026!`
+- Created comprehensive `/app/SHOPIFY_APP_LISTING.md` with full app listing copy, features, pricing, API scopes, GDPR endpoints, URLs, screenshot requirements, and 14-item submission checklist
+- **Verified:** 100% backend (9/9), 100% frontend — iteration_91.json
   - `GET /api/cj/product/{pid}` — get detailed product info with variants and properties
   - `POST /api/cj/import/{pid}` — import CJ product into TrendScout with launch score calculation
   - `GET /api/cj/categories` — get CJ product categories
@@ -194,4 +203,6 @@ AI product validation for ecommerce. Find products worth launching before you sp
 
 ## Backlog
 - P1: Pexels API key for admin image refresh tool (waiting for user key)
-- P1: Full Shopify App Store submission preparation
+- P1: Generate app icon (1200x1200) for Shopify App Store submission
+- P1: Capture 6 submission screenshots for Shopify App Store listing
+- P2: Final QA on production domain before Shopify submission
