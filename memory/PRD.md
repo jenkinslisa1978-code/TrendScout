@@ -174,6 +174,24 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Naming convention cleanup:** Renamed `ProductLaunchWizard.jsx` → `ProductLaunchWizardPage.jsx`, `SystemHealthDashboard.jsx` → `SystemHealthDashboardPage.jsx`, `BudgetOptimizerCard.jsx` → `BudgetOptimiserCard.jsx`.
 - **Verified:** 100% backend (11/11), 100% frontend — iteration_89.json.
 
+### CJ Dropshipping Integration — Complete (March 17, 2026)
+- **Backend:**
+  - `GET /api/cj/search?q=&page=&page_size=` — search CJ Dropshipping products by keyword
+  - `GET /api/cj/product/{pid}` — get detailed product info with variants and properties
+  - `POST /api/cj/import/{pid}` — import CJ product into TrendScout with launch score calculation
+  - `GET /api/cj/categories` — get CJ product categories
+  - Token caching to `/tmp/cj_api_token.json` for persistence across restarts
+  - Fixed image_url JSON array string parsing and sell_price fallback for zero values
+- **Frontend:**
+  - `/cj-sourcing` page with search, product cards, detail modal, and import
+  - Product cards: name, image, category, stock badge, supplier cost, est. retail, margin %
+  - Product detail modal: image gallery with thumbnails, pricing grid, variants list, description (HTML sanitised)
+  - Quick search suggestions (LED strip lights, phone case, yoga mat, etc.)
+  - Pagination controls for large result sets
+  - "Sourced from CJ Dropshipping" badge on ProductDetailPage for imported products
+  - Sidebar "Product Sourcing" nav item
+- **Verified:** 100% backend (12/12), 100% frontend — iteration_90.json.
+
 ## Backlog
-- P1: CJ Dropshipping API integration (waiting for user to get API key from developers.cjdropshipping.com)
 - P1: Pexels API key for admin image refresh tool (waiting for user key)
+- P1: Full Shopify App Store submission preparation
