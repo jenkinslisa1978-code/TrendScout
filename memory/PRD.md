@@ -166,7 +166,14 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Admin image refresh tool:** `GET /api/admin/images/stats`, `POST /api/admin/images/refresh/{product_id}`, `POST /api/admin/images/refresh-batch`. Requires PEXELS_API_KEY env var for actual image refresh.
 - **Verified:** 100% backend (19/19), 95% frontend — iteration_88.json.
 
+### Phase B — Ad Tests & Data Quality (March 17, 2026)
+- **Ad Tests page rewrite:** Complete overhaul with "How Ad Testing Works" 4-step guide (Choose Product → Run Ads → Log Results → Find Winner), key metric reference cards (CTR >2%, CPC <£0.50, 24-48h duration, £30-60 budget), data transparency section explaining the methodology.
+- **Data transparency messaging:** Replaced all "Simulated Data" labels with "Market Analysis Data" and "Based on market analysis and trend modelling. Connect CJ Dropshipping for live supplier data." Updated `SimulatedDataAlert`, `DataIntegritySummary`, `ValueWithConfidence`, and `ConfidenceBadge` components.
+- **Backend messaging:** Updated `source_health.py` and `data_integrity.py` to use actionable language about connecting APIs.
+- **TikTok product links:** Fixed `/trending/:slug` → `/product/:id` links on TikTok Intelligence page.
+- **Naming convention cleanup:** Renamed `ProductLaunchWizard.jsx` → `ProductLaunchWizardPage.jsx`, `SystemHealthDashboard.jsx` → `SystemHealthDashboardPage.jsx`, `BudgetOptimizerCard.jsx` → `BudgetOptimiserCard.jsx`.
+- **Verified:** 100% backend (11/11), 100% frontend — iteration_89.json.
+
 ## Backlog
-- P2: Connect real product data API (CJ Dropshipping, AliExpress) for live data
-- P2: Connect Ad Tests to real ad platform APIs
-- P3: Naming convention cleanup (2 cosmetic files)
+- P1: CJ Dropshipping API integration (waiting for user to get API key from developers.cjdropshipping.com)
+- P1: Pexels API key for admin image refresh tool (waiting for user key)
