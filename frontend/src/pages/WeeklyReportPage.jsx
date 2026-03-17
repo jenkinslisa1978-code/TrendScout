@@ -153,7 +153,7 @@ export default function WeeklyReportPage() {
               </span>
               <span className="flex items-center gap-1">
                 <Package className="h-4 w-4" />
-                {summary.total_products_analyzed || 0} products analyzed
+                {summary.total_products_analysed || 0} products analysed
               </span>
             </div>
           </div>

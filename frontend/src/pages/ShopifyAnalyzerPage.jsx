@@ -32,7 +32,7 @@ export default function ShopifyAnalyzerPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.detail || 'Failed to analyze store');
+        toast.error(data.detail || 'Failed to analyse store');
         setLoading(false);
         return;
       }

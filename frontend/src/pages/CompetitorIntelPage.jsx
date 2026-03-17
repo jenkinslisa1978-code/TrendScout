@@ -49,7 +49,7 @@ export default function CompetitorIntelPage() {
       } else {
         toast.error(res.data?.error || 'Analysis failed');
       }
-    } catch { toast.error('Could not analyze store'); }
+    } catch { toast.error('Could not analyse store'); }
     setLoading(false);
   };
 
@@ -71,7 +71,7 @@ export default function CompetitorIntelPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Competitor Intelligence</h1>
-          <p className="text-sm text-slate-500 mt-1">Deep-analyze any Shopify store: revenue estimates, pricing strategy, supplier risk, and top products.</p>
+          <p className="text-sm text-slate-500 mt-1">Deep-analyse any Shopify store: revenue estimates, pricing strategy, supplier risk, and top products.</p>
         </div>
 
         {/* Search */}
@@ -90,7 +90,7 @@ export default function CompetitorIntelPage() {
               </div>
               <Button type="submit" disabled={loading || !url.trim()} className="bg-indigo-600 hover:bg-indigo-700" data-testid="analyze-store-btn">
                 {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
-                Analyze Store
+                Analyse Store
               </Button>
             </form>
             <div className="flex items-center gap-3">

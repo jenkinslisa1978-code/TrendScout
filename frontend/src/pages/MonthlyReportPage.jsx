@@ -139,7 +139,7 @@ export default function MonthlyReportPage() {
               </span>
               <span className="flex items-center gap-1">
                 <Layers className="h-4 w-4" />
-                {summary.total_categories || 0} categories analyzed
+                {summary.total_categories || 0} categories analysed
               </span>
             </div>
           </div>

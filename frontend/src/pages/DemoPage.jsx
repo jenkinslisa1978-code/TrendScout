@@ -19,7 +19,7 @@ export default function DemoPage() {
       <div className="mx-auto max-w-5xl px-6 py-16" data-testid="demo-page">
         <div className="text-center mb-14">
           <h1 className="font-manrope text-4xl font-extrabold text-slate-900" data-testid="demo-title">See TrendScout in Action</h1>
-          <p className="mt-3 text-slate-500 max-w-lg mx-auto">No account needed. Here's exactly what you get when you analyze a product.</p>
+          <p className="mt-3 text-slate-500 max-w-lg mx-auto">No account needed. Here's exactly what you get when you analyse a product.</p>
         </div>
 
         {/* Example Product Analysis */}
@@ -90,7 +90,7 @@ export default function DemoPage() {
             <p className="text-sm text-slate-500 mb-6">Every product comes with a step-by-step launch plan.</p>
             <div className="space-y-4">
               {[
-                { step: 1, title: 'Import product to Shopify', desc: 'One-click export with optimized title, description, and pricing.' },
+                { step: 1, title: 'Import product to Shopify', desc: 'One-click export with optimised title, description, and pricing.' },
                 { step: 2, title: 'Create product page', desc: 'Auto-generated product page with benefit-focused copy.' },
                 { step: 3, title: 'Generate ad creatives', desc: 'AI creates 3 ad angles with headlines and descriptions.' },
                 { step: 4, title: 'Launch TikTok campaign', desc: 'Start with a $20–$50 test budget targeting the suggested audience.' },

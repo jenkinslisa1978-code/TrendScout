@@ -21,7 +21,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">2. Description of Service</h2>
-            <p>TrendScout is an AI-powered product discovery platform that helps ecommerce entrepreneurs find trending products, analyze market competition, and make data-driven decisions. The Service includes product trend data, market analysis, store generation tools, and related features.</p>
+            <p>TrendScout is an AI-powered product discovery platform that helps ecommerce entrepreneurs find trending products, analyse market competition, and make data-driven decisions. The Service includes product trend data, market analysis, store generation tools, and related features.</p>
           </section>
 
           <section>

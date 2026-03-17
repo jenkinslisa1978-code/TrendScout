@@ -78,7 +78,7 @@ export default function FindWinningProductHero({ onLaunchProduct }) {
             Ready to launch your next winner?
           </h2>
           <p className="text-indigo-200 mb-8 max-w-lg mx-auto">
-            Our AI analyzes thousands of products across TikTok, Amazon, and Google Trends to find the best product for you right now.
+            Our AI analyses thousands of products across TikTok, Amazon, and Google Trends to find the best product for you right now.
           </p>
           <Button
             size="lg"

@@ -116,7 +116,7 @@ export default function OptimizationPage() {
                 <Brain className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900 font-manrope">Smart Budget Optimizer</h1>
+                <h1 className="text-xl font-bold text-slate-900 font-manrope">Smart Budget Optimiser</h1>
                 <p className="text-sm text-slate-500">Manage your ad test optimisation strategy</p>
               </div>
             </div>
@@ -201,12 +201,12 @@ export default function OptimizationPage() {
           </Card>
         </div>
 
-        {/* Optimizer Alerts */}
-        <Card className="border-0 shadow-md" data-testid="optimizer-alerts-card">
+        {/* Optimiser Alerts */}
+        <Card className="border-0 shadow-md" data-testid="optimiser-alerts-card">
           <CardHeader className="py-3 px-5">
             <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
               <Bell className="h-4 w-4 text-indigo-500" />
-              Optimizer Alerts
+              Optimiser Alerts
               {unreadAlerts > 0 && (
                 <Badge className="bg-red-100 text-red-700 border-red-200 text-[10px] ml-1">{unreadAlerts} new</Badge>
               )}
@@ -219,7 +219,7 @@ export default function OptimizationPage() {
           </CardHeader>
           <CardContent className="px-5 pb-5">
             {alerts.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-6">No optimizer alerts yet. Run recommendations on your ad tests to generate alerts.</p>
+              <p className="text-sm text-slate-400 text-center py-6">No optimiser alerts yet. Run recommendations on your ad tests to generate alerts.</p>
             ) : (
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {alerts.map((alert, i) => {
@@ -231,7 +231,7 @@ export default function OptimizationPage() {
                       className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
                         !alert.read ? `${cfg.bg} ${cfg.border}` : 'bg-white border-slate-100'
                       }`}
-                      data-testid={`optimizer-alert-${i}`}
+                      data-testid={`optimiser-alert-${i}`}
                     >
                       <Icon className={`h-4 w-4 ${cfg.color} flex-shrink-0`} />
                       <div className="flex-1 min-w-0">

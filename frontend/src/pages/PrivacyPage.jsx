@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-3">1. Information We Collect</h2>
             <p><strong>Account data:</strong> Email address, name, and password hash when you register.</p>
-            <p><strong>Usage data:</strong> Pages viewed, features used, products analyzed, and interaction patterns to improve the Service.</p>
+            <p><strong>Usage data:</strong> Pages viewed, features used, products analysed, and interaction patterns to improve the Service.</p>
             <p><strong>Payment data:</strong> Processed securely by Stripe. We do not store card details.</p>
           </section>
 

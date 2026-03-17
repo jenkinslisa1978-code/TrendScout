@@ -72,7 +72,7 @@ export default function LandingPage() {
               style={{ animation: 'fadeSlideUp 0.7s ease forwards' }}
               data-testid="hero-subheadline"
             >
-              TrendScout analyzes trending ecommerce products and predicts whether they are worth launching{' '}
+              TrendScout analyses trending ecommerce products and predicts whether they are worth launching{' '}
               <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
                 using a multi-signal AI launch score.
               </span>
@@ -137,7 +137,7 @@ export default function LandingPage() {
                 step: '2',
                 icon: Eye,
                 title: 'Check the launch score',
-                description: 'TrendScout analyzes demand, competition, and ad potential.',
+                description: 'TrendScout analyses demand, competition, and ad potential.',
                 gradient: 'from-violet-500 to-purple-500',
               },
               {

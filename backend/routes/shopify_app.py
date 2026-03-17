@@ -188,7 +188,7 @@ async def app_info():
     return {
         "name": "TrendScout",
         "version": "1.0.0",
-        "description": "AI-powered product validation and launch intelligence for dropshippers. Find winning products, analyze competitors, and push products directly to your store.",
+        "description": "AI-powered product validation and launch intelligence for dropshippers. Find winning products, analyse competitors, and push products directly to your store.",
         "features": [
             "7-Signal Launch Score — AI product scoring",
             "Ad Intelligence — spy on TikTok, Meta, Pinterest ads",

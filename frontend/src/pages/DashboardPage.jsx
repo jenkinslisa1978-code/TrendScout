@@ -56,7 +56,7 @@ import ProductDecisionPanel from '@/components/dashboard/ProductDecisionPanel';
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const { canAccessEarlyTrends, isElite, isFree, isStarter, maxAnalysesDaily, canUseBudgetOptimizer } = useSubscription();
+  const { canAccessEarlyTrends, isElite, isFree, isStarter, maxAnalysesDaily, canUseBudgetOptimiser } = useSubscription();
   const { isBeginner, isAdvanced } = useViewMode();
   const [winningProducts, setWinningProducts] = useState([]);
   const [earlyTrendProducts, setEarlyTrendProducts] = useState([]);
@@ -349,14 +349,14 @@ export default function DashboardPage() {
 
         {/* Upgrade nudge for Starter users */}
         {isStarter && (
-          <InsightLockedNudge feature="Smart Budget Optimizer" upgradeTo="Elite" />
+          <InsightLockedNudge feature="Smart Budget Optimiser" upgradeTo="Elite" />
         )}
 
         {/* Daily Opportunities */}
         <DailyOpportunitiesPanel />
 
-        {/* Budget Optimizer Widget — Elite only with upgrade prompt */}
-        {canUseBudgetOptimizer ? (
+        {/* Budget Optimiser Widget — Elite only with upgrade prompt */}
+        {canUseBudgetOptimiser ? (
           <OptimizationDashboardWidget />
         ) : !isFree && !isStarter ? null : null}
 

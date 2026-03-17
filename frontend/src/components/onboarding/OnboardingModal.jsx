@@ -334,7 +334,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
               </div>
               <Button onClick={goToAnalysis} className="w-full mt-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700" data-testid="onboarding-analyze-btn">
                 <Rocket className="mr-2 h-4 w-4" />
-                {featuredProduct ? 'Analyze This Product' : 'Browse Products'}
+                {featuredProduct ? 'Analyse This Product' : 'Browse Products'}
               </Button>
             </div>
           )}

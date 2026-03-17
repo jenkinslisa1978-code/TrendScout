@@ -19,8 +19,8 @@ const faqs = [
 
 const howItWorks = [
   { icon: Search, title: 'Find a product', desc: 'Browse products gaining traction online. Filter by category, score, or trend stage.' },
-  { icon: BarChart3, title: 'Check the launch score', desc: 'TrendScout analyzes demand, competition, margins, and ad potential to give you a 0–100 score.' },
-  { icon: ShoppingBag, title: 'Import to Shopify', desc: 'Connect your store and export products with optimized descriptions and pricing.' },
+  { icon: BarChart3, title: 'Check the launch score', desc: 'TrendScout analyses demand, competition, margins, and ad potential to give you a 0–100 score.' },
+  { icon: ShoppingBag, title: 'Import to Shopify', desc: 'Connect your store and export products with optimised descriptions and pricing.' },
   { icon: Megaphone, title: 'Launch ads', desc: 'Get AI-generated ad creative ideas and target audience suggestions. Test with a small budget.' },
   { icon: Rocket, title: 'Evaluate results', desc: 'Track performance and decide whether to scale, pivot, or move on.' },
 ];

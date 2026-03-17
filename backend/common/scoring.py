@@ -362,13 +362,43 @@ def calculate_launch_score(product: dict) -> tuple:
     competition_score = product.get('competition_score', 0)
     ad_activity_score = product.get('ad_activity_score', 0)
     supplier_demand_score = product.get('supplier_demand_score', 0)
+
+    # Competition penalty: heavy ad activity should reduce opportunity
+    ad_count = product.get('ad_count', 0)
+    competition_level = product.get('competition_level', 'medium')
+    market_saturation = product.get('market_saturation', 0)
+    active_stores = product.get('active_competitor_stores', 0)
+
+    # Calculate saturation penalty (0 to 25 points deducted)
+    saturation_penalty = 0
+    if competition_level == 'high':
+        saturation_penalty += 8
+    if ad_count > 200:
+        saturation_penalty += min(12, (ad_count - 200) / 50 * 3)
+    if market_saturation > 60:
+        saturation_penalty += min(5, (market_saturation - 60) / 10 * 2)
+    if active_stores > 50:
+        saturation_penalty += min(5, (active_stores - 50) / 30 * 3)
+
+    # Convert ad_activity_score to an opportunity score
+    # High ad activity validates demand BUT reduces opportunity
+    if ad_count > 300:
+        ad_opportunity = max(15, ad_activity_score * 0.3)
+    elif ad_count > 150:
+        ad_opportunity = max(25, ad_activity_score * 0.5)
+    elif ad_count > 50:
+        ad_opportunity = ad_activity_score * 0.75
+    else:
+        ad_opportunity = ad_activity_score
+
     launch_score = (
         trend_score * 0.30 +
         margin_score * 0.25 +
         competition_score * 0.20 +
-        ad_activity_score * 0.15 +
+        ad_opportunity * 0.15 +
         supplier_demand_score * 0.10
-    )
+    ) - saturation_penalty
+
     launch_score = min(100, max(0, round(launch_score)))
     if launch_score >= 80:
         label = 'strong_launch'
@@ -383,7 +413,7 @@ def calculate_launch_score(product: dict) -> tuple:
         'Trend momentum': trend_score,
         'Profit margins': margin_score,
         'Market accessibility': competition_score,
-        'Advertiser validation': ad_activity_score,
+        'Ad opportunity': round(ad_opportunity),
         'Supplier reliability': supplier_demand_score
     }
     sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
@@ -393,6 +423,10 @@ def calculate_launch_score(product: dict) -> tuple:
         reasoning_parts.append(f"Strong: {', '.join(strengths)}")
     if weaknesses and label in ['risky', 'avoid']:
         reasoning_parts.append(f"Weak: {', '.join(weaknesses[:2])}")
+    if saturation_penalty > 10:
+        reasoning_parts.append(f"Heavy competition penalty (-{round(saturation_penalty)}pts)")
+    elif saturation_penalty > 5:
+        reasoning_parts.append(f"Moderate competition drag (-{round(saturation_penalty)}pts)")
     if label == 'strong_launch':
         reasoning_parts.append("Excellent conditions for launch")
     elif label == 'promising':

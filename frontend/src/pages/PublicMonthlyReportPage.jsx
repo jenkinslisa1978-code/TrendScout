@@ -1,7 +1,7 @@
 /**
  * Public Monthly Report Page
  * 
- * SEO-optimized public preview of monthly market trends report
+ * SEO-optimised public preview of monthly market trends report
  */
 
 import React, { useState, useEffect } from 'react';
@@ -86,7 +86,7 @@ export default function PublicMonthlyReportPage() {
             </span>
             <span className="flex items-center gap-1">
               <Layers className="h-4 w-4" />
-              {summary.total_categories || 0} categories analyzed
+              {summary.total_categories || 0} categories analysed
             </span>
           </div>
         </header>

@@ -37,25 +37,25 @@ import PageExplanation from '@/components/PageExplanation';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Find Products', href: '/discover', icon: Search },
-  { name: 'Product Analysis', href: '/stores', icon: Store },
+  { name: 'Product Analysis', href: '/discover', icon: Search },
   { name: 'Ad Intelligence', href: '/ad-spy', icon: Radar },
   { name: 'Ad Ideas', href: '/ad-tests', icon: Zap },
   { name: 'Profit Simulator', href: '/profitability-simulator', icon: Target },
   { name: 'Competitor Intel', href: '/competitor-intel', icon: Shield },
   { name: 'Radar Alerts', href: '/radar-alerts', icon: Activity },
   { name: 'Verified Winners', href: '/verified-winners', icon: Trophy },
+  { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
+  { name: 'Saved Products', href: '/saved', icon: Bookmark },
+  { name: 'My Stores', href: '/stores', icon: Store },
   { name: 'Connections', href: '/settings/connections', icon: Link2 },
   { name: 'API Access', href: '/api-docs', icon: Shield },
   { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'TikTok Intel', href: '/tiktok-intelligence', icon: Video },
-  { name: 'Saved Products', href: '/saved', icon: Bookmark },
   { name: 'Referrals', href: '/referrals', icon: Gift },
 ];
 
 const eliteNavigation = [
   { name: 'Trend Alerts', href: '/alerts', icon: Bell, badge: true },
-  { name: 'Budget Optimizer', href: '/optimization', icon: Brain },
+  { name: 'Budget Optimiser', href: '/optimization', icon: Brain },
 ];
 
 const adminNavigation = [

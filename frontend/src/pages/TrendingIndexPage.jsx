@@ -37,7 +37,7 @@ export default function TrendingIndexPage() {
     <>
       <Helmet>
         <title>Trending Products to Dropship in 2026 | TrendScout</title>
-        <meta name="description" content="Discover the highest-scoring trending products for dropshipping. AI-analyzed launch scores, competition levels, and profit estimates updated daily." />
+        <meta name="description" content="Discover the highest-scoring trending products for dropshipping. AI-analysed launch scores, competition levels, and profit estimates updated daily." />
         <meta property="og:title" content="Trending Products to Dropship | TrendScout" />
         <meta property="og:description" content="AI-scored trending products for dropshipping. Updated daily." />
         <link rel="canonical" href={`${window.location.origin}/trending`} />

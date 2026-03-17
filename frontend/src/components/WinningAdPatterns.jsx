@@ -54,7 +54,7 @@ export default function WinningAdPatterns({ productId }) {
           </Badge>
         </CardTitle>
         <p className="text-xs text-rose-200 mt-1">
-          Based on {data.total_ads_analyzed} ads analyzed &middot; Source: {data.data_source === 'ad_discovery' ? 'Real ad data' : 'Product signals'}
+          Based on {data.total_ads_analysed} ads analysed &middot; Source: {data.data_source === 'ad_discovery' ? 'Real ad data' : 'Product signals'}
         </p>
       </CardHeader>
 

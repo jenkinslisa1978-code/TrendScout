@@ -1,7 +1,7 @@
 /**
  * Public Weekly Report Page
  * 
- * SEO-optimized public preview of weekly winning products report
+ * SEO-optimised public preview of weekly winning products report
  */
 
 import React, { useState, useEffect } from 'react';
@@ -108,7 +108,7 @@ export default function PublicWeeklyReportPage() {
             </span>
             <span className="flex items-center gap-1">
               <Package className="h-4 w-4" />
-              {preview.total_products || 20} products analyzed
+              {preview.total_products || 20} products analysed
             </span>
           </div>
           {/* Download PDF Button */}

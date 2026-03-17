@@ -36,7 +36,7 @@ const PLAN_FEATURES = {
     color: 'from-amber-500 to-orange-600',
     features: [
       'Everything in Pro',
-      'Budget Optimizer',
+      'Budget Optimiser',
       'Radar alerts',
       'LaunchPad',
       'Priority support',

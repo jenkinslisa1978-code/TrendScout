@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { apiGet, apiPost, apiPut } from '@/lib/api';
 import { toast } from 'sonner';
-import BudgetOptimizerCard from '@/components/BudgetOptimizerCard';
+import BudgetOptimiserCard from '@/components/BudgetOptimiserCard';
 
 export default function AdTestPlanner({ productId }) {
   const [data, setData] = useState(null);
@@ -114,7 +114,7 @@ export default function AdTestPlanner({ productId }) {
           {activeTest && (
             <TabsContent value="results" className="mt-0 space-y-4">
               <ResultsTracker test={activeTest} onUpdate={fetchData} />
-              <BudgetOptimizerCard testId={activeTest.id} />
+              <BudgetOptimiserCard testId={activeTest.id} />
             </TabsContent>
           )}
         </Tabs>

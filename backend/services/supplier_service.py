@@ -47,11 +47,47 @@ class SupplierService:
         if not product:
             return {"error": "Product not found", "suppliers_found": 0}
         
-        # Check existing suppliers
+        # Check existing suppliers in product_suppliers collection
         existing = await self.db.product_suppliers.count_documents({"product_id": product_id})
         if existing > 0:
             suppliers = await self.get_suppliers_for_product(product_id)
             return {"suppliers_found": existing, "suppliers": suppliers, "cached": True}
+        
+        # Check embedded suppliers on product document
+        embedded = product.get("suppliers", [])
+        if embedded:
+            suppliers = []
+            for s in embedded:
+                suppliers.append({
+                    "id": str(uuid.uuid4()),
+                    "product_id": product_id,
+                    "source": "verified",
+                    "supplier_name": s.get("name", "Unknown"),
+                    "supplier_url": "",
+                    "supplier_cost": s.get("unit_cost", 0),
+                    "currency": "GBP",
+                    "estimated_shipping_cost": s.get("shipping_cost", 0),
+                    "shipping_origin": s.get("country", "CN"),
+                    "shipping_days_min": max(1, s.get("lead_time_days", 7) - 2),
+                    "shipping_days_max": s.get("lead_time_days", 7) + 5,
+                    "shipping_days_estimate": s.get("lead_time_days", 7),
+                    "stock_status": "in_stock",
+                    "stock_quantity": None,
+                    "supplier_rating": s.get("rating"),
+                    "supplier_orders": None,
+                    "min_order": s.get("min_order", 1),
+                    "confidence": "verified",
+                    "confidence_note": f"Min order: {s.get('min_order', 1)} units",
+                    "is_selected": False,
+                    "image_urls": [product.get("image_url", "")],
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                })
+            # Cache to product_suppliers
+            if suppliers:
+                await self.db.product_suppliers.insert_many([{**s} for s in suppliers])
+                for s in suppliers:
+                    s.pop("_id", None)
+            return {"suppliers_found": len(suppliers), "suppliers": suppliers, "cached": False}
         
         suppliers = []
         

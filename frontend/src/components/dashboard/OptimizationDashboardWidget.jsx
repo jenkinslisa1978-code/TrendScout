@@ -54,7 +54,7 @@ export default function OptimizationDashboardWidget() {
       <CardHeader className="py-3 px-4 bg-gradient-to-r from-indigo-600 to-violet-600">
         <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
           <Brain className="h-4 w-4" />
-          Budget Optimizer
+          Budget Optimiser
           {hasActions && (
             <Badge className="ml-auto bg-white/20 text-white border-white/30 text-[10px]">
               {actionItems.length} action{actionItems.length !== 1 ? 's' : ''} needed
@@ -131,10 +131,10 @@ export default function OptimizationDashboardWidget() {
             size="sm"
             className="flex-1 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 h-8"
             onClick={() => navigate('/optimization')}
-            data-testid="open-optimizer-btn"
+            data-testid="open-optimiser-btn"
           >
             <Brain className="mr-1 h-3 w-3" />
-            Open Optimizer
+            Open Optimiser
           </Button>
           <Button
             variant="ghost"

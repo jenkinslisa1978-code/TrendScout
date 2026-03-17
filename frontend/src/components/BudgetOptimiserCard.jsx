@@ -128,7 +128,7 @@ function RecommendationRow({ rec }) {
   );
 }
 
-export default function BudgetOptimizerCard({ testId }) {
+export default function BudgetOptimiserCard({ testId }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -178,12 +178,12 @@ export default function BudgetOptimizerCard({ testId }) {
   const { recommendations, summary } = data;
 
   return (
-    <div className="space-y-3" data-testid="budget-optimizer-card">
+    <div className="space-y-3" data-testid="budget-optimiser-card">
       {/* Summary bar */}
       <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 rounded-xl">
         <Brain className="h-4 w-4 text-indigo-600 flex-shrink-0" />
         <div className="flex-1">
-          <p className="text-xs font-semibold text-indigo-900">Budget Optimizer</p>
+          <p className="text-xs font-semibold text-indigo-900">Budget Optimiser</p>
           <p className="text-[10px] text-indigo-600">
             {summary.to_scale > 0 && `${summary.to_scale} to scale · `}
             {summary.to_pause > 0 && `${summary.to_pause} to pause · `}
@@ -223,7 +223,7 @@ export default function BudgetOptimizerCard({ testId }) {
         variant="ghost"
         className="w-full text-xs text-slate-400 hover:text-slate-600 h-7"
         onClick={fetchRecommendations}
-        data-testid="refresh-optimizer-btn"
+        data-testid="refresh-optimiser-btn"
       >
         Refresh Recommendations
       </Button>
