@@ -45,6 +45,154 @@ async def cj_categories(
     return await get_categories()
 
 
+@cj_router.get("/supplier-comparison")
+async def supplier_comparison(
+    q: str = Query(..., min_length=2),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Compare a product across multiple suppliers.
+    Returns CJ (live), AliExpress (estimation), and Zendrop (estimation) data.
+    """
+    from services.api_clients.aliexpress_client import AliExpressClient
+    from services.api_clients.zendrop_client import zendrop_client
+
+    suppliers = []
+
+    # CJ Dropshipping (live)
+    try:
+        cj_result = await search_products(q, page=1, page_size=3)
+        if cj_result.get("success") and cj_result.get("products"):
+            for p in cj_result["products"][:3]:
+                retail = round(p["sell_price"] * 2.5, 2)
+                margin = round(((retail - p["sell_price"]) / retail) * 100) if p["sell_price"] > 0 and retail > 0 else 0
+                suppliers.append({
+                    "source": "cj_dropshipping",
+                    "source_label": "CJ Dropshipping",
+                    "mode": "live",
+                    "product_name": p["product_name"],
+                    "image_url": p.get("image_url", ""),
+                    "supplier_cost": p["sell_price"],
+                    "estimated_retail": retail,
+                    "margin_pct": margin,
+                    "shipping_days": 8,
+                    "shipping_cost": 3.50,
+                    "stock_status": p.get("stock_status", "unknown"),
+                    "moq": 1,
+                    "variants_count": p.get("variants_count", 0),
+                    "source_id": p.get("cj_pid", ""),
+                    "source_url": p.get("source_url", ""),
+                })
+    except Exception:
+        pass
+
+    # AliExpress (live if configured, else estimation)
+    try:
+        ali = AliExpressClient()
+        ali_products = await ali.search_products(q, limit=3)
+        if ali_products:
+            for p in ali_products[:3]:
+                cost = p.get("supplier_cost", 0)
+                retail = round(cost * 2.8, 2) if cost > 0 else 0
+                margin = round(((retail - cost) / retail) * 100) if cost > 0 and retail > 0 else 0
+                suppliers.append({
+                    "source": "aliexpress",
+                    "source_label": "AliExpress",
+                    "mode": "live",
+                    "product_name": p.get("product_name", q),
+                    "image_url": p.get("image_url", ""),
+                    "supplier_cost": cost,
+                    "estimated_retail": retail,
+                    "margin_pct": margin,
+                    "shipping_days": p.get("shipping_days", 14),
+                    "shipping_cost": 0,
+                    "stock_status": p.get("availability", "unknown"),
+                    "moq": 1,
+                    "variants_count": p.get("variants_count", 1),
+                    "source_id": p.get("aliexpress_id", ""),
+                    "source_url": p.get("product_url", ""),
+                    "orders_30d": p.get("orders_30d", 0),
+                    "rating": p.get("rating", 0),
+                })
+        else:
+            # Estimation mode
+            suppliers.append({
+                "source": "aliexpress",
+                "source_label": "AliExpress",
+                "mode": "estimation",
+                "product_name": q,
+                "image_url": "",
+                "supplier_cost": 0,
+                "estimated_retail": 0,
+                "margin_pct": 60,
+                "shipping_days": 14,
+                "shipping_cost": 0,
+                "stock_status": "likely_available",
+                "moq": 1,
+                "variants_count": 0,
+                "source_id": "",
+                "source_url": f"https://www.aliexpress.com/w/wholesale-{q.replace(' ', '-')}.html",
+                "note": "Add ALIEXPRESS_API_KEY to .env for live pricing",
+            })
+    except Exception:
+        pass
+
+    # Zendrop (live if configured, else estimation)
+    try:
+        zd_products = await zendrop_client.search_products(q, limit=3)
+        if zd_products:
+            for p in zd_products[:3]:
+                cost = float(p.get("price", 0))
+                retail = round(cost * 2.5, 2) if cost > 0 else 0
+                margin = round(((retail - cost) / retail) * 100) if cost > 0 and retail > 0 else 0
+                suppliers.append({
+                    "source": "zendrop",
+                    "source_label": "Zendrop",
+                    "mode": "live",
+                    "product_name": p.get("title", q),
+                    "image_url": p.get("image_url", ""),
+                    "supplier_cost": cost,
+                    "estimated_retail": retail,
+                    "margin_pct": margin,
+                    "shipping_days": 5,
+                    "shipping_cost": 3.50,
+                    "stock_status": "in_stock" if p.get("in_stock") else "limited",
+                    "moq": 1,
+                    "variants_count": 0,
+                    "source_id": p.get("sku", ""),
+                    "source_url": "",
+                })
+        else:
+            # Estimation mode
+            suppliers.append({
+                "source": "zendrop",
+                "source_label": "Zendrop",
+                "mode": "estimation",
+                "product_name": q,
+                "image_url": "",
+                "supplier_cost": 0,
+                "estimated_retail": 0,
+                "margin_pct": 55,
+                "shipping_days": 5,
+                "shipping_cost": 3.50,
+                "stock_status": "likely_available",
+                "moq": 1,
+                "variants_count": 0,
+                "source_id": "",
+                "source_url": "https://www.zendrop.com",
+                "note": "Add ZENDROP_API_KEY to .env for live pricing",
+            })
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "query": q,
+        "suppliers": suppliers,
+        "supplier_count": len(suppliers),
+    }
+
+
 @cj_router.post("/import/{pid}")
 async def import_cj_product(
     pid: str,

@@ -191,6 +191,18 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - Captured 6 submission screenshots: Dashboard, Product Detail (7-Signal Score), CJ Sourcing (live search), Ad Intelligence (multi-platform), Profit Simulator, Shopify App Page
 - Created reviewer account: reviewer@trendscout.click / ShopifyReview2026!
 - Only remaining item: Final QA on production domain
+
+### Final QA — Passed (March 17, 2026)
+- Comprehensive QA across all 20+ pages and API endpoints
+- 100% backend (26/26), 100% frontend — iteration_92.json
+- All auth flows, product features, supplier sourcing, ad intelligence, and public pages verified
+
+### Multi-Supplier Comparison (March 17, 2026)
+- Added `GET /api/cj/supplier-comparison?q=` endpoint comparing CJ (live), AliExpress, and Zendrop
+- AliExpress and Zendrop in estimation mode (API keys not configured) with clear "add API key" guidance
+- Product Sourcing page now has "CJ Search" and "Compare Suppliers" tabs
+- Comparison view shows grouped results by supplier with cost, retail, margin, and shipping days
+- **Verified:** Backend endpoint returns multi-supplier data, frontend tabs switch correctly
 - **Verified:** 100% backend (9/9), 100% frontend — iteration_91.json
   - `GET /api/cj/product/{pid}` — get detailed product info with variants and properties
   - `POST /api/cj/import/{pid}` — import CJ product into TrendScout with launch score calculation
@@ -208,6 +220,6 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Verified:** 100% backend (12/12), 100% frontend — iteration_90.json.
 
 ## Backlog
-- P1: Final QA on production domain before Shopify App Store submission
 - P2: Pexels API key for admin image refresh tool
-- P2: Additional supplier integrations (AliExpress, Zendrop)
+- P2: AliExpress API key (ALIEXPRESS_API_KEY + ALIEXPRESS_API_SECRET) for live supplier pricing
+- P2: Zendrop API key (ZENDROP_API_KEY) for live supplier pricing

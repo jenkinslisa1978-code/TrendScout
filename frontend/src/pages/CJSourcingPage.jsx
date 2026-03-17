@@ -15,7 +15,7 @@ import {
   Search, Package, Loader2, TrendingUp, Import, CheckCircle2,
   ShoppingBag, Truck, Star, ExternalLink, AlertTriangle,
   X, ChevronLeft, ChevronRight, Eye, DollarSign, Boxes,
-  Globe, Weight, ImageIcon, Tag,
+  Globe, Weight, ImageIcon, Tag, BarChart3, Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -338,6 +338,185 @@ function ProductDetailModal({ pid, open, onClose, onImport, importing }) {
   );
 }
 
+const SOURCE_COLORS = {
+  cj_dropshipping: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'CJ Dropshipping' },
+  aliexpress: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', label: 'AliExpress' },
+  zendrop: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Zendrop' },
+};
+
+function SupplierComparisonCard({ supplier }) {
+  const colors = SOURCE_COLORS[supplier.source] || SOURCE_COLORS.cj_dropshipping;
+  const isEstimation = supplier.mode === 'estimation';
+
+  return (
+    <Card className="border border-slate-200/60 hover:shadow-md transition-all" data-testid={`supplier-${supplier.source}`}>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
+          {supplier.image_url ? (
+            <img src={supplier.image_url} alt="" className="w-16 h-16 rounded-lg object-cover bg-slate-100 flex-shrink-0" />
+          ) : (
+            <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <Package className="h-6 w-6 text-slate-300" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Badge className={`text-[10px] ${colors.bg} ${colors.text} ${colors.border}`}>
+                {colors.label}
+              </Badge>
+              <Badge variant="outline" className={`text-[10px] ${isEstimation ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                {isEstimation ? 'Estimated' : 'Live'}
+              </Badge>
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900 line-clamp-1">{supplier.product_name}</h3>
+            <div className="grid grid-cols-4 gap-3 mt-2">
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase">Cost</p>
+                <p className="font-mono text-sm font-bold text-slate-900">
+                  {supplier.supplier_cost > 0 ? `$${supplier.supplier_cost.toFixed(2)}` : 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase">Retail</p>
+                <p className="font-mono text-sm font-bold text-slate-900">
+                  {supplier.estimated_retail > 0 ? `$${supplier.estimated_retail.toFixed(2)}` : 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase">Margin</p>
+                <p className={`text-sm font-bold ${supplier.margin_pct >= 50 ? 'text-emerald-600' : supplier.margin_pct >= 30 ? 'text-amber-600' : 'text-red-600'}`}>
+                  {supplier.margin_pct}%
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-400 uppercase">Shipping</p>
+                <p className="text-sm font-semibold text-slate-700 flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> {supplier.shipping_days}d
+                </p>
+              </div>
+            </div>
+            {supplier.note && (
+              <p className="text-[10px] text-amber-600 mt-1.5 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> {supplier.note}
+              </p>
+            )}
+          </div>
+          {supplier.source_url && (
+            <a href={supplier.source_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+              <Button variant="outline" size="sm" className="text-xs gap-1">
+                <ExternalLink className="h-3 w-3" /> View
+              </Button>
+            </a>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SupplierComparisonView({ query, active }) {
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [searched, setSearched] = useState(false);
+
+  const handleCompare = useCallback(async () => {
+    if (!query.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.get(`/api/cj/supplier-comparison?q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        setSuppliers(res.data.suppliers || []);
+      } else {
+        setError(res.data?.error || 'Comparison failed');
+      }
+    } catch {
+      setError('Connection error');
+    }
+    setLoading(false);
+    setSearched(true);
+  }, [query]);
+
+  useEffect(() => {
+    if (active && query.trim() && !searched) {
+      handleCompare();
+    }
+  }, [active, query, searched, handleCompare]);
+
+  if (!active) return null;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+        <p className="text-sm text-slate-400">Comparing suppliers...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-amber-200 bg-amber-50">
+        <CardContent className="p-3 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <p className="text-sm text-amber-700">{error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!searched) {
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardContent className="text-center py-12">
+          <BarChart3 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-lg font-semibold text-slate-700">Search to compare suppliers</p>
+          <p className="text-sm text-slate-500 mt-1">Enter a product name above to see pricing across CJ, AliExpress, and Zendrop</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (suppliers.length === 0) {
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardContent className="text-center py-12">
+          <Package className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-lg font-semibold text-slate-700">No supplier data found</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Group by source
+  const grouped = {};
+  for (const s of suppliers) {
+    if (!grouped[s.source]) grouped[s.source] = [];
+    grouped[s.source].push(s);
+  }
+
+  return (
+    <div className="space-y-4" data-testid="supplier-comparison-results">
+      <p className="text-sm text-slate-500">
+        <strong>{suppliers.length}</strong> results across {Object.keys(grouped).length} suppliers
+      </p>
+      {Object.entries(grouped).map(([source, items]) => (
+        <div key={source}>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            {SOURCE_COLORS[source]?.label || source} ({items.length})
+          </h3>
+          <div className="space-y-2">
+            {items.map((s, i) => (
+              <SupplierComparisonCard key={`${source}-${i}`} supplier={s} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function CJSourcingPage() {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState([]);
@@ -348,6 +527,7 @@ export default function CJSourcingPage() {
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
   const [detailPid, setDetailPid] = useState(null);
+  const [activeTab, setActiveTab] = useState('search');
 
   const handleSearch = useCallback(async (pageNum = 1) => {
     if (!query.trim()) return;
@@ -404,10 +584,32 @@ export default function CJSourcingPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Product Sourcing</h1>
-              <p className="text-sm text-slate-500">Search real supplier inventory on CJ Dropshipping with live pricing</p>
+              <p className="text-sm text-slate-500">Search real supplier inventory with live pricing across multiple platforms</p>
             </div>
             <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] ml-auto">Live API</Badge>
           </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 mb-5 bg-slate-100 rounded-lg p-1 w-fit" data-testid="sourcing-tabs">
+          <button
+            onClick={() => setActiveTab('search')}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'search' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+            data-testid="tab-search"
+          >
+            CJ Search
+          </button>
+          <button
+            onClick={() => setActiveTab('compare')}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'compare' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+            data-testid="tab-compare"
+          >
+            Compare Suppliers
+          </button>
         </div>
 
         {/* Search */}
@@ -418,13 +620,13 @@ export default function CJSourcingPage() {
               placeholder="Search products (e.g. LED strip lights, phone case, yoga mat)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              onKeyDown={(e) => e.key === 'Enter' && (activeTab === 'search' ? handleSearch() : null)}
               className="pl-10 h-11"
               data-testid="cj-search-input"
             />
           </div>
           <Button
-            onClick={() => handleSearch()}
+            onClick={() => activeTab === 'search' ? handleSearch() : null}
             disabled={loading || !query.trim()}
             className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700"
             data-testid="cj-search-btn"
@@ -433,6 +635,14 @@ export default function CJSourcingPage() {
           </Button>
         </div>
 
+        {/* Compare Suppliers Tab */}
+        {activeTab === 'compare' && (
+          <SupplierComparisonView query={query} active={activeTab === 'compare'} />
+        )}
+
+        {/* CJ Search Tab */}
+        {activeTab === 'search' && (
+          <>
         {/* Error */}
         {error && (
           <Card className="border-amber-200 bg-amber-50 mb-4">
@@ -545,6 +755,8 @@ export default function CJSourcingPage() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
 
