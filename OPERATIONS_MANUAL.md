@@ -446,5 +446,42 @@ sudo supervisorctl restart frontend
 
 ---
 
-*Last updated: March 17, 2026*
+## 13. Marketing & Analytics Setup
+
+Your marketing team can set up tracking **themselves** via GitHub — no developer needed.
+
+### Google Analytics 4 (Simplest)
+1. Go to https://analytics.google.com → Admin → Create Property
+2. Set up a Web data stream for your domain
+3. Copy the **Measurement ID** (looks like `G-XXXXXXXXXX`)
+4. In GitHub, edit `/frontend/.env` and set:
+   ```
+   REACT_APP_GA4_ID=G-XXXXXXXXXX
+   ```
+5. Deploy — tracking starts automatically
+
+### Google Tag Manager (Full Control)
+If the team wants to manage multiple pixels (GA4 + Meta + TikTok etc.):
+1. Go to https://tagmanager.google.com → Create Account & Container
+2. Copy the **Container ID** (looks like `GTM-XXXXXXX`)
+3. In GitHub, edit `/frontend/.env` and set:
+   ```
+   REACT_APP_GTM_ID=GTM-XXXXXXX
+   ```
+4. Deploy — the team can then add any tags from the GTM dashboard
+
+### Both at Once
+You can set both `REACT_APP_GA4_ID` and `REACT_APP_GTM_ID`. GA4 gives you basic analytics immediately, while GTM gives the marketing team a dashboard to add more tracking later.
+
+### What Gets Tracked Automatically
+- Page views (every route change)
+- User sessions and demographics
+- Referral sources
+- Device and browser info
+
+The team can then set up custom events (e.g. signup conversions, product views) from their Google Analytics or GTM dashboard.
+
+---
+
+*Last updated: March 18, 2026*
 *Contact: info@trendscout.click*

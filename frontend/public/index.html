@@ -32,10 +32,41 @@
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
         <title>TrendScout | Find Winning Products Before They Go Viral</title>
+        <!-- Google Tag Manager / GA4: Set REACT_APP_GTM_ID (GTM-XXXXXXX) or REACT_APP_GA4_ID (G-XXXXXXXXXX) in .env -->
+        <script>
+          (function(){
+            // Google Tag Manager
+            var gtmId = '%REACT_APP_GTM_ID%';
+            if (gtmId && gtmId !== '' && !gtmId.startsWith('%')) {
+              var s = document.createElement('script');
+              s.async = true;
+              s.src = 'https://www.googletagmanager.com/gtm.js?id=' + gtmId;
+              var dl = window.dataLayer = window.dataLayer || [];
+              dl.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+              document.head.appendChild(s);
+            }
+            // Google Analytics 4 (standalone)
+            var gaId = '%REACT_APP_GA4_ID%';
+            if (gaId && gaId !== '' && !gaId.startsWith('%')) {
+              var g = document.createElement('script');
+              g.async = true;
+              g.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+              document.head.appendChild(g);
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){window.dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', gaId);
+            }
+          })();
+        </script>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
     </head>
     <body>
+        <!-- Google Tag Manager noscript fallback -->
+        <noscript>
+            <iframe src="https://www.googletagmanager.com/ns.html?id=%REACT_APP_GTM_ID%" height="0" width="0" style="display:none;visibility:hidden"></iframe>
+        </noscript>
         <noscript>
             <style>
                 .nojs-shell { font-family:'Manrope','Inter',system-ui,sans-serif; max-width:720px; margin:0 auto; padding:40px 24px; color:#1e293b; }
