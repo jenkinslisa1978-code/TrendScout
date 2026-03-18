@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import LandingLayout from '@/components/layouts/LandingLayout';
+import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { SignupGate } from '@/components/SignupGate';
 import {
   Trophy, TrendingUp, Flame, Eye, Package, ChevronRight,
   Loader2, Crown, Zap, ArrowUp, Clock, Star,
@@ -34,6 +36,7 @@ function getScoreConfig(score) {
 }
 
 export default function TopTrendingPage() {
+  const { isAuthenticated } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -85,7 +88,7 @@ export default function TopTrendingPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {products.map((product) => {
+            {(isAuthenticated ? products : products.slice(0, 3)).map((product) => {
               const sc = getScoreConfig(product.launch_score);
               const isTop3 = product.rank <= 3;
               const RankIcon = product.rank === 1 ? Crown : product.rank <= 3 ? Star : null;
@@ -161,6 +164,12 @@ export default function TopTrendingPage() {
               );
             })}
           </div>
+        )}
+        {!isAuthenticated && products.length > 3 && (
+          <SignupGate
+            title={`${products.length - 3} more top products`}
+            description="Sign up to see the full leaderboard with scores, margins, and supplier data."
+          />
         )}
 
         {/* CTA */}

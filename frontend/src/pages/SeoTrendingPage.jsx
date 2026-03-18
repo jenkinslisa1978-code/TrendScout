@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import LandingLayout from '@/components/layouts/LandingLayout';
+import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { SignupGate } from '@/components/SignupGate';
 import {
   TrendingUp, Package, ChevronRight, Loader2, Flame, Zap,
   Clock, ArrowRight, Calendar, BarChart3, Eye,
@@ -49,6 +51,7 @@ function getConfidence(score) {
 }
 
 export default function SeoTrendingPage() {
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
   const config = PAGE_CONFIG[location.pathname];
   const [data, setData] = useState(null);
@@ -183,11 +186,19 @@ export default function SeoTrendingPage() {
             <p className="text-slate-500 font-medium">No trending products found</p>
           </div>
         ) : (
+          <>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="seo-product-grid">
-            {products.map((product) => (
+            {(isAuthenticated ? products : products.slice(0, 3)).map((product) => (
               <SeoProductCard key={product.id} product={product} />
             ))}
           </div>
+          {!isAuthenticated && products.length > 3 && (
+            <SignupGate
+              title={`${products.length - 3} more trending products`}
+              description="Create a free account to access all trending data with scores and margins."
+            />
+          )}
+          </>
         )}
 
         {/* Internal links footer */}

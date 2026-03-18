@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -9,6 +10,7 @@ import {
   ArrowUpDown, Filter, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
 import { API_URL } from '@/lib/config';
+import { SignupGate } from '@/components/SignupGate';
 import DailyPicksSection from '@/components/common/DailyPicksSection';
 
 const STAGE_COLORS = {
@@ -35,6 +37,7 @@ function getConfidence(score) {
 }
 
 export default function TrendingProductsPage() {
+  const { isAuthenticated } = useAuth();
   const [products, setProducts] = useState([]);
   const [weekCount, setWeekCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -271,11 +274,19 @@ export default function TrendingProductsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="product-grid">
-            {filteredAndSorted.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="product-grid">
+              {(isAuthenticated ? filteredAndSorted : filteredAndSorted.slice(0, 3)).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            {!isAuthenticated && filteredAndSorted.length > 3 && (
+              <SignupGate
+                title={`${filteredAndSorted.length - 3} more products available`}
+                description="Create a free account to see all products with launch scores, profit margins, and supplier costs."
+              />
+            )}
+          </>
         )}
 
         {/* CTA */}

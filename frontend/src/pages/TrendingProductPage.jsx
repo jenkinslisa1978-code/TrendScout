@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { SignupGate } from '@/components/SignupGate';
 import {
   TrendingUp, ArrowRight, Package, Radar, Lock, ArrowLeft,
   BarChart3, Eye, DollarSign, Truck, ShieldCheck, Loader2,
@@ -22,6 +24,7 @@ const STAGE_COLORS = {
 
 export default function TrendingProductPage() {
   const { slug } = useParams();
+  const { isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -244,14 +247,32 @@ export default function TrendingProductPage() {
               </div>
 
               {/* Key Metrics Grid */}
+              {isAuthenticated ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="metrics-grid">
                 <MetricCard icon={BarChart3} label="Launch Score" value={product.launch_score} color="indigo" />
                 <MetricCard icon={TrendingUp} label="Margin" value={`${product.margin_percent}%`} color="emerald" />
                 <MetricCard icon={DollarSign} label="Est. Retail" value={product.estimated_retail_price > 0 ? `£${product.estimated_retail_price}` : '—'} color="amber" />
                 <MetricCard icon={Truck} label="Supplier Cost" value={product.supplier_cost > 0 ? `£${product.supplier_cost}` : '—'} color="blue" />
               </div>
+              ) : (
+              <div className="relative">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 filter blur-md pointer-events-none select-none" aria-hidden="true">
+                  <MetricCard icon={BarChart3} label="Launch Score" value="??" color="indigo" />
+                  <MetricCard icon={TrendingUp} label="Margin" value="??%" color="emerald" />
+                  <MetricCard icon={DollarSign} label="Est. Retail" value="£??" color="amber" />
+                  <MetricCard icon={Truck} label="Supplier Cost" value="£??" color="blue" />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Link to="/signup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors" data-testid="metrics-gate-btn">
+                    <Lock className="h-4 w-4" /> Sign up to reveal scores
+                  </Link>
+                </div>
+              </div>
+              )}
 
               {/* Product Overview */}
+              {isAuthenticated ? (
+              <>
               <Card className="bg-white/[0.04] border-white/[0.06]" data-testid="overview-card">
                 <CardContent className="p-5">
                   <h2 className="font-semibold text-white text-sm mb-3 flex items-center gap-2">
@@ -324,6 +345,29 @@ export default function TrendingProductPage() {
               </Card>
 
               {/* Locked CTA */}
+              </>
+              ) : (
+              <Card className="bg-white/[0.04] border-white/[0.06]">
+                <CardContent className="p-6 text-center">
+                  <Lock className="h-8 w-8 text-indigo-400 mx-auto mb-3" />
+                  <h3 className="font-bold text-white text-lg mb-2">Full analysis behind login</h3>
+                  <p className="text-sm text-slate-400 mb-4 max-w-md mx-auto">
+                    Sign up to see detailed scores, profit margins, supplier costs, AI ad creatives, and the complete launch assessment.
+                  </p>
+                  <div className="flex flex-col sm:flex-row justify-center gap-3">
+                    <Link to="/signup">
+                      <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2" data-testid="gate-signup-btn">
+                        <Radar className="h-4 w-4" /> Start Free Trial
+                      </Button>
+                    </Link>
+                    <Link to="/login">
+                      <Button variant="ghost" className="text-slate-400 hover:text-white">Log in</Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+              )}
+              {isAuthenticated && (
               <div className="bg-gradient-to-r from-indigo-600/20 to-violet-600/20 border border-indigo-500/20 rounded-2xl p-6" data-testid="unlock-cta">
                 <div className="flex items-start gap-3">
                   <Lock className="h-6 w-6 text-indigo-400 mt-0.5 flex-shrink-0" />
@@ -349,6 +393,7 @@ export default function TrendingProductPage() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           </div>
 

@@ -4,6 +4,8 @@ import { Helmet } from 'react-helmet-async';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { SignupGate } from '@/components/SignupGate';
 import { 
   TrendingUp, 
   Lock,
@@ -102,6 +104,7 @@ function ShareMenu({ product, onClose }) {
 }
 
 export default function PublicProductPage() {
+  const { isAuthenticated } = useAuth();
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -275,8 +278,9 @@ export default function PublicProductPage() {
               </div>
             </div>
 
-            <CardContent className="p-8">
-              {/* Public Scores */}
+            <CardContent className="p-6 sm:p-8">
+              {/* Public Scores — gated for non-authenticated */}
+              {isAuthenticated ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-slate-50 rounded-xl p-4 text-center">
                   <PieChart className="h-6 w-6 mx-auto mb-2 text-indigo-600" />
@@ -299,6 +303,29 @@ export default function PublicProductPage() {
                   <p className="text-xs text-slate-500">Competition</p>
                 </div>
               </div>
+              ) : (
+              <div className="mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-slate-50 rounded-xl p-4 text-center">
+                    <BarChart3 className="h-6 w-6 mx-auto mb-2 text-slate-400" />
+                    <p className="font-mono text-lg font-bold text-slate-700 capitalize">{product.trend_stage}</p>
+                    <p className="text-xs text-slate-500">Trend Stage</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-4 text-center">
+                    <Users className="h-6 w-6 mx-auto mb-2 text-slate-400" />
+                    <p className="font-mono text-lg font-bold text-slate-600 capitalize">{product.competition_level}</p>
+                    <p className="text-xs text-slate-500">Competition</p>
+                  </div>
+                  <div className="bg-slate-100 rounded-xl p-4 text-center col-span-2 flex items-center justify-center gap-3">
+                    <Lock className="h-5 w-5 text-indigo-500" />
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-slate-700">Scores locked</p>
+                      <p className="text-xs text-slate-500">Sign up to see market & trend scores</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              )}
 
               {/* Locked Insights */}
               <div className="space-y-4">

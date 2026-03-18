@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import LandingLayout from '@/components/layouts/LandingLayout';
+import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { SignupGate } from '@/components/SignupGate';
 import {
   TrendingUp, Package, ChevronRight, Loader2, Flame, Zap,
   Clock, Tag, ArrowRight, BarChart3,
@@ -18,6 +20,7 @@ function getConfidence(score) {
 
 export default function SeoCategoryPage() {
   const { slug } = useParams();
+  const { isAuthenticated } = useAuth();
   const [data, setData] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,11 +161,19 @@ export default function SeoCategoryPage() {
             <p className="text-slate-500 font-medium">No products found in this category</p>
           </div>
         ) : (
+          <>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="category-product-grid">
-            {products.map((product) => (
+            {(isAuthenticated ? products : products.slice(0, 3)).map((product) => (
               <CategoryProductCard key={product.id} product={product} />
             ))}
           </div>
+          {!isAuthenticated && products.length > 3 && (
+            <SignupGate
+              title={`${products.length - 3} more ${categoryName} products`}
+              description="Create a free account to see all products with launch scores and profit margins."
+            />
+          )}
+          </>
         )}
 
         {/* Internal links */}
