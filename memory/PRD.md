@@ -205,6 +205,23 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - Views correlated with product category and launch score for realism
 - Updated endpoint to track all 150 products (was limited to 30)
 - Truncated long product names to 80 chars for clean display
+
+### Mobile Responsive Layout (March 18, 2026)
+- DashboardLayout: Sidebar hidden behind hamburger menu on mobile (<1024px), slide-out overlay with backdrop
+- Mobile top bar: Logo, TrendScout branding, notification icon
+- Full-width content on mobile, sidebar offset on desktop
+- **Verified:** 100% frontend (18/18 tests) — iteration_93.json
+
+### Content Gating (March 18, 2026)
+- SignupGate component: Blurred placeholder rows with "Start Free Trial" / "Log in" CTAs
+- Gated pages (show 3 items then gate for non-authenticated):
+  - /trending-products, /top-trending-products, /trending-products-today/this-week/this-month
+  - /category/:slug (SeoCategoryPage)
+- Gated product detail: /trending/:slug (TrendingProductPage) — blurred metrics grid with "Sign up to reveal scores"
+- Gated public product: /p/:id (PublicProductPage) — "Scores locked" with partial data visible
+- Authenticated users see full data with no gating
+- Kept fully public: Landing, pricing, blog, weekly digest, help, privacy, terms, Shopify App page
+- **Verified:** 100% frontend (18/18 tests) — iteration_93.json
 - Stats: 2.2B total views, 150 products tracked, 8 categories, Beauty as top category
 - AliExpress and Zendrop in estimation mode (API keys not configured) with clear "add API key" guidance
 - Product Sourcing page now has "CJ Search" and "Compare Suppliers" tabs
@@ -227,4 +244,4 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - **Verified:** 100% backend (12/12), 100% frontend — iteration_90.json.
 
 ## Backlog
-- P2: Pexels API key for admin image refresh tool (optional)
+- P3: Pexels API key for admin image refresh tool (optional)
