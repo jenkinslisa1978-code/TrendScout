@@ -9,103 +9,103 @@ AI product research and launch intelligence for UK ecommerce sellers. Discover t
 ## Architecture
 - Backend: FastAPI + MongoDB + Redis
 - Frontend: React CRA + Shadcn/UI + Tailwind CSS
-- Auth: JWT (15min access tokens) + __Host-refresh cookie (7d) + forgot/reset password with email
+- Auth: JWT (15min access tokens) + __Host-refresh cookie (7d)
 - Email: Resend (transactional emails)
-- Security: HSTS, CSP, CSRF, Fernet encryption
-- Monitoring: Sentry, PostHog, web-vitals
-- Real-time: WebSocket notifications
+- Payments: Stripe
+- Monitoring: Sentry, web-vitals
 
 ## Design System
 - Fonts: Manrope (headings), Inter (body), JetBrains Mono (data)
 - Primary: #4F46E5 (indigo)
 - Background: #F8FAFC
 - Cards: white with subtle borders
-- Philosophy: "Performance Pro" — clean, light, data-focused
-
-## Target Audience
-- Shopify UK sellers
-- Amazon UK sellers
-- TikTok Shop UK sellers
-- UK dropshippers
-- Ecommerce founders
-- Agencies researching products for clients
 
 ## Test Credentials
 - Reviewer: reviewer@trendscout.click / ShopifyReview2026!
-- Admin: jenkinslisa1978@gmail.com / admin123456
 
 ## ALL Features — COMPLETED
 
-### Website Rebuild — UK-First Conversion Focus (March 19, 2026)
-Complete rebuild of all public-facing pages with UK-first positioning and conversion focus.
+### Phase 2: Analytics, Schema, Viability Score, SEO (March 19, 2026)
 
-**Pages rebuilt/created:**
-1. **Homepage** (`/`) — UK-first hero, trust bar, 4 feature cards, 4-step how it works, live trending products, UK viability section (6 factors), 6 use case cards, 7-signal methodology showcase, final CTA
-2. **Pricing** (`/pricing`) — Monthly/annual toggle (Save 20%), 3 tiers in GBP (Starter £19/£15, Growth £39/£31, Pro £79/£63), 13-row feature comparison table, 6 FAQ accordions
-3. **How It Works** (`/how-it-works`) — 4-step process, 7-signal scoring model with weights, score interpretation guide (4 tiers), who it's for/not for, UK viability section, FAQ
-4. **About** (`/about`) — Company story, 4 values, company details (TrendScout Ltd, UK)
-5. **Contact** (`/contact`) — Email, help centre, response times, company details
-6. **UK Product Research** (`/uk-product-research`) — SEO landing page with unique UK-focused copy
-7. **For Shopify** (`/for-shopify`) — Shopify-specific features, push-to-store highlight
-8. **For Amazon UK** (`/for-amazon-uk`) — Amazon UK-specific copy, FBA fee integration
-9. **For TikTok Shop UK** (`/for-tiktok-shop-uk`) — TikTok-specific features, virality vs viability
-10. **vs Jungle Scout** (`/compare/jungle-scout-vs-trendscout`) — Feature comparison table, verdict
-11. **vs Sell The Trend** (`/compare/sell-the-trend-vs-trendscout`) — Different content per competitor
-12. **vs Minea** (`/compare/minea-vs-trendscout`) — Ad spy angle comparison
-13. **Free Tools** (`/free-tools`) — 4 calculators: Profit Margin, ROAS, UK VAT, Product Pricing
+**GA4 Analytics Bridge:**
+- Analytics service upgraded with GA4 gtag() bridge — fires to both internal batch API and GA4 when configured
+- 20+ named event constants: HOMEPAGE_PRIMARY_CTA, PRICING_TOGGLE, PRICING_PLAN_SELECTED, FREE_TOOL_USED, COMPARE_PAGE_CTA, UK_LANDING_CTA, VIABILITY_BADGE_CLICK, etc.
+- Events wired to: hero CTAs, pricing toggle, plan selection, comparison CTAs, free tool tabs, landing page CTAs
+- GA4 measurement ID configurable via REACT_APP_GA4_ID env var
 
-**Navigation & Footer:**
-- Dropdown nav: Product (Trending, Leaderboard, Free Tools) + Solutions (Shopify, Amazon, TikTok, UK Research)
-- 5-column footer: Product, Solutions, Compare, Company + legal links
-- Mobile responsive menu
+**JSON-LD Schema Markup (all pages):**
+- Homepage: Organization + WebSite + SoftwareApplication
+- Pricing: SoftwareApplication + FAQPage + BreadcrumbList
+- How It Works: WebPage + FAQPage + BreadcrumbList
+- About: AboutPage + BreadcrumbList
+- Contact: ContactPage + BreadcrumbList
+- UK Viability Score: WebPage + FAQPage + BreadcrumbList
+- All UK landing pages: WebPage + FAQPage + BreadcrumbList via SeoLandingTemplate
+- All comparison pages: WebPage + BreadcrumbList
+- Free Tools: BreadcrumbList + FAQPage
+- Policy pages: BreadcrumbList
 
-**SEO & Meta:**
-- Updated title: "TrendScout | AI Product Research for UK Ecommerce Sellers"
-- Updated meta description and OG tags for UK positioning
-- og:locale set to en_GB
+**Reusable PageMeta component** with schema builders: organizationSchema, websiteSchema, softwareAppSchema, faqSchema(), breadcrumbSchema(), webPageSchema()
 
-**Reusable Components:**
-- `SeoLandingTemplate` — template for all SEO landing pages
-- `ComparisonPage` — handles all /compare/:slug routes with per-competitor data
+**Technical SEO:**
+- robots.txt: blocks /dashboard, /admin, /api/, /login, /signup, /settings, /reset-password, /forgot-password, /saved-products, /notification, /ad-tests, etc.
+- sitemap.xml: 30+ URLs covering all public pages
+- Canonical tags on all public pages via PageMeta component
 
-**Verified:** 100% frontend pass — iteration_98.json
+**UK Product Viability Score (Flagship Feature):**
+- Dedicated page at /uk-product-viability-score with: hero, 7 weighted factors, 3-tier score interpretation, 3 product examples, 6 FAQ, CTA
+- ViabilityBadge component: expandable badge showing score, band label, progress bar, and explainer
+- ViabilityIndicator component: compact inline indicator for product cards
+- Live on homepage product cards — every product shows UK Viability Score
+- Referenced throughout: homepage, how-it-works, UK landing pages, methodology section
 
-### Previously Completed Features
-(See CHANGELOG.md for full history)
-- Email-powered password reset, production hardening, programmatic SEO
-- Shopify OAuth, 5 ecommerce platforms, 3 ad platforms
-- Launch score, profit predictor, launch playbook, ad generator
-- Ad Intelligence, Profitability Simulator, 7-Signal Score Breakdown
-- Competitor Intelligence, Radar Alerts, Verified Winners
-- TikTok Intelligence, CJ Dropshipping Integration
-- WebSocket notifications, API access for power users
-- Content gating, free trial mechanic, mobile responsive layout
-- Shopify App Bridge embedded dashboard, GDPR compliance
+**New UK Landing Pages (4):**
+- /dropshipping-product-research-uk
+- /winning-products-uk
+- /product-validation-uk
+- /uk-ecommerce-trend-analysis
+Each with unique copy, features, steps, UK points, FAQ, CTA, related links, canonical, meta description
+
+**Trust/Policy Pages:**
+- /cookie-policy — cookie types, third-party, management instructions
+- /refund-policy — trial, cancellation, refunds, annual plans, billing
+
+**Footer Updates:**
+- Added: UK Viability Score, UK Dropshipping, Winning Products UK links
+- Added: Cookie Policy, Refund Policy in legal row
+
+**Verified:** 100% frontend pass — iteration_99.json
+
+### Phase 1: Website Rebuild (March 19, 2026)
+- Homepage, Pricing, How It Works, About, Contact pages rebuilt
+- 4 UK landing pages (uk-product-research, for-shopify, for-amazon-uk, for-tiktok-shop-uk)
+- 3 competitor comparison pages (vs Jungle Scout, Sell The Trend, Minea)
+- Free Tools page (4 calculators)
+- Navigation with dropdowns, mobile responsive menu
+- 5-column footer with internal linking
+- SEO meta tags + OG tags
+- Verified: 100% — iteration_98.json
+
+### Previously Completed
+(See prior PRD for full list: Shopify OAuth, launch scores, AI generators, content gating, free trials, etc.)
 
 ## Backlog
 
 ### P0 — High Priority
-- Server-side rendering / static generation for marketing pages (SSR/SSG)
-- Proper canonical tags and schema markup (JSON-LD) on all public pages
-- robots.txt and XML sitemap updates for new pages
+- Configure GA4 measurement ID (REACT_APP_GA4_ID) in production .env
+- SSR/static generation for marketing pages (requires Next.js migration or pre-rendering solution)
 
 ### P1 — Medium Priority
-- Additional UK landing pages: /dropshipping-product-research-uk, /winning-products-uk, /product-validation-uk, /uk-ecommerce-trend-analysis
-- "UK Product Viability Score" branded feature with dedicated landing page
 - Blog content strategy and article templates
-- GA4 + Search Console event tracking for conversion measurement
-- User journey optimisation (signup to activation to upgrade flow)
+- Email capture on free tool result pages
+- Sample product analysis page with public mock data
+- Changelog / product updates page
+- Performance optimisation (image lazy loading, code splitting, font optimisation)
 
 ### P2 — Lower Priority
-- Breadcrumb schema on all pages
-- SoftwareApplication schema on commercial pages
-- FAQ schema on pages with FAQ sections
-- Changelog / roadmap page
-- Cookie policy page
-- Refund/cancellation policy page
-- Performance optimisation (image lazy loading, code splitting)
-
-### P3 — Backlog
+- Additional comparison pages (Helium 10, Ecomhunt)
+- More free tools (TikTok Ad Budget calculator, Product Validation Checklist)
+- FAQ schema on comparison pages
+- SoftwareApplication schema on UK landing pages
 - Backend scoring consolidation (unify launch_score + overall_score)
 - Trial expiry notification emails
-- Programmatic content templates for category and trend pages at scale
