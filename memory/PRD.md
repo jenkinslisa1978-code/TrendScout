@@ -269,6 +269,17 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - Updated scoring engine to stamp `last_updated` on every score recompute
 - **Verified:** iteration_95.json
 
+### Free Plan Content Gating (March 19, 2026)
+- Implemented blurred preview + upgrade CTA overlays across all premium features
+- **Ad Intelligence:** 2 free ads, rest blurred with "Upgrade to Starter" overlay
+- **TikTok Intelligence:** 5 free viral products, categories/patterns locked
+- **Profitability Simulator:** 2 free simulations, button shows remaining count
+- **Competitor Intelligence:** 1 free analysis, comparison locked, subsequent analyses gated
+- **Product Detail Page:** Locked: Saturation Radar, Competitor Intel, Winning Ad Patterns, Ad Blueprint, Ad Performance, AI Ad Generator. Free: basic scores, profit calculator, trend timeline
+- **Similar Products:** Limited to 3 for free, 6 for paid plans
+- Uses existing `LockedContent` component from `UpgradePrompts.jsx` + `useSubscription` hook
+- **Verified:** 100% backend + frontend — iteration_96.json
+
 ## Backlog
 - P3: Pexels API key for admin image refresh tool (optional)
 - P3: Backend scoring consolidation (unify launch_score + overall_score algorithms)

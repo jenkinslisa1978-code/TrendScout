@@ -1,5 +1,11 @@
 # TrendScout Changelog
 
+## March 19, 2026 - Free Plan Content Gating
+- Implemented blurred preview + upgrade CTAs across: Ad Intelligence (2 free), TikTok Intel (5 free), Profit Sim (2 free), Competitor Intel (1 free), Product Detail (7 sections locked)
+- Similar Products limited to 3 for free, 6 for paid
+- All verified: 100% backend + frontend — iteration_96
+
+
 ## March 19, 2026 - Score Fix, Similar Products & Data Freshness
 - Fixed score inconsistency: intelligence API now uses authoritative `launch_score` from DB (was showing 72 vs 42)
 - Added Similar Products section on product detail pages (6 related products by category/price)
