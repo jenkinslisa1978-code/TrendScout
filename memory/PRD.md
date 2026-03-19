@@ -243,5 +243,11 @@ AI product validation for ecommerce. Find products worth launching before you sp
   - Sidebar "Product Sourcing" nav item
 - **Verified:** 100% backend (12/12), 100% frontend — iteration_90.json.
 
+### Product Image Quality Fix (March 19, 2026)
+- Replaced all 26 mismatched Unsplash product images with AI-generated product-accurate images
+- Zero Unsplash URLs remaining in database
+- **Verified:** 100% backend (6/6), 100% frontend (5/5) — iteration_94.json
+
 ## Backlog
 - P3: Pexels API key for admin image refresh tool (optional)
+- P3: Unify backend scoring systems (launch_score vs overall_score)
