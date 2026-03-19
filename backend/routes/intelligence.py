@@ -129,15 +129,33 @@ async def get_complete_product_analysis(product_id: str):
     # Get data integrity info
     integrity_data = data_integrity_service.format_for_ui(product)
     
+    # Use the authoritative launch_score from the DB, NOT the dynamically-computed overall_score
+    # This prevents confusing users with two different scores on the same page
+    authoritative_score = product.get("launch_score") or round(validation.overall_score)
+    
+    # Derive recommendation from authoritative_score to keep it consistent
+    if authoritative_score >= 65:
+        rec_value = "launch_opportunity"
+        rec_label = "Launch Opportunity"
+    elif authoritative_score >= 45:
+        rec_value = "promising_monitor"
+        rec_label = "Promising — Monitor"
+    elif authoritative_score >= 25:
+        rec_value = "risky_caution"
+        rec_label = "Risky — Proceed with Caution"
+    else:
+        rec_value = "avoid"
+        rec_label = "Avoid"
+    
     return {
         "product_id": product_id,
         "product_name": product.get("product_name"),
         "category": product.get("category"),
         
-        # Primary recommendation
-        "recommendation": validation.recommendation.value,
-        "recommendation_label": validation.recommendation_label,
-        "overall_score": validation.overall_score,
+        # Primary recommendation — derived from launch_score for consistency
+        "recommendation": rec_value,
+        "recommendation_label": rec_label,
+        "overall_score": authoritative_score,
         "risk_level": validation.risk_level.value,
         
         # Success prediction
