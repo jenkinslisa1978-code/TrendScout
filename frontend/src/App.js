@@ -85,6 +85,13 @@ import ForShopifyPage from "@/pages/ForShopifyPage";
 import ForAmazonUkPage from "@/pages/ForAmazonUkPage";
 import ForTikTokShopUkPage from "@/pages/ForTikTokShopUkPage";
 import ComparisonPage from "@/pages/ComparisonPage";
+import ViabilityScorePage from "@/pages/ViabilityScorePage";
+import DropshippingUkPage from "@/pages/DropshippingUkPage";
+import WinningProductsUkPage from "@/pages/WinningProductsUkPage";
+import ProductValidationUkPage from "@/pages/ProductValidationUkPage";
+import TrendAnalysisUkPage from "@/pages/TrendAnalysisUkPage";
+import CookiePolicyPage from "@/pages/CookiePolicyPage";
+import RefundPolicyPage from "@/pages/RefundPolicyPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -167,6 +174,13 @@ function AppRoutes() {
       <Route path="/for-amazon-uk" element={<ForAmazonUkPage />} />
       <Route path="/for-tiktok-shop-uk" element={<ForTikTokShopUkPage />} />
       <Route path="/compare/:slug" element={<ComparisonPage />} />
+      <Route path="/uk-product-viability-score" element={<ViabilityScorePage />} />
+      <Route path="/dropshipping-product-research-uk" element={<DropshippingUkPage />} />
+      <Route path="/winning-products-uk" element={<WinningProductsUkPage />} />
+      <Route path="/product-validation-uk" element={<ProductValidationUkPage />} />
+      <Route path="/uk-ecommerce-trend-analysis" element={<TrendAnalysisUkPage />} />
+      <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+      <Route path="/refund-policy" element={<RefundPolicyPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />
       <Route path="/free-tools" element={<FreeToolsPage />} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />

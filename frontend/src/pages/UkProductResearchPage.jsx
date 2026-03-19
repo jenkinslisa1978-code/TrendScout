@@ -42,6 +42,8 @@ export default function UkProductResearchPage() {
         { q: 'How much does it cost?', a: 'TrendScout has a free tier and paid plans starting from £19/month. See the pricing page for full details.' },
       ]}
       ctaText="Start researching UK products today"
+      canonical="/uk-product-research"
+      metaDesc="UK product research for ecommerce sellers. Multi-channel trend detection, saturation analysis, and UK-specific margin estimation for Shopify, Amazon UK, and TikTok Shop."
       relatedLinks={[
         { href: '/for-shopify', label: 'For Shopify Sellers' },
         { href: '/for-amazon-uk', label: 'For Amazon UK' },

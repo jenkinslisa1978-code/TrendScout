@@ -1,11 +1,12 @@
 /**
- * Analytics Service — Tracks user events for conversion funnel analysis.
- * Events are batched and sent to /api/analytics/batch every 3 seconds.
+ * Analytics Service — Tracks user events via internal batch API + GA4 gtag bridge.
+ * 
+ * Internal events batch to /api/analytics/batch every 3 seconds.
+ * GA4 events fire via window.gtag() when GA4 is configured.
  */
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
-// Generate a session ID that persists for the browser session
 const getSessionId = () => {
   let sid = sessionStorage.getItem('ts_session_id');
   if (!sid) {
@@ -22,19 +23,17 @@ const flushEvents = async () => {
   if (eventQueue.length === 0) return;
   const batch = [...eventQueue];
   eventQueue = [];
-
   try {
     const token = localStorage.getItem('ts_token');
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-
     await fetch(`${API_URL}/api/analytics/batch`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ events: batch }),
     });
   } catch {
-    // Silently fail — analytics should never break the app
+    // Analytics should never break the app
   }
 };
 
@@ -47,11 +46,22 @@ const scheduleFlush = () => {
 };
 
 /**
- * Track a single analytics event.
- * @param {string} event - Event name (e.g., 'page_view', 'signup_click')
- * @param {object} properties - Optional event properties
+ * Send event to GA4 via gtag() if available.
+ */
+const sendToGA4 = (eventName, params = {}) => {
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.gtag('event', eventName, {
+      ...params,
+      page_path: window.location.pathname,
+    });
+  }
+};
+
+/**
+ * Track a single analytics event. Fires to both internal API and GA4.
  */
 export const trackEvent = (event, properties = {}) => {
+  // Internal batch
   eventQueue.push({
     event,
     properties,
@@ -61,13 +71,17 @@ export const trackEvent = (event, properties = {}) => {
     timestamp: new Date().toISOString(),
   });
   scheduleFlush();
+
+  // GA4 bridge
+  sendToGA4(event, properties);
 };
 
 /**
- * Track a page view. Call on every route change.
+ * Track a page view.
  */
 export const trackPageView = (path) => {
-  trackEvent('page_view', { path: path || window.location.pathname });
+  const pagePath = path || window.location.pathname;
+  trackEvent('page_view', { path: pagePath });
 };
 
 // Flush on page unload
@@ -75,20 +89,42 @@ if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', flushEvents);
 }
 
-// Event name constants
+// Event name constants — comprehensive for conversion tracking
 export const EVENTS = {
   PAGE_VIEW: 'page_view',
-  SIGNUP_CLICK: 'signup_click',
+  // Homepage
+  HOMEPAGE_PRIMARY_CTA: 'homepage_primary_cta_click',
+  HOMEPAGE_SECONDARY_CTA: 'homepage_secondary_cta_click',
+  // Signup / Auth
+  SIGNUP_CLICK: 'signup_start',
   SIGNUP_COMPLETE: 'signup_complete',
+  LOGIN_CLICK: 'login_click',
   LOGIN_COMPLETE: 'login_complete',
+  // Pricing
+  PRICING_VIEW: 'pricing_view',
+  PRICING_CTA_CLICK: 'pricing_cta_click',
+  PRICING_PLAN_SELECTED: 'pricing_plan_selected',
+  PRICING_TOGGLE: 'pricing_toggle',
+  CHECKOUT_START: 'checkout_start',
+  // Upgrade
+  UPGRADE_CLICK: 'upgrade_click',
+  // Products
   PRODUCT_VIEW: 'product_view',
   PRODUCT_SAVE: 'product_save',
-  UPGRADE_CLICK: 'upgrade_click',
-  CHECKOUT_START: 'checkout_start',
+  TRENDING_VIEW: 'trending_view',
+  TRENDING_PRODUCT_CARD_CLICK: 'trending_product_card_click',
+  // Viability
+  VIABILITY_BADGE_CLICK: 'viability_badge_interaction',
+  // Free Tools
+  FREE_TOOL_USED: 'free_tool_used',
+  FREE_TOOL_RESULT: 'free_tool_result_generated',
+  // Landing Pages
+  UK_LANDING_CTA: 'uk_landing_page_cta_click',
+  COMPARE_PAGE_CTA: 'compare_page_cta_click',
+  // Features
   AD_GENERATE: 'ad_generate',
   LAUNCH_SIMULATE: 'launch_simulate',
   CTA_CLICK: 'cta_click',
-  PRICING_VIEW: 'pricing_view',
-  TRENDING_VIEW: 'trending_view',
   BLOG_VIEW: 'blog_view',
+  CONTACT_SUBMIT: 'contact_form_submit',
 };

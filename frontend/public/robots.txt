@@ -2,7 +2,26 @@ User-agent: *
 Allow: /
 
 Disallow: /dashboard
+Disallow: /dashboard/
 Disallow: /admin
+Disallow: /admin/
 Disallow: /api/
+Disallow: /settings
+Disallow: /settings/
+Disallow: /onboarding
+Disallow: /saved-products
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /verify-email
+Disallow: /notification
+Disallow: /ad-tests
+Disallow: /radar-alerts
+Disallow: /competitors
+Disallow: /launch-hub
+Disallow: /profitability
+Disallow: /search
+Disallow: /tiktok-intelligence
 
 Sitemap: https://trendscout.click/sitemap.xml

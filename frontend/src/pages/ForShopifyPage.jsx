@@ -39,6 +39,8 @@ export default function ForShopifyPage() {
         { q: 'Can I use this for dropshipping on Shopify?', a: 'Absolutely. TrendScout includes supplier data, lead times, and margin estimates that are particularly useful for Shopify dropshipping businesses.' },
       ]}
       ctaText="Find products for your Shopify store"
+      canonical="/for-shopify"
+      metaDesc="Product research for Shopify UK sellers. Discover trending products, check UK margins, push to your store, and launch faster with TrendScout."
       relatedLinks={[
         { href: '/uk-product-research', label: 'UK Product Research' },
         { href: '/for-amazon-uk', label: 'For Amazon UK' },

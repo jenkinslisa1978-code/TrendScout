@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
+import PageMeta, { faqSchema, breadcrumbSchema, webPageSchema } from '@/components/PageMeta';
 import {
   ArrowRight, Search, BarChart3, Shield, Zap, TrendingUp,
   Target, PoundSterling, Truck, RefreshCw, Layers, Globe,
@@ -72,6 +73,16 @@ const FAQS = [
 export default function HowItWorksPage() {
   return (
     <LandingLayout>
+      <PageMeta
+        title="How It Works"
+        description="Learn how TrendScout evaluates products using a 7-signal scoring model, UK-specific viability analysis, and multi-channel trend detection."
+        canonical="/how-it-works"
+        schema={[
+          webPageSchema('How TrendScout Works', 'Learn how TrendScout evaluates products using a 7-signal scoring model and UK-specific viability analysis.', '/how-it-works'),
+          faqSchema(FAQS),
+          breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'How It Works' }]),
+        ]}
+      />
       <div className="bg-white" data-testid="how-it-works-page">
         {/* Hero */}
         <section className="pt-16 pb-12 px-6">

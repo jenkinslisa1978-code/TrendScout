@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
+import PageMeta, { faqSchema, breadcrumbSchema, webPageSchema } from '@/components/PageMeta';
+import { trackEvent, EVENTS } from '@/services/analytics';
 import { ArrowRight, Check, X, Minus } from 'lucide-react';
 
 const COMPARISONS = {
@@ -101,6 +103,15 @@ export default function ComparisonPage() {
   return (
     <LandingLayout>
       <div className="bg-white" data-testid="comparison-page">
+        <PageMeta
+          title={data.headline}
+          description={data.subtitle}
+          canonical={`/compare/${slug}`}
+          schema={[
+            webPageSchema(data.headline, data.subtitle, `/compare/${slug}`),
+            breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Compare' }, { name: data.headline }]),
+          ]}
+        />
         {/* Hero */}
         <section className="pt-16 pb-8 px-6">
           <div className="max-w-3xl mx-auto">
@@ -166,7 +177,7 @@ export default function ComparisonPage() {
             <p className="mt-3 text-base text-slate-500">See the difference for yourself. Browse trending products with UK viability data — no credit card needed.</p>
             <div className="mt-6 flex items-center justify-center gap-3">
               <Link to="/signup">
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11" data-testid="comparison-cta">
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11" data-testid="comparison-cta" onClick={() => trackEvent(EVENTS.COMPARE_PAGE_CTA, { competitor: data.competitor, cta_label: 'Start Free' })}>
                   Start Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>

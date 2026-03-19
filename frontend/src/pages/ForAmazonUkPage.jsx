@@ -39,6 +39,8 @@ export default function ForAmazonUkPage() {
         { q: 'How is this different from Helium 10?', a: 'Helium 10 is an Amazon-specific keyword and listing optimisation tool. TrendScout focuses on cross-channel product discovery and UK-specific viability analysis. They solve different problems and can work well together.' },
       ]}
       ctaText="Find your next Amazon UK product"
+      canonical="/for-amazon-uk"
+      metaDesc="Product research for Amazon UK sellers. Cross-channel trend detection, UK-specific margin estimation, and saturation analysis for Amazon.co.uk."
       relatedLinks={[
         { href: '/uk-product-research', label: 'UK Product Research' },
         { href: '/for-shopify', label: 'For Shopify Sellers' },

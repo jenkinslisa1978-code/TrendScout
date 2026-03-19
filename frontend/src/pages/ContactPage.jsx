@@ -2,11 +2,21 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
+import PageMeta, { breadcrumbSchema } from '@/components/PageMeta';
 import { Mail, MessageSquare, Clock, ArrowRight } from 'lucide-react';
 
 export default function ContactPage() {
   return (
     <LandingLayout>
+      <PageMeta
+        title="Contact"
+        description="Get in touch with TrendScout. Support enquiries, partnership opportunities, and general questions."
+        canonical="/contact"
+        schema={[
+          { '@context': 'https://schema.org', '@type': 'ContactPage', name: 'Contact TrendScout', url: 'https://trendscout.click/contact' },
+          breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Contact' }]),
+        ]}
+      />
       <div className="bg-white" data-testid="contact-page">
         <section className="pt-16 pb-20 px-6">
           <div className="max-w-3xl mx-auto">

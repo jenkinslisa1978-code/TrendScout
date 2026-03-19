@@ -39,6 +39,8 @@ export default function ForTikTokShopUkPage() {
         { q: 'Can I use this for TikTok affiliate products?', a: 'Yes. The trend data and product research features are useful whether you are selling directly on TikTok Shop or promoting products as an affiliate.' },
       ]}
       ctaText="Find products for TikTok Shop UK"
+      canonical="/for-tiktok-shop-uk"
+      metaDesc="Product research for TikTok Shop UK sellers. Track viral products, validate UK margins, and separate real opportunities from viral noise."
       relatedLinks={[
         { href: '/uk-product-research', label: 'UK Product Research' },
         { href: '/for-shopify', label: 'For Shopify Sellers' },

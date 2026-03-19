@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
+import PageMeta, { faqSchema, breadcrumbSchema } from '@/components/PageMeta';
+import { trackEvent, EVENTS } from '@/services/analytics';
 import { ArrowRight, Calculator, PoundSterling, BarChart3, TrendingUp, Receipt, CheckCircle } from 'lucide-react';
 
 function ProfitMarginCalculator() {
@@ -209,6 +211,18 @@ export default function FreeToolsPage() {
 
   return (
     <LandingLayout>
+      <PageMeta
+        title="Free Ecommerce Calculators"
+        description="Free UK ecommerce calculators: profit margin, break-even ROAS, UK VAT, and product pricing. Quick tools for UK sellers."
+        canonical="/free-tools"
+        schema={[
+          breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Free Tools' }]),
+          faqSchema([
+            { q: 'Are these tools really free?', a: 'Yes. All calculators are completely free to use with no signup required.' },
+            { q: 'Do the calculators account for UK VAT?', a: 'Yes. The profit margin calculator includes 20% UK VAT in its calculations.' },
+          ]),
+        ]}
+      />
       <div className="bg-white" data-testid="free-tools-page">
         <section className="pt-16 pb-8 px-6">
           <div className="max-w-4xl mx-auto">
@@ -230,7 +244,7 @@ export default function FreeToolsPage() {
                 return (
                   <button
                     key={tool.id}
-                    onClick={() => setActiveTool(tool.id)}
+                    onClick={() => { setActiveTool(tool.id); trackEvent(EVENTS.FREE_TOOL_USED, { tool_name: tool.name }); }}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                       activeTool === tool.id
                         ? 'bg-indigo-600 text-white shadow-sm'

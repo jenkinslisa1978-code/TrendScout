@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
+import PageMeta, { breadcrumbSchema, webPageSchema } from '@/components/PageMeta';
 import { ArrowRight, TrendingUp, Target, Shield, Zap, Globe, BarChart3 } from 'lucide-react';
 
 const VALUES = [
@@ -14,6 +15,15 @@ const VALUES = [
 export default function AboutPage() {
   return (
     <LandingLayout>
+      <PageMeta
+        title="About"
+        description="TrendScout is a product research and launch intelligence platform built specifically for UK ecommerce sellers."
+        canonical="/about"
+        schema={[
+          { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About TrendScout', url: 'https://trendscout.click/about' },
+          breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'About' }]),
+        ]}
+      />
       <div className="bg-white" data-testid="about-page">
         {/* Hero */}
         <section className="pt-16 pb-12 px-6">

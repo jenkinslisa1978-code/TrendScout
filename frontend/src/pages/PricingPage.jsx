@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
+import PageMeta, { faqSchema, breadcrumbSchema, softwareAppSchema } from '@/components/PageMeta';
 import {
   Check, X, Loader2, ArrowRight, ChevronDown, ChevronUp,
   Sparkles, Eye, TrendingUp, Zap, Shield, BarChart3, Store, Bell, FileText, Rocket,
@@ -173,6 +174,16 @@ export default function PricingPage() {
 
   return (
     <LandingLayout>
+      <PageMeta
+        title="Pricing"
+        description="Simple, transparent pricing for UK ecommerce sellers. Plans from £19/month. Start free, upgrade when ready."
+        canonical="/pricing"
+        schema={[
+          softwareAppSchema,
+          faqSchema(FAQS),
+          breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Pricing' }]),
+        ]}
+      />
       <div className="bg-white" data-testid="pricing-page">
         {/* Header */}
         <div className="pt-16 pb-2 text-center max-w-3xl mx-auto px-6">
@@ -187,14 +198,14 @@ export default function PricingPage() {
           <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-slate-100 p-1" data-testid="billing-toggle">
             <button
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${!annual ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              onClick={() => setAnnual(false)}
+              onClick={() => { setAnnual(false); trackEvent(EVENTS.PRICING_TOGGLE, { billing: 'monthly' }); }}
               data-testid="toggle-monthly"
             >
               Monthly
             </button>
             <button
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${annual ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              onClick={() => setAnnual(true)}
+              onClick={() => { setAnnual(true); trackEvent(EVENTS.PRICING_TOGGLE, { billing: 'annual' }); }}
               data-testid="toggle-annual"
             >
               Annual <span className="text-emerald-600 font-semibold ml-1">Save 20%</span>

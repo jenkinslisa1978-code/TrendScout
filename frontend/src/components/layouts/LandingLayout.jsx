@@ -202,6 +202,7 @@ export default function LandingLayout({ children }) {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/trending-products" className="text-slate-500 hover:text-indigo-600 transition-colors">Trending Products</Link></li>
                 <li><Link to="/top-trending-products" className="text-slate-500 hover:text-indigo-600 transition-colors">Leaderboard</Link></li>
+                <li><Link to="/uk-product-viability-score" className="text-slate-500 hover:text-indigo-600 transition-colors">UK Viability Score</Link></li>
                 <li><Link to="/free-tools" className="text-slate-500 hover:text-indigo-600 transition-colors">Free Tools</Link></li>
                 <li><Link to="/pricing" className="text-slate-500 hover:text-indigo-600 transition-colors">Pricing</Link></li>
                 <li><Link to="/how-it-works" className="text-slate-500 hover:text-indigo-600 transition-colors">How It Works</Link></li>
@@ -216,6 +217,8 @@ export default function LandingLayout({ children }) {
                 <li><Link to="/for-amazon-uk" className="text-slate-500 hover:text-indigo-600 transition-colors">For Amazon UK</Link></li>
                 <li><Link to="/for-tiktok-shop-uk" className="text-slate-500 hover:text-indigo-600 transition-colors">For TikTok Shop UK</Link></li>
                 <li><Link to="/uk-product-research" className="text-slate-500 hover:text-indigo-600 transition-colors">UK Product Research</Link></li>
+                <li><Link to="/dropshipping-product-research-uk" className="text-slate-500 hover:text-indigo-600 transition-colors">UK Dropshipping</Link></li>
+                <li><Link to="/winning-products-uk" className="text-slate-500 hover:text-indigo-600 transition-colors">Winning Products UK</Link></li>
               </ul>
             </div>
 
@@ -246,7 +249,8 @@ export default function LandingLayout({ children }) {
             <div className="flex items-center gap-5 text-xs text-slate-400">
               <Link to="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-slate-600 transition-colors">Terms of Service</Link>
-              <Link to="/sitemap.xml" className="hover:text-slate-600 transition-colors">Sitemap</Link>
+              <Link to="/cookie-policy" className="hover:text-slate-600 transition-colors">Cookies</Link>
+              <Link to="/refund-policy" className="hover:text-slate-600 transition-colors">Refunds</Link>
               <a href="mailto:info@trendscout.click" className="hover:text-slate-600 transition-colors">info@trendscout.click</a>
             </div>
           </div>

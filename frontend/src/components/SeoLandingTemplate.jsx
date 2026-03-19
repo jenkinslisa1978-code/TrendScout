@@ -3,17 +3,27 @@ import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { trackEvent, EVENTS } from '@/services/analytics';
+import PageMeta, { faqSchema, breadcrumbSchema, webPageSchema } from '@/components/PageMeta';
 import { useState } from 'react';
 
 /**
  * Reusable SEO landing page template.
- * Props: headline, subtitle, intro, features[], steps[], faqs[], ctaText, relatedLinks[]
+ * Props: headline, subtitle, intro, features[], steps[], faqs[], ctaText, relatedLinks[], canonical, metaDesc
  */
-export default function SeoLandingTemplate({ headline, subtitle, intro, features, steps, ukPoints, faqs, ctaText, relatedLinks, children }) {
+export default function SeoLandingTemplate({ headline, subtitle, intro, features, steps, ukPoints, faqs, ctaText, relatedLinks, children, canonical, metaDesc }) {
   const [openFaq, setOpenFaq] = useState(null);
+
+  const schemas = [];
+  if (canonical) schemas.push(webPageSchema(headline, metaDesc || subtitle, canonical));
+  if (canonical) schemas.push(breadcrumbSchema([{ name: 'Home', url: '/' }, { name: headline }]));
+  if (faqs && faqs.length) schemas.push(faqSchema(faqs));
 
   return (
     <LandingLayout>
+      {canonical && (
+        <PageMeta title={headline} description={metaDesc || subtitle} canonical={canonical} schema={schemas} />
+      )}
       <div className="bg-white">
         {/* Hero */}
         <section className="pt-16 pb-12 px-6">
@@ -118,7 +128,7 @@ export default function SeoLandingTemplate({ headline, subtitle, intro, features
             <p className="mt-3 text-base text-slate-500">Free to start. No credit card needed.</p>
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link to="/signup">
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11">
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11" onClick={() => trackEvent(EVENTS.UK_LANDING_CTA, { page_type: 'seo_landing', cta_label: 'Start Free' })}>
                   Start Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
