@@ -204,6 +204,7 @@ export default function LandingLayout({ children }) {
                 <li><Link to="/top-trending-products" className="text-slate-500 hover:text-indigo-600 transition-colors">Leaderboard</Link></li>
                 <li><Link to="/uk-product-viability-score" className="text-slate-500 hover:text-indigo-600 transition-colors">UK Viability Score</Link></li>
                 <li><Link to="/free-tools" className="text-slate-500 hover:text-indigo-600 transition-colors">Free Tools</Link></li>
+                <li><Link to="/sample-product-analysis" className="text-slate-500 hover:text-indigo-600 transition-colors">Sample Analysis</Link></li>
                 <li><Link to="/pricing" className="text-slate-500 hover:text-indigo-600 transition-colors">Pricing</Link></li>
                 <li><Link to="/how-it-works" className="text-slate-500 hover:text-indigo-600 transition-colors">How It Works</Link></li>
               </ul>
@@ -229,6 +230,8 @@ export default function LandingLayout({ children }) {
                 <li><Link to="/compare/jungle-scout-vs-trendscout" className="text-slate-500 hover:text-indigo-600 transition-colors">vs Jungle Scout</Link></li>
                 <li><Link to="/compare/sell-the-trend-vs-trendscout" className="text-slate-500 hover:text-indigo-600 transition-colors">vs Sell The Trend</Link></li>
                 <li><Link to="/compare/minea-vs-trendscout" className="text-slate-500 hover:text-indigo-600 transition-colors">vs Minea</Link></li>
+                <li><Link to="/compare/helium-10-vs-trendscout" className="text-slate-500 hover:text-indigo-600 transition-colors">vs Helium 10</Link></li>
+                <li><Link to="/compare/ecomhunt-vs-trendscout" className="text-slate-500 hover:text-indigo-600 transition-colors">vs Ecomhunt</Link></li>
               </ul>
             </div>
 

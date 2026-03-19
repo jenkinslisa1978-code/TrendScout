@@ -115,9 +115,17 @@ export const EVENTS = {
   TRENDING_PRODUCT_CARD_CLICK: 'trending_product_card_click',
   // Viability
   VIABILITY_BADGE_CLICK: 'viability_badge_interaction',
+  VIABILITY_PAGE_CTA: 'viability_page_cta_click',
   // Free Tools
   FREE_TOOL_USED: 'free_tool_used',
   FREE_TOOL_RESULT: 'free_tool_result_generated',
+  TOOL_RESULT_CTA: 'tool_result_cta_click',
+  // Email Capture
+  EMAIL_CAPTURE_VIEW: 'email_capture_view',
+  EMAIL_CAPTURE_SUBMIT: 'email_capture_submit',
+  // Sample Analysis
+  SAMPLE_ANALYSIS_VIEW: 'sample_analysis_page_view',
+  SAMPLE_ANALYSIS_CTA: 'sample_analysis_cta_click',
   // Landing Pages
   UK_LANDING_CTA: 'uk_landing_page_cta_click',
   COMPARE_PAGE_CTA: 'compare_page_cta_click',

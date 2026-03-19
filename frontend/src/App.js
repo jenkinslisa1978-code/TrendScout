@@ -92,6 +92,11 @@ import ProductValidationUkPage from "@/pages/ProductValidationUkPage";
 import TrendAnalysisUkPage from "@/pages/TrendAnalysisUkPage";
 import CookiePolicyPage from "@/pages/CookiePolicyPage";
 import RefundPolicyPage from "@/pages/RefundPolicyPage";
+import SampleAnalysisPage from "@/pages/SampleAnalysisPage";
+import BestProductsUkPage from "@/pages/BestProductsUkPage";
+import TikTokProductResearchUkPage from "@/pages/TikTokProductResearchUkPage";
+import ShopifyProductResearchUkPage from "@/pages/ShopifyProductResearchUkPage";
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -181,6 +186,10 @@ function AppRoutes() {
       <Route path="/uk-ecommerce-trend-analysis" element={<TrendAnalysisUkPage />} />
       <Route path="/cookie-policy" element={<CookiePolicyPage />} />
       <Route path="/refund-policy" element={<RefundPolicyPage />} />
+      <Route path="/sample-product-analysis" element={<SampleAnalysisPage />} />
+      <Route path="/best-products-to-sell-online-uk" element={<BestProductsUkPage />} />
+      <Route path="/tiktok-shop-product-research-uk" element={<TikTokProductResearchUkPage />} />
+      <Route path="/shopify-product-research-uk" element={<ShopifyProductResearchUkPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />
       <Route path="/free-tools" element={<FreeToolsPage />} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />

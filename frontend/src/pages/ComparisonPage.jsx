@@ -77,6 +77,53 @@ const COMPARISONS = {
     ],
     verdict: 'If your primary need is ad creative spying and tracking competitor ads across platforms, Minea is the specialised tool. If you need comprehensive product research with UK viability scoring, margin analysis, and launch intelligence, TrendScout is the stronger choice.',
   },
+  'helium-10-vs-trendscout': {
+    competitor: 'Helium 10',
+    headline: 'Helium 10 vs TrendScout',
+    subtitle: 'Helium 10 is a comprehensive Amazon seller toolkit focused on keyword research, listing optimisation, and sales tracking. TrendScout is a multi-channel product research platform built for UK ecommerce sellers.',
+    intro: 'These tools serve different purposes and different markets. Here is a direct, honest comparison to help you decide which fits your needs.',
+    competitor_best_for: 'Helium 10 is best for Amazon-focused sellers who need deep keyword research, listing optimisation, and sales tracking on Amazon.com. It is a mature toolkit for Amazon-specific workflows including PPC management and inventory forecasting.',
+    trendscout_best_for: 'TrendScout is best for UK sellers who research products across multiple channels before committing. It focuses on discovering trends, validating viability, and estimating UK-specific profitability before you source or list.',
+    rows: [
+      { feature: 'Primary focus', competitor: 'Amazon seller toolkit', trendscout: 'Cross-channel product research' },
+      { feature: 'Target market', competitor: 'US / Global Amazon', trendscout: 'UK-first, multi-channel' },
+      { feature: 'Trend detection', competitor: 'Amazon keyword trends', trendscout: 'TikTok + Amazon + Google + Shopify' },
+      { feature: 'UK margin estimation', competitor: false, trendscout: true },
+      { feature: 'VAT factored into costs', competitor: false, trendscout: true },
+      { feature: 'UK Viability Score', competitor: false, trendscout: true },
+      { feature: 'Keyword research', competitor: 'Extensive', trendscout: 'Basic' },
+      { feature: 'Listing optimisation', competitor: true, trendscout: false },
+      { feature: 'PPC management', competitor: true, trendscout: false },
+      { feature: 'AI ad suggestions', competitor: false, trendscout: true },
+      { feature: 'Push to Shopify', competitor: false, trendscout: true },
+      { feature: 'Free plan', competitor: 'Limited', trendscout: true },
+      { feature: 'Starting price', competitor: '$39/mo (USD)', trendscout: '£19/mo (GBP)' },
+    ],
+    verdict: 'If you are an Amazon-focused seller who needs listing optimisation, keyword research, and PPC tools, Helium 10 is the more complete Amazon toolkit. If you are a UK seller who needs cross-channel product discovery and UK-specific viability analysis, TrendScout fills a gap that Helium 10 does not address.',
+  },
+  'ecomhunt-vs-trendscout': {
+    competitor: 'Ecomhunt',
+    headline: 'Ecomhunt vs TrendScout',
+    subtitle: 'Ecomhunt is a curated product discovery tool that hand-picks trending products for dropshippers. TrendScout uses multi-signal data analysis to identify and score products on UK commercial viability.',
+    intro: 'Both tools help sellers find products, but they take very different approaches. Here is how they compare.',
+    competitor_best_for: 'Ecomhunt is best for beginners who want a simple, curated list of product ideas with ad examples. It is straightforward for sellers who want quick inspiration without deep analysis.',
+    trendscout_best_for: 'TrendScout is best for UK sellers who want data-driven product research. It scores products on UK-specific viability, estimates margins after VAT, and provides competition and saturation data.',
+    rows: [
+      { feature: 'Approach', competitor: 'Curated product picks', trendscout: 'Data-driven multi-signal analysis' },
+      { feature: 'Target market', competitor: 'Global / US-leaning', trendscout: 'UK-first' },
+      { feature: 'Product scoring', competitor: 'Editorial rating', trendscout: '7-signal viability score' },
+      { feature: 'UK margin estimation', competitor: false, trendscout: true },
+      { feature: 'VAT factored in', competitor: false, trendscout: true },
+      { feature: 'Saturation analysis', competitor: 'Basic', trendscout: 'Multi-channel detailed' },
+      { feature: 'Ad examples', competitor: true, trendscout: 'AI-generated suggestions' },
+      { feature: 'TikTok trends', competitor: 'Limited', trendscout: 'Detailed' },
+      { feature: 'Push to Shopify', competitor: false, trendscout: true },
+      { feature: 'Supplier data', competitor: 'AliExpress links', trendscout: 'CJ Dropshipping integration' },
+      { feature: 'Free plan', competitor: 'Limited', trendscout: true },
+      { feature: 'Starting price', competitor: '$29/mo (USD)', trendscout: '£19/mo (GBP)' },
+    ],
+    verdict: 'If you want a simple curated list of product ideas and are not focused on the UK market, Ecomhunt is accessible. If you want rigorous, data-driven product research with UK-specific viability scoring and margin analysis, TrendScout provides significantly more depth.',
+  },
 };
 
 export default function ComparisonPage() {
@@ -184,6 +231,11 @@ export default function ComparisonPage() {
               <Link to="/pricing">
                 <Button variant="outline" className="border-slate-300 text-slate-700 rounded-lg font-medium px-6 h-11">
                   See Pricing
+                </Button>
+              </Link>
+              <Link to="/sample-product-analysis">
+                <Button variant="ghost" className="text-slate-500 hover:text-slate-700 rounded-lg font-medium px-6 h-11">
+                  See Sample Analysis
                 </Button>
               </Link>
             </div>

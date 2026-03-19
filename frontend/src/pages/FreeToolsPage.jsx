@@ -4,6 +4,7 @@ import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
 import PageMeta, { faqSchema, breadcrumbSchema } from '@/components/PageMeta';
 import { trackEvent, EVENTS } from '@/services/analytics';
+import EmailCapture from '@/components/EmailCapture';
 import { ArrowRight, Calculator, PoundSterling, BarChart3, TrendingUp, Receipt, CheckCircle } from 'lucide-react';
 
 function ProfitMarginCalculator() {
@@ -262,14 +263,24 @@ export default function FreeToolsPage() {
             {/* Active tool */}
             {ActiveComponent && <ActiveComponent />}
 
+            {/* Email capture — shown after tool delivers value */}
+            <div className="mt-8">
+              <EmailCapture source="free_tool" context={activeTool} />
+            </div>
+
             {/* CTA */}
-            <div className="mt-12 rounded-lg bg-slate-50 border border-slate-200 p-6 text-center">
+            <div className="mt-8 rounded-lg bg-slate-50 border border-slate-200 p-6 text-center">
               <h3 className="font-manrope text-lg font-semibold text-slate-900">Want deeper product analysis?</h3>
-              <p className="mt-2 text-sm text-slate-500">TrendScout gives you margin estimates, saturation data, and launch scores for trending products — not just calculator inputs.</p>
-              <div className="mt-4">
+              <p className="mt-2 text-sm text-slate-500">TrendScout gives you margin estimates, saturation data, and UK Viability Scores for trending products — not just calculator inputs.</p>
+              <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link to="/signup">
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold" data-testid="tools-cta">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold" data-testid="tools-cta" onClick={() => trackEvent(EVENTS.TOOL_RESULT_CTA, { tool_name: activeTool, cta_label: 'Start Free' })}>
                     Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/sample-product-analysis">
+                  <Button variant="outline" className="border-slate-300 text-slate-700 rounded-lg font-medium" onClick={() => trackEvent(EVENTS.TOOL_RESULT_CTA, { tool_name: activeTool, cta_label: 'See Sample Analysis' })}>
+                    See a Sample Product Analysis
                   </Button>
                 </Link>
               </div>
