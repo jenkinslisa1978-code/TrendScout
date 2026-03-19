@@ -20,7 +20,7 @@ const STEPS = [
   { id: 2, label: 'Supplier', icon: Truck, tip: 'Verified supplier with cost analysis.' },
   { id: 3, label: 'Store Assets', icon: Store, tip: 'Product page, Shopify data, and store preview.' },
   { id: 4, label: 'Ad Pack', icon: Sparkles, tip: 'Ad creatives, scripts, and A/B test plan.' },
-  { id: 5, label: 'Launch', icon: Rocket, tip: 'Review checklist and go live.' },
+  { id: 5, label: 'Launch', icon: Rocket, tip: 'Review checklist and create your store package.' },
 ];
 
 export default function ProductLaunchWizard() {
@@ -116,7 +116,7 @@ export default function ProductLaunchWizard() {
     // If store was already created in step 3, just mark as launched
     if (storeData?.store_id || storeData?.id) {
       setLaunchResult(storeData);
-      toast.success('Store launched successfully!');
+      toast.success('Store package created! Connect Shopify to go live.');
       trackOutcome(storeData?.store_id || storeData?.id);
       return;
     }
@@ -131,7 +131,7 @@ export default function ProductLaunchWizard() {
       if (res.ok) {
         const data = await res.json();
         setLaunchResult(data);
-        toast.success('Store launched successfully!');
+        toast.success('Store package created! Connect Shopify to go live.');
         trackOutcome(data.store_id || data.store?.id || data.id);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -186,7 +186,7 @@ export default function ProductLaunchWizard() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900 font-manrope">TrendScout LaunchPad</h1>
           </div>
-          <p className="text-slate-500 mt-1">Everything you need to launch — product intel, store, ads, and go-live checklist.</p>
+          <p className="text-slate-500 mt-1">Everything you need to launch — product intel, store package, ads, and go-live checklist. Connect Shopify to push live.</p>
         </div>
 
         {/* Step Indicators */}
@@ -560,26 +560,47 @@ function Step5Launch({ result, loading, navigate }) {
     return (
       <div className="flex flex-col items-center justify-center py-12" data-testid="wizard-step5-content">
         <Loader2 className="h-10 w-10 animate-spin text-indigo-500 mb-3" />
-        <p className="font-semibold text-slate-800">Launching your store...</p>
-        <p className="text-sm text-slate-500 mt-1">Connecting supplier, finalizing product pages</p>
+        <p className="font-semibold text-slate-800">Creating your store package...</p>
+        <p className="text-sm text-slate-500 mt-1">Generating product pages, branding, and supplier data</p>
       </div>
     );
   }
 
   if (result) {
+    const storeId = result.store_id || result.store?.id || result.id;
     return (
       <div className="text-center py-8" data-testid="wizard-step5-content">
         <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
           <Check className="h-8 w-8 text-emerald-600" />
         </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">Your Store is Live!</h3>
-        <p className="text-slate-500 mb-6">Your store has been created with connected supplier and ready-to-use product pages.</p>
-        <div className="flex justify-center gap-3">
-          <Button onClick={() => navigate(`/store/${result.store_id || result.id}`)} className="bg-indigo-600 hover:bg-indigo-700" data-testid="view-store-btn">
-            <Store className="h-4 w-4 mr-2" /> View Store
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Store Package Ready!</h3>
+        <p className="text-slate-500 mb-2">Your store has been created with product pages, branding, and supplier data.</p>
+        <p className="text-sm text-amber-600 font-medium mb-6">
+          To go live, connect your Shopify store and export from the store page.
+        </p>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 max-w-md mx-auto text-left">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Next Steps</p>
+          <div className="space-y-2.5">
+            <div className="flex items-start gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-indigo-600">1</div>
+              <p className="text-sm text-slate-700">Connect your Shopify store in <a href="/settings/connections" className="text-indigo-600 underline">Settings &rarr; Connections</a></p>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-indigo-600">2</div>
+              <p className="text-sm text-slate-700">View your store package and click <strong>"Export to Shopify"</strong></p>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-indigo-600">3</div>
+              <p className="text-sm text-slate-700">Products will be pushed to your Shopify store as drafts</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button onClick={() => navigate(`/store/${storeId}`)} className="bg-indigo-600 hover:bg-indigo-700" data-testid="view-store-btn">
+            <Store className="h-4 w-4 mr-2" /> View Store Package
           </Button>
-          <Button variant="outline" onClick={() => navigate('/outcomes')} data-testid="track-outcomes-btn">
-            <TrendingUp className="h-4 w-4 mr-2" /> Track Outcomes
+          <Button variant="outline" onClick={() => navigate('/settings/connections')} data-testid="connect-shopify-btn">
+            <ShoppingBag className="h-4 w-4 mr-2" /> Connect Shopify
           </Button>
           <Button variant="outline" onClick={() => navigate('/dashboard')} data-testid="back-to-dashboard-btn">
             Back to Dashboard

@@ -51,18 +51,18 @@ const TABS = [
 // Status configuration
 const STATUS_CONFIG = {
   draft: { label: 'Draft', color: 'bg-slate-100 text-slate-600', nextStatus: 'ready', nextLabel: 'Mark Ready' },
-  ready: { label: 'Ready', color: 'bg-blue-100 text-blue-700', nextStatus: 'exported', nextLabel: 'Export' },
-  exported: { label: 'Exported', color: 'bg-amber-100 text-amber-700', nextStatus: 'published', nextLabel: 'Mark Published' },
-  published: { label: 'Published', color: 'bg-emerald-100 text-emerald-700', nextStatus: null, nextLabel: null },
+  ready: { label: 'Ready', color: 'bg-blue-100 text-blue-700', nextStatus: 'exported', nextLabel: 'Export Package' },
+  exported: { label: 'Exported', color: 'bg-amber-100 text-amber-700', nextStatus: 'published', nextLabel: 'Mark Complete' },
+  published: { label: 'Package Ready', color: 'bg-emerald-100 text-emerald-700', nextStatus: null, nextLabel: null },
   archived: { label: 'Archived', color: 'bg-slate-100 text-slate-500', nextStatus: null, nextLabel: null },
 };
 
 // Launch progress steps
 const LAUNCH_STEPS = [
   { id: 1, label: 'Create', icon: Edit3, status: 'draft', description: 'Store created with AI-generated content' },
-  { id: 2, label: 'Review', icon: Check, status: 'ready', description: 'Review and customize your store' },
-  { id: 3, label: 'Export', icon: FileDown, status: 'exported', description: 'Export to Shopify format' },
-  { id: 4, label: 'Launch', icon: Rocket, status: 'published', description: 'Store is live!' },
+  { id: 2, label: 'Review', icon: Check, status: 'ready', description: 'Review and customise your store' },
+  { id: 3, label: 'Export', icon: FileDown, status: 'exported', description: 'Exported to Shopify-ready format' },
+  { id: 4, label: 'Push to Shopify', icon: Rocket, status: 'published', description: 'Connect Shopify to go live' },
 ];
 
 export default function StoreDetailPage() {
@@ -118,7 +118,7 @@ export default function StoreDetailPage() {
       const statusLabels = {
         ready: 'Store marked as ready!',
         exported: 'Store exported!',
-        published: 'Store published!',
+        published: 'Store package complete! Connect Shopify to push live.',
         draft: 'Store reverted to draft',
       };
       toast.success(statusLabels[newStatus] || 'Status updated');
@@ -290,12 +290,22 @@ export default function StoreDetailPage() {
               </Button>
             )}
             {store.status === 'published' && (
+              <>
+              <Button 
+                variant="default"
+                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => navigate('/settings/connections')}
+                data-testid="connect-shopify-btn"
+              >
+                Connect Shopify to Go Live
+              </Button>
               <Button 
                 variant="outline"
                 onClick={() => handleStatusChange('draft')}
               >
-                Unpublish
+                Reset to Draft
               </Button>
+              </>
             )}
           </div>
         </div>
