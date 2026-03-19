@@ -5,97 +5,120 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Toaster } from "sonner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { trackPageView } from "@/services/analytics";
-
-// Pages
-import LandingPage from "@/pages/LandingPage";
-import LoginPage from "@/pages/LoginPage";
-import SignupPage from "@/pages/SignupPage";
-import DashboardPage from "@/pages/DashboardPage";
-import DiscoverPage from "@/pages/DiscoverPage";
-import ProductDetailPage from "@/pages/ProductDetailPage";
-import SavedProductsPage from "@/pages/SavedProductsPage";
-import AdminPage from "@/pages/AdminPage";
-import AdminAutomationPage from "@/pages/AdminAutomationPage";
-import AnalyticsDashboardPage from "@/pages/AnalyticsDashboardPage";
-import AdminImageReviewPage from "@/pages/AdminImageReviewPage";
-import TrendAlertsPage from "@/pages/TrendAlertsPage";
-import StoresPage from "@/pages/StoresPage";
-import StoreDetailPage from "@/pages/StoreDetailPage";
-import StorePreviewPage from "@/pages/StorePreviewPage";
-import TrendingProductsPage from "@/pages/TrendingProductsPage";
-import TrendingProductPage from "@/pages/TrendingProductPage";
-import TrendingIndexPage from "@/pages/TrendingIndexPage";
-import ApiDocsPage from "@/pages/ApiDocsPage";
-import WeeklyDigestPage from "@/pages/WeeklyDigestPage";
-import DigestArchivePage from "@/pages/DigestArchivePage";
-import PublicProductPage from "@/pages/PublicProductPage";
-import ReferralPage from "@/pages/ReferralPage";
-
-// Reports Pages
-import ReportsPage from "@/pages/ReportsPage";
-import WeeklyReportPage from "@/pages/WeeklyReportPage";
-import MonthlyReportPage from "@/pages/MonthlyReportPage";
-import PublicWeeklyReportPage from "@/pages/PublicWeeklyReportPage";
-import PublicMonthlyReportPage from "@/pages/PublicMonthlyReportPage";
-
-// Settings Pages
-import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
-
-// Subscription
-import PricingPage from "@/pages/PricingPage";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
-import ProductLaunchWizard from "@/pages/ProductLaunchWizardPage";
-import OptimizationPage from "@/pages/OptimizationPage";
 import { ViewModeProvider } from "@/contexts/ViewModeContext";
-import SeoPage from "@/pages/SeoPage";
-import FreeToolsPage from "@/pages/FreeToolsPage";
-import OutcomesPage from "@/pages/OutcomesPage";
-import AdTestsPage from "@/pages/AdTestsPage";
-import SystemHealthDashboard from "@/pages/SystemHealthDashboardPage";
-import IntegrationStatusPage from "@/pages/IntegrationStatusPage";
-import ShopifyAnalyzerPage from "@/pages/ShopifyAnalyzerPage";
-import ShopifyAppPage from "@/pages/ShopifyAppPage";
-import ShopifyEmbeddedDashboard from "@/pages/ShopifyEmbeddedDashboard";
-import CompetitorTrackerPage from "@/pages/CompetitorTrackerPage";
-import TikTokIntelligencePage from "@/pages/TikTokIntelligencePage";
-import TopTrendingPage from "@/pages/TopTrendingPage";
-import SeoTrendingPage from "@/pages/SeoTrendingPage";
-import SeoCategoryPage from "@/pages/SeoCategoryPage";
-import BlogPage from "@/pages/BlogPage";
-import BlogPostPage from "@/pages/BlogPostPage";
+
+// Eager — critical landing path
+import LandingPage from "@/pages/LandingPage";
 import NotFoundPage from "@/pages/NotFoundPage";
-import TermsPage from "@/pages/TermsPage";
-import PrivacyPage from "@/pages/PrivacyPage";
-import PlatformConnectionsPage from "@/pages/PlatformConnectionsPage";
-import HelpPage from "@/pages/HelpPage";
-import DemoPage from "@/pages/DemoPage";
-import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
-import ResetPasswordPage from "@/pages/ResetPasswordPage";
-import ProfitabilitySimulatorPage from "@/pages/ProfitabilitySimulatorPage";
-import AdSpyPage from "@/pages/AdSpyPage";
-import CompetitorIntelPage from "@/pages/CompetitorIntelPage";
-import RadarAlertsPage from "@/pages/RadarAlertsPage";
-import VerifiedWinnersPage from "@/pages/VerifiedWinnersPage";
-import CJSourcingPage from "@/pages/CJSourcingPage";
-import HowItWorksPage from "@/pages/HowItWorksPage";
-import AboutPage from "@/pages/AboutPage";
-import ContactPage from "@/pages/ContactPage";
-import UkProductResearchPage from "@/pages/UkProductResearchPage";
-import ForShopifyPage from "@/pages/ForShopifyPage";
-import ForAmazonUkPage from "@/pages/ForAmazonUkPage";
-import ForTikTokShopUkPage from "@/pages/ForTikTokShopUkPage";
-import ComparisonPage from "@/pages/ComparisonPage";
-import ViabilityScorePage from "@/pages/ViabilityScorePage";
-import DropshippingUkPage from "@/pages/DropshippingUkPage";
-import WinningProductsUkPage from "@/pages/WinningProductsUkPage";
-import ProductValidationUkPage from "@/pages/ProductValidationUkPage";
-import TrendAnalysisUkPage from "@/pages/TrendAnalysisUkPage";
-import CookiePolicyPage from "@/pages/CookiePolicyPage";
-import RefundPolicyPage from "@/pages/RefundPolicyPage";
-import SampleAnalysisPage from "@/pages/SampleAnalysisPage";
-import BestProductsUkPage from "@/pages/BestProductsUkPage";
-import TikTokProductResearchUkPage from "@/pages/TikTokProductResearchUkPage";
-import ShopifyProductResearchUkPage from "@/pages/ShopifyProductResearchUkPage";
+
+// Lazy-loaded pages (code-split by route)
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const SignupPage = lazy(() => import("@/pages/SignupPage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
+const PricingPage = lazy(() => import("@/pages/PricingPage"));
+const HowItWorksPage = lazy(() => import("@/pages/HowItWorksPage"));
+const AboutPage = lazy(() => import("@/pages/AboutPage"));
+const ContactPage = lazy(() => import("@/pages/ContactPage"));
+
+// Dashboard & core app
+const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
+const DiscoverPage = lazy(() => import("@/pages/DiscoverPage"));
+const ProductDetailPage = lazy(() => import("@/pages/ProductDetailPage"));
+const SavedProductsPage = lazy(() => import("@/pages/SavedProductsPage"));
+const ProductLaunchWizard = lazy(() => import("@/pages/ProductLaunchWizardPage"));
+const OptimizationPage = lazy(() => import("@/pages/OptimizationPage"));
+const OutcomesPage = lazy(() => import("@/pages/OutcomesPage"));
+const AdTestsPage = lazy(() => import("@/pages/AdTestsPage"));
+const ProfitabilitySimulatorPage = lazy(() => import("@/pages/ProfitabilitySimulatorPage"));
+const AdSpyPage = lazy(() => import("@/pages/AdSpyPage"));
+const CompetitorIntelPage = lazy(() => import("@/pages/CompetitorIntelPage"));
+const RadarAlertsPage = lazy(() => import("@/pages/RadarAlertsPage"));
+const VerifiedWinnersPage = lazy(() => import("@/pages/VerifiedWinnersPage"));
+const CJSourcingPage = lazy(() => import("@/pages/CJSourcingPage"));
+const CompetitorTrackerPage = lazy(() => import("@/pages/CompetitorTrackerPage"));
+const TikTokIntelligencePage = lazy(() => import("@/pages/TikTokIntelligencePage"));
+
+// Admin
+const AdminPage = lazy(() => import("@/pages/AdminPage"));
+const AdminAutomationPage = lazy(() => import("@/pages/AdminAutomationPage"));
+const AnalyticsDashboardPage = lazy(() => import("@/pages/AnalyticsDashboardPage"));
+const AdminImageReviewPage = lazy(() => import("@/pages/AdminImageReviewPage"));
+const SystemHealthDashboard = lazy(() => import("@/pages/SystemHealthDashboardPage"));
+const IntegrationStatusPage = lazy(() => import("@/pages/IntegrationStatusPage"));
+
+// Trending & SEO
+const TrendingProductsPage = lazy(() => import("@/pages/TrendingProductsPage"));
+const TrendingProductPage = lazy(() => import("@/pages/TrendingProductPage"));
+const TrendingIndexPage = lazy(() => import("@/pages/TrendingIndexPage"));
+const TopTrendingPage = lazy(() => import("@/pages/TopTrendingPage"));
+const SeoTrendingPage = lazy(() => import("@/pages/SeoTrendingPage"));
+const SeoCategoryPage = lazy(() => import("@/pages/SeoCategoryPage"));
+const SeoPage = lazy(() => import("@/pages/SeoPage"));
+
+// Reports
+const ReportsPage = lazy(() => import("@/pages/ReportsPage"));
+const WeeklyReportPage = lazy(() => import("@/pages/WeeklyReportPage"));
+const MonthlyReportPage = lazy(() => import("@/pages/MonthlyReportPage"));
+const PublicWeeklyReportPage = lazy(() => import("@/pages/PublicWeeklyReportPage"));
+const PublicMonthlyReportPage = lazy(() => import("@/pages/PublicMonthlyReportPage"));
+
+// Stores & Shopify
+const StoresPage = lazy(() => import("@/pages/StoresPage"));
+const StoreDetailPage = lazy(() => import("@/pages/StoreDetailPage"));
+const StorePreviewPage = lazy(() => import("@/pages/StorePreviewPage"));
+const ShopifyAnalyzerPage = lazy(() => import("@/pages/ShopifyAnalyzerPage"));
+const ShopifyAppPage = lazy(() => import("@/pages/ShopifyAppPage"));
+const ShopifyEmbeddedDashboard = lazy(() => import("@/pages/ShopifyEmbeddedDashboard"));
+
+// Alerts, Digest, Referral
+const TrendAlertsPage = lazy(() => import("@/pages/TrendAlertsPage"));
+const WeeklyDigestPage = lazy(() => import("@/pages/WeeklyDigestPage"));
+const DigestArchivePage = lazy(() => import("@/pages/DigestArchivePage"));
+const ReferralPage = lazy(() => import("@/pages/ReferralPage"));
+const ApiDocsPage = lazy(() => import("@/pages/ApiDocsPage"));
+const PublicProductPage = lazy(() => import("@/pages/PublicProductPage"));
+
+// Settings
+const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettingsPage"));
+const PlatformConnectionsPage = lazy(() => import("@/pages/PlatformConnectionsPage"));
+
+// Content / Marketing / Free Tools
+const FreeToolsPage = lazy(() => import("@/pages/FreeToolsPage"));
+const BlogPage = lazy(() => import("@/pages/BlogPage"));
+const BlogPostPage = lazy(() => import("@/pages/BlogPostPage"));
+const DemoPage = lazy(() => import("@/pages/DemoPage"));
+const HelpPage = lazy(() => import("@/pages/HelpPage"));
+const TermsPage = lazy(() => import("@/pages/TermsPage"));
+const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
+const CookiePolicyPage = lazy(() => import("@/pages/CookiePolicyPage"));
+const RefundPolicyPage = lazy(() => import("@/pages/RefundPolicyPage"));
+
+// UK Landing Pages
+const UkProductResearchPage = lazy(() => import("@/pages/UkProductResearchPage"));
+const ForShopifyPage = lazy(() => import("@/pages/ForShopifyPage"));
+const ForAmazonUkPage = lazy(() => import("@/pages/ForAmazonUkPage"));
+const ForTikTokShopUkPage = lazy(() => import("@/pages/ForTikTokShopUkPage"));
+const ViabilityScorePage = lazy(() => import("@/pages/ViabilityScorePage"));
+const DropshippingUkPage = lazy(() => import("@/pages/DropshippingUkPage"));
+const WinningProductsUkPage = lazy(() => import("@/pages/WinningProductsUkPage"));
+const ProductValidationUkPage = lazy(() => import("@/pages/ProductValidationUkPage"));
+const TrendAnalysisUkPage = lazy(() => import("@/pages/TrendAnalysisUkPage"));
+const BestProductsUkPage = lazy(() => import("@/pages/BestProductsUkPage"));
+const TikTokProductResearchUkPage = lazy(() => import("@/pages/TikTokProductResearchUkPage"));
+const ShopifyProductResearchUkPage = lazy(() => import("@/pages/ShopifyProductResearchUkPage"));
+const SampleAnalysisPage = lazy(() => import("@/pages/SampleAnalysisPage"));
+
+// Comparison
+const ComparisonPage = lazy(() => import("@/pages/ComparisonPage"));
+
+// Page loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+  </div>
+);
 
 
 // Protected Route Component
@@ -160,6 +183,7 @@ function PageTracker() {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
@@ -491,6 +515,7 @@ function AppRoutes() {
       {/* Fallback */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </Suspense>
   );
 }
 

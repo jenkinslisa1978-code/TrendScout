@@ -135,4 +135,6 @@ export const EVENTS = {
   CTA_CLICK: 'cta_click',
   BLOG_VIEW: 'blog_view',
   CONTACT_SUBMIT: 'contact_form_submit',
+  // Scroll Depth
+  SCROLL_DEPTH: 'scroll_depth',
 };

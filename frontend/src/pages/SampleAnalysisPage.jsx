@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import PageMeta, { breadcrumbSchema, webPageSchema } from '@/components/PageMeta';
 import { ViabilityBadge } from '@/components/ViabilityBadge';
 import { trackEvent, EVENTS } from '@/services/analytics';
+import useScrollDepth from '@/hooks/useScrollDepth';
 import {
   ArrowRight, TrendingUp, Shield, Target, PoundSterling, Truck,
   AlertTriangle, Check, X, BarChart3, Zap, Store, Eye, Layers,
@@ -57,6 +58,7 @@ const PRODUCT = {
 };
 
 export default function SampleAnalysisPage() {
+  useScrollDepth('sample_product_analysis');
   useEffect(() => {
     trackEvent(EVENTS.SAMPLE_ANALYSIS_VIEW, { product_name: PRODUCT.name });
   }, []);

@@ -4,6 +4,8 @@ import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
 import PageMeta, { faqSchema, breadcrumbSchema, webPageSchema } from '@/components/PageMeta';
 import { trackEvent, EVENTS } from '@/services/analytics';
+import useScrollDepth from '@/hooks/useScrollDepth';
+import EmailCapture from '@/components/EmailCapture';
 import { ArrowRight, Check, X, Minus } from 'lucide-react';
 
 const COMPARISONS = {
@@ -129,6 +131,7 @@ const COMPARISONS = {
 export default function ComparisonPage() {
   const { slug } = useParams();
   const data = COMPARISONS[slug];
+  useScrollDepth(`compare_${slug || 'unknown'}`);
 
   if (!data) {
     return (
@@ -222,7 +225,8 @@ export default function ComparisonPage() {
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="font-manrope text-2xl font-bold text-slate-900">Try TrendScout free</h2>
             <p className="mt-3 text-base text-slate-500">See the difference for yourself. Browse trending products with UK viability data — no credit card needed.</p>
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <p className="mt-1 text-xs text-slate-400">Join 2,000+ UK sellers already using TrendScout</p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link to="/signup">
                 <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11" data-testid="comparison-cta" onClick={() => trackEvent(EVENTS.COMPARE_PAGE_CTA, { competitor: data.competitor, cta_label: 'Start Free' })}>
                   Start Free <ArrowRight className="ml-2 h-4 w-4" />
@@ -230,7 +234,7 @@ export default function ComparisonPage() {
               </Link>
               <Link to="/pricing">
                 <Button variant="outline" className="border-slate-300 text-slate-700 rounded-lg font-medium px-6 h-11">
-                  See Pricing
+                  Compare Plans
                 </Button>
               </Link>
               <Link to="/sample-product-analysis">
@@ -239,6 +243,13 @@ export default function ComparisonPage() {
                 </Button>
               </Link>
             </div>
+          </div>
+        </section>
+
+        {/* Email Capture */}
+        <section className="py-10 bg-white px-6">
+          <div className="max-w-xl mx-auto">
+            <EmailCapture source="comparison_page" context={slug} />
           </div>
         </section>
 

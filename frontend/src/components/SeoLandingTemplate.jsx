@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import PageMeta, { faqSchema, breadcrumbSchema, webPageSchema } from '@/components/PageMeta';
+import useScrollDepth from '@/hooks/useScrollDepth';
+import EmailCapture from '@/components/EmailCapture';
 import { useState } from 'react';
 
 /**
@@ -13,6 +15,7 @@ import { useState } from 'react';
  */
 export default function SeoLandingTemplate({ headline, subtitle, intro, features, steps, ukPoints, faqs, ctaText, relatedLinks, children, canonical, metaDesc }) {
   const [openFaq, setOpenFaq] = useState(null);
+  useScrollDepth(canonical ? `landing_${canonical.replace(/\//g, '')}` : 'seo_landing');
 
   const schemas = [];
   if (canonical) schemas.push(webPageSchema(headline, metaDesc || subtitle, canonical));
@@ -58,6 +61,17 @@ export default function SeoLandingTemplate({ headline, subtitle, intro, features
                     </div>
                   );
                 })}
+              </div>
+              {/* Mid-page CTA */}
+              <div className="mt-8 flex items-center gap-4">
+                <Link to="/sample-product-analysis">
+                  <Button variant="outline" className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-lg font-medium text-sm px-5 h-10" onClick={() => trackEvent(EVENTS.UK_LANDING_CTA, { page_type: 'seo_landing', cta_label: 'See Sample Report', position: 'mid_page' })}>
+                    See a sample product report <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+                <Link to="/tools" className="text-sm text-slate-500 hover:text-indigo-600 font-medium transition-colors">
+                  Try free calculators
+                </Link>
               </div>
             </div>
           </section>
@@ -126,18 +140,26 @@ export default function SeoLandingTemplate({ headline, subtitle, intro, features
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="font-manrope text-2xl font-bold text-slate-900">{ctaText || 'Start validating products today'}</h2>
             <p className="mt-3 text-base text-slate-500">Free to start. No credit card needed.</p>
+            <p className="mt-1 text-xs text-slate-400">Join 2,000+ UK sellers already using TrendScout</p>
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link to="/signup">
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11" onClick={() => trackEvent(EVENTS.UK_LANDING_CTA, { page_type: 'seo_landing', cta_label: 'Start Free' })}>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11" onClick={() => trackEvent(EVENTS.UK_LANDING_CTA, { page_type: 'seo_landing', cta_label: 'Start Free', position: 'bottom' })}>
                   Start Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/trending-products">
+              <Link to="/pricing">
                 <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-white rounded-lg font-medium px-6 h-11">
-                  See Trending Products
+                  Compare Plans
                 </Button>
               </Link>
             </div>
+          </div>
+        </section>
+
+        {/* Email Capture — low commitment alternative */}
+        <section className="py-10 bg-white px-6">
+          <div className="max-w-xl mx-auto">
+            <EmailCapture source="seo_landing" context={canonical || 'landing_page'} />
           </div>
         </section>
 
