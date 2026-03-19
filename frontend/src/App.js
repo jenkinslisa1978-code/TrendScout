@@ -77,6 +77,14 @@ import CompetitorIntelPage from "@/pages/CompetitorIntelPage";
 import RadarAlertsPage from "@/pages/RadarAlertsPage";
 import VerifiedWinnersPage from "@/pages/VerifiedWinnersPage";
 import CJSourcingPage from "@/pages/CJSourcingPage";
+import HowItWorksPage from "@/pages/HowItWorksPage";
+import AboutPage from "@/pages/AboutPage";
+import ContactPage from "@/pages/ContactPage";
+import UkProductResearchPage from "@/pages/UkProductResearchPage";
+import ForShopifyPage from "@/pages/ForShopifyPage";
+import ForAmazonUkPage from "@/pages/ForAmazonUkPage";
+import ForTikTokShopUkPage from "@/pages/ForTikTokShopUkPage";
+import ComparisonPage from "@/pages/ComparisonPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -151,7 +159,16 @@ function AppRoutes() {
       <Route path="/trending-products" element={<TrendingProductsPage />} />
       <Route path="/trending/:slug" element={<TrendingProductPage />} />
       <Route path="/p/:id" element={<PublicProductPage />} />
+      <Route path="/how-it-works" element={<HowItWorksPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/uk-product-research" element={<UkProductResearchPage />} />
+      <Route path="/for-shopify" element={<ForShopifyPage />} />
+      <Route path="/for-amazon-uk" element={<ForAmazonUkPage />} />
+      <Route path="/for-tiktok-shop-uk" element={<ForTikTokShopUkPage />} />
+      <Route path="/compare/:slug" element={<ComparisonPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />
+      <Route path="/free-tools" element={<FreeToolsPage />} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />
       <Route path="/shopify-app" element={<ShopifyAppPage />} />
       <Route path="/embedded" element={<ShopifyEmbeddedDashboard />} />

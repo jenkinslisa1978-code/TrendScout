@@ -4,345 +4,114 @@ import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import {
-  TrendingUp, Rocket, Zap, Check, ArrowRight,
-  Search, Package, Target, Eye, ChevronRight,
-  Flame, Clock, Lightbulb, ArrowDown,
+  TrendingUp, ArrowRight, Check, Search, BarChart3, Shield,
+  Zap, Package, ChevronRight, Globe, ShoppingBag, Store,
+  Target, PoundSterling, Truck, RefreshCw, Layers, Sparkles,
+  Eye, LineChart,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
-function getShortReason(product) {
-  const reasons = [];
-  if (product.launch_score >= 80) reasons.push('Very strong trend signals');
-  else if (product.launch_score >= 65) reasons.push('Strong trend momentum');
-  else if (product.launch_score >= 50) reasons.push('Growing market interest');
-
-  if (product.margin_percent >= 60) reasons.push('high margins');
-  else if (product.margin_percent >= 40) reasons.push('solid margins');
-
-  if (product.growth_rate >= 100) reasons.push('rapid growth');
-  else if (product.growth_rate >= 40) reasons.push('steady growth');
-
-  if (product.tiktok_views >= 1000000) reasons.push('viral social proof');
-  else if (product.tiktok_views >= 100000) reasons.push('strong social traction');
-
-  if (product.trend_stage === 'Exploding') reasons.push('exploding demand');
-  else if (product.trend_stage === 'Emerging') reasons.push('emerging opportunity');
-
-  if (reasons.length === 0) return 'Monitored for growth potential';
-  if (reasons.length === 1) return reasons[0].charAt(0).toUpperCase() + reasons[0].slice(1);
-  return reasons[0].charAt(0).toUpperCase() + reasons[0].slice(1) + ' and ' + reasons[1];
-}
-
 export default function LandingPage() {
-  const [trendingProducts, setTrendingProducts] = useState([]);
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     fetch(`${API_URL}/api/public/trending-products?limit=6`)
       .then(r => r.json())
-      .then(d => setTrendingProducts(d.products || []))
+      .then(d => setProducts(d.products || []))
       .catch(() => {});
   }, []);
 
   return (
     <LandingLayout>
-      {/* ── HERO ── */}
-      <section className="relative overflow-hidden bg-[#030712]" data-testid="hero-section">
-        <div className="absolute inset-0 -z-0">
-          <div className="absolute top-[-20%] left-[10%] w-[600px] h-[600px] rounded-full bg-indigo-600/8 blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[5%] w-[500px] h-[500px] rounded-full bg-violet-600/6 blur-[100px]" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)', backgroundSize: '32px 32px'}} />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-6 pt-24 pb-20 lg:px-8 lg:pt-32 lg:pb-28">
-          <div className="text-center max-w-3xl mx-auto">
+      {/* ═══ A. HERO ═══ */}
+      <section className="relative bg-white overflow-hidden" data-testid="hero-section">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(79,70,229,0.04),transparent_50%)]" />
+        <div className="relative mx-auto max-w-7xl px-6 pt-20 pb-16 lg:px-8 lg:pt-28 lg:pb-24">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 border border-indigo-100 px-3 py-1 mb-6 animate-fade-in">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-500" />
+              <span className="text-xs font-medium text-indigo-700">Built for UK ecommerce sellers</span>
+            </div>
             <h1
-              className="font-manrope text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl leading-[1.08]"
-              style={{ animation: 'fadeSlideUp 0.6s ease forwards' }}
+              className="font-manrope text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight text-slate-900 leading-[1.1]"
               data-testid="hero-headline"
             >
-              Find products worth testing{' '}
-              <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
-                before you waste money on ads
-              </span>
+              Find products that can actually{' '}
+              <span className="text-indigo-600">sell in the UK</span>
             </h1>
-
-            <p
-              className="mt-6 text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto"
-              style={{ animation: 'fadeSlideUp 0.7s ease forwards' }}
-              data-testid="hero-subheadline"
-            >
-              TrendScout analyses trending ecommerce products and predicts whether they are worth launching{' '}
-              <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
-                using a multi-signal AI launch score.
-              </span>
+            <p className="mt-5 text-lg text-slate-600 leading-relaxed max-w-2xl" data-testid="hero-subheadline">
+              TrendScout helps UK ecommerce sellers discover trending products, analyse competition, estimate profit potential, and launch faster across Shopify, TikTok Shop, and Amazon.co.uk.
             </p>
-
-            <div
-              className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
-              style={{ animation: 'fadeSlideUp 0.8s ease forwards' }}
-            >
-              <Link to="/trending-products">
+            <div className="mt-8 flex flex-col sm:flex-row items-start gap-3">
+              <Link to="/signup">
                 <Button
                   size="lg"
-                  className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-13 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
-                  data-testid="hero-cta-btn"
-                  onClick={() => trackEvent(EVENTS.TRENDING_VIEW, { source: 'hero' })}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-base px-7 h-12 font-semibold rounded-lg shadow-sm"
+                  data-testid="hero-cta-primary"
+                  onClick={() => trackEvent(EVENTS.SIGNUP_CLICK, { source: 'hero' })}
                 >
-                  <Search className="mr-2 h-5 w-5" />
-                  Browse Trending Products
+                  Start Free
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <a href="#how-it-works">
+              <Link to="/trending-products">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="lg"
-                  className="text-base px-8 h-13 text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all duration-300 rounded-xl"
-                  data-testid="hero-secondary-btn"
+                  className="text-base px-7 h-12 text-slate-700 border-slate-300 hover:bg-slate-50 rounded-lg font-medium"
+                  data-testid="hero-cta-secondary"
+                  onClick={() => trackEvent(EVENTS.TRENDING_VIEW, { source: 'hero' })}
                 >
-                  <ArrowDown className="mr-2 h-4 w-4" />
-                  See How It Works
+                  See Trending Products
                 </Button>
-              </a>
-            </div>
-
-            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-slate-500" style={{ animation: 'fadeSlideUp 0.9s ease forwards' }}>
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> Free to start</span>
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> No credit card required</span>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── HOW TRENDSCOUT WORKS ── */}
-      <section id="how-it-works" className="py-24 bg-white" data-testid="how-it-works-section">
-        <div className="mx-auto max-w-5xl px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
-              How TrendScout Works
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            <div className="hidden md:block absolute top-14 left-[16.5%] right-[16.5%] h-px bg-gradient-to-r from-indigo-200 via-violet-200 to-emerald-200" />
-            {[
-              {
-                step: '1',
-                icon: Search,
-                title: 'Find products',
-                description: 'Browse products gaining traction online.',
-                gradient: 'from-indigo-500 to-sky-500',
-              },
-              {
-                step: '2',
-                icon: Eye,
-                title: 'Check the launch score',
-                description: 'TrendScout analyses demand, competition, and ad potential.',
-                gradient: 'from-violet-500 to-purple-500',
-              },
-              {
-                step: '3',
-                icon: Rocket,
-                title: 'Launch faster',
-                description: 'Get ad ideas and a simple launch plan.',
-                gradient: 'from-emerald-500 to-teal-500',
-              },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.step}
-                  className="group relative bg-white rounded-3xl border border-slate-100 p-8 hover:border-slate-200 hover:shadow-2xl hover:shadow-slate-100/80 transition-all duration-500 text-center"
-                  data-testid={`how-step-${item.step}`}
-                >
-                  <div className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${item.gradient} text-white shadow-lg mx-auto group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="h-7 w-7" />
-                  </div>
-                  <h3 className="mt-6 font-manrope text-lg font-bold text-slate-900">{item.title}</h3>
-                  <p className="mt-2 text-slate-500 text-sm">{item.description}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Start Here Panel */}
-          <div className="mt-16 bg-gradient-to-br from-slate-50 to-indigo-50/50 rounded-2xl border border-slate-200/60 p-8" data-testid="start-here-panel">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg">
-                  <Lightbulb className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-manrope text-lg font-bold text-slate-900">New here? Start with these 3 steps.</h3>
-                <ol className="mt-3 space-y-2">
-                  <li className="flex items-center gap-3 text-sm text-slate-600">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">1</span>
-                    Browse trending products
-                  </li>
-                  <li className="flex items-center gap-3 text-sm text-slate-600">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-100 text-violet-600 text-xs font-bold flex items-center justify-center">2</span>
-                    Open a product analysis
-                  </li>
-                  <li className="flex items-center gap-3 text-sm text-slate-600">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold flex items-center justify-center">3</span>
-                    Decide if it's worth testing
-                  </li>
-                </ol>
-              </div>
-              <div className="flex-shrink-0">
-                <Link to="/trending-products">
-                  <Button
-                    className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 h-11 rounded-xl"
-                    data-testid="start-now-btn"
-                    onClick={() => trackEvent(EVENTS.TRENDING_VIEW, { source: 'start_here' })}
-                  >
-                    Start Now
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
+      {/* ═══ B. TRUST BAR ═══ */}
+      <section className="border-y border-slate-100 bg-slate-50/50" data-testid="trust-bar">
+        <div className="mx-auto max-w-7xl px-6 py-5 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-slate-500">
+            <span className="flex items-center gap-2"><Globe className="h-4 w-4 text-indigo-500" /> Built for UK ecommerce sellers</span>
+            <span className="flex items-center gap-2"><Package className="h-4 w-4 text-indigo-500" /> <span className="font-mono font-semibold text-slate-700">150+</span> products tracked</span>
+            <span className="flex items-center gap-2"><BarChart3 className="h-4 w-4 text-indigo-500" /> <span className="font-mono font-semibold text-slate-700">7</span> trend signals per product</span>
+            <span className="flex items-center gap-2"><RefreshCw className="h-4 w-4 text-indigo-500" /> Updated daily</span>
           </div>
         </div>
       </section>
 
-      {/* ── WINNING PRODUCT EXAMPLE ── */}
-      <section className="py-20 bg-gradient-to-b from-white to-slate-50/50" data-testid="product-example-section">
-        <div className="mx-auto max-w-5xl px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
-              See what a product analysis looks like
-            </h2>
-            <p className="mt-4 text-base text-slate-500">
-              Every product gets scored across multiple signals. Here's a real example.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-lg overflow-hidden" data-testid="example-product-card">
-            <div className="grid md:grid-cols-2">
-              <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 p-8 flex items-center justify-center">
-                <div className="relative w-full max-w-[280px] aspect-square rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">
-                  <Package className="h-20 w-20 text-slate-200" />
-                  <div className="absolute top-3 left-3 bg-indigo-600 text-white rounded-xl px-3 py-1 shadow-md">
-                    <span className="font-mono text-lg font-bold">78</span>
-                    <span className="text-xs ml-0.5 opacity-80">/100</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-8">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Strong Candidate</span>
-                </div>
-                <h3 className="font-manrope text-2xl font-bold text-slate-900">Magnetic Spice Rack</h3>
-                <p className="text-slate-500 text-sm mt-2 mb-6">Home &amp; Kitchen</p>
-
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  <div className="bg-slate-50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-slate-500 mb-1">Demand</p>
-                    <p className="font-semibold text-emerald-600 text-sm">Rising</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-slate-500 mb-1">Competition</p>
-                    <p className="font-semibold text-amber-600 text-sm">Moderate</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-slate-500 mb-1">Est. Profit</p>
-                    <p className="font-semibold text-indigo-600 text-sm">$12-$18/unit</p>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Why it works</h4>
-                  <ul className="space-y-1.5">
-                    <li className="flex items-center gap-2 text-sm text-slate-600">
-                      <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" /> Strong TikTok engagement
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-slate-600">
-                      <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" /> Visually satisfying demo
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-slate-600">
-                      <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" /> Broad household audience
-                    </li>
-                  </ul>
-                </div>
-
-                <Link to="/trending-products">
-                  <Button className="bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl" data-testid="example-cta-btn">
-                    View Full Analysis <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── TRENDING PRODUCTS ── */}
-      <section className="py-24 bg-gradient-to-b from-slate-50/80 to-white" data-testid="winning-products-section">
+      {/* ═══ C. WHY TRENDSCOUT IS DIFFERENT ═══ */}
+      <section className="py-20 bg-white" data-testid="why-different-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
-              Trending products right now
+          <div className="max-w-2xl mb-12">
+            <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Trend data is easy. Profitable decisions are harder.
             </h2>
-            <p className="mt-4 text-base text-slate-500">
-              Real products our AI flagged as trending. Updated daily.
-            </p>
-          </div>
-
-          {trendingProducts.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {trendingProducts.slice(0, 6).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 text-slate-400">
-              <Package className="h-10 w-10 mx-auto mb-3 text-slate-300" />
-              <p>Loading trending products...</p>
-            </div>
-          )}
-
-          <div className="text-center mt-10">
-            <Link to="/trending-products">
-              <Button
-                size="lg"
-                className="bg-slate-900 hover:bg-slate-800 text-base px-8 h-12 font-semibold rounded-xl"
-                data-testid="see-all-products-btn"
-              >
-                See All Trending Products
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHY USE TRENDSCOUT ── */}
-      <section className="py-24 bg-white" data-testid="why-section">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <h2 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
-              Why use TrendScout
-            </h2>
-            <p className="mt-4 text-base text-slate-500">
-              Stop guessing. Start with data.
+            <p className="mt-3 text-base text-slate-500">
+              Most product research tools show you what is trending. TrendScout tells you whether it is commercially viable in the UK.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: TrendingUp, title: 'Real trend data', desc: 'Every product score is backed by live signals from TikTok, Amazon, and Google Trends.', color: 'from-indigo-500 to-sky-500' },
-              { icon: Target, title: 'Know before you spend', desc: 'See margins, supplier costs, and competition levels before investing in ads.', color: 'from-violet-500 to-purple-500' },
-              { icon: Zap, title: 'Ad ideas included', desc: 'Get AI-generated ad angles and target audience suggestions for every product.', color: 'from-amber-500 to-orange-500' },
-              { icon: Flame, title: 'Updated daily', desc: 'New products and scores every day so you never miss an opportunity.', color: 'from-emerald-500 to-teal-500' },
+              { icon: Search, title: 'Multi-channel trend detection', desc: 'Spot rising products across TikTok, Amazon, Shopify, and Google Trends before they peak.' },
+              { icon: Shield, title: 'Saturation & competition analysis', desc: 'See how many sellers are already active, how crowded the ad space is, and where gaps exist.' },
+              { icon: PoundSterling, title: 'UK-first viability insights', desc: 'Estimate landed costs, margins, VAT impact, and shipping practicality for UK customers.' },
+              { icon: Zap, title: 'AI-assisted launch decisions', desc: 'Get launch scores, ad angle suggestions, and profit projections — not just raw data.' },
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="group rounded-2xl border border-slate-100 bg-white p-7 hover:border-slate-200 hover:shadow-xl hover:shadow-slate-100/60 transition-all duration-400 hover:-translate-y-1" data-testid={`why-card-${item.title.toLowerCase().replace(/\s/g, '-')}`}>
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300`}>
-                    <Icon className="h-6 w-6" />
+                <div
+                  key={item.title}
+                  className="rounded-xl border border-slate-200 bg-white p-6 hover:border-indigo-200 hover:shadow-md transition-all duration-200"
+                  data-testid={`feature-card-${item.title.toLowerCase().replace(/\s/g, '-')}`}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 mb-4">
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-5 font-manrope text-base font-bold text-slate-900">{item.title}</h3>
+                  <h3 className="font-manrope text-base font-semibold text-slate-900">{item.title}</h3>
                   <p className="mt-2 text-sm text-slate-500 leading-relaxed">{item.desc}</p>
                 </div>
               );
@@ -351,100 +120,273 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section className="py-20 bg-white">
+      {/* ═══ D. HOW IT WORKS ═══ */}
+      <section className="py-20 bg-slate-50" data-testid="how-it-works-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="relative rounded-[2rem] overflow-hidden">
-            <div className="absolute inset-0 bg-[#030712]" />
-            <div className="absolute inset-0 opacity-[0.04]" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px'}} />
-            <div className="absolute top-[-30%] right-[10%] w-[400px] h-[400px] rounded-full bg-indigo-600/10 blur-[100px]" />
-            <div className="relative px-8 py-16 sm:px-16 text-center">
-              <h2 className="font-manrope text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                Ready to find your next product?
+          <div className="max-w-2xl mb-12">
+            <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              From trend signal to launch decision in four steps
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-4 gap-6">
+            {[
+              { step: '01', title: 'Discover rising products', desc: 'Browse products gaining traction across TikTok, Amazon, and ecommerce stores. Filtered and scored daily.' },
+              { step: '02', title: 'Analyse saturation and demand', desc: 'Check how many sellers are already active, ad competition levels, and real demand signals.' },
+              { step: '03', title: 'Check UK viability', desc: 'Estimate profit margins, landed costs, VAT implications, and shipping practicality for UK buyers.' },
+              { step: '04', title: 'Launch with more confidence', desc: 'Use AI launch scores, ad angle suggestions, and competitor insights to make faster decisions.' },
+            ].map((item) => (
+              <div key={item.step} className="relative" data-testid={`step-${item.step}`}>
+                <span className="font-mono text-xs font-semibold text-indigo-500 mb-3 block">{item.step}</span>
+                <h3 className="font-manrope text-base font-semibold text-slate-900 mb-2">{item.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10">
+            <Link to="/how-it-works">
+              <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-white rounded-lg font-medium" data-testid="learn-more-hiw">
+                Learn more about our methodology <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ E. FEATURE SHOWCASE — Live Trending Products ═══ */}
+      <section className="py-20 bg-white" data-testid="product-showcase-section">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+            <div>
+              <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                Products trending right now
               </h2>
-              <p className="mt-4 text-lg text-slate-400 max-w-lg mx-auto">
-                Browse trending products now — no account needed.
+              <p className="mt-2 text-base text-slate-500">
+                Real products scored and updated daily. See the data before you sign up.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/trending-products">
-                  <Button
-                    size="lg"
-                    className="bg-white text-slate-900 hover:bg-slate-100 text-base px-10 h-13 font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl"
-                    data-testid="final-cta-btn"
-                    onClick={() => trackEvent(EVENTS.TRENDING_VIEW, { source: 'final_cta' })}
-                  >
-                    See Trending Products
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button
-                    variant="ghost"
-                    size="lg"
-                    className="text-base px-8 h-13 text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-xl"
-                    data-testid="final-signup-btn"
-                    onClick={() => trackEvent(EVENTS.SIGNUP_CLICK, { source: 'final_cta' })}
-                  >
-                    Create Free Account
+            </div>
+            <Link to="/trending-products">
+              <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg font-medium text-sm" data-testid="view-all-products-btn">
+                View all products <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+
+          {products.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {products.slice(0, 6).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {[1,2,3].map(i => (
+                <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-6 h-52 animate-pulse" />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══ F. UK-SPECIFIC SECTION ═══ */}
+      <section className="py-20 bg-slate-50" data-testid="uk-section">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                Not every viral product works in the UK
+              </h2>
+              <p className="mt-4 text-base text-slate-600 leading-relaxed">
+                A product can have millions of TikTok views and still lose money in the UK market. Different VAT rules, higher shipping costs, local returns expectations, and saturated ad channels mean UK sellers need UK-specific intelligence.
+              </p>
+              <p className="mt-3 text-base text-slate-600 leading-relaxed">
+                TrendScout is built to answer one question: <strong className="text-slate-900">can this product actually sell profitably in the UK?</strong>
+              </p>
+              <div className="mt-8">
+                <Link to="/uk-product-research">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold" data-testid="uk-research-cta">
+                    Learn about UK product research <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: PoundSterling, label: 'VAT & landed cost', desc: 'Factor in 20% VAT and actual import costs' },
+                { icon: Truck, label: 'Shipping practicality', desc: 'UK delivery times and carrier feasibility' },
+                { icon: Target, label: 'Margin potential', desc: 'Realistic profit after all UK-specific costs' },
+                { icon: Layers, label: 'Saturation levels', desc: 'How many UK sellers are already active' },
+                { icon: RefreshCw, label: 'Returns friction', desc: 'Product categories with high UK return rates' },
+                { icon: Globe, label: 'Channel fit', desc: 'Which UK sales channel suits this product' },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="rounded-lg border border-slate-200 bg-white p-4">
+                    <Icon className="h-5 w-5 text-indigo-600 mb-2" />
+                    <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
-      <style>{`
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      {/* ═══ G. USE CASES ═══ */}
+      <section className="py-20 bg-white" data-testid="use-cases-section">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="max-w-2xl mb-12">
+            <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Built for how UK sellers actually work
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: Store, title: 'Shopify sellers', desc: 'Find products to test on your Shopify store. Push products directly from TrendScout to your store as drafts.', link: '/for-shopify' },
+              { icon: ShoppingBag, title: 'Amazon UK sellers', desc: 'Spot products gaining demand on Amazon.co.uk before the category gets crowded. Check saturation and margin potential.', link: '/for-amazon-uk' },
+              { icon: Eye, title: 'TikTok Shop UK sellers', desc: 'Find products going viral on TikTok and check whether the UK audience, margins, and logistics work.', link: '/for-tiktok-shop-uk' },
+              { icon: Package, title: 'UK dropshippers', desc: 'Research products before committing to suppliers. See estimated margins, shipping times, and competition levels.', link: '/uk-product-research' },
+              { icon: Sparkles, title: 'Ecommerce founders', desc: 'Validate product ideas with data instead of guesswork. Reduce risk before investing in inventory or ads.', link: '/how-it-works' },
+              { icon: BarChart3, title: 'Agencies & power users', desc: 'Research products for multiple clients. Use the API for custom integrations and automated product screening.', link: '/pricing' },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.title}
+                  to={item.link}
+                  className="group rounded-xl border border-slate-200 bg-white p-6 hover:border-indigo-200 hover:shadow-md transition-all duration-200"
+                  data-testid={`usecase-${item.title.toLowerCase().replace(/\s/g, '-')}`}
+                >
+                  <Icon className="h-5 w-5 text-slate-400 group-hover:text-indigo-600 transition-colors mb-3" />
+                  <h3 className="font-manrope text-base font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">{item.title}</h3>
+                  <p className="mt-2 text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                  <span className="inline-flex items-center mt-3 text-xs font-medium text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Learn more <ChevronRight className="h-3 w-3 ml-0.5" />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ H. PROOF OF VALUE — Platform Methodology ═══ */}
+      <section className="py-20 bg-slate-50" data-testid="methodology-section">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            <div>
+              <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                Scored on 7 signals. Not vibes.
+              </h2>
+              <p className="mt-4 text-base text-slate-600 leading-relaxed">
+                Every product in TrendScout is evaluated using a multi-signal scoring model. The launch score combines trend momentum, market saturation, margin potential, ad opportunity, and more — giving you a single number to help prioritise what is worth testing.
+              </p>
+              <Link to="/how-it-works" className="inline-flex items-center mt-6 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+                Read the full methodology <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: 'Trend momentum', desc: 'Is demand growing, peaking, or declining?', pct: 82 },
+                { label: 'Market saturation', desc: 'How many sellers are already active in this space?', pct: 45 },
+                { label: 'Margin potential', desc: 'Can you make money after costs, VAT, and shipping?', pct: 68 },
+                { label: 'Ad opportunity', desc: 'Is there space to advertise profitably?', pct: 55 },
+                { label: 'Search growth', desc: 'Are people actively searching for this product?', pct: 72 },
+                { label: 'Social buzz', desc: 'How much organic social engagement does it have?', pct: 90 },
+                { label: 'Supplier availability', desc: 'Are there reliable suppliers with reasonable lead times?', pct: 60 },
+              ].map((signal) => (
+                <div key={signal.label} className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium text-slate-900">{signal.label}</span>
+                    <span className="font-mono text-xs font-semibold text-indigo-600">{signal.pct}%</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-2">{signal.desc}</p>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${signal.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ I. FINAL CTA ═══ */}
+      <section className="py-20 bg-white" data-testid="final-cta-section">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="rounded-2xl bg-slate-900 p-10 sm:p-14 text-center">
+            <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              Validate your next product before you waste money on ads or stock
+            </h2>
+            <p className="mt-4 text-base text-slate-400 max-w-xl mx-auto">
+              Start free. Browse trending products, check scores, and explore UK viability insights — no credit card needed.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link to="/signup">
+                <Button
+                  size="lg"
+                  className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-lg"
+                  data-testid="final-cta-primary"
+                  onClick={() => trackEvent(EVENTS.SIGNUP_CLICK, { source: 'final_cta' })}
+                >
+                  Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/trending-products">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="text-base px-8 h-12 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg"
+                  data-testid="final-cta-secondary"
+                >
+                  See Trending Products
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
     </LandingLayout>
   );
 }
 
 /* ── Product Card ── */
 function ProductCard({ product }) {
-  const scoreColor = product.launch_score >= 75
-    ? 'text-emerald-600 bg-emerald-50'
-    : product.launch_score >= 50
-    ? 'text-amber-600 bg-amber-50'
-    : 'text-slate-600 bg-slate-50';
-
-  const reason = getShortReason(product);
+  const score = product.launch_score || 0;
+  const scoreColor = score >= 65 ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+    : score >= 45 ? 'text-amber-700 bg-amber-50 border-amber-200'
+    : 'text-slate-600 bg-slate-50 border-slate-200';
 
   return (
     <Link
       to={`/trending/${product.slug}`}
-      className="group block bg-white rounded-2xl border border-slate-100 overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-100/60 transition-all duration-400 hover:-translate-y-1"
+      className="group block rounded-xl border border-slate-200 bg-white overflow-hidden hover:border-indigo-200 hover:shadow-md transition-all duration-200"
       data-testid={`product-card-${product.id}`}
     >
-      <div className="relative h-40 bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+      <div className="relative h-40 bg-slate-100 overflow-hidden">
         {product.image_url ? (
-          <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+          <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Package className="h-12 w-12 text-slate-300" />
-          </div>
+          <div className="w-full h-full flex items-center justify-center"><Package className="h-10 w-10 text-slate-300" /></div>
         )}
-        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-1 shadow-sm">
-          <span className="font-mono text-sm font-bold text-indigo-600">{product.launch_score}</span>
-          <span className="text-[10px] text-slate-400 ml-0.5">/100</span>
+        <div className="absolute top-2.5 left-2.5">
+          <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold ${scoreColor}`}>
+            <span className="font-mono">{score}</span><span className="text-[10px] ml-0.5 opacity-60">/100</span>
+          </span>
         </div>
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-slate-900 text-sm line-clamp-1 group-hover:text-indigo-600 transition-colors">
-          {product.product_name}
-        </h3>
-        <p className="mt-1.5 text-xs text-slate-500 leading-relaxed line-clamp-2">
-          {reason}
-        </p>
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-50">
-          <div className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${scoreColor}`}>
-            Score: {product.launch_score}/100
-          </div>
-          <span className="text-xs text-indigo-500 font-medium group-hover:text-indigo-600 flex items-center gap-0.5">
+        <h3 className="text-sm font-semibold text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors">{product.product_name}</h3>
+        <p className="mt-1 text-xs text-slate-500">{product.category || 'Uncategorised'}</p>
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+          {product.margin_percent ? (
+            <span className="text-xs text-slate-500">
+              Est. margin: <span className="font-mono font-semibold text-slate-700">{Math.round(product.margin_percent)}%</span>
+            </span>
+          ) : (
+            <span className="text-xs text-slate-400">View details</span>
+          )}
+          <span className="text-xs font-medium text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
             View <ChevronRight className="h-3 w-3" />
           </span>
         </div>

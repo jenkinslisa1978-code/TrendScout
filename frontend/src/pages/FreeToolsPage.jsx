@@ -1,399 +1,268 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Calculator, TrendingUp, ArrowRight, DollarSign, Package,
-  BarChart3, Sparkles, Percent, Search, Video, Eye, Radio, Store,
-} from 'lucide-react';
+import { ArrowRight, Calculator, PoundSterling, BarChart3, TrendingUp, Receipt, CheckCircle } from 'lucide-react';
 
-export default function FreeToolsPage() {
-  return (
-    <LandingLayout>
-      <div className="mx-auto max-w-7xl px-6 py-16" data-testid="free-tools-page">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 mb-5 text-xs px-3 py-1 rounded-full">Free Tools</Badge>
-          <h1 className="font-manrope text-3xl font-bold text-slate-900 sm:text-4xl">
-            Free Dropshipping Tools
-          </h1>
-          <p className="mt-4 text-lg text-slate-500">
-            Use our free tools to validate product ideas and estimate profits before you invest.
-          </p>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {/* Shopify Analyzer Link Card */}
-          <Link to="/tools/shopify-analyzer" className="lg:col-span-2" data-testid="shopify-analyzer-link">
-            <Card className="border-0 shadow-xl overflow-hidden hover:shadow-2xl transition-shadow group">
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                    <Store className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Shopify Store Analyzer</h3>
-                    <p className="text-emerald-100 text-sm mt-0.5">Paste any Shopify URL to see their products, pricing, and categories instantly</p>
-                  </div>
-                </div>
-                <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
-              </div>
-            </Card>
-          </Link>
-          <ProfitCalculator />
-          <SaturationChecker />
-          <TikTokProductAnalyzer />
-          <ProductTrendChecker />
-        </div>
-
-        {/* CTA */}
-        <div className="mt-16 text-center">
-          <p className="text-slate-500 mb-4">Want full product intelligence powered by AI?</p>
-          <Link to="/signup">
-            <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 px-8 rounded-xl shadow-md" data-testid="tools-cta-btn">
-              <Sparkles className="mr-2 h-4 w-4" />
-              Start Free with TrendScout
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </LandingLayout>
-  );
-}
-
-function ProfitCalculator() {
+function ProfitMarginCalculator() {
   const [cost, setCost] = useState('');
-  const [price, setPrice] = useState('');
+  const [selling, setSelling] = useState('');
   const [shipping, setShipping] = useState('');
-  const [adCost, setAdCost] = useState('');
+  const vatRate = 0.2;
 
   const costNum = parseFloat(cost) || 0;
-  const priceNum = parseFloat(price) || 0;
-  const shipNum = parseFloat(shipping) || 0;
-  const adNum = parseFloat(adCost) || 0;
-
-  const profit = priceNum - costNum - shipNum - adNum;
-  const margin = priceNum > 0 ? ((profit / priceNum) * 100) : 0;
-  const roiPerUnit = costNum > 0 ? ((profit / costNum) * 100) : 0;
+  const sellingNum = parseFloat(selling) || 0;
+  const shippingNum = parseFloat(shipping) || 0;
+  const vatAmount = sellingNum * vatRate;
+  const totalCost = costNum + shippingNum;
+  const grossProfit = sellingNum - totalCost;
+  const netProfit = grossProfit - vatAmount;
+  const marginPct = sellingNum > 0 ? ((netProfit / sellingNum) * 100) : 0;
 
   return (
-    <Card className="border-0 shadow-xl" data-testid="profit-calculator">
-      <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-t-xl">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Calculator className="h-5 w-5" />
-          Dropshipping Profit Calculator
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-xs text-slate-500">Supplier Cost (£)</Label>
-            <Input type="number" placeholder="5.00" value={cost} onChange={(e) => setCost(e.target.value)} data-testid="calc-cost" />
+    <div className="rounded-xl border border-slate-200 bg-white p-6" data-testid="profit-margin-calculator">
+      <h3 className="font-manrope text-lg font-semibold text-slate-900 mb-1">UK Profit Margin Calculator</h3>
+      <p className="text-sm text-slate-500 mb-5">Calculate your profit margin after VAT, shipping, and product costs.</p>
+      <div className="grid sm:grid-cols-3 gap-4 mb-6">
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Product cost (&pound;)</label>
+          <input type="number" value={cost} onChange={e => setCost(e.target.value)} placeholder="8.50" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="calc-cost-input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Selling price (&pound;)</label>
+          <input type="number" value={selling} onChange={e => setSelling(e.target.value)} placeholder="24.99" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="calc-selling-input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Shipping cost (&pound;)</label>
+          <input type="number" value={shipping} onChange={e => setShipping(e.target.value)} placeholder="3.50" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="calc-shipping-input" />
+        </div>
+      </div>
+      {sellingNum > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100">
+          <div className="text-center">
+            <p className="text-xs text-slate-500">VAT (20%)</p>
+            <p className="font-mono text-base font-bold text-slate-900">&pound;{vatAmount.toFixed(2)}</p>
           </div>
-          <div>
-            <Label className="text-xs text-slate-500">Selling Price (£)</Label>
-            <Input type="number" placeholder="24.99" value={price} onChange={(e) => setPrice(e.target.value)} data-testid="calc-price" />
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Total cost</p>
+            <p className="font-mono text-base font-bold text-slate-900">&pound;{totalCost.toFixed(2)}</p>
           </div>
-          <div>
-            <Label className="text-xs text-slate-500">Shipping Cost (£)</Label>
-            <Input type="number" placeholder="2.00" value={shipping} onChange={(e) => setShipping(e.target.value)} data-testid="calc-shipping" />
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Net profit</p>
+            <p className={`font-mono text-base font-bold ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>&pound;{netProfit.toFixed(2)}</p>
           </div>
-          <div>
-            <Label className="text-xs text-slate-500">Ad Cost per Sale (£)</Label>
-            <Input type="number" placeholder="5.00" value={adCost} onChange={(e) => setAdCost(e.target.value)} data-testid="calc-ad" />
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Margin</p>
+            <p className={`font-mono text-base font-bold ${marginPct >= 20 ? 'text-emerald-600' : marginPct >= 0 ? 'text-amber-600' : 'text-red-600'}`}>{marginPct.toFixed(1)}%</p>
           </div>
         </div>
-
-        {priceNum > 0 && (
-          <div className="bg-slate-50 rounded-xl p-5 space-y-3 mt-4" data-testid="calc-results">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600 flex items-center gap-1"><DollarSign className="h-4 w-4 text-slate-400" /> Profit per Unit</span>
-              <span className={`font-bold text-lg font-mono ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                £{profit.toFixed(2)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600 flex items-center gap-1"><Percent className="h-4 w-4 text-slate-400" /> Profit Margin</span>
-              <span className={`font-bold font-mono ${margin >= 30 ? 'text-emerald-600' : margin >= 15 ? 'text-amber-600' : 'text-red-600'}`}>
-                {margin.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600 flex items-center gap-1"><BarChart3 className="h-4 w-4 text-slate-400" /> ROI per Unit</span>
-              <span className="font-bold font-mono text-indigo-600">{roiPerUnit.toFixed(0)}%</span>
-            </div>
-            <div className={`text-xs p-2 rounded-lg mt-2 ${margin >= 30 ? 'bg-emerald-50 text-emerald-700' : margin >= 15 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'}`}>
-              {margin >= 30 ? 'Great margins! This product has strong profit potential.' :
-               margin >= 15 ? 'Decent margins. Consider reducing ad costs to improve profitability.' :
-               'Low margins. Look for cheaper suppliers or increase your selling price.'}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 
-function SaturationChecker() {
-  const [keyword, setKeyword] = useState('');
-  const [result, setResult] = useState(null);
+function RoasCalculator() {
+  const [revenue, setRevenue] = useState('');
+  const [adSpend, setAdSpend] = useState('');
 
-  const handleCheck = () => {
-    if (!keyword.trim()) return;
-    // Simulate saturation analysis based on keyword characteristics
-    const len = keyword.trim().length;
-    const words = keyword.trim().split(' ').length;
-    const isNiche = words >= 3;
-    const saturation = isNiche ? Math.floor(Math.random() * 30 + 10) : Math.floor(Math.random() * 40 + 40);
-    const competition = saturation > 60 ? 'High' : saturation > 35 ? 'Moderate' : 'Low';
-    const recommendation = saturation > 60
-      ? 'This market is highly competitive. Consider finding a more specific niche.'
-      : saturation > 35
-      ? 'Moderate competition. Differentiation through branding and ads is key.'
-      : 'Low saturation — great opportunity for early movers!';
-
-    setResult({ keyword: keyword.trim(), saturation, competition, recommendation });
-  };
+  const revNum = parseFloat(revenue) || 0;
+  const adNum = parseFloat(adSpend) || 0;
+  const roas = adNum > 0 ? (revNum / adNum) : 0;
+  const breakEvenRoas = 1;
 
   return (
-    <Card className="border-0 shadow-xl" data-testid="saturation-checker">
-      <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-t-xl">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <TrendingUp className="h-5 w-5" />
-          Product Saturation Checker
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-6" data-testid="roas-calculator">
+      <h3 className="font-manrope text-lg font-semibold text-slate-900 mb-1">Break-even ROAS Calculator</h3>
+      <p className="text-sm text-slate-500 mb-5">Calculate your return on ad spend and check if your campaigns are profitable.</p>
+      <div className="grid sm:grid-cols-2 gap-4 mb-6">
         <div>
-          <Label className="text-xs text-slate-500">Product Keyword</Label>
-          <div className="flex gap-2 mt-1">
-            <Input
-              placeholder="e.g. sunset lamp, pet grooming"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-              data-testid="saturation-input"
-            />
-            <Button onClick={handleCheck} className="bg-indigo-600 hover:bg-indigo-700" data-testid="saturation-check-btn">
-              Check
-            </Button>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Revenue from ads (&pound;)</label>
+          <input type="number" value={revenue} onChange={e => setRevenue(e.target.value)} placeholder="500" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="roas-revenue-input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Ad spend (&pound;)</label>
+          <input type="number" value={adSpend} onChange={e => setAdSpend(e.target.value)} placeholder="150" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="roas-spend-input" />
+        </div>
+      </div>
+      {adNum > 0 && (
+        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Your ROAS</p>
+            <p className={`font-mono text-xl font-bold ${roas >= 2 ? 'text-emerald-600' : roas >= 1 ? 'text-amber-600' : 'text-red-600'}`}>{roas.toFixed(2)}x</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Status</p>
+            <p className={`text-sm font-semibold ${roas >= 2 ? 'text-emerald-600' : roas >= 1 ? 'text-amber-600' : 'text-red-600'}`}>
+              {roas >= 2 ? 'Profitable' : roas >= 1 ? 'Break-even' : 'Losing money'}
+            </p>
           </div>
         </div>
-
-        {result && (
-          <div className="bg-slate-50 rounded-xl p-5 space-y-3" data-testid="saturation-results">
-            <p className="text-sm font-medium text-slate-800">Results for "{result.keyword}"</p>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Estimated Saturation</span>
-              <span className={`font-bold font-mono ${result.saturation > 60 ? 'text-red-600' : result.saturation > 35 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {result.saturation}%
-              </span>
-            </div>
-            <div className="w-full bg-slate-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all ${result.saturation > 60 ? 'bg-red-500' : result.saturation > 35 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                style={{ width: `${result.saturation}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Competition Level</span>
-              <Badge className={`text-xs ${result.competition === 'High' ? 'bg-red-100 text-red-700' : result.competition === 'Moderate' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                {result.competition}
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-600 bg-white rounded-lg p-3 border">{result.recommendation}</p>
-            <p className="text-xs text-slate-400">Want detailed insights? <Link to="/signup" className="text-indigo-600 hover:underline">Sign up for free</Link></p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 
-function TikTokProductAnalyzer() {
-  const [url, setUrl] = useState('');
-  const [result, setResult] = useState(null);
+function VatCalculator() {
+  const [amount, setAmount] = useState('');
+  const [direction, setDirection] = useState('add');
 
-  const handleAnalyze = () => {
-    if (!url.trim()) return;
-    const isTikTok = url.includes('tiktok.com') || url.includes('tiktok');
-    const seed = url.length;
-    const views = isTikTok ? (seed * 31337) % 5000000 + 50000 : (seed * 7919) % 1000000 + 10000;
-    const engRate = isTikTok ? ((seed % 12) + 3) : ((seed % 8) + 1);
-    const virality = engRate > 8 ? 'High' : engRate > 4 ? 'Medium' : 'Low';
-    const productPotential = views > 1000000 && engRate > 5 ? 'Strong' : views > 500000 ? 'Moderate' : 'Low';
-
-    setResult({
-      views: views.toLocaleString(),
-      engagement_rate: engRate.toFixed(1),
-      virality,
-      product_potential: productPotential,
-      hashtag_growth: isTikTok ? '+' + ((seed * 41) % 200 + 20) + '% this week' : 'N/A',
-      ad_likelihood: engRate > 6 ? 'Likely being advertised' : 'Organic content',
-    });
-  };
+  const num = parseFloat(amount) || 0;
+  const vatAmount = direction === 'add' ? num * 0.2 : num - (num / 1.2);
+  const total = direction === 'add' ? num * 1.2 : num;
+  const exVat = direction === 'add' ? num : num / 1.2;
 
   return (
-    <Card className="border-0 shadow-xl" data-testid="tiktok-analyzer">
-      <CardHeader className="bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-t-xl">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Video className="h-5 w-5" />
-          TikTok Product Analyzer
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-6" data-testid="vat-calculator">
+      <h3 className="font-manrope text-lg font-semibold text-slate-900 mb-1">UK VAT Calculator</h3>
+      <p className="text-sm text-slate-500 mb-5">Add or remove 20% UK VAT from any amount.</p>
+      <div className="grid sm:grid-cols-2 gap-4 mb-6">
         <div>
-          <Label className="text-xs text-slate-500">TikTok Video or Product URL</Label>
-          <div className="flex gap-2 mt-1">
-            <Input
-              placeholder="e.g. https://tiktok.com/@user/video/..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
-              data-testid="tiktok-url-input"
-            />
-            <Button onClick={handleAnalyze} className="bg-rose-600 hover:bg-rose-700" data-testid="tiktok-analyze-btn">
-              Analyze
-            </Button>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Amount (&pound;)</label>
+          <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="100" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="vat-amount-input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Direction</label>
+          <select value={direction} onChange={e => setDirection(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="vat-direction-select">
+            <option value="add">Add VAT (ex-VAT price)</option>
+            <option value="remove">Remove VAT (inc-VAT price)</option>
+          </select>
+        </div>
+      </div>
+      {num > 0 && (
+        <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-100">
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Ex-VAT</p>
+            <p className="font-mono text-base font-bold text-slate-900">&pound;{exVat.toFixed(2)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-slate-500">VAT (20%)</p>
+            <p className="font-mono text-base font-bold text-amber-600">&pound;{vatAmount.toFixed(2)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Inc-VAT</p>
+            <p className="font-mono text-base font-bold text-emerald-600">&pound;{total.toFixed(2)}</p>
           </div>
         </div>
-
-        {result && (
-          <div className="bg-slate-50 rounded-xl p-5 space-y-3" data-testid="tiktok-results">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white rounded-lg p-3 border border-slate-100 text-center">
-                <Eye className="h-4 w-4 text-rose-500 mx-auto mb-1" />
-                <p className="text-lg font-bold font-mono text-slate-800">{result.views}</p>
-                <p className="text-[10px] text-slate-500">Est. Views</p>
-              </div>
-              <div className="bg-white rounded-lg p-3 border border-slate-100 text-center">
-                <TrendingUp className="h-4 w-4 text-rose-500 mx-auto mb-1" />
-                <p className="text-lg font-bold font-mono text-slate-800">{result.engagement_rate}%</p>
-                <p className="text-[10px] text-slate-500">Engagement</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Virality Signal</span>
-              <Badge className={`text-xs ${result.virality === 'High' ? 'bg-emerald-100 text-emerald-700' : result.virality === 'Medium' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                {result.virality}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Product Potential</span>
-              <Badge className={`text-xs ${result.product_potential === 'Strong' ? 'bg-emerald-100 text-emerald-700' : result.product_potential === 'Moderate' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                {result.product_potential}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Hashtag Growth</span>
-              <span className="text-xs font-medium text-rose-600">{result.hashtag_growth}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Ad Detection</span>
-              <span className="text-xs font-medium text-slate-700">{result.ad_likelihood}</span>
-            </div>
-            <p className="text-xs text-slate-400">Full analysis with TrendScout Pro. <Link to="/signup" className="text-indigo-600 hover:underline">Sign up free</Link></p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 
-function ProductTrendChecker() {
-  const [product, setProduct] = useState('');
-  const [result, setResult] = useState(null);
+function PricingCalculator() {
+  const [cost, setCost] = useState('');
+  const [targetMargin, setTargetMargin] = useState('');
+  const [platformFee, setPlatformFee] = useState('5');
 
-  const handleCheck = () => {
-    if (!product.trim()) return;
-    const seed = product.length + product.charCodeAt(0);
-    const trendScore = ((seed * 73) % 60) + 20;
-    const searchGrowth = ((seed * 37) % 150) - 30;
-    const stage = trendScore > 70 ? 'Exploding' : trendScore > 55 ? 'Emerging' : trendScore > 40 ? 'Rising' : 'Stable';
-    const demand = searchGrowth > 80 ? 'Surging' : searchGrowth > 30 ? 'Growing' : searchGrowth > 0 ? 'Steady' : 'Declining';
+  const costNum = parseFloat(cost) || 0;
+  const marginNum = parseFloat(targetMargin) || 0;
+  const feeNum = parseFloat(platformFee) || 0;
 
-    setResult({
-      product: product.trim(),
-      trend_score: trendScore,
-      search_growth: searchGrowth,
-      stage,
-      demand,
-      best_time: trendScore > 55 ? 'Now — early mover advantage' : 'Monitor for 2-4 weeks',
-      risk: trendScore > 70 ? 'Low — high momentum' : trendScore > 40 ? 'Medium — watch closely' : 'Higher — trend may stall',
-    });
-  };
+  const sellingPrice = marginNum > 0 && marginNum < 100
+    ? costNum / (1 - (marginNum / 100) - (feeNum / 100))
+    : 0;
+  const profit = sellingPrice - costNum - (sellingPrice * feeNum / 100);
 
   return (
-    <Card className="border-0 shadow-xl" data-testid="trend-checker">
-      <CardHeader className="bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-t-xl">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Search className="h-5 w-5" />
-          Product Trend Checker
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-6" data-testid="pricing-calculator">
+      <h3 className="font-manrope text-lg font-semibold text-slate-900 mb-1">Product Pricing Calculator</h3>
+      <p className="text-sm text-slate-500 mb-5">Work out the right selling price to hit your target margin.</p>
+      <div className="grid sm:grid-cols-3 gap-4 mb-6">
         <div>
-          <Label className="text-xs text-slate-500">Product Name or Keyword</Label>
-          <div className="flex gap-2 mt-1">
-            <Input
-              placeholder="e.g. portable blender, LED strip lights"
-              value={product}
-              onChange={(e) => setProduct(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-              data-testid="trend-product-input"
-            />
-            <Button onClick={handleCheck} className="bg-sky-600 hover:bg-sky-700" data-testid="trend-check-btn">
-              Check
-            </Button>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Total product cost (&pound;)</label>
+          <input type="number" value={cost} onChange={e => setCost(e.target.value)} placeholder="12" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="price-cost-input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Target margin (%)</label>
+          <input type="number" value={targetMargin} onChange={e => setTargetMargin(e.target.value)} placeholder="40" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="price-margin-input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Platform fee (%)</label>
+          <input type="number" value={platformFee} onChange={e => setPlatformFee(e.target.value)} placeholder="5" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" data-testid="price-fee-input" />
+        </div>
+      </div>
+      {sellingPrice > 0 && (
+        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Recommended price</p>
+            <p className="font-mono text-xl font-bold text-indigo-600">&pound;{sellingPrice.toFixed(2)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-slate-500">Profit per unit</p>
+            <p className="font-mono text-xl font-bold text-emerald-600">&pound;{profit.toFixed(2)}</p>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
 
-        {result && (
-          <div className="bg-slate-50 rounded-xl p-5 space-y-3" data-testid="trend-results">
-            <p className="text-sm font-medium text-slate-800">Trend analysis for "{result.product}"</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white rounded-lg p-3 border border-slate-100 text-center">
-                <Radio className="h-4 w-4 text-sky-500 mx-auto mb-1" />
-                <p className="text-lg font-bold font-mono text-slate-800">{result.trend_score}</p>
-                <p className="text-[10px] text-slate-500">Trend Score</p>
-              </div>
-              <div className="bg-white rounded-lg p-3 border border-slate-100 text-center">
-                <BarChart3 className="h-4 w-4 text-sky-500 mx-auto mb-1" />
-                <p className={`text-lg font-bold font-mono ${result.search_growth >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {result.search_growth > 0 ? '+' : ''}{result.search_growth}%
-                </p>
-                <p className="text-[10px] text-slate-500">Search Growth</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Trend Stage</span>
-              <Badge className={`text-xs ${
-                result.stage === 'Exploding' ? 'bg-red-100 text-red-700' :
-                result.stage === 'Emerging' ? 'bg-orange-100 text-orange-700' :
-                result.stage === 'Rising' ? 'bg-amber-100 text-amber-700' :
-                'bg-sky-100 text-sky-700'
-              }`}>{result.stage}</Badge>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Market Demand</span>
-              <span className="text-xs font-medium text-slate-700">{result.demand}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Best Time to Enter</span>
-              <span className="text-xs font-medium text-sky-600">{result.best_time}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Risk Level</span>
-              <span className="text-xs font-medium text-slate-700">{result.risk}</span>
-            </div>
-            <p className="text-xs text-slate-400">Get AI-powered scores with real data. <Link to="/signup" className="text-indigo-600 hover:underline">Try TrendScout free</Link></p>
+const TOOLS = [
+  { id: 'profit', name: 'Profit Margin', icon: PoundSterling, component: ProfitMarginCalculator },
+  { id: 'roas', name: 'Break-even ROAS', icon: BarChart3, component: RoasCalculator },
+  { id: 'vat', name: 'UK VAT', icon: Receipt, component: VatCalculator },
+  { id: 'pricing', name: 'Product Pricing', icon: Calculator, component: PricingCalculator },
+];
+
+export default function FreeToolsPage() {
+  const [activeTool, setActiveTool] = useState('profit');
+  const ActiveComponent = TOOLS.find(t => t.id === activeTool)?.component;
+
+  return (
+    <LandingLayout>
+      <div className="bg-white" data-testid="free-tools-page">
+        <section className="pt-16 pb-8 px-6">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="font-manrope text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              Free ecommerce calculators
+            </h1>
+            <p className="mt-4 text-lg text-slate-600 leading-relaxed max-w-2xl">
+              Quick calculations for UK ecommerce sellers. Estimate margins, check ROAS, calculate VAT, and work out the right selling price.
+            </p>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </section>
+
+        <section className="pb-20 px-6">
+          <div className="max-w-4xl mx-auto">
+            {/* Tool selector */}
+            <div className="flex flex-wrap gap-2 mb-8">
+              {TOOLS.map((tool) => {
+                const Icon = tool.icon;
+                return (
+                  <button
+                    key={tool.id}
+                    onClick={() => setActiveTool(tool.id)}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeTool === tool.id
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                    data-testid={`tool-tab-${tool.id}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tool.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active tool */}
+            {ActiveComponent && <ActiveComponent />}
+
+            {/* CTA */}
+            <div className="mt-12 rounded-lg bg-slate-50 border border-slate-200 p-6 text-center">
+              <h3 className="font-manrope text-lg font-semibold text-slate-900">Want deeper product analysis?</h3>
+              <p className="mt-2 text-sm text-slate-500">TrendScout gives you margin estimates, saturation data, and launch scores for trending products — not just calculator inputs.</p>
+              <div className="mt-4">
+                <Link to="/signup">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold" data-testid="tools-cta">
+                    Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </LandingLayout>
   );
 }
