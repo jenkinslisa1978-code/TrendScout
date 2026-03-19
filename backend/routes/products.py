@@ -1232,4 +1232,122 @@ def _get_audience_suggestions(category: str, name: str):
     return base
 
 
+
+@api_router.get("/products/data-freshness/summary")
+async def get_data_freshness_summary():
+    """
+    Get a summary of data freshness across all products.
+    Shows when data was last refreshed and from which sources.
+    """
+    pipeline = [
+        {"$group": {
+            "_id": "$data_source",
+            "count": {"$sum": 1},
+            "latest_update": {"$max": "$last_updated"},
+            "avg_launch_score": {"$avg": "$launch_score"},
+        }},
+        {"$sort": {"count": -1}},
+    ]
+    sources = await db.products.aggregate(pipeline).to_list(20)
+
+    # Get the most recent score update
+    latest_scored = await db.products.find_one(
+        {"scores_updated_at": {"$exists": True}},
+        {"_id": 0, "scores_updated_at": 1}
+    )
+    
+    total = await db.products.count_documents({})
+
+    return {
+        "total_products": total,
+        "sources": [
+            {
+                "source": s["_id"] or "unknown",
+                "count": s["count"],
+                "latest_update": s["latest_update"],
+                "avg_score": round(s["avg_launch_score"] or 0, 1),
+            }
+            for s in sources
+        ],
+        "last_score_refresh": latest_scored.get("scores_updated_at") if latest_scored else None,
+        "refresh_schedule": {
+            "scores": "Every 4 hours",
+            "trending_data": "Every 4 hours",
+            "competitor_data": "Every 6 hours",
+            "supplier_data": "Every 6 hours",
+            "alerts": "Every hour",
+        },
+    }
+
+
+
+
+@api_router.get("/products/{product_id}/similar")
+async def get_similar_products(product_id: str, limit: int = 6):
+    """
+    Get similar products based on category and price range.
+    Returns products in the same category with similar pricing, sorted by launch_score.
+    """
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    category = product.get("category", "")
+    retail_price = product.get("estimated_retail_price", 0)
+
+    # Build query: same category, exclude self
+    query = {"id": {"$ne": product_id}}
+    if category:
+        query["category"] = category
+
+    # Find similar products sorted by launch_score
+    similar = await db.products.find(
+        query, {"_id": 0}
+    ).sort("launch_score", -1).limit(limit * 2).to_list(limit * 2)
+
+    # If not enough in same category, broaden to similar price range
+    if len(similar) < limit and retail_price > 0:
+        existing_ids = {p["id"] for p in similar}
+        existing_ids.add(product_id)
+        price_low = retail_price * 0.5
+        price_high = retail_price * 2.0
+        extra = await db.products.find(
+            {
+                "id": {"$nin": list(existing_ids)},
+                "estimated_retail_price": {"$gte": price_low, "$lte": price_high},
+            },
+            {"_id": 0}
+        ).sort("launch_score", -1).limit(limit - len(similar)).to_list(limit - len(similar))
+        similar.extend(extra)
+
+    # Format response
+    results = []
+    for p in similar[:limit]:
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 1)
+        margin_pct = int((margin / retail) * 100) if retail > 0 else 0
+        results.append({
+            "id": p.get("id"),
+            "slug": slugify(p.get("product_name", "")),
+            "product_name": p.get("product_name", "Unknown"),
+            "category": p.get("category", ""),
+            "image_url": p.get("image_url", ""),
+            "launch_score": p.get("launch_score", 0),
+            "launch_score_label": p.get("launch_score_label", ""),
+            "estimated_retail_price": round(retail, 2),
+            "supplier_cost": round(p.get("supplier_cost", 0), 2),
+            "margin_percent": margin_pct,
+            "trend_stage": p.get("trend_stage", p.get("early_trend_label", "")),
+            "data_source": p.get("data_source", "unknown"),
+            "last_updated": p.get("last_updated") or p.get("updated_at") or p.get("created_at", ""),
+        })
+
+    return {
+        "product_id": product_id,
+        "similar_products": results,
+        "total": len(results),
+    }
+
+
+
 routers = [api_router]

@@ -156,6 +156,8 @@ class ScoringEngine:
             'success_probability': success_probability,
             
             'scores_updated_at': datetime.now(timezone.utc).isoformat(),
+            'last_updated': datetime.now(timezone.utc).isoformat(),
+            'updated_at': datetime.now(timezone.utc).isoformat(),
             'scoring_metadata': self._build_scoring_metadata(product),
         }
     

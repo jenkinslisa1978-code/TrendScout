@@ -364,9 +364,26 @@ function ProductCard({ product }) {
 
         {/* Bottom row */}
         <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-50">
-          <span className="text-[11px] text-slate-400 flex items-center gap-1">
-            <TrendingUp className="h-3 w-3" />
-            {product.growth_rate || 0}% growth
+          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+            {product.last_updated ? (
+              <>
+                <Clock className="h-3 w-3" />
+                {(() => {
+                  const diff = Date.now() - new Date(product.last_updated).getTime();
+                  const hours = Math.floor(diff / 3600000);
+                  if (hours < 1) return 'Just now';
+                  if (hours < 24) return `${hours}h ago`;
+                  const days = Math.floor(hours / 24);
+                  if (days < 7) return `${days}d ago`;
+                  return `${Math.floor(days / 7)}w ago`;
+                })()}
+              </>
+            ) : (
+              <>
+                <TrendingUp className="h-3 w-3" />
+                {product.growth_rate || 0}% growth
+              </>
+            )}
           </span>
           <span className="text-[11px] text-indigo-500 font-medium group-hover:text-indigo-600 flex items-center gap-0.5">
             Details <ChevronRight className="h-3 w-3" />

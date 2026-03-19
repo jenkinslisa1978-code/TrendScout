@@ -520,8 +520,25 @@ export default function DiscoverPage() {
                           {formatNumber(product.tiktok_views)} TikTok views
                           {product.stores_created > 0 && (
                             <>
-                              <span className="text-slate-300">•</span>
+                              <span className="text-slate-300">|</span>
                               <span className="text-emerald-600">{product.stores_created} stores built</span>
+                            </>
+                          )}
+                          {product.last_updated && (
+                            <>
+                              <span className="text-slate-300">|</span>
+                              <span className="text-slate-400 text-xs flex items-center gap-0.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                                {(() => {
+                                  const diff = Date.now() - new Date(product.last_updated).getTime();
+                                  const hours = Math.floor(diff / 3600000);
+                                  if (hours < 1) return 'Just now';
+                                  if (hours < 24) return `${hours}h ago`;
+                                  const days = Math.floor(hours / 24);
+                                  if (days < 7) return `${days}d ago`;
+                                  return `${Math.floor(days / 7)}w ago`;
+                                })()}
+                              </span>
                             </>
                           )}
                         </div>

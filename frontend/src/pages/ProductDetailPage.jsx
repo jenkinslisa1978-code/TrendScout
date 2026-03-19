@@ -64,6 +64,8 @@ import ScoringMethodology from '@/components/ScoringMethodology';
 import ProfitabilityCalculator from '@/components/ProfitabilityCalculator';
 import WinningProductIndicator from '@/components/WinningProductIndicator';
 import ProductLaunchPlaybook from '@/components/ProductLaunchPlaybook';
+import SimilarProducts from '@/components/SimilarProducts';
+import { DataFreshnessBadge, DataFreshnessCard } from '@/components/DataFreshness';
 import { 
   formatCurrency, 
   formatNumber, 
@@ -370,6 +372,13 @@ export default function ProductDetailPage() {
                 {product.enrichment_last_run && (
                   <FreshnessIndicator timestamp={product.enrichment_last_run} />
                 )}
+              </div>
+              {/* Data Freshness */}
+              <div className="mt-2">
+                <DataFreshnessBadge 
+                  lastUpdated={product.last_updated || product.updated_at || product.scores_updated_at}
+                  dataSource={product.data_source}
+                />
               </div>
             </div>
           </div>
@@ -904,6 +913,12 @@ export default function ProductDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Similar Products */}
+        <SimilarProducts productId={id} productName={product.product_name} />
+
+        {/* Data Freshness Card */}
+        <DataFreshnessCard product={product} />
 
         {/* Data Quality Card */}
         {dataIntegrity && (

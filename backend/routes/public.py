@@ -337,6 +337,8 @@ async def get_trending_products(limit: int = 20):
             "detected_at": p.get("radar_detected_at", p.get("created_at", "")),
             "radar_detected": p.get("radar_detected", False),
             "gallery_images": p.get("gallery_images", []),
+            "data_source": p.get("data_source", "unknown"),
+            "last_updated": p.get("last_updated") or p.get("updated_at") or p.get("created_at", ""),
         })
 
     from datetime import timedelta
