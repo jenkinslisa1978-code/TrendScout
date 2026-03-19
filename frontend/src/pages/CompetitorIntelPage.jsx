@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useSubscription } from '@/hooks/useSubscription';
+import { LockedContent } from '@/components/common/UpgradePrompts';
 
 export default function CompetitorIntelPage() {
   const [url, setUrl] = useState('');
@@ -24,6 +26,9 @@ export default function CompetitorIntelPage() {
   const [compareUrl, setCompareUrl] = useState('');
   const [compareLoading, setCompareLoading] = useState(false);
   const [comparison, setComparison] = useState(null);
+  const [analysisCount, setAnalysisCount] = useState(0);
+  const { isFree } = useSubscription();
+  const FREE_ANALYSIS_LIMIT = 1;
 
   useEffect(() => {
     (async () => {
@@ -37,12 +42,17 @@ export default function CompetitorIntelPage() {
   const analyzeStore = async (e) => {
     e.preventDefault();
     if (!url.trim()) return;
+    if (isFree && analysisCount >= FREE_ANALYSIS_LIMIT) {
+      toast.error('Free plan limit reached. Upgrade to run more analyses.');
+      return;
+    }
     setLoading(true);
     setAnalysis(null);
     try {
       const res = await api.post('/api/competitor-intel/analyze', { url: url.trim() });
       if (res.ok && res.data.success) {
         setAnalysis(res.data);
+        setAnalysisCount(prev => prev + 1);
         // Refresh history
         const h = await api.get('/api/competitor-intel/history');
         if (h.ok) setHistory(h.data.analyses || []);
@@ -155,11 +165,25 @@ export default function CompetitorIntelPage() {
 
         {/* Comparison Result */}
         {comparison && (
-          <ComparisonTable data={comparison} onClose={() => setComparison(null)} />
+          isFree ? (
+            <LockedContent feature="Store Comparison" requiredPlan="Pro" blurIntensity="heavy">
+              <ComparisonTable data={comparison} onClose={() => setComparison(null)} />
+            </LockedContent>
+          ) : (
+            <ComparisonTable data={comparison} onClose={() => setComparison(null)} />
+          )
         )}
 
         {/* Analysis Result */}
-        {analysis && <StoreAnalysis data={analysis} />}
+        {analysis && (
+          isFree && analysisCount > FREE_ANALYSIS_LIMIT ? (
+            <LockedContent feature="Competitor Intelligence" requiredPlan="Starter" blurIntensity="heavy">
+              <StoreAnalysis data={analysis} />
+            </LockedContent>
+          ) : (
+            <StoreAnalysis data={analysis} />
+          )
+        )}
 
         {/* Loading State */}
         {loading && !analysis && (

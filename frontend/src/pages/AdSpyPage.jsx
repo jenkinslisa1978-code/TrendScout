@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useSubscription } from '@/hooks/useSubscription';
+import { LockedContent } from '@/components/common/UpgradePrompts';
 
 const PLATFORMS = [
   { id: 'all', label: 'All Platforms' },
@@ -37,6 +39,8 @@ export default function AdSpyPage() {
   const [searched, setSearched] = useState(false);
   const [savedIds, setSavedIds] = useState(new Set());
   const [selectedAd, setSelectedAd] = useState(null);
+  const { isFree, isStarter } = useSubscription();
+  const FREE_AD_LIMIT = 2;
 
   const fetchAds = useCallback(async () => {
     setLoading(true);
@@ -184,17 +188,34 @@ export default function AdSpyPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="ad-grid">
-            {ads.map((ad, idx) => (
-              <AdCard
-                key={ad.id || idx}
-                ad={ad}
-                isSaved={savedIds.has(ad.id)}
-                onSave={() => toggleSave(ad)}
-                onDetail={() => setSelectedAd(ad)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="ad-grid">
+              {ads.slice(0, isFree ? FREE_AD_LIMIT : ads.length).map((ad, idx) => (
+                <AdCard
+                  key={ad.id || idx}
+                  ad={ad}
+                  isSaved={savedIds.has(ad.id)}
+                  onSave={() => toggleSave(ad)}
+                  onDetail={() => setSelectedAd(ad)}
+                />
+              ))}
+            </div>
+            {isFree && ads.length > FREE_AD_LIMIT && (
+              <LockedContent feature="Full Ad Intelligence" requiredPlan="Starter" blurIntensity="heavy">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {ads.slice(FREE_AD_LIMIT, FREE_AD_LIMIT + 6).map((ad, idx) => (
+                    <AdCard
+                      key={ad.id || idx}
+                      ad={ad}
+                      isSaved={false}
+                      onSave={() => {}}
+                      onDetail={() => {}}
+                    />
+                  ))}
+                </div>
+              </LockedContent>
+            )}
+          </>
         )}
       </div>
 

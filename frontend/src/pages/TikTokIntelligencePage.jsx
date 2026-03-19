@@ -9,6 +9,8 @@ import {
   Sparkles, Target,
 } from 'lucide-react';
 import api from '@/lib/api';
+import { useSubscription } from '@/hooks/useSubscription';
+import { LockedContent } from '@/components/common/UpgradePrompts';
 
 function formatViews(n) {
   if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
@@ -20,6 +22,8 @@ function formatViews(n) {
 export default function TikTokIntelligencePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { isFree } = useSubscription();
+  const FREE_PRODUCT_LIMIT = 5;
 
   useEffect(() => {
     api.get('/api/tools/tiktok-intelligence')
@@ -71,7 +75,7 @@ export default function TikTokIntelligencePage() {
               <Flame className="h-4 w-4 text-rose-500" /> Top Viral Products on TikTok
             </h2>
             <div className="space-y-2">
-              {viral_products.map((p, i) => {
+              {viral_products.slice(0, isFree ? FREE_PRODUCT_LIMIT : viral_products.length).map((p, i) => {
                 const scoreColor = p.launch_score >= 70 ? 'text-emerald-600 bg-emerald-50' : p.launch_score >= 50 ? 'text-amber-600 bg-amber-50' : 'text-slate-600 bg-slate-50';
                 return (
                   <Link
@@ -113,11 +117,25 @@ export default function TikTokIntelligencePage() {
                 );
               })}
             </div>
+            {isFree && viral_products.length > FREE_PRODUCT_LIMIT && (
+              <LockedContent feature="Full TikTok Intelligence" requiredPlan="Starter" blurIntensity="heavy">
+                <div className="space-y-2">
+                  {viral_products.slice(FREE_PRODUCT_LIMIT, FREE_PRODUCT_LIMIT + 5).map((p, i) => (
+                    <div key={p.id} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50">
+                      <span className="w-6 text-sm font-bold text-slate-300 text-right">#{FREE_PRODUCT_LIMIT + i + 1}</span>
+                      <div className="w-10 h-10 rounded-lg bg-slate-200" />
+                      <div className="flex-1"><div className="h-3 bg-slate-200 rounded w-3/4 mb-1" /><div className="h-2 bg-slate-100 rounded w-1/2" /></div>
+                    </div>
+                  ))}
+                </div>
+              </LockedContent>
+            )}
           </CardContent>
         </Card>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          {/* Category Performance */}
+        {isFree ? (
+          <LockedContent feature="TikTok Category & Pattern Analysis" requiredPlan="Starter" blurIntensity="medium">
+            <div className="grid sm:grid-cols-2 gap-4">
           <Card className="border-slate-200">
             <CardContent className="p-5">
               <h2 className="font-semibold text-slate-900 text-sm mb-4 flex items-center gap-2">
@@ -169,6 +187,62 @@ export default function TikTokIntelligencePage() {
             </CardContent>
           </Card>
         </div>
+          </LockedContent>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* Category Performance */}
+            <Card className="border-slate-200">
+              <CardContent className="p-5">
+                <h2 className="font-semibold text-slate-900 text-sm mb-4 flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-indigo-500" /> Category Performance
+                </h2>
+                <div className="space-y-3">
+                  {categories.map((cat) => {
+                    const maxViews = categories[0]?.total_views || 1;
+                    const pct = Math.min(100, (cat.total_views / maxViews) * 100);
+                    return (
+                      <div key={cat.name} data-testid={`tiktok-category-${cat.name}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-slate-700">{cat.name}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge className="text-[10px] rounded-full bg-slate-50 text-slate-500 border-0">{cat.product_count} products</Badge>
+                            <span className="text-xs font-semibold text-rose-600">{formatViews(cat.total_views)}</span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Trending Patterns */}
+            <Card className="border-slate-200">
+              <CardContent className="p-5">
+                <h2 className="font-semibold text-slate-900 text-sm mb-4 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-amber-500" /> Trending Ad Patterns
+                </h2>
+                <div className="space-y-3">
+                  {trending_patterns.map((tp) => {
+                    const relevanceColor = tp.relevance === 'high' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+                    return (
+                      <div key={tp.pattern} className="p-3 rounded-xl bg-slate-50 border border-slate-100" data-testid={`trend-pattern-${tp.pattern.replace(/\s/g, '-')}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-slate-800 text-sm">{tp.pattern}</span>
+                          <Badge className={`text-[10px] border rounded-full ${relevanceColor}`}>{tp.relevance}</Badge>
+                        </div>
+                        <p className="text-xs text-slate-500">{tp.description}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

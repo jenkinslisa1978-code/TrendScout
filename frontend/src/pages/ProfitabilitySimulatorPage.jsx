@@ -10,6 +10,8 @@ import {
   XCircle, Clock, BarChart3, Loader2, ArrowRight,
 } from 'lucide-react';
 import api from '@/lib/api';
+import { useSubscription } from '@/hooks/useSubscription';
+import { LockedContent } from '@/components/common/UpgradePrompts';
 
 const COMPETITION_OPTIONS = [
   { value: 'low', label: 'Low', desc: 'Few competitors, niche product' },
@@ -25,14 +27,23 @@ export default function ProfitabilitySimulatorPage() {
   });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [simulationCount, setSimulationCount] = useState(0);
+  const { isFree } = useSubscription();
+  const FREE_SIM_LIMIT = 2;
 
   const update = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
   const simulate = async () => {
+    if (isFree && simulationCount >= FREE_SIM_LIMIT) {
+      return; // Button will be disabled
+    }
     setLoading(true);
     try {
       const res = await api.post('/api/tools/profitability-simulator', form);
-      if (res.ok) setResult(res.data);
+      if (res.ok) {
+        setResult(res.data);
+        setSimulationCount(prev => prev + 1);
+      }
     } catch {}
     setLoading(false);
   };
@@ -110,8 +121,10 @@ export default function ProfitabilitySimulatorPage() {
                   ))}
                 </div>
               </div>
-              <Button onClick={simulate} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700" data-testid="simulate-btn">
-                {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Simulating...</> : <><BarChart3 className="h-4 w-4 mr-2" /> Run Simulation</>}
+              <Button onClick={simulate} disabled={loading || (isFree && simulationCount >= FREE_SIM_LIMIT)} className="w-full bg-indigo-600 hover:bg-indigo-700" data-testid="simulate-btn">
+                {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Simulating...</> : 
+                 isFree && simulationCount >= FREE_SIM_LIMIT ? 'Simulation limit reached — Upgrade' :
+                 <><BarChart3 className="h-4 w-4 mr-2" /> Run Simulation ({isFree ? `${FREE_SIM_LIMIT - simulationCount} left` : 'Unlimited'})</>}
               </Button>
             </CardContent>
           </Card>

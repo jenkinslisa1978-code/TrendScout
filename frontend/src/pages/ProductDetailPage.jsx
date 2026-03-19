@@ -607,19 +607,43 @@ export default function ProductDetailPage() {
         <ProductLaunchPlaybook productId={id} />
 
         {/* Saturation Radar + Competitor Intelligence — side by side */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <SaturationRadar productId={id} />
-          <CompetitorIntelligence productId={id} />
-        </div>
+        {isStarterOrAbove ? (
+          <div className="grid lg:grid-cols-2 gap-6">
+            <SaturationRadar productId={id} />
+            <CompetitorIntelligence productId={id} />
+          </div>
+        ) : (
+          <LockedContent feature="Saturation & Competitor Intelligence" requiredPlan="Starter" blurIntensity="heavy">
+            <div className="grid lg:grid-cols-2 gap-6">
+              <SaturationRadar productId={id} />
+              <CompetitorIntelligence productId={id} />
+            </div>
+          </LockedContent>
+        )}
 
         {/* Ad Winning Engine — Patterns + Blueprint + Performance */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <WinningAdPatterns productId={id} />
-          <AdBlueprint productId={id} />
-        </div>
+        {isStarterOrAbove ? (
+          <div className="grid lg:grid-cols-2 gap-6">
+            <WinningAdPatterns productId={id} />
+            <AdBlueprint productId={id} />
+          </div>
+        ) : (
+          <LockedContent feature="Winning Ad Patterns & Blueprints" requiredPlan="Starter" blurIntensity="heavy">
+            <div className="grid lg:grid-cols-2 gap-6">
+              <WinningAdPatterns productId={id} />
+              <AdBlueprint productId={id} />
+            </div>
+          </LockedContent>
+        )}
 
         {/* Ad Performance Indicator */}
-        <AdPerformanceIndicator productId={id} />
+        {isStarterOrAbove ? (
+          <AdPerformanceIndicator productId={id} />
+        ) : (
+          <LockedContent feature="Ad Performance Insights" requiredPlan="Starter" blurIntensity="medium">
+            <AdPerformanceIndicator productId={id} />
+          </LockedContent>
+        )}
 
         {/* Ad A/B Test Planner */}
         <AdTestPlanner productId={id} />
@@ -915,7 +939,7 @@ export default function ProductDetailPage() {
         </Card>
 
         {/* Similar Products */}
-        <SimilarProducts productId={id} productName={product.product_name} />
+        <SimilarProducts productId={id} productName={product.product_name} maxItems={isStarterOrAbove ? 6 : 3} />
 
         {/* Data Freshness Card */}
         <DataFreshnessCard product={product} />

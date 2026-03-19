@@ -21,7 +21,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(days / 7)}w ago`;
 }
 
-export default function SimilarProducts({ productId, productName }) {
+export default function SimilarProducts({ productId, productName, maxItems = 6 }) {
   const [similar, setSimilar] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +30,7 @@ export default function SimilarProducts({ productId, productName }) {
     (async () => {
       try {
         const token = localStorage.getItem('trendscout_token');
-        const res = await fetch(`${API_URL}/api/products/${productId}/similar?limit=6`, {
+        const res = await fetch(`${API_URL}/api/products/${productId}/similar?limit=${maxItems}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (res.ok) {
