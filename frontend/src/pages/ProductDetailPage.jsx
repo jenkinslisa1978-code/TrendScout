@@ -459,21 +459,21 @@ export default function ProductDetailPage() {
                     />
                     <Badge variant="outline" className="bg-white">
                       <Target className="h-3 w-3 mr-1" />
-                      {Math.round(intelligenceData.overall_score)}/100 Score
+                      {product.launch_score}/100 Launch Score
                     </Badge>
                     <Badge variant="outline" className="bg-white">
                       <Sparkles className="h-3 w-3 mr-1" />
-                      {Math.round(intelligenceData.success_probability)}% Success
+                      {intelligenceData.confidence}% Confidence
                     </Badge>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-indigo-600">
-                    {Math.round(intelligenceData.success_probability)}%
+                    {product.launch_score}
                   </div>
-                  <div className="text-sm text-slate-500">Success Probability</div>
+                  <div className="text-sm text-slate-500">Launch Score</div>
                   <div className="text-xs text-slate-400 mt-1">
-                    {intelligenceData.confidence}% confidence
+                    {intelligenceData.confidence}% data confidence
                   </div>
                 </div>
               </div>
