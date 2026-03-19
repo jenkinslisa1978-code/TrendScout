@@ -25,64 +25,68 @@ AI product research and launch intelligence for UK ecommerce sellers. Discover t
 
 ## ALL Features — COMPLETED
 
+### Phase 3: CRO, Lead Capture, Performance (March 19, 2026)
+
+**Sample Product Analysis Page:**
+- Public-facing page at /sample-product-analysis with mock Portable Neck Fan data
+- Viability score, 7-signal breakdown, AI summary, channel fit, strengths/risks
+- Scroll depth tracking via useScrollDepth hook
+
+**Email Lead Capture:**
+- Reusable EmailCapture component
+- Integrated into: FreeToolsPage, SeoLandingTemplate, ComparisonPage
+- Backend: POST /api/leads/capture endpoint (upsert, validates email)
+- Analytics: EMAIL_CAPTURE_VIEW, EMAIL_CAPTURE_SUBMIT events
+
+**Content Expansion:**
+- 4 new high-intent landing pages: /best-products-to-sell-online-uk, /tiktok-shop-product-research-uk, /shopify-product-research-uk, /product-validation-uk
+- 2 new competitor comparisons: Helium 10, Ecomhunt (merged into ComparisonPage)
+
+**Performance Optimisation:**
+- Route-level code splitting: 80+ pages lazy-loaded via React.lazy()
+- Only LandingPage and NotFoundPage are eager-loaded
+- Suspense fallback with branded spinner
+- Font loading optimisation (media=print with onload)
+
+**Conversion Path Improvements:**
+- Mid-page CTA in SeoLandingTemplate after features ("See a sample product report")
+- Social proof in bottom CTAs ("Join 2,000+ UK sellers already using TrendScout")
+- EmailCapture as low-commitment alternative on all landing + comparison pages
+- "Compare Plans" replaced "See Trending Products" in bottom CTA for stronger conversion intent
+- Cross-linking: mid-page links to /tools, /sample-product-analysis
+
+**Scroll Depth Analytics:**
+- useScrollDepth hook fires SCROLL_DEPTH events at 25%, 50%, 75%, 100%
+- Active on: SeoLandingTemplate, ComparisonPage, SampleAnalysisPage
+
+**Cleanup:**
+- Deleted redundant MoreComparisonsPage.jsx and removed its route from App.js
+
+**Verified:** 100% — iteration_100.json (base), iteration_101.json (improvements)
+
 ### Phase 2: Analytics, Schema, Viability Score, SEO (March 19, 2026)
 
 **GA4 Analytics Bridge:**
-- Analytics service upgraded with GA4 gtag() bridge — fires to both internal batch API and GA4 when configured
-- 20+ named event constants: HOMEPAGE_PRIMARY_CTA, PRICING_TOGGLE, PRICING_PLAN_SELECTED, FREE_TOOL_USED, COMPARE_PAGE_CTA, UK_LANDING_CTA, VIABILITY_BADGE_CLICK, etc.
-- Events wired to: hero CTAs, pricing toggle, plan selection, comparison CTAs, free tool tabs, landing page CTAs
-- GA4 measurement ID configurable via REACT_APP_GA4_ID env var
+- Analytics service with GA4 gtag() bridge
+- 20+ named event constants
+- Events wired to hero CTAs, pricing toggle, plan selection, comparison CTAs, free tool tabs
 
-**JSON-LD Schema Markup (all pages):**
-- Homepage: Organization + WebSite + SoftwareApplication
-- Pricing: SoftwareApplication + FAQPage + BreadcrumbList
-- How It Works: WebPage + FAQPage + BreadcrumbList
-- About: AboutPage + BreadcrumbList
-- Contact: ContactPage + BreadcrumbList
-- UK Viability Score: WebPage + FAQPage + BreadcrumbList
-- All UK landing pages: WebPage + FAQPage + BreadcrumbList via SeoLandingTemplate
-- All comparison pages: WebPage + BreadcrumbList
-- Free Tools: BreadcrumbList + FAQPage
-- Policy pages: BreadcrumbList
-
-**Reusable PageMeta component** with schema builders: organizationSchema, websiteSchema, softwareAppSchema, faqSchema(), breadcrumbSchema(), webPageSchema()
-
-**Technical SEO:**
-- robots.txt: blocks /dashboard, /admin, /api/, /login, /signup, /settings, /reset-password, /forgot-password, /saved-products, /notification, /ad-tests, etc.
-- sitemap.xml: 30+ URLs covering all public pages
-- Canonical tags on all public pages via PageMeta component
+**JSON-LD Schema Markup:** All public pages have appropriate schema
 
 **UK Product Viability Score (Flagship Feature):**
-- Dedicated page at /uk-product-viability-score with: hero, 7 weighted factors, 3-tier score interpretation, 3 product examples, 6 FAQ, CTA
-- ViabilityBadge component: expandable badge showing score, band label, progress bar, and explainer
-- ViabilityIndicator component: compact inline indicator for product cards
-- Live on homepage product cards — every product shows UK Viability Score
-- Referenced throughout: homepage, how-it-works, UK landing pages, methodology section
+- Dedicated page, ViabilityBadge, ViabilityIndicator components
+- Live on homepage product cards
 
-**New UK Landing Pages (4):**
-- /dropshipping-product-research-uk
-- /winning-products-uk
-- /product-validation-uk
-- /uk-ecommerce-trend-analysis
-Each with unique copy, features, steps, UK points, FAQ, CTA, related links, canonical, meta description
+**New UK Landing Pages:** 4 pages with SeoLandingTemplate
 
-**Trust/Policy Pages:**
-- /cookie-policy — cookie types, third-party, management instructions
-- /refund-policy — trial, cancellation, refunds, annual plans, billing
+**Trust/Policy Pages:** Cookie policy, refund policy
 
-**Footer Updates:**
-- Added: UK Viability Score, UK Dropshipping, Winning Products UK links
-- Added: Cookie Policy, Refund Policy in legal row
-
-**Verified:** 100% frontend pass — iteration_99.json
+**Verified:** 100% — iteration_99.json
 
 ### Phase 1: Website Rebuild (March 19, 2026)
 - Homepage, Pricing, How It Works, About, Contact pages rebuilt
-- 4 UK landing pages (uk-product-research, for-shopify, for-amazon-uk, for-tiktok-shop-uk)
-- 3 competitor comparison pages (vs Jungle Scout, Sell The Trend, Minea)
-- Free Tools page (4 calculators)
-- Navigation with dropdowns, mobile responsive menu
-- 5-column footer with internal linking
+- 4 UK landing pages, 3 competitor comparison pages
+- Free Tools page (4 calculators), Navigation with dropdowns
 - SEO meta tags + OG tags
 - Verified: 100% — iteration_98.json
 
@@ -97,13 +101,11 @@ Each with unique copy, features, steps, UK points, FAQ, CTA, related links, cano
 
 ### P1 — Medium Priority
 - Blog content strategy and article templates
-- Email capture on free tool result pages
-- Sample product analysis page with public mock data
 - Changelog / product updates page
-- Performance optimisation (image lazy loading, code splitting, font optimisation)
+- Image lazy loading for product images (consider react-lazy-load-image-component)
+- Bundle size analysis and further tree shaking
 
 ### P2 — Lower Priority
-- Additional comparison pages (Helium 10, Ecomhunt)
 - More free tools (TikTok Ad Budget calculator, Product Validation Checklist)
 - FAQ schema on comparison pages
 - SoftwareApplication schema on UK landing pages
