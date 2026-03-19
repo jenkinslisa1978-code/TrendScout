@@ -1,5 +1,12 @@
 # TrendScout Changelog
 
+## March 19, 2026 - Score Fix, Similar Products & Data Freshness
+- Fixed score inconsistency: intelligence API now uses authoritative `launch_score` from DB (was showing 72 vs 42)
+- Added Similar Products section on product detail pages (6 related products by category/price)
+- Added Data Freshness indicators: source badges, "Updated Xm ago", freshness card, and summary API
+- Added freshness indicator on Discover page product cards
+- All verified: 100% backend (13/13), 100% frontend (7/7) — iteration_95
+
 ## March 19, 2026 - Product Image Quality Fix (P0)
 - Replaced all 26 mismatched Unsplash product images with AI-generated, product-accurate images
 - Products affected: LED Sunset Lamp, Cloud Pillow Slides, Neck Fan, Ice Roller, Galaxy Projector, Scalp Massager, Mini Projector, MagSafe Mount, Desk Organizer, ANC Earbuds, Posture Corrector, Pet Hair Remover, Blender Cup, RGB LED Strips, Heated Lunch Box, Wireless Charging Pad, Smart Water Bottle, Thermal Printer, Sleep Mask, Laptop Stand, Milk Frother, Storage Bins, Ceramic Coating Spray, Yoga Wheels, Magnetic Spice Jars, Self-Watering Pots

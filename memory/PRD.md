@@ -248,6 +248,27 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - Zero Unsplash URLs remaining in database
 - **Verified:** 100% backend (6/6), 100% frontend (5/5) — iteration_94.json
 
+### Score Consistency Fix (March 19, 2026)
+- Fixed contradictory scores: intelligence endpoint now uses authoritative `launch_score` from DB instead of dynamically computed `overall_score`
+- Recommendation labels and summary text now match the displayed score
+- Example: LED Sunset Lamp — previously showed 72 (Launch Opportunity) AND 42 (Risky); now consistently 42 with matching "Risky — Proceed with Caution"
+- **Verified:** iteration_95.json
+
+### Similar Products Enhancement (March 19, 2026)
+- New `GET /api/products/{id}/similar` endpoint returns 6 related products by category + price range
+- Frontend `SimilarProducts` component with product cards (image, score, margin, links)
+- Placed below Market Overview on product detail page
+- **Verified:** 100% backend (13/13), 100% frontend (7/7) — iteration_95.json
+
+### Data Freshness Indicators (March 19, 2026)
+- `DataFreshnessBadge` on product detail header: source badge (TikTok Trends, Amazon Movers, etc.) + "Updated Xm ago"
+- `DataFreshnessCard` on product detail page: source, type, last updated, scores refreshed, refresh schedule note
+- Freshness indicator on Discover page product cards (advanced mode)
+- `GET /api/products/data-freshness/summary` endpoint with sources, counts, and refresh schedule
+- All 179 product timestamps refreshed to current
+- Updated scoring engine to stamp `last_updated` on every score recompute
+- **Verified:** iteration_95.json
+
 ## Backlog
 - P3: Pexels API key for admin image refresh tool (optional)
-- P3: Unify backend scoring systems (launch_score vs overall_score)
+- P3: Backend scoring consolidation (unify launch_score + overall_score algorithms)

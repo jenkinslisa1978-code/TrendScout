@@ -109,6 +109,20 @@ async def predict_product_success(product_id: str):
     }
 
 
+
+def _build_consistent_summary(name, score, strengths, weaknesses):
+    """Build a summary text that's consistent with the authoritative launch_score."""
+    strength_text = ", ".join(strengths[:2]) if strengths else "some positive signals"
+    if score >= 65:
+        return f"{name} shows strong launch potential with a score of {score}/100. Key strengths: {strength_text}. Consider moving forward with store creation."
+    elif score >= 45:
+        return f"{name} shows moderate potential with a score of {score}/100. Key strengths: {strength_text}. Monitor trends closely before committing significant budget."
+    elif score >= 25:
+        return f"{name} has notable weaknesses with a score of {score}/100. Strengths include {strength_text}, but risks should be carefully evaluated before proceeding."
+    else:
+        return f"{name} scores {score}/100, indicating high risk. Consider alternative products with stronger market signals."
+
+
 @intelligence_router.get("/complete-analysis/{product_id}")
 async def get_complete_product_analysis(product_id: str):
     """
@@ -172,8 +186,13 @@ async def get_complete_product_analysis(product_id: str):
         "weaknesses": validation.weaknesses,
         "action_items": validation.action_items,
         
-        # Summaries
-        "validation_summary": validation.summary,
+        # Summaries — generate consistent summary using authoritative score
+        "validation_summary": _build_consistent_summary(
+            product.get("product_name", "This product"),
+            authoritative_score,
+            validation.strengths,
+            validation.weaknesses,
+        ),
         "prediction_summary": prediction.prediction_explanation,
         
         # Confidence
