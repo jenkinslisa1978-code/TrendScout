@@ -1,5 +1,13 @@
 # TrendScout Changelog
 
+## March 19, 2026 - Free Trial Mechanic + Pexels API
+- Built 24-hour free trial system: free users pick ONE premium feature to unlock (5 options)
+- Trial banner on dashboard (eligible/active/expired states), inline "Try free" on locked overlays
+- Rate limits fixed: free=120/min, core endpoints exempted from rate limiting
+- Pexels API key configured for admin image refresh tool
+- All verified: 100% backend + frontend — iteration_97
+
+
 ## March 19, 2026 - Free Plan Content Gating
 - Implemented blurred preview + upgrade CTAs across: Ad Intelligence (2 free), TikTok Intel (5 free), Profit Sim (2 free), Competitor Intel (1 free), Product Detail (7 sections locked)
 - Similar Products limited to 3 for free, 6 for paid

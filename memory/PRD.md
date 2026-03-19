@@ -280,6 +280,16 @@ AI product validation for ecommerce. Find products worth launching before you sp
 - Uses existing `LockedContent` component from `UpgradePrompts.jsx` + `useSubscription` hook
 - **Verified:** 100% backend + frontend — iteration_96.json
 
+### Free Trial Mechanic (March 19, 2026)
+- Free users can unlock ONE premium feature for 24 hours — no card required
+- Trial features: Ad Intelligence, TikTok Intel, Competitor Intel, Product Deep Dive, Profit Simulator
+- Backend: `POST /api/trial/activate`, `GET /api/trial/status` + trial data in `/api/stripe/feature-access`
+- Frontend: TrialBanner on dashboard (eligible/active/expired states), inline "Try free for 24h" on LockedContent overlays
+- All gated pages respect trial unlocks via `isTrialFeature()` helper
+- Rate limits increased (free: 120/min) + exempted core endpoints (feature-access, auth/profile, trial/status)
+- Pexels API key configured for admin image refresh tool
+- **Verified:** 100% backend + frontend — iteration_97.json
+
 ## Backlog
 - P3: Pexels API key for admin image refresh tool (optional)
 - P3: Backend scoring consolidation (unify launch_score + overall_score algorithms)
