@@ -1,70 +1,76 @@
 <analysis>**original_problem_statement:**
-The user's vision is to build TrendScout, a comprehensive decision and launch engine for dropshippers. The goal is to guide users from product discovery to store launch and monitoring. The initial 9-part strategic brief has been fully implemented, and recent user requests have focused on UI/UX improvements, data quality, and operational readiness.
+The user wants to completely rebuild and reposition their website, TrendScout, to become a serious, conversion-focused, UK-first ecommerce intelligence platform. The goal is to move away from a generic winning products site to a credible SaaS tool for UK sellers on Shopify, TikTok, and Amazon.
 
-**PRODUCT REQUIREMENTS (based on the 9-part strategic brief):**
-1.  **Product Discovery & AI Scoring Overhaul:** Expose a 7-Signal launch score and add a profitability/saturation predictor.
-2.  **Multi-platform Ad Intelligence:** Create a unified ad spy tool (TikTok, Meta, Pinterest).
-3.  **Competitor Store Intelligence & Alerts:** Build a dashboard for competitor analysis and a supplier risk score.
-4.  **Store-launch & Fulfillment Automation:** Implement one-click product import to Shopify and generate store pages.
-5.  **Real-time Monitoring & Alerts:** Deliver push notifications for metric changes and create a smart budget optimizer.
-6.  **Community & Data Flywheel:** Create a Verified Winners feature for users to submit proof of success.
-7.  **UX & Onboarding:** Improve signup and make pricing transparent.
-8.  **SEO & Virality:** Generate public product insight pages for SEO and add social sharing.
-9.  **Integration & Ecosystem:** Build a Shopify App and offer API access.
+This is a comprehensive 14-part strategic brief that includes rebuilding the homepage, pricing page, and site architecture for SEO; creating new UK-focused landing pages, competitor comparison pages, and free tools; introducing a UK Product Viability Score concept; and improving the overall design, trust signals, and user journey to drive conversions. The user has provided detailed instructions on copy, structure, and priorities.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The platform is a feature-complete, production-ready dropshipping intelligence tool. All major features from the original brief are implemented. The application is now fully mobile-responsive, with a hamburger-style navigation for the dashboard. Public-facing pages are content-gated to encourage sign-ups, showing only a limited number of products to unauthenticated users. A self-service mechanism for adding Google Analytics or Google Tag Manager has been implemented for the marketing team. The agent just finished addressing user concerns about misleading UI text in the store launch flow and inconsistencies in product data (scores and images).
+The application is a feature-rich dropshipping intelligence platform. In this session, the agent has:
+1.  Fixed all data quality and consistency issues (product images and scores).
+2.  Added a Similar Products feature.
+3.  Added Data Freshness indicators and backend refresh jobs.
+4.  Implemented comprehensive content gating to create a freemium model, locking premium features behind paywalls.
+5.  Built a full-featured Free Trial mechanic, allowing users to unlock one premium feature for 24 hours.
+6.  Fixed a critical rate-limiting bug that was blocking API calls for free users.
+7.  Integrated a user-provided Pexels API key.
+
+Upon receiving the major rebuild request, the agent audited the current public-facing pages and invoked the  to generate a new, comprehensive design system located at .
 
 **Last working item**:
--   **Last item agent was working:** The agent was addressing user feedback on data quality and accuracy. This involved two main issues:
-    1.  **Inconsistent Scores:** The agent identified that a Launch Potential score of 70 was coming from a separate  calculated on-the-fly, while the main product  was 40. The agent fixed the  to consistently display the product's authoritative .
-    2.  **Mismatched Product Images:** The user pointed out incorrect images (e.g., a man's face for a LED Sunset Lamp). The agent identified 26 products using generic Unsplash images and used the  to generate new, accurate images for the two products the user specifically mentioned.
--   **Status:** IN PROGRESS
--   **Agent Testing Done:** Y (for the score consistency fix)
--   **Which testing method agent to use?** Manual verification. The agent needs to generate images for the remaining 24 products and then can use the  on the  page to visually confirm the fixes.
+-   **Last item agent was working:** The agent received a massive new request to rebuild the entire public-facing website. The agent's first steps were to audit the existing codebase and page structure, and then call the  to get a new design system for the rebuild.
+-   **Status:** NOT STARTED (on implementation). The agent has completed the initial audit and planning phase.
+-   **Agent Testing Done:** N/A
+-   **Which testing method agent to use?** Frontend testing agent and screenshot tool will be essential to verify the visual and structural changes of the website rebuild.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Mismatched Product Images (P0)**
-    -   **Description:** The user reported that several products have incorrect or irrelevant images. The agent confirmed that 26 products are using generic, non-contextual images from Unsplash. This directly impacts user trust and the perceived quality of the application.
-    -   **Attempted fixes:** The agent successfully regenerated accurate AI images for 2 out of the 26 products (LED Sunset Projection Lamp and RGB LED Strip Lights).
+This is not a list of bugs but a new project. The user has provided a clear priority order.
+
+-   **Issue 1: Complete Website Rebuild (P0)**
+    -   **Description:** The entire public-facing website needs to be rebuilt from the ground up to align with the new UK-first, conversion-focused strategy outlined by the user. This is a multi-part project encompassing design, architecture, content, and SEO.
     -   **Next debug checklist:**
-        1.  Execute the script  to get the list of the remaining 24 products with Unsplash images.
-        2.  For each product, use the  with a descriptive prompt (e.g., A high-quality product photo of a Portable Bladeless Neck Fan, on a white background) to generate a new, accurate image.
-        3.  Update the  for each product in the database with the new URL.
-    -   **Why fix this issue and what will be achieved with the fix?** To resolve a direct user complaint, improve data quality, and enhance the professionalism and trustworthiness of the application before final deployment.
-    -   **Status:** IN PROGRESS
+        1.  Thoroughly review the user's 14-part brief (the last user message).
+        2.  Thoroughly review the new design system in .
+        3.  Begin implementation, starting with the highest-priority items: Homepage, Pricing Page, and How It Works Page.
+    -   **Why fix this issue and what will be achieved with the fix?** To transform the website into a credible, trustworthy, and high-converting SaaS platform that can attract and retain UK ecommerce sellers, differentiate from competitors, and rank in search engines.
+    -   **Status:** NOT STARTED
     -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend (visual verification).
+    -   **Should Test frontend/backend/both after fix?** Both. Frontend is the primary focus, but new pages will require backend support (e.g., for serving sample data).
     -   **Blocked on other issue:** None.
 
 **In progress Task List**:
 -   None.
 
 **Upcoming and Future Tasks**
--   **Future Tasks:**
-    -   (P2) Pexels API key for the admin image refresh tool (optional, low priority).
+The user has provided a clear, prioritized list for the website rebuild.
+
+**Upcoming Tasks (High Priority - P0):**
+1.  **Homepage Rebuild:** Recreate  using the new copy from the brief and the London/Navy aesthetic from .
+2.  **Pricing Page Rebuild:** Recreate  with a monthly/annual toggle, GBP pricing, and a professional feature comparison table.
+3.  **How It Works Page Creation:** Build a new page at  to explain the platform's methodology and build trust.
+4.  **Trust Signal Improvement:** Rebuild the  and  pages. Update the footer and navigation in .
+5.  **Add Public Sample Data:** Modify public-facing pages like  to show a limited amount of data to unauthenticated users to provide value before signup.
+
+**Future Tasks (Lower Priority - P1/P2):**
+-   (P1) **Create UK-Focused Landing Pages:** Build new SEO pages like , , etc.
+-   (P1) **Create Competitor Comparison Pages:** Build new pages like .
+-   (P1) **Build Free Tools:** Create new pages with useful calculators (Profit Margin, ROAS, etc.).
+-   (P2) **Full SEO Architecture Fix:** Implement server-side rendering, schema markup, sitemaps, and metadata across all new pages.
+-   (P2) **Introduce UK Product Viability Score:** Create marketing content and potentially a dedicated landing page for this new flagship feature concept.
+-   (P2) **Implement Analytics:** Add GA4 and custom event tracking for key conversion actions.
 
 **Completed work in this session**
--   **CJ Dropshipping Integration:** Completed the full-stack integration, including a feature-rich frontend UI (), backend routes, and robust file-based token caching to handle API rate limits.
--   **Shopify App Store Readiness:** Prepared the app for submission by creating a listing document (), updating legal pages (, ) with Shopify-specific clauses, generating an app icon, and capturing all required submission screenshots.
--   **Multi-Supplier Comparison:** Implemented a unified supplier view, showing live CJ Dropshipping data alongside reference pricing from AliExpress and Zendrop after the user had difficulty obtaining API keys.
--   **Data Population & Enhancement:**
-    -   Populated  data for all 151 products to enrich the TikTok Intelligence page.
-    -   Updated the TikTok intelligence endpoint to show data for all products, not just a limited subset.
--   **Mobile Responsiveness & Content Gating:**
-    -   Implemented a hamburger menu and slide-out sidebar for a fully responsive mobile dashboard experience.
-    -   Created and applied a  component to all public-facing product pages, limiting free content to 3 items to drive user registration.
--   **Operational Readiness & UX Fixes:**
-    -   Created a comprehensive  for the app owner.
-    -   Added a self-service mechanism for the marketing team to add Google Analytics or GTM tracking IDs via environment variables.
-    -   Corrected a major UX issue where the Launch Store feature was misleading; it now clearly communicates that it creates a *package* within the app, with Shopify connection as a distinct next step.
-    -   Addressed multiple user-reported email address inconsistencies.
+-   **Data Quality & Consistency Fix:** Replaced 26 incorrect product images with AI-generated ones and unified the product scoring system to resolve user-facing inconsistencies.
+-   **New Feature: Similar Products**: Added a section on the product detail page to recommend related items.
+-   **New Feature: Data Freshness**: Added last updated timestamps and data source badges to product cards to build user trust in the data.
+-   **Freemium Model Implementation:** Successfully implemented content gating across all premium features, creating a robust free plan with clear upgrade paths.
+-   **New Feature: Free Trial Mechanic:** Built a complete 24-hour free trial system, allowing users to unlock one premium feature without a credit card. This included backend APIs and frontend UI (, updated ).
+-   **Critical Bug Fix (Rate Limiting):** Diagnosed and fixed a  error by increasing the API rate limit for the free plan, which was preventing the app from functioning correctly.
+-   **Pexels API Key Integration:** Added the user-provided key to the environment for use in the admin image refresh tool.
 
 **Earlier issues found/mentioned but not fixed**
--   None. The agent has been diligent in addressing all identified issues.
+-   None.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -73,39 +79,43 @@ The platform is a feature-complete, production-ready dropshipping intelligence t
 
 
 **Key Technical Concepts**
--   **Mobile Responsiveness:** Implemented a hamburger menu and conditional CSS classes (, ) to create a functional mobile layout for the dashboard.
--   **Content Gating:** Used a new  component and the  context to conditionally render a limited amount of content to unauthenticated users, encouraging sign-ups.
--   **Data Inconsistency Resolution:** Debugged and resolved a user-facing issue where two different scoring algorithms ( vs. ) were creating confusion. The frontend was updated to provide a single source of truth.
--   **Resilient API Integration:** Implemented a file-based token cache for the CJ Dropshipping API to survive backend restarts and gracefully handle strict rate limits.
--   **Self-Service Configuration:** Enabled marketing tracking (GA4/GTM) via environment variables (), allowing non-developers to configure it.
+-   **Full-Stack Feature Implementation:** The agent demonstrated the ability to add new features from backend (FastAPI endpoints, DB queries) to frontend (React components, hooks).
+-   **Content Gating & Freemium Logic:** Used a combination of a  hook and a reusable  component to implement tiered feature access.
+-   **Time-Based Free Trial System:** Implemented a trial mechanic involving a new  DB collection, API endpoints to manage state, and frontend logic to display trial status and temporarily unlock features.
+-   **API Rate Limit Debugging:** Identified and resolved a critical  error by analyzing API call volume and adjusting the rate limit configuration in the backend middleware.
+-   **Design System Integration:** The agent initiated the rebuild by calling the  and receiving a comprehensive  file.
 
 **key DB schema**
--   No database schema changes were made. Work focused on data population (TikTok views) and correction (product images).
+-   **trials**:  - Stores active user trials.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : Location of the score inconsistency fix.
--   : The file containing the mobile sidebar implementation.
--   : The new component for gating public content.
--   : Example of a page where the  was applied.
--   : Location of the Launch Store UX fix.
--   : The service where file-based token caching was added to handle rate limits.
--   : The newly created owner's guide.
+-   : **(CRITICAL)** The new design system for the entire website rebuild.
+-   User's last message in history: **(CRITICAL)** The 14-part brief detailing the rebuild project.
+-   : The current homepage, which needs to be completely rebuilt.
+-   : The current pricing page, to be rebuilt.
+-   : The layout for public pages, which will need navigation and footer updates.
+-   : Contains the  component, which was updated with trial logic and will be key for the new site.
+-   : Contains all feature access and trial logic.
 
 **Areas that need refactoring**:
--   The backend still contains two different product scoring systems ( in  and  in ). While the frontend now consistently displays the , a future task could be to unify these algorithms in the backend to prevent future confusion.
+-   The entire public-facing website (, , etc.) needs to be refactored/rebuilt according to the user's new brief and the  file.
 
 **key api endpoints**
--   : (New) Provides a unified list of supplier options from CJ Dropshipping, AliExpress, and Zendrop (with the latter two in reference mode).
--   : (Updated) Now returns data for all 150+ products, providing a richer dataset.
+-   : Activates a 24-hour trial for a specific feature.
+-   : Checks the user's trial eligibility and status.
+-   : Returns products similar to the given one.
+-   : Returns a summary of data source freshness.
+-   : (Updated) Now includes active trial information.
 
 **Critical Info for New Agent**
--   **Your immediate priority is to fix the remaining 24 mismatched product images.** This is a direct user complaint and impacts the app's perceived quality. Use the  for accuracy.
--   The application is feature-complete and production-ready. All user requests from the session have been addressed, except for the remaining image fixes.
--   Be aware that there are two scoring systems in the backend. The frontend has been standardized to show the . Do not get confused if you see a different  in the backend validation service.
--   The app is now mobile-responsive and uses content gating on public pages.
+-   **Your top priority is the complete rebuild of the public-facing website.** The user has provided a new, detailed strategic direction. The previous marketing site is now considered legacy.
+-   The two most important documents for you are the **user's last message** (the 14-part brief) and the new design system at . Adhere to them strictly.
+-   Start with the highest-impact pages as requested: **Homepage, Pricing Page, and a new How It Works page.**
+-   The backend is robust. All gating, trial, and data freshness logic you need for the new frontend already exists and is working correctly.
+-   This is a large, multi-step project. Plan your work in phases, following the priority order set by the user.
 
 **documents and test reports created in this job**
 -   
@@ -113,44 +123,44 @@ The platform is a feature-complete, production-ready dropshipping intelligence t
 -   
 -   
 -   
--   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks how to give marketing team access for tracking and questions the need for Supabase.
-2.  **Agent:** Explains Supabase isn't used and recommends Google Tag Manager for marketing.
-3.  **User:** Asks if marketing can add tracking themselves.
-4.  **Agent:** Proposes setting up a GTM env variable so the marketing team can self-serve.
-5.  **User:** Agrees.
-6.  **User:** Reports the Stripe webhook is already set up with the correct URL.
-7.  **Agent:** Confirms the secret key in the  also matches, so no action is needed.
-8.  **User:** Reports confusion with the Launch Store feature, noting it doesn't ask for Shopify details but says the store is published.
-9.  **Agent:** Investigates, confirms the UX is misleading, and implements fixes to clarify the workflow.
-10. **User:** Reports that product images are still mismatched and a product shows two different launch scores. Asks where data is coming from and if it's accurate. (This is the last user message that triggered the most recent work).
+1.  **User:** Asks to implement a free trial mechanic and provides a Pexels API key.
+2.  **Agent:** Implements the Pexels key and the full free trial system (backend APIs, frontend components, updated subscription hook).
+3.  **Agent:** Diagnoses and fixes a critical  rate-limiting error preventing the trial from working correctly.
+4.  **Agent:** Verifies the complete trial flow with screenshots and the testing agent.
+5.  **Agent:** Finishes the task, summarizing the work and suggesting an enhancement (trial expiry emails).
+6.  **User:** **(CRITICAL)** Submits a massive, 14-part request to completely rebuild and reposition the entire public-facing website with a new UK-first strategy, new design, new pages, and a focus on SEO and conversion.
+7.  **Agent:** Acknowledges the large scope, starts by auditing the current file structure.
+8.  **Agent:** Calls the  to generate a new design system for the rebuild.
+9.  **Agent:** Receives  from the design agent.
+10. **Agent:** Continues exploring the codebase to prepare for the rebuild.
 
 **Project Health Check:**
 -   **Broken:** No.
--   **Mocked:** No. All core data is live (CJ Dropshipping) or realistically simulated.
--   **Live:** Yes, the application is ready for production deployment.
+-   **Mocked:** No.
+-   **Live:** Yes, the application is fully functional. The current task is a complete strategic rebuild of the public-facing marketing site, not fixing a broken app.
 
 **3rd Party Integrations**
--   **Shopify:** Admin API & App Bridge for embedded app.
+-   **Shopify:** Admin API & App Bridge.
 -   **Stripe:** Subscription billing.
 -   **Resend:** Transactional emails.
--   **OpenAI GPT-4o:** Ad generation.
+-   **OpenAI GPT-4o:** AI features.
 -   **Gemini (via ):** Product image generation.
--   **Redis:** Caching and rate limiting (with in-memory fallback).
+-   **Pexels:** Admin image search (newly configured with API key).
 -   **Sentry:** Error monitoring.
--   **CJ Dropshipping:** Live supplier and product data.
--   **Google Tag Manager / Google Analytics:** (New) Ready for configuration via .
+-   **CJ Dropshipping:** Live supplier data.
+-   **Google Tag Manager / Google Analytics:** Configured via .
 
 **Testing status**
--   **Testing agent used after significant changes:** YES. Used after CJ integration, Shopify prep, and Mobile/Gating features.
+-   **Testing agent used after significant changes:** YES. Used to validate the content gating and free trial features.
 -   **Troubleshoot agent used after agent stuck in loop:** NO.
--   **Test files created:** None, but test reports  through  were generated.
--   **Known regressions:** None.
+-   **Test files created:** None.
+-   **Known regressions:** A  rate-limiting issue was introduced and subsequently fixed during development by increasing the free plan's rate limit.
 
 **Credentials to test flow:**
--   **Reviewer Account:**  / 
+-   **User Account:**  / 
+-   This user's plan can be toggled between 'free' and 'elite' to test gating and premium features.
 
 **What agent forgot to execute**
--   The agent was tasked with fixing mismatched product images. The user pointed out two specific examples, and the agent found a total of 26 products with incorrect Unsplash images. The agent only fixed the two user-mentioned products and did not proceed to fix the other 24, leaving the core issue largely unresolved.</analysis>
+-   The agent did not forget anything. It successfully completed all prior tasks and has now correctly begun the discovery and planning phase for the new, large-scale website rebuild requested by the user. The next logical step is to start implementing the first part of that rebuild.</analysis>
