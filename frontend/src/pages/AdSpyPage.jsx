@@ -39,8 +39,9 @@ export default function AdSpyPage() {
   const [searched, setSearched] = useState(false);
   const [savedIds, setSavedIds] = useState(new Set());
   const [selectedAd, setSelectedAd] = useState(null);
-  const { isFree, isStarter } = useSubscription();
+  const { isFree, isStarter, isTrialFeature } = useSubscription();
   const FREE_AD_LIMIT = 2;
+  const hasAdAccess = !isFree || isTrialFeature('ad_spy');
 
   const fetchAds = useCallback(async () => {
     setLoading(true);
@@ -190,7 +191,7 @@ export default function AdSpyPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="ad-grid">
-              {ads.slice(0, isFree ? FREE_AD_LIMIT : ads.length).map((ad, idx) => (
+              {ads.slice(0, hasAdAccess ? ads.length : FREE_AD_LIMIT).map((ad, idx) => (
                 <AdCard
                   key={ad.id || idx}
                   ad={ad}
@@ -200,7 +201,7 @@ export default function AdSpyPage() {
                 />
               ))}
             </div>
-            {isFree && ads.length > FREE_AD_LIMIT && (
+            {!hasAdAccess && ads.length > FREE_AD_LIMIT && (
               <LockedContent feature="Full Ad Intelligence" requiredPlan="Starter" blurIntensity="heavy">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {ads.slice(FREE_AD_LIMIT, FREE_AD_LIMIT + 6).map((ad, idx) => (

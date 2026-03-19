@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import TrialBanner from '@/components/TrialBanner';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -168,6 +169,9 @@ export default function DashboardPage() {
       <div className="space-y-8 max-w-7xl mx-auto" data-testid="dashboard">
         {/* Quick Launch — 3-Click Flow for Beginners */}
         <QuickLaunchFlow />
+
+        {/* Free Trial Banner */}
+        <TrialBanner />
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

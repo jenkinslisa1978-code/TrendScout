@@ -28,14 +28,15 @@ export default function ProfitabilitySimulatorPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [simulationCount, setSimulationCount] = useState(0);
-  const { isFree } = useSubscription();
+  const { isFree, isTrialFeature } = useSubscription();
   const FREE_SIM_LIMIT = 2;
+  const hasSimAccess = !isFree || isTrialFeature('profit_simulator');
 
   const update = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
   const simulate = async () => {
-    if (isFree && simulationCount >= FREE_SIM_LIMIT) {
-      return; // Button will be disabled
+    if (!hasSimAccess && simulationCount >= FREE_SIM_LIMIT) {
+      return;
     }
     setLoading(true);
     try {
@@ -121,10 +122,10 @@ export default function ProfitabilitySimulatorPage() {
                   ))}
                 </div>
               </div>
-              <Button onClick={simulate} disabled={loading || (isFree && simulationCount >= FREE_SIM_LIMIT)} className="w-full bg-indigo-600 hover:bg-indigo-700" data-testid="simulate-btn">
+              <Button onClick={simulate} disabled={loading || (!hasSimAccess && simulationCount >= FREE_SIM_LIMIT)} className="w-full bg-indigo-600 hover:bg-indigo-700" data-testid="simulate-btn">
                 {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Simulating...</> : 
-                 isFree && simulationCount >= FREE_SIM_LIMIT ? 'Simulation limit reached — Upgrade' :
-                 <><BarChart3 className="h-4 w-4 mr-2" /> Run Simulation ({isFree ? `${FREE_SIM_LIMIT - simulationCount} left` : 'Unlimited'})</>}
+                 !hasSimAccess && simulationCount >= FREE_SIM_LIMIT ? 'Simulation limit reached — Upgrade' :
+                 <><BarChart3 className="h-4 w-4 mr-2" /> Run Simulation ({hasSimAccess ? 'Unlimited' : `${FREE_SIM_LIMIT - simulationCount} left`})</>}
               </Button>
             </CardContent>
           </Card>

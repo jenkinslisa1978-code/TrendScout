@@ -22,8 +22,9 @@ function formatViews(n) {
 export default function TikTokIntelligencePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { isFree } = useSubscription();
+  const { isFree, isTrialFeature } = useSubscription();
   const FREE_PRODUCT_LIMIT = 5;
+  const hasTikTokAccess = !isFree || isTrialFeature('tiktok_intelligence');
 
   useEffect(() => {
     api.get('/api/tools/tiktok-intelligence')
@@ -75,7 +76,7 @@ export default function TikTokIntelligencePage() {
               <Flame className="h-4 w-4 text-rose-500" /> Top Viral Products on TikTok
             </h2>
             <div className="space-y-2">
-              {viral_products.slice(0, isFree ? FREE_PRODUCT_LIMIT : viral_products.length).map((p, i) => {
+              {viral_products.slice(0, hasTikTokAccess ? viral_products.length : FREE_PRODUCT_LIMIT).map((p, i) => {
                 const scoreColor = p.launch_score >= 70 ? 'text-emerald-600 bg-emerald-50' : p.launch_score >= 50 ? 'text-amber-600 bg-amber-50' : 'text-slate-600 bg-slate-50';
                 return (
                   <Link
@@ -117,7 +118,7 @@ export default function TikTokIntelligencePage() {
                 );
               })}
             </div>
-            {isFree && viral_products.length > FREE_PRODUCT_LIMIT && (
+            {!hasTikTokAccess && viral_products.length > FREE_PRODUCT_LIMIT && (
               <LockedContent feature="Full TikTok Intelligence" requiredPlan="Starter" blurIntensity="heavy">
                 <div className="space-y-2">
                   {viral_products.slice(FREE_PRODUCT_LIMIT, FREE_PRODUCT_LIMIT + 5).map((p, i) => (
@@ -133,7 +134,7 @@ export default function TikTokIntelligencePage() {
           </CardContent>
         </Card>
 
-        {isFree ? (
+        {!hasTikTokAccess ? (
           <LockedContent feature="TikTok Category & Pattern Analysis" requiredPlan="Starter" blurIntensity="medium">
             <div className="grid sm:grid-cols-2 gap-4">
           <Card className="border-slate-200">

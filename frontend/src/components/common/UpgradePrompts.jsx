@@ -5,8 +5,8 @@
  * Displays blurred content with upgrade CTA.
  */
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,12 @@ import {
   TrendingUp,
   Store,
   FileText,
-  Eye
+  Eye,
+  Gift,
 } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 /**
  * Blurred content overlay with upgrade prompt
@@ -30,12 +34,46 @@ export function LockedContent({
   feature = 'this feature',
   requiredPlan = 'Pro',
   blurIntensity = 'medium',
-  className = ''
+  className = '',
+  trialFeatureId = null,
 }) {
+  const { isFree, trial, hasActiveTrial, refresh } = useSubscription();
+  const [activating, setActivating] = useState(false);
   const blurClasses = {
     light: 'blur-[2px]',
     medium: 'blur-[4px]',
     heavy: 'blur-[8px]'
+  };
+
+  // Auto-detect trial feature from the feature name
+  const getTrialId = () => {
+    if (trialFeatureId) return trialFeatureId;
+    const lower = feature.toLowerCase();
+    if (lower.includes('ad intel') || lower.includes('ad spy')) return 'ad_intelligence';
+    if (lower.includes('tiktok')) return 'tiktok_intel';
+    if (lower.includes('competitor') && !lower.includes('saturation')) return 'competitor_intel';
+    if (lower.includes('saturation') || lower.includes('ad pattern') || lower.includes('blueprint') || lower.includes('ad performance') || lower.includes('deep dive')) return 'product_deep_dive';
+    if (lower.includes('profit') || lower.includes('simulator')) return 'profit_simulator';
+    return null;
+  };
+
+  const canTrial = isFree && !trial && !hasActiveTrial;
+  const detectedTrialId = getTrialId();
+
+  const handleActivateTrial = async () => {
+    if (!detectedTrialId) return;
+    setActivating(true);
+    try {
+      const res = await api.post('/api/trial/activate', { feature: detectedTrialId });
+      if (res.ok && res.data.success) {
+        toast.success(res.data.message);
+        await refresh();
+        window.location.reload();
+      } else {
+        toast.error(res.data?.detail || 'Could not activate trial');
+      }
+    } catch { toast.error('Failed to activate trial'); }
+    setActivating(false);
   };
   
   return (
@@ -64,6 +102,17 @@ export function LockedContent({
                 Upgrade to {requiredPlan}
               </Button>
             </Link>
+            {canTrial && detectedTrialId && (
+              <button
+                onClick={handleActivateTrial}
+                disabled={activating}
+                className="mt-3 w-full text-center text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center justify-center gap-1 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-50"
+                data-testid="trial-inline-activate"
+              >
+                <Gift className="h-3.5 w-3.5" />
+                {activating ? 'Activating...' : 'Or try free for 24 hours'}
+              </button>
+            )}
           </CardContent>
         </Card>
       </div>

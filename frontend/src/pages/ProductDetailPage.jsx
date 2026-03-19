@@ -104,7 +104,8 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isFree, isStarter, canAccessFullInsights, canAccessEarlyTrends, canDirectPublish, isStarterOrAbove, isProOrAbove } = useSubscription();
+  const { isFree, isStarter, canAccessFullInsights, canAccessEarlyTrends, canDirectPublish, isStarterOrAbove, isProOrAbove, isTrialFeature } = useSubscription();
+  const hasDeepDive = isStarterOrAbove || isTrialFeature('saturation') || isTrialFeature('ad_patterns');
   const [product, setProduct] = useState(null);
   const [competitorData, setCompetitorData] = useState(null);
   const [dataIntegrity, setDataIntegrity] = useState(null);
@@ -607,7 +608,7 @@ export default function ProductDetailPage() {
         <ProductLaunchPlaybook productId={id} />
 
         {/* Saturation Radar + Competitor Intelligence — side by side */}
-        {isStarterOrAbove ? (
+        {hasDeepDive ? (
           <div className="grid lg:grid-cols-2 gap-6">
             <SaturationRadar productId={id} />
             <CompetitorIntelligence productId={id} />
@@ -622,7 +623,7 @@ export default function ProductDetailPage() {
         )}
 
         {/* Ad Winning Engine — Patterns + Blueprint + Performance */}
-        {isStarterOrAbove ? (
+        {hasDeepDive ? (
           <div className="grid lg:grid-cols-2 gap-6">
             <WinningAdPatterns productId={id} />
             <AdBlueprint productId={id} />
@@ -637,7 +638,7 @@ export default function ProductDetailPage() {
         )}
 
         {/* Ad Performance Indicator */}
-        {isStarterOrAbove ? (
+        {hasDeepDive ? (
           <AdPerformanceIndicator productId={id} />
         ) : (
           <LockedContent feature="Ad Performance Insights" requiredPlan="Starter" blurIntensity="medium">

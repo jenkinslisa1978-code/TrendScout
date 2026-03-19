@@ -1,6 +1,6 @@
 """Stripe billing routes: checkout, portal, webhook, subscription, plans."""
 from fastapi import APIRouter, HTTPException, Request, Depends
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 import logging
 
@@ -142,10 +142,37 @@ async def get_feature_access(
         {"user_id": current_user.user_id, "date": today}, {"_id": 0}
     )
     insights_used = usage_doc.get("insights_used", 0) if usage_doc else 0
+
+    # Check for active trial
+    trial_data = None
+    trial_unlocks = []
+    if plan == "free":
+        from routes.trial import TRIAL_FEATURES
+        trial = await db.trials.find_one({"user_id": current_user.user_id}, {"_id": 0})
+        if trial:
+            activated_at = datetime.fromisoformat(trial["activated_at"])
+            expires_at = activated_at + timedelta(hours=24)
+            now = datetime.now(timezone.utc)
+            if now < expires_at:
+                feature_info = TRIAL_FEATURES.get(trial["feature"], {})
+                trial_unlocks = feature_info.get("unlocks", [])
+                trial_data = {
+                    "active": True,
+                    "feature": trial["feature"],
+                    "feature_label": feature_info.get("label", ""),
+                    "unlocks": trial_unlocks,
+                    "remaining_seconds": int((expires_at - now).total_seconds()),
+                    "expires_at": expires_at.isoformat(),
+                }
+            else:
+                trial_data = {"active": False, "expired": True}
+
     return {
         "plan": plan,
         "is_admin": is_admin,
         "admin_bypass": is_admin,
+        "trial": trial_data,
+        "trial_unlocks": trial_unlocks,
         "features": {
             "full_reports": FeatureGate.can_access_full_reports(plan),
             "full_insights": FeatureGate.can_access_full_insights(plan),

@@ -87,7 +87,9 @@ export function SubscriptionProvider({ children }) {
           status: 'active',
           features: response.data.features || DEFAULT_FEATURES,
           isAdmin: response.data.is_admin || false,
-          adminBypass: response.data.admin_bypass || false
+          adminBypass: response.data.admin_bypass || false,
+          trial: response.data.trial || null,
+          trialUnlocks: response.data.trial_unlocks || [],
         });
       }
     } catch (error) {
@@ -152,7 +154,13 @@ export function SubscriptionProvider({ children }) {
     canAccessPriorityAlerts: subscription.features.priority_alerts,
     canCreateStore: subscription.features.can_create_store,
     maxStores: subscription.features.max_stores,
-    storeCount: subscription.features.current_store_count
+    storeCount: subscription.features.current_store_count,
+    
+    // Trial
+    trial: subscription.trial || null,
+    trialUnlocks: subscription.trialUnlocks || [],
+    hasActiveTrial: !!(subscription.trial && subscription.trial.active),
+    isTrialFeature: (featureKey) => (subscription.trialUnlocks || []).includes(featureKey),
   };
   
   return (

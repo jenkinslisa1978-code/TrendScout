@@ -16,17 +16,20 @@ logger = logging.getLogger(__name__)
 
 # Requests per minute per plan
 PLAN_LIMITS = {
-    "free": 30,
-    "starter": 120,
-    "pro": 300,
-    "elite": 600,
-    "admin": 1000,
+    "free": 120,
+    "starter": 200,
+    "pro": 400,
+    "elite": 800,
+    "admin": 1200,
 }
 
 # Paths exempt from rate limiting
 EXEMPT_PATHS = {
     "/api/health",
     "/api/scoring/methodology",
+    "/api/stripe/feature-access",
+    "/api/auth/profile",
+    "/api/trial/status",
 }
 
 # Auth routes with stricter IP-based limits (per-IP, not per-user)

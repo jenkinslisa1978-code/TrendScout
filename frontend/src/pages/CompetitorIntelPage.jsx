@@ -27,8 +27,9 @@ export default function CompetitorIntelPage() {
   const [compareLoading, setCompareLoading] = useState(false);
   const [comparison, setComparison] = useState(null);
   const [analysisCount, setAnalysisCount] = useState(0);
-  const { isFree } = useSubscription();
+  const { isFree, isTrialFeature } = useSubscription();
   const FREE_ANALYSIS_LIMIT = 1;
+  const hasCompetitorAccess = !isFree || isTrialFeature('competitor_intel');
 
   useEffect(() => {
     (async () => {
@@ -42,7 +43,7 @@ export default function CompetitorIntelPage() {
   const analyzeStore = async (e) => {
     e.preventDefault();
     if (!url.trim()) return;
-    if (isFree && analysisCount >= FREE_ANALYSIS_LIMIT) {
+    if (!hasCompetitorAccess && analysisCount >= FREE_ANALYSIS_LIMIT) {
       toast.error('Free plan limit reached. Upgrade to run more analyses.');
       return;
     }
@@ -165,7 +166,7 @@ export default function CompetitorIntelPage() {
 
         {/* Comparison Result */}
         {comparison && (
-          isFree ? (
+          !hasCompetitorAccess ? (
             <LockedContent feature="Store Comparison" requiredPlan="Pro" blurIntensity="heavy">
               <ComparisonTable data={comparison} onClose={() => setComparison(null)} />
             </LockedContent>
@@ -176,7 +177,7 @@ export default function CompetitorIntelPage() {
 
         {/* Analysis Result */}
         {analysis && (
-          isFree && analysisCount > FREE_ANALYSIS_LIMIT ? (
+          !hasCompetitorAccess && analysisCount > FREE_ANALYSIS_LIMIT ? (
             <LockedContent feature="Competitor Intelligence" requiredPlan="Starter" blurIntensity="heavy">
               <StoreAnalysis data={analysis} />
             </LockedContent>

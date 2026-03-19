@@ -74,6 +74,7 @@ from routes.winners import routers as winners_routers
 from routes.api_access import routers as api_access_routers
 from routes.admin_images import routers as admin_images_routers
 from routes.cj_dropshipping import routers as cj_routers
+from routes.trial import routers as trial_routers
 
 # Include all routers
 all_router_groups = [
@@ -90,6 +91,7 @@ all_router_groups = [
     api_access_routers,
     admin_images_routers,
     cj_routers,
+    trial_routers,
 ]
 
 for group in all_router_groups:
