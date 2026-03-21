@@ -7,6 +7,7 @@ import ExitIntentPopup from '@/components/ExitIntentPopup';
 import SocialProofToast from '@/components/SocialProofToast';
 
 const NAV_ITEMS = [
+  { name: 'Features', href: '/features' },
   { name: 'Product', children: [
     { name: 'Trending Products', href: '/trending-products', desc: 'Browse rising products across channels' },
     { name: 'Leaderboard', href: '/top-trending-products', desc: 'Top-performing products ranked by score' },
