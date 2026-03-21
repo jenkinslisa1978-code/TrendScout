@@ -783,4 +783,66 @@ async def get_trending_products_index():
     return result
 
 
+
+@public_router.post("/quick-viability")
+async def quick_viability_check(request: Request):
+    """Public endpoint: AI-powered quick viability check for a product idea. No auth required."""
+    try:
+        body = await request.json()
+        product_name = body.get("product_name", "").strip()
+        if not product_name or len(product_name) < 2 or len(product_name) > 100:
+            raise HTTPException(status_code=400, detail="Product name must be 2-100 characters")
+
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not llm_key:
+            raise HTTPException(status_code=503, detail="AI service unavailable")
+
+        prompt = f"""You are a UK ecommerce product viability analyst. Analyse this product idea for the UK market: "{product_name}"
+
+Return a JSON object with exactly these fields (no markdown, just raw JSON):
+{{
+  "score": <number 0-100 representing UK viability>,
+  "verdict": "<one of: Strong Potential|Promising|Mixed Signals|High Risk>",
+  "signals": {{
+    "trend_momentum": <number 0-100>,
+    "market_saturation": <number 0-100>,
+    "margin_potential": <number 0-100>,
+    "uk_fit": <number 0-100>
+  }},
+  "strengths": ["<strength 1>", "<strength 2>"],
+  "risks": ["<risk 1>", "<risk 2>"],
+  "summary": "<2-3 sentence summary of viability in the UK market>"
+}}
+
+Be realistic and honest. Consider UK-specific factors: VAT (20%), shipping costs, competition on Amazon.co.uk/TikTok Shop UK/Shopify, and consumer demand."""
+
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"quick-viability-{uuid.uuid4().hex[:8]}",
+            system_message="You are a UK ecommerce product viability analyst. Always respond with valid JSON only, no markdown."
+        ).with_model("openai", "gpt-5.2")
+
+        response = await chat.send_message(UserMessage(text=prompt))
+        text = response.strip() if isinstance(response, str) else str(response)
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
+
+        result = json.loads(text)
+        result["product_name"] = product_name
+        return result
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Failed to parse AI response")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Quick viability error: {e}")
+        raise HTTPException(status_code=500, detail="Viability check failed")
+
+
+
 routers = [public_router, api_router]

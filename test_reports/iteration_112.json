@@ -1,0 +1,135 @@
+{
+  "summary": "Iteration 112 - Testing new Quick Viability Search and Interactive Demo features. All tests passed (8 backend, 25+ frontend checks). Both new homepage sections render correctly with full functionality.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "POST /api/public/quick-viability returns valid JSON with score, verdict, signals, strengths, risks, summary",
+    "API rejects empty product name (400)",
+    "API rejects too-short product name < 2 chars (400)",
+    "API rejects whitespace-only product name (400)",
+    "API rejects missing product_name field (400)",
+    "API handles special characters in product name",
+    "API works without authentication (public endpoint)",
+    "Quick Viability Search section renders on homepage",
+    "Search input with placeholder text exists",
+    "'Check viability' button exists and is clickable",
+    "4 suggestion chips render (LED sunset lamp, Portable blender, Posture corrector, Ice roller)",
+    "Clicking suggestion chip fills input with product name (does NOT auto-submit)",
+    "Submitting search shows loading state then result card",
+    "Result card displays score (X/100 format)",
+    "Result card displays verdict badge (Strong Potential/Promising/Mixed Signals/High Risk)",
+    "Result card displays signal breakdown bars (trend_momentum, market_saturation, margin_potential, uk_fit)",
+    "Result card displays strengths list",
+    "Result card displays risks list",
+    "Result card displays summary text",
+    "Result card displays 'Get full analysis' CTA button linking to /signup",
+    "Interactive Demo section renders on homepage",
+    "4 step tabs render (Browse, Score, Analyse, Launch)",
+    "Preview panel shows mock browser chrome (red/amber/green dots, URL bar)",
+    "Clicking each tab changes preview panel content",
+    "'Next' button advances to next step",
+    "On last step (Launch), 'Try it for real' link replaces Next button",
+    "'Try it for real — Start Free' CTA button links to /signup",
+    "Step progress indicator dots show current step (active dot wider)",
+    "Hero section renders correctly",
+    "Trust bar renders correctly",
+    "Feature highlights section renders correctly",
+    "Trending products section renders correctly",
+    "Final CTA section renders correctly",
+    "Features page (/features) still works",
+    "How It Works page (/how-it-works) still works",
+    "Pricing page (/pricing) still works",
+    "Mobile responsive (390x844 viewport tested)",
+    "No console errors"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_quick_viability_api.py",
+    "/app/test_reports/pytest/quick_viability_api_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "QuickViabilitySearch.jsx correctly implements all required functionality with proper data-testid attributes",
+    "InteractiveDemo.jsx correctly implements 4-step product tour with mock data",
+    "Backend /api/public/quick-viability endpoint properly validates input (2-100 chars) and uses GPT-5.2 via Emergent LLM Key",
+    "API response structure matches frontend expectations (score, verdict, signals, strengths, risks, summary)",
+    "Suggestion chips correctly fill input without auto-submitting (per requirements)",
+    "Error handling implemented for API failures",
+    "Loading state properly shown during AI processing"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_quick_viability_api.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+  "test_credentials": "None required (public endpoints)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 112 verified two new homepage features: (1) QuickViabilitySearch component with AI-powered product analysis via POST /api/public/quick-viability - takes 5-10 seconds to respond, returns score/verdict/signals/strengths/risks/summary. (2) InteractiveDemo component with 4 clickable tabs (Browse/Score/Analyse/Launch) showing mock product tour data. Both sections render correctly on desktop and mobile. All other pages (Features, How It Works, Pricing) still work. No mocked APIs - the quick viability endpoint uses real GPT-5.2.",
+  "verified_features": {
+    "quick_viability_search": {
+      "section_renders": true,
+      "search_input": true,
+      "check_viability_button": true,
+      "suggestion_chips": 4,
+      "chip_fills_input": true,
+      "chip_auto_submits": false,
+      "loading_state": true,
+      "result_card_score": true,
+      "result_card_verdict": true,
+      "result_card_signals": true,
+      "result_card_strengths": true,
+      "result_card_risks": true,
+      "result_card_summary": true,
+      "result_card_cta": true,
+      "api_response_time": "5-10 seconds"
+    },
+    "interactive_demo": {
+      "section_renders": true,
+      "tabs_count": 4,
+      "tab_labels": ["Browse", "Score", "Analyse", "Launch"],
+      "preview_panel": true,
+      "mock_browser_chrome": true,
+      "red_amber_green_dots": true,
+      "url_bar": true,
+      "tab_click_changes_content": true,
+      "next_button_advances": true,
+      "last_step_shows_try_it_link": true,
+      "signup_cta_button": true,
+      "progress_dots": true
+    },
+    "other_sections": {
+      "hero_section": true,
+      "trust_bar": true,
+      "feature_highlights": true,
+      "trending_products": true,
+      "final_cta": true
+    },
+    "other_pages": {
+      "features_page": true,
+      "how_it_works_page": true,
+      "pricing_page": true
+    },
+    "responsive": {
+      "desktop": true,
+      "mobile": true
+    }
+  },
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  },
+  "console_errors": {
+    "count": 0,
+    "details": "No console errors"
+  }
+}

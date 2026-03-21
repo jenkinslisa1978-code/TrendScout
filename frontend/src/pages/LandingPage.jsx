@@ -6,6 +6,8 @@ import { trackEvent, EVENTS } from '@/services/analytics';
 import PageMeta, { organizationSchema, websiteSchema, softwareAppSchema } from '@/components/PageMeta';
 import { ViabilityIndicator } from '@/components/ViabilityBadge';
 import { RevealSection, RevealStagger } from '@/hooks/useScrollReveal';
+import InteractiveDemo from '@/components/InteractiveDemo';
+import QuickViabilitySearch from '@/components/QuickViabilitySearch';
 import {
   TrendingUp, ArrowRight, Check, Search, BarChart3, Shield,
   Zap, Package, ChevronRight, Globe, PoundSterling, RefreshCw,
@@ -159,6 +161,12 @@ export default function LandingPage() {
           </RevealSection>
         </div>
       </section>
+
+      {/* ═══ QUICK VIABILITY SEARCH ═══ */}
+      <QuickViabilitySearch />
+
+      {/* ═══ INTERACTIVE PRODUCT TOUR ═══ */}
+      <InteractiveDemo />
 
       {/* ═══ LIVE TRENDING PRODUCTS ═══ */}
       <section className="py-20 lg:py-24 bg-slate-50" data-testid="product-showcase-section">
