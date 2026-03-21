@@ -36,25 +36,11 @@ onLCP(reportVital);
 onTTFB(reportVital);
 
 const rootElement = document.getElementById("root");
-
-// Hydrate pre-rendered content from react-snap, otherwise render normally
-if (rootElement.hasChildNodes()) {
-  const { hydrateRoot } = require("react-dom/client");
-  hydrateRoot(
-    rootElement,
-    <React.StrictMode>
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
-    </React.StrictMode>,
-  );
-} else {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <React.StrictMode>
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
-    </React.StrictMode>,
-  );
-}
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+  </React.StrictMode>,
+);
