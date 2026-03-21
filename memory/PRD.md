@@ -13,40 +13,44 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Completed Features
 
-### How It Works Visual Walkthrough Redesign (March 21, 2026)
-- **4-step visual walkthrough**: Each step has AI-generated illustration + text with alternating left/right layouts
-- **Step images**: Discover (multi-channel), Scoring (78/100 gauge), UK Viability (UK map), Launch (rocket dashboard)
-- **Interactive FAQ accordion**: Click to expand/collapse, only one open at a time
-- **Scroll animations**: RevealSection/RevealStagger applied across all sections
-- **Enhanced sections**: 7-signal scoring grid, color-coded score tiers, who it's for/not for cards, UK viability factors
+### Pricing Page Visual Enhancement (March 21, 2026)
+- **Gradient headline**: Matching site-wide style
+- **Enhanced pricing cards**: Plan icons (Eye/TrendingUp/Rocket), improved spacing, bigger prices, rounded checkmarks
+- **Most Popular badge**: Sparkles icon, centered pill, indigo shadow
+- **Trust strip**: "7 days, 0 contracts, GBP, < 2 min" section between cards and comparison table
+- **Improved comparison table**: Rounded container, better column headers, indigo highlight on Growth
+- **FAQ accordion**: Consistent with How It Works page (animated chevron, smooth expand/collapse)
+- **Final CTA**: Dark section with gradient accent
+- **Scroll animations**: RevealSection/RevealStagger across all sections
+- Stripe checkout functionality fully preserved
+- Verified: iteration_111 (100%, 21/21 tests)
+
+### How It Works Visual Walkthrough (March 21, 2026)
+- 4-step visual walkthrough with AI-generated illustrations, alternating layouts, interactive FAQ
 - Verified: iteration_110 (100%, 22/22 tests)
 
-### Scroll-Triggered Fade-In Animations (March 21, 2026)
-- useScrollReveal hook with RevealSection (directional) and RevealStagger (staggered children)
-- Applied to homepage, features page, and how-it-works page
+### Scroll-Triggered Animations (March 21, 2026)
+- useScrollReveal hook with RevealSection + RevealStagger, applied site-wide
 
-### Homepage Split into Separate Pages (March 21, 2026)
-- **Slim homepage**: Hero + trust bar + 4 feature cards + 3 live products + CTA
-- **Dedicated /features page**: Core capabilities, UK intelligence, methodology, use cases, free tools
-- **Navigation**: "Features" added as first top-level nav link
+### Homepage Split (March 21, 2026)
+- Slim homepage + dedicated /features page + nav updated
 - Verified: iteration_109 (100%, 22/22 tests)
 
 ### Homepage Visual Redesign (March 21, 2026)
-- 4 AI-generated images: dashboard mockup, product analysis, UK data map, trending products
-- Verified: iteration_108 (100%, 21/21 tests)
+- 4 AI-generated images, verified: iteration_108 (100%, 21/21 tests)
 
 ### All Previous Features
-- Prediction Accuracy Tracking, Trust & Accuracy Framework, Methodology page
+- Prediction Accuracy Tracking, Trust Framework, Methodology page
 - Changelog, 6 free tools, FAQ schema, Trial expiry, A/B framework
 - CRO: Exit-intent, Social proof, Quiz, Digest, Tool recommender
 - Performance: Code splitting, Lazy loading, react-snap, Blog automation
-- Phase 3a/2/1: Website rebuild, analytics, schema, viability score, lead capture
 
 ## Key Files
 - `/app/frontend/src/pages/LandingPage.jsx` - Focused homepage
-- `/app/frontend/src/pages/FeaturesPage.jsx` - Detailed features page
+- `/app/frontend/src/pages/FeaturesPage.jsx` - Detailed features
 - `/app/frontend/src/pages/HowItWorksPage.jsx` - Visual walkthrough
-- `/app/frontend/src/hooks/useScrollReveal.js` - Scroll animation hook
+- `/app/frontend/src/pages/PricingPage.jsx` - Enhanced pricing
+- `/app/frontend/src/hooks/useScrollReveal.js` - Scroll animations
 
 ## Remaining
 - Wire `useABTest` hook to hero CTA (P1)
