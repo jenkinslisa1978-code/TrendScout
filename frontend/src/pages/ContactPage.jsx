@@ -55,9 +55,9 @@ export default function ContactPage() {
             </div>
 
             <div className="mt-10 rounded-lg bg-slate-50 border border-slate-200 p-6">
-              <h3 className="text-sm font-semibold text-slate-900 mb-2">Company details</h3>
+              <h3 className="text-sm font-semibold text-slate-900 mb-2">Contact details</h3>
               <div className="text-sm text-slate-600 space-y-1">
-                <p>TrendScout Ltd</p>
+                <p>TrendScout</p>
                 <p>United Kingdom</p>
                 <p>Email: <a href="mailto:info@trendscout.click" className="text-indigo-600">info@trendscout.click</a></p>
                 <p>Website: <a href="https://trendscout.click" className="text-indigo-600">trendscout.click</a></p>

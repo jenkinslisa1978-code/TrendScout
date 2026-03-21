@@ -84,8 +84,8 @@ export default function AboutPage() {
             <div className="rounded-lg border border-slate-200 bg-white p-6">
               <div className="grid sm:grid-cols-2 gap-6 text-sm">
                 <div>
-                  <p className="text-slate-500">Company name</p>
-                  <p className="font-medium text-slate-900 mt-0.5">TrendScout Ltd</p>
+                  <p className="text-slate-500">Name</p>
+                  <p className="font-medium text-slate-900 mt-0.5">TrendScout</p>
                 </div>
                 <div>
                   <p className="text-slate-500">Location</p>

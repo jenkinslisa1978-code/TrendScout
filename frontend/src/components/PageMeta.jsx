@@ -39,7 +39,7 @@ export const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'TrendScout',
-  legalName: 'TrendScout Ltd',
+  legalName: 'TrendScout',
   url: 'https://trendscout.click',
   email: 'info@trendscout.click',
   description: 'AI product research and launch intelligence for UK ecommerce sellers.',
@@ -73,7 +73,7 @@ export const softwareAppSchema = {
     highPrice: '79',
     offerCount: '4',
   },
-  provider: { '@type': 'Organization', name: 'TrendScout Ltd' },
+  provider: { '@type': 'Organization', name: 'TrendScout' },
 };
 
 export function faqSchema(items) {
@@ -109,6 +109,6 @@ export function webPageSchema(name, description, url) {
     description,
     url: `https://trendscout.click${url}`,
     isPartOf: { '@type': 'WebSite', name: 'TrendScout', url: 'https://trendscout.click' },
-    provider: { '@type': 'Organization', name: 'TrendScout Ltd' },
+    provider: { '@type': 'Organization', name: 'TrendScout' },
   };
 }

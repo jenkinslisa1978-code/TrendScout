@@ -193,7 +193,7 @@ export default function LandingLayout({ children }) {
               <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
                 AI product research and launch intelligence for UK ecommerce sellers.
               </p>
-              <p className="text-xs text-slate-400 mt-3">TrendScout Ltd &middot; United Kingdom</p>
+              <p className="text-xs text-slate-400 mt-3">TrendScout &middot; United Kingdom</p>
             </div>
 
             {/* Product */}
@@ -248,7 +248,7 @@ export default function LandingLayout({ children }) {
           </div>
 
           <div className="border-t border-slate-100 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-slate-400">&copy; {new Date().getFullYear()} TrendScout Ltd. All rights reserved. Registered in England &amp; Wales.</p>
+            <p className="text-xs text-slate-400">&copy; {new Date().getFullYear()} TrendScout. All rights reserved.</p>
             <div className="flex items-center gap-5 text-xs text-slate-400">
               <Link to="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-slate-600 transition-colors">Terms of Service</Link>
