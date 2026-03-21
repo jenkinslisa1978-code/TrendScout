@@ -13,30 +13,25 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Completed Features
 
+### Homepage Split into Separate Pages (March 21, 2026)
+- **Slim homepage**: Hero + trust bar + 4 feature cards + 3 live trending products + final CTA (~3036px)
+- **New /features page**: Core capabilities (with analysis image), UK intelligence (with map), 7-signal methodology, 6 use cases, free tools, CTA (~5223px)
+- **Navigation updated**: "Features" added as first top-level nav link with active state highlighting
+- **Route added**: `/features` lazy-loaded in App.js
+- Verified: iteration_109 (100%, 22/22 tests)
+
 ### Homepage Visual Redesign (March 21, 2026)
-- **Hero section**: Split layout with headline on left, AI-generated dashboard mockup on right
-- **4 AI-generated images**: Dashboard mockup, product analysis visual, UK ecommerce data map, trending products interface
-- **Visual storytelling**: Each major section now paired with relevant imagery
-- **Feature showcase**: Product viability analysis image + feature cards
-- **UK section**: UK data map visual with feature badges
-- **Free tools teaser**: New section promoting free calculators
-- **Improved hierarchy**: Section labels, gradient accents, modern card design with hover effects
-- **Floating badge**: Products tracked counter on hero
-- **Responsive**: Fully tested on desktop and mobile
+- 4 AI-generated images: dashboard mockup, product analysis, UK data map, trending products interface
+- Split hero layout, visual storytelling, gradient accents, modern card design
 - Verified: iteration_108 (100%, 21/21 tests)
 
 ### Prediction Accuracy Tracking System (March 21, 2026)
-- **GET /api/accuracy/stats**: Live endpoint returning real tracked accuracy data
-- **Prediction snapshots**: Every scored product is snapshotted (score, margin, trend, signals)
-- **30/90 day reviews**: Daily cron (`review_prediction_accuracy`, 6 AM UTC) compares snapshots vs current data
-- **Accuracy page** (`/accuracy`): Shows live-tracked stats when enough data (5+ reviews), honest "building track record" state otherwise
-- **Honesty overhaul**: Removed fabricated "2,000+ sellers", "85% accuracy", fake case studies
-- **Real vs estimated transparency**: Clear section explaining what is real data vs calculated estimates
-- DB collections: `prediction_snapshots`, `prediction_reviews`
+- GET /api/accuracy/stats, prediction snapshots, 30/90 day reviews, accuracy page
+- Honesty overhaul: removed fabricated stats, real vs estimated transparency
 - Verified: iteration_107 (100%)
 
 ### Trust & Accuracy Framework (March 21, 2026)
-- Methodology page (/methodology), Confidence indicators, Accuracy disclaimers, Data source labels
+- Methodology page, Confidence indicators, Accuracy disclaimers, Data source labels
 - Verified: iteration_106 (100%)
 
 ### All Previous Features
