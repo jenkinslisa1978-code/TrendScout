@@ -63,6 +63,14 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - POST /api/leads/capture — Email lead capture + instant drip email
 - GET /api/accuracy/stats — Prediction accuracy metrics
 
+### Admin Growth & Revenue Dashboard (Feb 2026)
+- Full analytics dashboard at `/admin/analytics` (admin-only access)
+- Revenue KPIs: MRR, new revenue, paid subscribers with period-over-period trends
+- Lead capture metrics: total leads, sources breakdown, top product searches
+- Email drip performance: delivery rates per step (instant, day 2, day 5)
+- User plan distribution and conversion funnel visualization
+- Backend endpoint: `GET /api/analytics/growth?days=30`
+
 ## Remaining Tasks
 - Wire `useABTest` hook to hero CTA (P1)
 - Set `REACT_APP_GA4_ID` in production .env (P1 - user needs to provide GA4 ID)

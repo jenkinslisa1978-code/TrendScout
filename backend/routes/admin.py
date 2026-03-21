@@ -442,5 +442,106 @@ async def get_conversion_funnel(
     }
 
 
+# =====================
+# GROWTH / REVENUE OVERVIEW
+# =====================
+
+@analytics_router.get("/growth")
+async def get_growth_metrics(
+    days: int = 30,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Admin-only growth & revenue metrics."""
+    await require_admin(current_user)
+
+    now = datetime.now(timezone.utc)
+    from_date = (now - timedelta(days=days)).isoformat()
+    prev_from = (now - timedelta(days=days * 2)).isoformat()
+
+    # --- Revenue from subscriptions ---
+    plan_prices = {"pro": 39, "elite": 79}
+    active_subs = await db.subscriptions.find(
+        {"status": "active"}, {"_id": 0, "plan_name": 1, "user_id": 1, "created_at": 1}
+    ).to_list(500)
+    mrr = sum(plan_prices.get(s.get("plan_name", "").lower(), 0) for s in active_subs)
+    new_subs_period = [s for s in active_subs if s.get("created_at", "") >= from_date]
+    new_revenue = sum(plan_prices.get(s.get("plan_name", "").lower(), 0) for s in new_subs_period)
+    total_paid = len([s for s in active_subs if s.get("plan_name", "").lower() in plan_prices])
+
+    # Previous period for comparison
+    prev_subs = [s for s in active_subs if prev_from <= s.get("created_at", "") < from_date]
+    prev_revenue = sum(plan_prices.get(s.get("plan_name", "").lower(), 0) for s in prev_subs)
+
+    # --- Lead metrics ---
+    total_leads = await db.leads.count_documents({})
+    period_leads = await db.leads.count_documents({"created_at": {"$gte": from_date}})
+    prev_leads = await db.leads.count_documents({"created_at": {"$gte": prev_from, "$lt": from_date}})
+
+    # Lead sources breakdown
+    source_pipeline = [
+        {"$match": {"created_at": {"$gte": from_date}}},
+        {"$group": {"_id": "$source", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    lead_sources = {doc["_id"]: doc["count"] async for doc in db.leads.aggregate(source_pipeline)}
+
+    # Top searched products from lead context
+    search_pipeline = [
+        {"$match": {"context": {"$exists": True, "$ne": ""}}},
+        {"$project": {"term": {"$trim": {"input": {"$replaceAll": {"input": "$context", "find": "Searched: ", "replacement": ""}}}}}},
+        {"$group": {"_id": {"$toLower": "$term"}, "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10},
+    ]
+    top_searches = [{"term": doc["_id"], "count": doc["count"]} async for doc in db.leads.aggregate(search_pipeline)]
+
+    # --- Email drip metrics ---
+    drip_pipeline = [
+        {"$unwind": "$drip_emails_sent"},
+        {"$group": {"_id": "$drip_emails_sent.type", "count": {"$sum": 1}}},
+    ]
+    drip_counts = {doc["_id"]: doc["count"] async for doc in db.leads.aggregate(drip_pipeline)}
+
+    # --- Conversion funnel ---
+    total_users = await db.auth_users.count_documents({})
+    period_users = await db.auth_users.count_documents({"created_at": {"$gte": from_date}})
+    trial_count = await db.trials.count_documents({})
+
+    # Plan breakdown
+    plan_pipeline = [
+        {"$group": {"_id": "$plan", "count": {"$sum": 1}}},
+    ]
+    plan_dist = {doc["_id"] or "none": doc["count"] async for doc in db.profiles.aggregate(plan_pipeline)}
+
+    return {
+        "period_days": days,
+        "revenue": {
+            "mrr": mrr,
+            "new_revenue_period": new_revenue,
+            "prev_revenue_period": prev_revenue,
+            "total_paid_subscribers": total_paid,
+            "new_subscribers_period": len(new_subs_period),
+        },
+        "leads": {
+            "total": total_leads,
+            "period": period_leads,
+            "prev_period": prev_leads,
+            "sources": lead_sources,
+            "top_searches": top_searches,
+        },
+        "email_drip": {
+            "viability_result_sent": drip_counts.get("viability_result", 0),
+            "trending_products_sent": drip_counts.get("trending_products", 0),
+            "trial_prompt_sent": drip_counts.get("trial_prompt", 0),
+        },
+        "users": {
+            "total": total_users,
+            "period_signups": period_users,
+            "trials": trial_count,
+            "plan_distribution": plan_dist,
+        },
+    }
+
+
 
 routers = [image_review_router, analytics_router]
