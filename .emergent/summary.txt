@@ -1,166 +1,128 @@
-<analysis>**original_problem_statement:**
-The user wants to completely rebuild and reposition their website, TrendScout, to become a serious, conversion-focused, UK-first ecommerce intelligence platform. The goal is to move away from a generic winning products site to a credible SaaS tool for UK sellers on Shopify, TikTok, and Amazon.
+<analysis>original_problem_statement: The user wants to enhance the TrendScout website to be more persuasive and more measurable, with a focus on public proof of value, lead capture, conversion performance, and absolute honesty regarding data accuracy.
 
-This is a comprehensive 14-part strategic brief that includes rebuilding the homepage, pricing page, and site architecture for SEO; creating new UK-focused landing pages, competitor comparison pages, and free tools; introducing a UK Product Viability Score concept; and improving the overall design, trust signals, and user journey to drive conversions. The user has provided detailed instructions on copy, structure, and priorities.
+**User's preferred language**: English (INSTRUCT next agent to respond in English)
 
-**User's preferred language**: English
-
-**what currently exists?**
-The application is a feature-rich dropshipping intelligence platform. In this session, the agent has:
-1.  Fixed all data quality and consistency issues (product images and scores).
-2.  Added a Similar Products feature.
-3.  Added Data Freshness indicators and backend refresh jobs.
-4.  Implemented comprehensive content gating to create a freemium model, locking premium features behind paywalls.
-5.  Built a full-featured Free Trial mechanic, allowing users to unlock one premium feature for 24 hours.
-6.  Fixed a critical rate-limiting bug that was blocking API calls for free users.
-7.  Integrated a user-provided Pexels API key.
-
-Upon receiving the major rebuild request, the agent audited the current public-facing pages and invoked the  to generate a new, comprehensive design system located at .
+**what currently exists?** 
+TrendScout is a comprehensive, live UK-focused ecommerce intelligence platform built with React, FastAPI, and MongoDB. It includes a robust public-facing marketing site with SEO landing pages, dynamic comparison pages, an AI-generated blog, and 8 free standalone calculators/tools. The backend features complex viability scoring, automated cron jobs (for AI blog generation, lead digest emails, and trial expiry), and a newly built prediction accuracy tracking system. The app recently underwent a major conversion and honesty overhaul, removing fabricated claims and replacing them with transparent methodologies and real tracking systems.
 
 **Last working item**:
--   **Last item agent was working:** The agent received a massive new request to rebuild the entire public-facing website. The agent's first steps were to audit the existing codebase and page structure, and then call the  to get a new design system for the rebuild.
--   **Status:** NOT STARTED (on implementation). The agent has completed the initial audit and planning phase.
--   **Agent Testing Done:** N/A
--   **Which testing method agent to use?** Frontend testing agent and screenshot tool will be essential to verify the visual and structural changes of the website rebuild.
--   **User Testing Done:** N
+- Last item agent was working: Redesigning the Homepage () to be more visually attractive. 
+- Reasoning: The user asked if the homepage needed pictures. The agent diagnosed the current homepage as too text-heavy, lacking visual proof, and having empty hero space. The user approved the agent's plan to add dashboard mockups, visual storytelling, and better visual hierarchy. The agent had just opened  when the session ended.
+- Status: IN PROGRESS
+- Agent Testing Done: N
+- Which testing method agent to use? Frontend testing agent (to verify layout, responsiveness, and functionality of the new homepage UI) + screenshot tool for visual verification.
+- User Testing Done: N
 
 **All Pending/In progress Issue list**:
-This is not a list of bugs but a new project. The user has provided a clear priority order.
-
--   **Issue 1: Complete Website Rebuild (P0)**
-    -   **Description:** The entire public-facing website needs to be rebuilt from the ground up to align with the new UK-first, conversion-focused strategy outlined by the user. This is a multi-part project encompassing design, architecture, content, and SEO.
-    -   **Next debug checklist:**
-        1.  Thoroughly review the user's 14-part brief (the last user message).
-        2.  Thoroughly review the new design system in .
-        3.  Begin implementation, starting with the highest-priority items: Homepage, Pricing Page, and How It Works Page.
-    -   **Why fix this issue and what will be achieved with the fix?** To transform the website into a credible, trustworthy, and high-converting SaaS platform that can attract and retain UK ecommerce sellers, differentiate from competitors, and rank in search engines.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Both. Frontend is the primary focus, but new pages will require backend support (e.g., for serving sample data).
-    -   **Blocked on other issue:** None.
+Issue 1: Redesign Homepage UI (P0)
+- Attempted fixes: The agent just opened  to begin the redesign. No code has been written yet.
+- Next debug checklist: 
+  - Update  hero section to include a dashboard mockup/screenshot.
+  - Add visual storytelling elements (product screenshots, before/after graphics) to the feature sections.
+  - Improve visual hierarchy to break up text-heavy areas.
+- Why fix this issue and what will be achieved with the fix? A more attractive, visually demonstrative homepage significantly improves user trust and conversion rates.
+- Status: IN PROGRESS
+- Is recurring issue? N
+- Should Test frontend/backend/both after fix? Frontend 
+- Blocked on other issue: None
 
 **In progress Task List**:
--   None.
+Task 1: Visual Overhaul of Landing Page (P0)
+- Where to resume: Modify .
+- What will be achieved with this? Higher engagement via visual proof of the platform's capabilities.
+- Status: IN PROGRESS
+- Should Test frontend/backend/both after fix? Frontend
+- Blocked on something: None
 
 **Upcoming and Future Tasks**
-The user has provided a clear, prioritized list for the website rebuild.
+Upcoming Tasks:
+- Wire the newly created  hook to the hero CTA on the landing page for live A/B testing (P1)
+- Set  in the production  file to fully enable Google Analytics tracking (P2)
 
-**Upcoming Tasks (High Priority - P0):**
-1.  **Homepage Rebuild:** Recreate  using the new copy from the brief and the London/Navy aesthetic from .
-2.  **Pricing Page Rebuild:** Recreate  with a monthly/annual toggle, GBP pricing, and a professional feature comparison table.
-3.  **How It Works Page Creation:** Build a new page at  to explain the platform's methodology and build trust.
-4.  **Trust Signal Improvement:** Rebuild the  and  pages. Update the footer and navigation in .
-5.  **Add Public Sample Data:** Modify public-facing pages like  to show a limited amount of data to unauthenticated users to provide value before signup.
-
-**Future Tasks (Lower Priority - P1/P2):**
--   (P1) **Create UK-Focused Landing Pages:** Build new SEO pages like , , etc.
--   (P1) **Create Competitor Comparison Pages:** Build new pages like .
--   (P1) **Build Free Tools:** Create new pages with useful calculators (Profit Margin, ROAS, etc.).
--   (P2) **Full SEO Architecture Fix:** Implement server-side rendering, schema markup, sitemaps, and metadata across all new pages.
--   (P2) **Introduce UK Product Viability Score:** Create marketing content and potentially a dedicated landing page for this new flagship feature concept.
--   (P2) **Implement Analytics:** Add GA4 and custom event tracking for key conversion actions.
+Future Tasks:
+- None. (All Phase 1-3 requirements and backlog items have been completed).
 
 **Completed work in this session**
--   **Data Quality & Consistency Fix:** Replaced 26 incorrect product images with AI-generated ones and unified the product scoring system to resolve user-facing inconsistencies.
--   **New Feature: Similar Products**: Added a section on the product detail page to recommend related items.
--   **New Feature: Data Freshness**: Added last updated timestamps and data source badges to product cards to build user trust in the data.
--   **Freemium Model Implementation:** Successfully implemented content gating across all premium features, creating a robust free plan with clear upgrade paths.
--   **New Feature: Free Trial Mechanic:** Built a complete 24-hour free trial system, allowing users to unlock one premium feature without a credit card. This included backend APIs and frontend UI (, updated ).
--   **Critical Bug Fix (Rate Limiting):** Diagnosed and fixed a  error by increasing the API rate limit for the free plan, which was preventing the app from functioning correctly.
--   **Pexels API Key Integration:** Added the user-provided key to the environment for use in the admin image refresh tool.
+- Removed dead code: Deleted redundant  (DONE)
+- Performance: Implemented Route-level code splitting using  and  in  (DONE)
+- Performance: Added  to images globally and integrated  for static pre-rendering (DONE)
+- Analytics: Created and integrated  hook for tracking on Comparison and Sample pages (DONE)
+- Conversion: Added , , , and  integrations (DONE)
+- Legal/Branding: Removed all fabricated Ltd and Registered Company claims across the site (DONE)
+- Content Expansion: Created , , and 3 seed articles for the AI blog (DONE)
+- New Free Tools: Added  and  (DONE)
+- Backend Automation: Fixed and verified cron jobs for AI blog generation, weekly lead digests, and trial expiry emails (DONE)
+- Trust & Accuracy Overhaul: Created , , removed fabricated social proof/stats, and built a real backend prediction accuracy tracking cron job () (DONE)
 
 **Earlier issues found/mentioned but not fixed**
--   None.
+- None. The previous agent achieved a 100% test pass rate across 8 extensive testing iterations.
 
 **Known issue recurrence from previous fork**
--   None.
+- None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Full-Stack Feature Implementation:** The agent demonstrated the ability to add new features from backend (FastAPI endpoints, DB queries) to frontend (React components, hooks).
--   **Content Gating & Freemium Logic:** Used a combination of a  hook and a reusable  component to implement tiered feature access.
--   **Time-Based Free Trial System:** Implemented a trial mechanic involving a new  DB collection, API endpoints to manage state, and frontend logic to display trial status and temporarily unlock features.
--   **API Rate Limit Debugging:** Identified and resolved a critical  error by analyzing API call volume and adjusting the rate limit configuration in the backend middleware.
--   **Design System Integration:** The agent initiated the rebuild by calling the  and receiving a comprehensive  file.
+- **Frontend Performance**: Implements React code-splitting and  for SEO-friendly static pre-rendering.
+- **Background Automation**: Uses  in FastAPI to handle email digests, blog generation, and the new 30/90-day accuracy prediction reviews.
+- **Honesty/Trust Framework**: The app strictly separates verified data from estimates. Fabricated stats were deliberately removed in favor of real, measured tracking logic.
 
 **key DB schema**
--   **trials**:  - Stores active user trials.
+- : Product viability data and scores.
+- : Captured emails from free tools and popups.
+- : (New) Tracks product predictions to compare initial launch scores against actual 30/90 day outcomes.
 
 **changes in tech stack**
--   None.
+- Added  to  for frontend static pre-rendering.
 
 **All files of reference**
--   : **(CRITICAL)** The new design system for the entire website rebuild.
--   User's last message in history: **(CRITICAL)** The 14-part brief detailing the rebuild project.
--   : The current homepage, which needs to be completely rebuilt.
--   : The current pricing page, to be rebuilt.
--   : The layout for public pages, which will need navigation and footer updates.
--   : Contains the  component, which was updated with trial logic and will be key for the new site.
--   : Contains all feature access and trial logic.
+- : The file currently being edited for the visual redesign.
 
 **Areas that need refactoring**:
--   The entire public-facing website (, , etc.) needs to be refactored/rebuilt according to the user's new brief and the  file.
+- None currently. 
 
 **key api endpoints**
--   : Activates a 24-hour trial for a specific feature.
--   : Checks the user's trial eligibility and status.
--   : Returns products similar to the given one.
--   : Returns a summary of data source freshness.
--   : (Updated) Now includes active trial information.
+- : Returns real tracked accuracy metrics.
+- : Used heavily across the site for the new lead magnets.
+- : Generates initial starter content.
 
 **Critical Info for New Agent**
--   **Your top priority is the complete rebuild of the public-facing website.** The user has provided a new, detailed strategic direction. The previous marketing site is now considered legacy.
--   The two most important documents for you are the **user's last message** (the 14-part brief) and the new design system at . Adhere to them strictly.
--   Start with the highest-impact pages as requested: **Homepage, Pricing Page, and a new How It Works page.**
--   The backend is robust. All gating, trial, and data freshness logic you need for the new frontend already exists and is working correctly.
--   This is a large, multi-step project. Plan your work in phases, following the priority order set by the user.
+- **Honesty Policy:** The user is highly sensitive to the accuracy of the platform's claims. In the last session, all fabricated social proof, fake user counts, and estimated accuracy percentages were strictly removed. When redesigning the , **do not** insert fake stats or fake user testimonials. If you use mockups, ensure they look like UI demonstrations rather than fabricated track records.
+- **Current State:** The agent was mid-thought. They opened  to begin a visual redesign but ran out of context. You should pick up exactly where they left off by modifying  to include dashboard graphics, visual storytelling, and a less text-heavy layout.
 
 **documents and test reports created in this job**
--   
--   
--   
--   
--   
+- 
+-  through 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks to implement a free trial mechanic and provides a Pexels API key.
-2.  **Agent:** Implements the Pexels key and the full free trial system (backend APIs, frontend components, updated subscription hook).
-3.  **Agent:** Diagnoses and fixes a critical  rate-limiting error preventing the trial from working correctly.
-4.  **Agent:** Verifies the complete trial flow with screenshots and the testing agent.
-5.  **Agent:** Finishes the task, summarizing the work and suggesting an enhancement (trial expiry emails).
-6.  **User:** **(CRITICAL)** Submits a massive, 14-part request to completely rebuild and reposition the entire public-facing website with a new UK-first strategy, new design, new pages, and a focus on SEO and conversion.
-7.  **Agent:** Acknowledges the large scope, starts by auditing the current file structure.
-8.  **Agent:** Calls the  to generate a new design system for the rebuild.
-9.  **Agent:** Receives  from the design agent.
-10. **Agent:** Continues exploring the codebase to prepare for the rebuild.
+1. User: can we remove the emergent banner from the app? (Agent instructed to contact support).
+2. User: trendscout is not an ltd and is not a registered company. amend the site to reflect this (Done).
+3. User: can you think of anything which would improve the app for users (Agent proposed 6 CRO features).
+4. User: do 1-6 (Done).
+5. User: yes and do next action items (Done - blog seeding/performance).
+6. User: yes and do next action items (Done - fixed blog cron, added react-snap).
+7. User: yes and do all other items (Done - added changelog, new tools, schemas).
+8. User: how can users be sure the information we are giving is accurate -> all (Done - created Methodology/Accuracy pages).
+9. User: can you reassure me that the information is correct? ... make it perfectly clear. how do i create a system that tracks prediction accuracy? (Done - stripped fake stats, built real tracking system).
+10. User: do you think the app needs a more attractive homepage with pictures or somethung -> yes go ahead (Pending - Agent opened  to begin).
 
 **Project Health Check:**
--   **Broken:** No.
--   **Mocked:** No.
--   **Live:** Yes, the application is fully functional. The current task is a complete strategic rebuild of the public-facing marketing site, not fixing a broken app.
+- Broken: No
+- Mocked: Mocked data/placeholders were recently purged in favor of real tracking. Any remaining mock data on the Sample Analysis page is explicitly labelled as illustrative.
 
 **3rd Party Integrations**
--   **Shopify:** Admin API & App Bridge.
--   **Stripe:** Subscription billing.
--   **Resend:** Transactional emails.
--   **OpenAI GPT-4o:** AI features.
--   **Gemini (via ):** Product image generation.
--   **Pexels:** Admin image search (newly configured with API key).
--   **Sentry:** Error monitoring.
--   **CJ Dropshipping:** Live supplier data.
--   **Google Tag Manager / Google Analytics:** Configured via .
+- OpenAI/Gemini — uses Emergent LLM Key
+- Stripe — uses User API Key
+- Resend (Emails) — uses User API Key
+- Google Analytics 4 (GA4) — User Key required ()
+- Pexels — uses User API Key
 
 **Testing status**
--   **Testing agent used after significant changes:** YES. Used to validate the content gating and free trial features.
--   **Troubleshoot agent used after agent stuck in loop:** NO.
--   **Test files created:** None.
--   **Known regressions:** A  rate-limiting issue was introduced and subsequently fixed during development by increasing the free plan's rate limit.
-
-**Credentials to test flow:**
--   **User Account:**  / 
--   This user's plan can be toggled between 'free' and 'elite' to test gating and premium features.
+- Testing agent used after significant changes: YES (Heavily utilized, iterations 100-107 all passed).
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: None
+- Known regressions: None
 
 **What agent forgot to execute**
--   The agent did not forget anything. It successfully completed all prior tasks and has now correctly begun the discovery and planning phase for the new, large-scale website rebuild requested by the user. The next logical step is to start implementing the first part of that rebuild.</analysis>
+- Nothing was forgotten. The agent simply hit the context limit right after the user approved the homepage redesign plan and the agent opened .</analysis>

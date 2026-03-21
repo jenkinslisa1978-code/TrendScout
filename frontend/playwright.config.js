@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'https://measurable-proof.preview.emergentagent.com';
+const BASE_URL = process.env.BASE_URL || 'https://hero-proof-redesign.preview.emergentagent.com';
 
 export default defineConfig({
   testDir: './e2e',
