@@ -16,6 +16,8 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ### Deployment Fix (Feb 2026)
 - Removed `react-snap` postbuild script that caused Alpine Linux build failure (`apt-get` incompatible)
+- Fixed `CI=true` build failure by setting `CI=false` in the build script (ESLint warnings treated as errors)
+- Cleaned dead react-snap hydration code from `index.js`
 - Cleaned `.gitignore` to allow `.env` files for Emergent deployment
 - Deployment agent confirms: APPROVED, no blockers
 
