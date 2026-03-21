@@ -33,6 +33,11 @@ const COMPARISONS = {
       { feature: 'Starting price', competitor: '$49/mo (USD)', trendscout: '£19/mo (GBP)' },
     ],
     verdict: 'If you sell exclusively on Amazon US, Jungle Scout is the better tool. If you sell in the UK across Shopify, Amazon.co.uk, or TikTok Shop and need UK-specific product intelligence, TrendScout is built for you.',
+    faqs: [
+      { q: 'Can I use Jungle Scout for the UK market?', a: 'Jungle Scout has some UK Amazon data, but its core tools, pricing estimates, and keyword data are optimised for the US. TrendScout is built specifically for UK sellers with VAT, UK shipping costs, and multi-channel data factored in.' },
+      { q: 'Is TrendScout cheaper than Jungle Scout?', a: 'Yes. TrendScout starts at £19/month with a free plan. Jungle Scout starts at $49/month with no free option.' },
+      { q: 'Does Jungle Scout cover TikTok Shop?', a: 'No. Jungle Scout focuses exclusively on Amazon. TrendScout covers Shopify, Amazon UK, and TikTok Shop.' },
+    ],
   },
   'sell-the-trend-vs-trendscout': {
     competitor: 'Sell The Trend',
@@ -56,6 +61,10 @@ const COMPARISONS = {
       { feature: 'Starting price', competitor: '$39.97/mo (USD)', trendscout: '£19/mo (GBP)' },
     ],
     verdict: 'If you want a broad catalog of global trending products with store automation, Sell The Trend is a reasonable choice. If you need UK-specific viability analysis, deeper scoring, and margin estimation, TrendScout gives you more actionable intelligence.',
+    faqs: [
+      { q: 'Is Sell The Trend good for UK sellers?', a: 'Sell The Trend is global and US-leaning. It does not factor in UK VAT, UK shipping, or UK-specific market data. TrendScout is built specifically for the UK market.' },
+      { q: 'Which tool has better product scoring?', a: 'TrendScout uses a 7-signal launch score with detailed breakdowns. Sell The Trend uses a simpler trend score without UK-specific viability assessment.' },
+    ],
   },
   'minea-vs-trendscout': {
     competitor: 'Minea',
@@ -79,6 +88,10 @@ const COMPARISONS = {
       { feature: 'Starting price', competitor: '€49/mo (EUR)', trendscout: '£19/mo (GBP)' },
     ],
     verdict: 'If your primary need is ad creative spying and tracking competitor ads across platforms, Minea is the specialised tool. If you need comprehensive product research with UK viability scoring, margin analysis, and launch intelligence, TrendScout is the stronger choice.',
+    faqs: [
+      { q: 'Does TrendScout have ad spy features?', a: 'TrendScout includes ad opportunity scoring and AI-generated ad suggestions rather than a full ad spy database. For dedicated ad creative tracking, Minea is more specialised.' },
+      { q: 'Can I use both Minea and TrendScout?', a: 'Yes, they complement each other well. Use Minea to find winning ad creatives and TrendScout to validate whether the product is viable in the UK market.' },
+    ],
   },
   'helium-10-vs-trendscout': {
     competitor: 'Helium 10',
@@ -103,6 +116,10 @@ const COMPARISONS = {
       { feature: 'Starting price', competitor: '$39/mo (USD)', trendscout: '£19/mo (GBP)' },
     ],
     verdict: 'If you are an Amazon-focused seller who needs listing optimisation, keyword research, and PPC tools, Helium 10 is the more complete Amazon toolkit. If you are a UK seller who needs cross-channel product discovery and UK-specific viability analysis, TrendScout fills a gap that Helium 10 does not address.',
+    faqs: [
+      { q: 'Is Helium 10 useful for UK Amazon sellers?', a: 'Helium 10 has some UK Amazon data, but its core strength is US Amazon. It does not cover Shopify, TikTok Shop, or provide UK viability scoring.' },
+      { q: 'Does TrendScout have keyword research?', a: 'TrendScout has basic keyword data. For deep Amazon keyword research and listing optimisation, Helium 10 is more comprehensive.' },
+    ],
   },
   'ecomhunt-vs-trendscout': {
     competitor: 'Ecomhunt',
@@ -126,6 +143,10 @@ const COMPARISONS = {
       { feature: 'Starting price', competitor: '$29/mo (USD)', trendscout: '£19/mo (GBP)' },
     ],
     verdict: 'If you want a simple curated list of product ideas and are not focused on the UK market, Ecomhunt is accessible. If you want rigorous, data-driven product research with UK-specific viability scoring and margin analysis, TrendScout provides significantly more depth.',
+    faqs: [
+      { q: 'Is Ecomhunt good for beginners?', a: 'Yes, Ecomhunt is very beginner-friendly with curated picks. However, it lacks the depth needed for serious UK market validation.' },
+      { q: 'Why is TrendScout better for UK sellers?', a: 'TrendScout factors in UK VAT, UK shipping costs, and UK consumer behaviour into its scoring. Ecomhunt provides global product ideas without UK-specific analysis.' },
+    ],
   },
 };
 
@@ -161,6 +182,7 @@ export default function ComparisonPage() {
           schema={[
             webPageSchema(data.headline, data.subtitle, `/compare/${slug}`),
             breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Compare' }, { name: data.headline }]),
+            ...(data.faqs ? [faqSchema(data.faqs.map(f => ({ question: f.q, answer: f.a })))] : []),
           ]}
         />
         {/* Hero */}
@@ -227,6 +249,23 @@ export default function ComparisonPage() {
             <ToolRecommender />
           </div>
         </section>
+
+        {/* FAQs */}
+        {data.faqs && data.faqs.length > 0 && (
+          <section className="py-12 px-6">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="font-manrope text-xl font-bold text-slate-900 mb-6">Frequently asked questions</h2>
+              <div className="space-y-4">
+                {data.faqs.map((faq, i) => (
+                  <div key={i} className="rounded-lg border border-slate-200 p-5" data-testid={`comparison-faq-${i}`}>
+                    <h3 className="text-sm font-semibold text-slate-900">{faq.q}</h3>
+                    <p className="text-sm text-slate-600 mt-2 leading-relaxed">{faq.a}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* CTA */}
         <section className="py-14 bg-slate-50 px-6">

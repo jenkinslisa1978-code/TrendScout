@@ -6,7 +6,9 @@ import PageMeta, { faqSchema, breadcrumbSchema } from '@/components/PageMeta';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import EmailCapture from '@/components/EmailCapture';
 import ShareResult from '@/components/ShareResult';
-import { ArrowRight, Calculator, PoundSterling, BarChart3, TrendingUp, Receipt, CheckCircle } from 'lucide-react';
+import TikTokAdBudgetCalculator from '@/components/TikTokAdBudgetCalculator';
+import ProductValidationChecklist from '@/components/ProductValidationChecklist';
+import { ArrowRight, Calculator, PoundSterling, BarChart3, TrendingUp, Receipt, CheckCircle, Video, ClipboardCheck } from 'lucide-react';
 
 function ProfitMarginCalculator() {
   const [cost, setCost] = useState('');
@@ -233,6 +235,8 @@ const TOOLS = [
   { id: 'roas', name: 'Break-even ROAS', icon: BarChart3, component: RoasCalculator },
   { id: 'vat', name: 'UK VAT', icon: Receipt, component: VatCalculator },
   { id: 'pricing', name: 'Product Pricing', icon: Calculator, component: PricingCalculator },
+  { id: 'tiktok-ads', name: 'TikTok Ad Budget', icon: Video, component: TikTokAdBudgetCalculator },
+  { id: 'validation', name: 'Validation Checklist', icon: ClipboardCheck, component: ProductValidationChecklist },
 ];
 
 export default function FreeToolsPage() {

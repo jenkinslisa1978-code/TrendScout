@@ -1579,3 +1579,116 @@ async def send_lead_subscriber_digest(db, params: Dict[str, Any] = None) -> Dict
 
     logger.info(f"Lead subscriber digest: sent {sent_count}/{len(leads)}, errors: {len(errors)}")
     return {"records_processed": sent_count, "details": {"total": len(leads), "sent": sent_count, "errors": len(errors)}}
+
+
+
+@TaskRegistry.register(
+    name="send_trial_expiry_notifications",
+    description="Send email notifications when free trials expire",
+    default_schedule="0 */2 * * *"  # Every 2 hours
+)
+async def send_trial_expiry_notifications(db, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Check for trials that have expired in the last 2 hours and send
+    a notification email encouraging upgrade.
+    """
+    import os
+    import httpx
+
+    logger.info("Checking for expired trials...")
+
+    now = datetime.now(timezone.utc)
+    two_hours_ago = (now - timedelta(hours=2)).isoformat()
+
+    # Find trials that expired in the last 2 hours and haven't been notified
+    expired_trials = await db.trials.find(
+        {
+            "expires_at": {"$lte": now.isoformat(), "$gte": two_hours_ago},
+            "expiry_notified": {"$ne": True},
+        },
+        {"_id": 0}
+    ).to_list(100)
+
+    if not expired_trials:
+        return {"records_processed": 0, "details": {"status": "no_expired_trials"}}
+
+    resend_key = os.environ.get("RESEND_API_KEY")
+    sender_email = os.environ.get("SENDER_EMAIL", "noreply@trendscout.click")
+    site_url = os.environ.get("SITE_URL", "https://trendscout.click")
+
+    if not resend_key:
+        return {"records_processed": 0, "details": {"status": "error", "reason": "Resend not configured"}}
+
+    sent_count = 0
+
+    async with httpx.AsyncClient() as client:
+        for trial in expired_trials:
+            email = trial.get("email")
+            feature = trial.get("feature", "premium feature")
+            feature_label = feature.replace("_", " ").title()
+
+            if not email:
+                continue
+
+            html_body = f"""
+            <div style="font-family:'Inter',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;">
+              <h1 style="font-family:'Manrope',sans-serif;font-size:22px;font-weight:700;color:#0f172a;margin:0;">
+                Your {feature_label} trial has ended
+              </h1>
+              <p style="font-size:14px;color:#64748b;margin:16px 0;">
+                Your 24-hour free trial of {feature_label} on TrendScout has expired.
+                During your trial, you experienced the full power of premium product intelligence.
+              </p>
+
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin:20px 0;">
+                <h2 style="font-size:16px;font-weight:600;color:#0f172a;margin:0 0 12px;">What you are missing without premium:</h2>
+                <ul style="margin:0;padding:0 0 0 20px;color:#475569;font-size:14px;line-height:1.8;">
+                  <li>Real-time cross-channel trend detection</li>
+                  <li>UK-specific viability scoring on every product</li>
+                  <li>Competitor store analysis with revenue estimates</li>
+                  <li>AI-generated ad copy and audience targeting</li>
+                  <li>Profit simulation with detailed projections</li>
+                </ul>
+              </div>
+
+              <p style="font-size:14px;color:#64748b;margin:16px 0;">
+                UK ecommerce moves fast. The products trending today will not be trending next month.
+                Upgrade now to keep your edge.
+              </p>
+
+              <div style="text-align:center;margin:24px 0;">
+                <a href="{site_url}/pricing" style="display:inline-block;background:#4f46e5;color:#fff;padding:14px 32px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
+                  Upgrade to Pro — £39/month
+                </a>
+              </div>
+
+              <p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:24px;">
+                Still not sure? <a href="{site_url}/tools" style="color:#4f46e5;text-decoration:none;">Try our free tools</a>
+                or <a href="{site_url}/sample-product-analysis" style="color:#4f46e5;text-decoration:none;">see a sample report</a>.
+              </p>
+            </div>
+            """
+
+            try:
+                resp = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                    json={
+                        "from": f"TrendScout <{sender_email}>",
+                        "to": [email],
+                        "subject": f"Your {feature_label} trial has ended — here is what to do next",
+                        "html": html_body,
+                    },
+                    timeout=10,
+                )
+                if resp.status_code in (200, 201):
+                    sent_count += 1
+                    await db.trials.update_one(
+                        {"user_id": trial["user_id"]},
+                        {"$set": {"expiry_notified": True, "notified_at": now.isoformat()}}
+                    )
+            except Exception as e:
+                logger.error(f"Trial expiry email failed for {email}: {e}")
+
+    logger.info(f"Trial expiry notifications: sent {sent_count}/{len(expired_trials)}")
+    return {"records_processed": sent_count, "details": {"total": len(expired_trials), "sent": sent_count}}

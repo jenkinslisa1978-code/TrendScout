@@ -699,3 +699,25 @@ def run_full_automation(product: dict) -> dict:
     alert = generate_alert(product)
     early_alert = generate_early_trend_alert(product)
     return {'product': product, 'alert': alert, 'early_alert': early_alert}
+
+
+# ── Score Normalisation ──────────────────────────────────────
+
+def get_canonical_score(product: dict) -> int:
+    """Single source of truth: launch_score > viability_score > trend_score > 0."""
+    return product.get("launch_score") or product.get("viability_score") or product.get("trend_score") or 0
+
+
+def normalise_product_scores(product: dict) -> dict:
+    """Ensure viability_score and launch_score are always in sync."""
+    score = get_canonical_score(product)
+    return {**product, "viability_score": score, "launch_score": score}
+
+
+def score_label(score: int) -> str:
+    if score >= 80: return "Excellent"
+    if score >= 60: return "Good"
+    if score >= 40: return "Fair"
+    if score >= 20: return "Weak"
+    return "Poor"
+

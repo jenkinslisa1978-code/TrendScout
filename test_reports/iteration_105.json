@@ -1,0 +1,98 @@
+{
+  "summary": "Iteration 105 testing complete. All backlog items verified: 1) Changelog page at /changelog loads with 5 version entries (v3.4, v3.3, v3.2, v3.1, v3.0), 2) Free Tools page has all 6 tool tabs (Profit Margin, Break-even ROAS, UK VAT, Product Pricing, TikTok Ad Budget, Validation Checklist), 3) TikTok Ad Budget Calculator works correctly - fills all 4 fields and displays results (Total budget, Est. clicks, Est. sales, Revenue, ROAS, Cost per sale) with Share buttons, 4) Product Validation Checklist works - toggling items updates score from 0/100 to 65/100 with verdict change, 5) All 3 comparison pages have FAQ sections with visible questions and FAQ JSON-LD schema, 6) Footer has Changelog link, 7) Backend files verified: useABTest hook, send_trial_expiry_notifications task, normalise_product_scores utility.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "/changelog page loads with data-testid='changelog-page'",
+    "Changelog has v3.4, v3.3, v3.2, v3.1, v3.0 version entries",
+    "/free-tools page loads with data-testid='free-tools-page'",
+    "All 6 tool tabs present: profit, roas, vat, pricing, tiktok-ads, validation",
+    "TikTok Ad Budget Calculator loads with data-testid='tiktok-ad-budget-calculator'",
+    "TikTok calculator accepts inputs: daily budget, CPC, conversion rate, AOV",
+    "TikTok calculator displays results: Total budget £140, Est. clicks 466, Est. sales 11, Revenue £275, ROAS 1.96x, Cost per sale £12.73",
+    "Share buttons appear on TikTok calculator after entering values",
+    "Product Validation Checklist loads with data-testid='product-validation-checklist'",
+    "Checklist items toggle correctly (demand, competition, margin, price, supplier)",
+    "Checklist score updates from 0/100 'Needs more work' to 65/100 'Promising but gaps'",
+    "/compare/jungle-scout-vs-trendscout has 3 FAQ items with visible questions",
+    "/compare/sell-the-trend-vs-trendscout has 2 FAQ items",
+    "/compare/helium-10-vs-trendscout has 2 FAQ items",
+    "FAQ JSON-LD schema present in comparison page source",
+    "Footer has Changelog link in PRODUCT section",
+    "useABTest hook exists at /app/frontend/src/hooks/useABTest.js",
+    "send_trial_expiry_notifications task exists in tasks.py (line 1586)",
+    "normalise_product_scores, get_canonical_score, score_label exist in scoring.py"
+  ],
+  "test_report_links": [
+    "/app/test_reports/iteration_105.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ChangelogPage.jsx has hardcoded CHANGELOG array with 5 versions - good for static content",
+    "TikTokAdBudgetCalculator.jsx correctly calculates: totalBudget = dailyNum * daysNum, totalClicks = totalBudget / cpc, expectedSales = totalClicks * (convRate/100)",
+    "ProductValidationChecklist.jsx has 10 items across 6 categories with weighted scoring (total 100 points)",
+    "ComparisonPage.jsx correctly renders FAQ section when data.faqs exists and includes faqSchema in PageMeta",
+    "useABTest hook uses localStorage for variant persistence and tracks assignment via analytics",
+    "send_trial_expiry_notifications task runs every 2 hours and sends emails via Resend API",
+    "scoring.py consolidation functions provide single source of truth for product scores"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (backend files verified)",
+    "frontend": "100% (all 19 tests passed)"
+  },
+  "test_credentials": "None required for public pages",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 105 tested all backlog items from the request. All features working correctly: Changelog page with 5 versions, Free Tools page with 6 tools including new TikTok Ad Budget Calculator and Product Validation Checklist, FAQ sections on all comparison pages with JSON-LD schema, Footer Changelog link. Backend items verified: useABTest hook for A/B testing framework, send_trial_expiry_notifications scheduled task, normalise_product_scores utility for score consolidation. No issues found.",
+  "verified_features": {
+    "changelog_page": {
+      "url": "/changelog",
+      "versions": ["v3.4", "v3.3", "v3.2", "v3.1", "v3.0"],
+      "status": "working"
+    },
+    "free_tools_page": {
+      "url": "/free-tools",
+      "tools": ["Profit Margin", "Break-even ROAS", "UK VAT", "Product Pricing", "TikTok Ad Budget", "Validation Checklist"],
+      "status": "working"
+    },
+    "tiktok_ad_budget_calculator": {
+      "inputs": ["daily budget", "CPC", "conversion rate", "AOV", "campaign duration"],
+      "outputs": ["total budget", "est. clicks", "est. sales", "revenue", "ROAS", "cost per sale"],
+      "share_buttons": true,
+      "status": "working"
+    },
+    "product_validation_checklist": {
+      "categories": ["Market", "Financials", "Operations", "Marketing", "Growth", "Risk"],
+      "items_count": 10,
+      "scoring": "weighted 0-100",
+      "verdicts": ["Strong candidate", "Promising but gaps", "Needs more work"],
+      "status": "working"
+    },
+    "comparison_page_faqs": {
+      "jungle_scout": {"faq_count": 3, "json_ld": true},
+      "sell_the_trend": {"faq_count": 2, "json_ld": true},
+      "helium_10": {"faq_count": 2, "json_ld": true},
+      "status": "working"
+    },
+    "footer_changelog_link": {
+      "location": "PRODUCT section",
+      "status": "working"
+    },
+    "backend_features": {
+      "useABTest_hook": "/app/frontend/src/hooks/useABTest.js",
+      "trial_expiry_task": "/app/backend/services/jobs/tasks.py:1586",
+      "scoring_consolidation": "/app/backend/common/scoring.py:706-717",
+      "status": "files verified"
+    }
+  },
+  "mocked_apis": {}
+}
