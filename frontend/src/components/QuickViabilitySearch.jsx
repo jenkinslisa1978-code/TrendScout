@@ -103,7 +103,12 @@ export default function QuickViabilitySearch() {
       await fetch(`${API_URL}/api/leads/capture`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: trimmedEmail, source: 'quick_viability_gate', context: `Searched: ${result?.product_name || query}` }),
+        body: JSON.stringify({
+          email: trimmedEmail,
+          source: 'quick_viability_gate',
+          context: `Searched: ${result?.product_name || query}`,
+          viability_result: result || null,
+        }),
       });
       localStorage.setItem(EMAIL_KEY, trimmedEmail);
       setEmailCaptured(true);

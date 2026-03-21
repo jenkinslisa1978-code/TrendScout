@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request
 from datetime import datetime, timezone
 import os
 import logging
+from common.database import db
 
 logger = logging.getLogger(__name__)
 
@@ -17,25 +18,54 @@ async def capture_lead(request: Request):
         email = body.get("email", "").strip().lower()
         source = body.get("source", "unknown")
         context = body.get("context", "")
+        viability_result = body.get("viability_result")
         
         if not email or "@" not in email:
             return {"status": "error", "message": "Invalid email"}
         
-        db = request.app.state.db
+        # db imported from common.database
+        now = datetime.now(timezone.utc).isoformat()
+        
         # Upsert to avoid duplicates
+        update_fields = {
+            "email": email,
+            "source": source,
+            "context": context,
+            "updated_at": now,
+        }
+        if viability_result:
+            update_fields["viability_result"] = viability_result
+        
         await db.leads.update_one(
             {"email": email},
-            {"$set": {
-                "email": email,
-                "source": source,
-                "context": context,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }, "$setOnInsert": {
-                "created_at": datetime.now(timezone.utc).isoformat(),
+            {"$set": update_fields, "$setOnInsert": {
+                "created_at": now,
                 "digest_opt_in": True,
+                "drip_emails_sent": [],
             }},
             upsert=True
         )
+        
+        # Send instant viability result email (Drip Email 1) if from viability gate
+        if source == "quick_viability_gate" and viability_result:
+            try:
+                from services.email_service import email_service
+                await email_service.send_viability_result_email(
+                    to_email=email,
+                    product_name=viability_result.get("product_name", ""),
+                    score=viability_result.get("score", 0),
+                    verdict=viability_result.get("verdict", ""),
+                    summary=viability_result.get("summary", ""),
+                    strengths=viability_result.get("strengths", []),
+                    risks=viability_result.get("risks", []),
+                )
+                await db.leads.update_one(
+                    {"email": email},
+                    {"$addToSet": {"drip_emails_sent": {"type": "viability_result", "sent_at": now}}}
+                )
+            except Exception as e:
+                logger.error(f"Failed to send viability email to {email}: {e}")
+        
         return {"status": "ok"}
     except Exception:
         return {"status": "ok"}  # Never fail visibly for lead capture
@@ -52,7 +82,7 @@ async def send_weekly_digest(request: Request):
         if admin_key != os.environ.get("STRIPE_WEBHOOK_SECRET", ""):
             return {"status": "error", "message": "Unauthorized"}
         
-        db = request.app.state.db
+        # db imported from common.database
         
         # Get opted-in leads
         leads = await db.leads.find(

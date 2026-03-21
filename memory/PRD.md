@@ -14,41 +14,48 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Completed Features
 
-### Email Capture Gate on Quick Viability Search (March 21, 2026)
-- **1 free search** without email, then email gate appears: "Unlock 3 more free searches"
-- **Email capture** via POST /api/leads/capture (source: 'quick_viability_gate', context: searched product)
-- **3 more searches** unlocked after email, progress dots + "X searches left" counter
-- **Exhausted state** after 4 total: disabled input + "Sign up for unlimited" CTA
-- **localStorage persistence**: ts_viability_searches (count), ts_viability_email (email)
-- Verified: iteration_113 (100%, 10 backend + 20+ frontend tests)
+### 3-Email Drip Sequence for Viability Leads (March 21, 2026)
+- **Email 1 (Instant)**: Viability result email with score, verdict, strengths, risks, summary + signup CTA
+- **Email 2 (Day 2)**: "3 Trending Products This Week" with top scored products + trial CTA
+- **Email 3 (Day 5)**: "Your free trial is waiting" with feature list + urgency CTA
+- **Drip tracking**: `drip_emails_sent` array in leads collection prevents duplicate sends
+- **Cron job**: `send_lead_drip_emails` runs daily at 9 AM UTC, checks lead age, skips converted users
+- **Bug fix**: Fixed leads.py to use `from common.database import db` instead of broken `request.app.state.db`
+- Verified: iteration_114 (100%, 17/17 backend tests)
+
+### Email Capture Gate (March 21, 2026)
+- 1 free search → email gate → 3 more unlocked → exhausted state with signup CTA
+- Verified: iteration_113 (100%)
 
 ### Interactive Demo & Quick Viability Search (March 21, 2026)
-- Quick viability search with AI-powered UK viability assessment (GPT-5.2)
-- Interactive 4-step product tour (Browse/Score/Analyse/Launch)
+- AI-powered quick viability check (GPT-5.2) + 4-step product tour
 - Verified: iteration_112 (100%)
 
-### Pricing Page Visual Enhancement (March 21, 2026)
-- Gradient headline, plan icons, trust strip, comparison table, FAQ accordion
-- Verified: iteration_111 (100%)
-
-### How It Works Visual Walkthrough (March 21, 2026)
-- 4-step walkthrough with AI-generated illustrations, interactive FAQ
-- Verified: iteration_110 (100%)
-
-### Homepage Split + Visual Redesign (March 21, 2026)
-- Slim homepage + /features page + scroll animations + AI images
-- Verified: iterations 108-109 (100%)
+### Visual Redesign Suite (March 21, 2026)
+- Homepage split + /features page + How It Works walkthrough + Pricing enhancement
+- Scroll-triggered animations (RevealSection/RevealStagger)
+- 8 AI-generated images across pages
+- Verified: iterations 108-111 (all 100%)
 
 ### All Previous Features
 - Prediction Accuracy Tracking, Trust Framework, Methodology page
 - Changelog, 6 free tools, Trial expiry, A/B framework, CRO suite
 - Performance: Code splitting, lazy loading, react-snap, blog automation
 
+## Scheduled Tasks
+| Task | Schedule | Description |
+|------|----------|-------------|
+| send_lead_drip_emails | Daily 9 AM | Day 2 trending + Day 5 trial drip emails |
+| review_prediction_accuracy | Daily 6 AM | Snapshot + review predictions |
+| weekly_blog_generation | Monday 8 AM | Auto-generate blog posts |
+| send_lead_subscriber_digest | Monday 9 AM | Trending products email to leads |
+| send_weekly_email_digest | Monday 10 AM | Digest to registered users |
+| send_trial_expiry_notifications | Every 2h | Email expired trial users |
+
 ## Key API Endpoints
 - POST /api/public/quick-viability — AI product viability check (public)
-- POST /api/leads/capture — Email lead capture
+- POST /api/leads/capture — Email lead capture + instant drip email
 - GET /api/accuracy/stats — Prediction accuracy metrics
-- POST /api/blog/seed — Blog content generation
 
 ## Remaining
 - Wire `useABTest` hook to hero CTA (P1)

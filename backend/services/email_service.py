@@ -199,6 +199,154 @@ class EmailService:
         """
         return await self.send_email(to_email, f"TrendScout: Product of the Week — {name}", html)
 
+    async def send_viability_result_email(self, to_email: str, product_name: str, score: int, verdict: str, summary: str, strengths: list, risks: list) -> dict:
+        """Drip Email 1: Instant viability result after email capture."""
+        site = self.site_url or "https://trendscout.click"
+        score_color = "#10b981" if score >= 65 else "#f59e0b" if score >= 40 else "#ef4444"
+        strengths_html = "".join(f'<li style="padding:4px 0;color:#334155;font-size:13px;">{s}</li>' for s in (strengths or []))
+        risks_html = "".join(f'<li style="padding:4px 0;color:#334155;font-size:13px;">{r}</li>' for r in (risks or []))
+        html = f"""
+        <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 24px;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;padding:10px;">
+              <span style="color:#fff;font-size:18px;font-weight:bold;">TS</span>
+            </div>
+            <h1 style="font-size:20px;font-weight:700;color:#1e293b;margin:10px 0 4px;">Your UK Viability Result</h1>
+            <p style="font-size:13px;color:#94a3b8;margin:0;">Here's the analysis you requested</p>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;text-align:center;margin-bottom:20px;">
+            <p style="font-size:13px;color:#64748b;margin:0 0 4px;">Product</p>
+            <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0 0 12px;">{product_name}</h2>
+            <span style="font-family:monospace;font-size:40px;font-weight:800;color:{score_color};">{score}</span>
+            <span style="font-size:16px;color:#94a3b8;">/100</span>
+            <div style="margin-top:8px;">
+              <span style="display:inline-block;background:{score_color}20;color:{score_color};font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;">{verdict}</span>
+            </div>
+          </div>
+          <p style="font-size:14px;color:#334155;line-height:1.6;margin-bottom:20px;">{summary}</p>
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="vertical-align:top;width:50%;padding-right:8px;">
+              <h3 style="font-size:13px;font-weight:600;color:#10b981;margin:0 0 6px;">Strengths</h3>
+              <ul style="margin:0;padding-left:16px;">{strengths_html}</ul>
+            </td>
+            <td style="vertical-align:top;width:50%;padding-left:8px;">
+              <h3 style="font-size:13px;font-weight:600;color:#ef4444;margin:0 0 6px;">Risks</h3>
+              <ul style="margin:0;padding-left:16px;">{risks_html}</ul>
+            </td>
+          </tr></table>
+          <div style="text-align:center;margin-top:24px;">
+            <a href="{site}/signup" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:10px;">
+              Get Full Analysis — Start Free
+            </a>
+            <p style="font-size:12px;color:#94a3b8;margin-top:8px;">No credit card needed. Cancel anytime.</p>
+          </div>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+          <p style="font-size:11px;color:#94a3b8;text-align:center;">TrendScout &mdash; AI product research for UK ecommerce<br/>Reply "unsubscribe" to stop emails</p>
+        </div>
+        """
+        return await self.send_email(to_email, f"Your viability result: {product_name} scored {score}/100", html)
+
+    async def send_trending_drip_email(self, to_email: str, products: list) -> dict:
+        """Drip Email 2 (Day 2): Top trending products this week."""
+        site = self.site_url or "https://trendscout.click"
+        rows = ""
+        for p in products[:3]:
+            name = p.get("product_name", p.get("name", "Unknown"))
+            score = p.get("launch_score", p.get("viability_score", 0))
+            cat = p.get("category", "General")
+            color = "#10b981" if score >= 65 else "#6366f1" if score >= 45 else "#64748b"
+            rows += f"""
+            <tr>
+              <td style="padding:12px;border-bottom:1px solid #f1f5f9;">
+                <span style="font-weight:600;color:#1e293b;font-size:14px;">{name}</span>
+                <br/><span style="font-size:12px;color:#94a3b8;">{cat}</span>
+              </td>
+              <td style="padding:12px;border-bottom:1px solid #f1f5f9;text-align:center;">
+                <span style="font-family:monospace;font-size:20px;font-weight:700;color:{color};">{score}</span>
+                <span style="font-size:11px;color:#94a3b8;">/100</span>
+              </td>
+            </tr>"""
+        if not rows:
+            rows = '<tr><td colspan="2" style="padding:20px;text-align:center;color:#94a3b8;">Check back soon for new products!</td></tr>'
+        html = f"""
+        <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 24px;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;padding:10px;">
+              <span style="color:#fff;font-size:18px;font-weight:bold;">TS</span>
+            </div>
+            <h1 style="font-size:20px;font-weight:700;color:#1e293b;margin:10px 0 4px;">3 Trending Products This Week</h1>
+            <p style="font-size:13px;color:#94a3b8;margin:0;">Products gaining traction in the UK right now</p>
+          </div>
+          <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+            <tr style="background:#f8fafc;">
+              <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:600;color:#64748b;">Product</th>
+              <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#64748b;">Score</th>
+            </tr>
+            {rows}
+          </table>
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px;margin:20px 0;text-align:center;">
+            <p style="font-size:13px;color:#0369a1;font-weight:600;margin:0 0 4px;">Want the full analysis on these products?</p>
+            <p style="font-size:12px;color:#64748b;margin:0;">Start your free trial to see margins, competition, and AI ad angles.</p>
+          </div>
+          <div style="text-align:center;margin-top:20px;">
+            <a href="{site}/signup" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:10px;">
+              Start Free Trial
+            </a>
+          </div>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+          <p style="font-size:11px;color:#94a3b8;text-align:center;">TrendScout &mdash; AI product research for UK ecommerce<br/>Reply "unsubscribe" to stop emails</p>
+        </div>
+        """
+        return await self.send_email(to_email, "3 products trending in the UK this week", html)
+
+    async def send_trial_drip_email(self, to_email: str) -> dict:
+        """Drip Email 3 (Day 5): Free trial reminder."""
+        site = self.site_url or "https://trendscout.click"
+        html = f"""
+        <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 24px;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;padding:10px;">
+              <span style="color:#fff;font-size:18px;font-weight:bold;">TS</span>
+            </div>
+            <h1 style="font-size:22px;font-weight:700;color:#1e293b;margin:10px 0 4px;">Your free trial is waiting</h1>
+          </div>
+          <p style="font-size:14px;color:#334155;line-height:1.6;">
+            A few days ago you checked a product idea on TrendScout. Since then, new products have started trending in the UK.
+          </p>
+          <p style="font-size:14px;color:#334155;line-height:1.6;">
+            With a free trial you get:
+          </p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+            <tr><td style="padding:8px 0;font-size:14px;color:#334155;">
+              <span style="color:#10b981;font-weight:bold;margin-right:8px;">&#10003;</span> Unlimited product discovery
+            </td></tr>
+            <tr><td style="padding:8px 0;font-size:14px;color:#334155;">
+              <span style="color:#10b981;font-weight:bold;margin-right:8px;">&#10003;</span> Full UK Viability Scores with 7-signal breakdown
+            </td></tr>
+            <tr><td style="padding:8px 0;font-size:14px;color:#334155;">
+              <span style="color:#10b981;font-weight:bold;margin-right:8px;">&#10003;</span> AI-generated ad angles and launch recommendations
+            </td></tr>
+            <tr><td style="padding:8px 0;font-size:14px;color:#334155;">
+              <span style="color:#10b981;font-weight:bold;margin-right:8px;">&#10003;</span> Margin calculator and profitability simulator
+            </td></tr>
+          </table>
+          <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:16px;margin:20px 0;">
+            <p style="font-size:13px;color:#92400e;font-weight:600;margin:0 0 4px;">No credit card required</p>
+            <p style="font-size:12px;color:#78350f;margin:0;">Try everything free for 7 days. If it's not useful, cancel with one click.</p>
+          </div>
+          <div style="text-align:center;margin-top:24px;">
+            <a href="{site}/signup" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:10px;">
+              Start Your Free Trial
+            </a>
+          </div>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0;" />
+          <p style="font-size:11px;color:#94a3b8;text-align:center;">TrendScout &mdash; AI product research for UK ecommerce<br/>Reply "unsubscribe" to stop emails</p>
+        </div>
+        """
+        return await self.send_email(to_email, "Your free trial is waiting — TrendScout", html)
+
+
+
 
 # Module-level instance
 email_service = EmailService()

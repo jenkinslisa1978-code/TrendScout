@@ -1775,3 +1775,96 @@ async def review_prediction_accuracy(db, params: Dict[str, Any] = None) -> Dict[
             "reviews_completed": reviewed_count,
         }
     }
+
+
+
+@TaskRegistry.register(
+    name="send_lead_drip_emails",
+    description="Send follow-up drip emails to leads: Day 2 trending products, Day 5 trial reminder",
+    default_schedule="0 9 * * *"  # Daily at 9 AM UTC
+)
+async def send_lead_drip_emails(db, params: dict = None) -> dict:
+    """
+    Drip email sequence for leads captured via quick viability search:
+    - Day 2: Top 3 trending products
+    - Day 5: Free trial reminder
+    """
+    from datetime import timedelta
+    from services.email_service import email_service
+
+    now = datetime.now(timezone.utc)
+    sent_count = 0
+    errors = []
+
+    # Get all leads from viability gate that haven't been fully dripped
+    leads = await db.leads.find(
+        {"source": "quick_viability_gate", "digest_opt_in": {"$ne": False}},
+        {"_id": 0, "email": 1, "created_at": 1, "drip_emails_sent": 1}
+    ).to_list(5000)
+
+    # Check if lead has already signed up (skip if they have)
+    for lead in leads:
+        email_addr = lead.get("email", "")
+        created_at_str = lead.get("created_at", "")
+        drip_sent = lead.get("drip_emails_sent", [])
+        sent_types = [d.get("type") for d in drip_sent if isinstance(d, dict)]
+
+        if not created_at_str:
+            continue
+
+        try:
+            created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+
+        days_since = (now - created_at).days
+
+        # Check if lead already registered as user (skip drip)
+        existing_user = await db.users.find_one({"email": email_addr}, {"_id": 1})
+        if existing_user:
+            continue
+
+        # Day 2: Send trending products email
+        if days_since >= 2 and "trending_drip" not in sent_types:
+            try:
+                products = await db.products.find(
+                    {},
+                    {"_id": 0, "product_name": 1, "name": 1, "launch_score": 1, "viability_score": 1, "category": 1}
+                ).sort("launch_score", -1).limit(3).to_list(3)
+
+                result = await email_service.send_trending_drip_email(email_addr, products)
+                if result.get("status") == "success":
+                    await db.leads.update_one(
+                        {"email": email_addr},
+                        {"$addToSet": {"drip_emails_sent": {"type": "trending_drip", "sent_at": now.isoformat()}}}
+                    )
+                    sent_count += 1
+                else:
+                    errors.append(f"{email_addr}: {result.get('error', 'unknown')}")
+            except Exception as e:
+                errors.append(f"{email_addr}: {str(e)}")
+
+        # Day 5: Send trial reminder email
+        if days_since >= 5 and "trial_drip" not in sent_types:
+            try:
+                result = await email_service.send_trial_drip_email(email_addr)
+                if result.get("status") == "success":
+                    await db.leads.update_one(
+                        {"email": email_addr},
+                        {"$addToSet": {"drip_emails_sent": {"type": "trial_drip", "sent_at": now.isoformat()}}}
+                    )
+                    sent_count += 1
+                else:
+                    errors.append(f"{email_addr}: {result.get('error', 'unknown')}")
+            except Exception as e:
+                errors.append(f"{email_addr}: {str(e)}")
+
+    logger.info(f"Drip emails: sent {sent_count}, errors: {len(errors)}")
+    return {
+        "records_processed": sent_count,
+        "details": {
+            "emails_sent": sent_count,
+            "leads_checked": len(leads),
+            "errors": errors[:10],
+        }
+    }
