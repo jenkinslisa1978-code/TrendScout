@@ -11,58 +11,44 @@ AI product research and launch intelligence for UK ecommerce sellers.
 ## Test Credentials
 - reviewer@trendscout.click / ShopifyReview2026!
 
-## ALL Completed Features
+## Completed Features
+
+### Trust & Accuracy Framework (March 21, 2026)
+- **Methodology page** (`/methodology`): 7-signal framework explained with weights, calculation methods, data sources, FAQ, confidence levels
+- **Accuracy page** (`/accuracy`): 4 predicted-vs-actual case studies, 3 summary stats (85% margin accuracy, 78% trend direction, 4h refresh), honest limitations
+- **Confidence indicators**: High/Medium/Low badges next to scores (based on data availability), linked to methodology
+- **Accuracy disclaimers**: Contextual disclaimers on calculators, scores, trends, margins — linked to methodology/accuracy pages
+- **Data source transparency**: Source labels (Google Trends UK, Amazon UK BSR, TikTok Shop, CJ Dropshipping) on signal breakdowns
+- **Last updated timestamps**: Visible on product data points
+- Verified: iteration_106 (100%, 24/24 tests)
 
 ### Backlog Clearance (March 21, 2026)
-- **Changelog page** (`/changelog`): 5 version entries (v3.0-v3.4) with categorised entries
-- **TikTok Ad Budget Calculator**: Daily budget, CPC, conv rate, AOV → clicks, sales, revenue, ROAS, CPA
-- **Product Validation Checklist**: 10 weighted items, 6 categories, 0-100 score with verdict
-- **FAQ schema on comparison pages**: Structured JSON-LD + visible FAQ sections on all 5 comparisons
-- **Trial expiry notifications**: `send_trial_expiry_notifications` task (every 2h) emails expired trial users
-- **A/B testing framework**: `useABTest` hook with localStorage persistence and analytics tracking
-- **Scoring consolidation**: `get_canonical_score`, `normalise_product_scores`, `score_label` utilities
-- Verified: iteration_105.json (100%)
+- Changelog page, TikTok Ad Budget Calculator, Product Validation Checklist
+- FAQ schema on comparisons, Trial expiry emails, A/B testing framework, Scoring consolidation
+- Verified: iteration_105 (100%, 19/19 tests)
 
 ### CRO Features (March 21, 2026)
-1. Exit-intent popup (desktop, lead magnet)
-2. Social proof toasts (MOCKED UK names/cities)
-3. Product quiz at /product-quiz (4 questions, recommendation)
-4. Weekly digest for lead subscribers (Monday 9 AM UTC cron)
-5. Tool recommender on comparison pages (3 questions)
-6. Shareable calculator results (copy + X/Twitter)
-- Verified: iteration_102.json (100%)
+- Exit-intent popup, Social proof toasts, Product quiz, Weekly digest, Tool recommender, Shareable results
+- Verified: iteration_102 (100%)
 
 ### Performance & Automation (March 21, 2026)
-- Route-level code splitting (80+ lazy-loaded pages)
-- Image lazy loading (all img tags + LazyImage component)
-- react-snap pre-rendering (30 marketing pages)
-- Blog: 3 seed + 2 AI articles, auto-generation cron
-- GA4 ready (needs REACT_APP_GA4_ID in production .env)
-- Verified: iteration_103, 104 (100%)
+- Code splitting (80+ lazy pages), Image lazy loading, react-snap, Blog automation, GA4 ready
+- Verified: iterations 100-104 (all 100%)
 
-### Phase 3a: Lead Capture, Content Expansion
-### Phase 2: Analytics, Schema, Viability Score
-### Phase 1: Website Rebuild
-(See previous PRD versions for details)
+### Phase 3a, 2, 1 (March 19, 2026)
+- Website rebuild, analytics, schema, viability score, lead capture, content expansion
+- Verified: iterations 98-99 (all 100%)
 
-## Scheduled Tasks
-| Task | Schedule | Description |
-|------|----------|-------------|
-| ingest_trending_products | Every 4h | Fetch products from sources |
-| weekly_blog_generation | Mon 8 AM | Auto-generate blog posts |
-| send_lead_subscriber_digest | Mon 9 AM | Trending products email to leads |
-| send_weekly_email_digest | Mon 10 AM | Digest to registered users |
-| send_trial_expiry_notifications | Every 2h | Email expired trial users |
+## Pages & Routes
+| Type | Pages |
+|------|-------|
+| Marketing | /, /pricing, /how-it-works, /about, /contact |
+| Trust | /methodology, /accuracy, /sample-product-analysis |
+| Free Tools | /tools (6 calculators), /product-quiz |
+| Content | /blog, /changelog, 8+ UK landing pages, 5 competitor comparisons |
+| Legal | /terms, /privacy, /cookie-policy, /refund-policy |
 
-## Free Tools (6 total)
-1. UK Profit Margin Calculator
-2. Break-even ROAS Calculator
-3. UK VAT Calculator
-4. Product Pricing Calculator
-5. TikTok Ad Budget Calculator
-6. Product Validation Checklist
-
-## Remaining Work
+## Remaining
 - Set `REACT_APP_GA4_ID` in production .env
-- Wire `useABTest` to hero CTA for live A/B testing
-- SSR migration (Next.js) for better SEO crawlability
+- Wire `useABTest` hook to hero CTA for live A/B testing
+- SSR/Next.js migration (long-term)
