@@ -128,7 +128,7 @@ export default function StorePreviewPage() {
                     src={product.image_url} 
                     alt={product.title}
                     className="w-full h-full object-cover rounded-2xl"
-                  />
+                   loading="lazy" />
                 ) : (
                   <div className="text-center">
                     <div className="w-24 h-24 mx-auto mb-4 rounded-xl bg-slate-200" />

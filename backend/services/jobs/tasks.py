@@ -1481,3 +1481,101 @@ async def generate_weekly_digest(db, params: Dict[str, Any]) -> Dict[str, Any]:
             "avg_score": avg_score,
         },
     }
+
+
+
+@TaskRegistry.register(
+    name="send_lead_subscriber_digest",
+    description="Send weekly trending products digest to email leads/subscribers",
+    default_schedule="0 9 * * 1"  # Every Monday at 9:00 AM UTC
+)
+async def send_lead_subscriber_digest(db, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Send weekly trending product digest to all opted-in leads (non-registered subscribers).
+    Runs every Monday at 9 AM UTC.
+    """
+    import os
+    import httpx
+
+    logger.info("Starting lead subscriber digest send...")
+
+    leads = await db.leads.find(
+        {"digest_opt_in": {"$ne": False}},
+        {"_id": 0, "email": 1}
+    ).to_list(5000)
+
+    if not leads:
+        return {"records_processed": 0, "details": {"status": "skipped", "reason": "No opted-in leads"}}
+
+    products = await db.products.find(
+        {},
+        {"_id": 0, "name": 1, "viability_score": 1, "trend_score": 1, "category": 1}
+    ).sort("trend_score", -1).limit(5).to_list(5)
+
+    product_rows = ""
+    for p in products:
+        name = p.get("name", "Unknown Product")
+        score = p.get("viability_score", p.get("trend_score", "N/A"))
+        category = p.get("category", "General")
+        product_rows += f'<tr><td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;">{name}</td><td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;text-align:center;">{category}</td><td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600;color:#4f46e5;text-align:center;">{score}</td></tr>'
+
+    if not product_rows:
+        product_rows = '<tr><td colspan="3" style="padding:16px;text-align:center;color:#64748b;font-size:14px;">No trending products this week.</td></tr>'
+
+    site_url = os.environ.get("SITE_URL", "https://trendscout.click")
+    html_body = f"""<div style="font-family:'Inter',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <h1 style="font-family:'Manrope',sans-serif;font-size:22px;font-weight:700;color:#0f172a;margin:0;">TrendScout Weekly Digest</h1>
+        <p style="font-size:14px;color:#64748b;margin:8px 0 0;">Top trending UK products this week</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+        <thead><tr style="background:#f8fafc;">
+          <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#475569;text-transform:uppercase;">Product</th>
+          <th style="padding:12px 16px;text-align:center;font-size:12px;font-weight:600;color:#475569;text-transform:uppercase;">Category</th>
+          <th style="padding:12px 16px;text-align:center;font-size:12px;font-weight:600;color:#475569;text-transform:uppercase;">Score</th>
+        </tr></thead>
+        <tbody>{product_rows}</tbody>
+      </table>
+      <div style="text-align:center;margin-top:24px;">
+        <a href="{site_url}/trending-products" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">See all trending products</a>
+      </div>
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;">
+        <p style="font-size:12px;color:#94a3b8;text-align:center;margin:0;">You received this because you subscribed at TrendScout.<br/>Reply with "unsubscribe" to stop.</p>
+      </div>
+    </div>"""
+
+    resend_key = os.environ.get("RESEND_API_KEY")
+    sender_email = os.environ.get("SENDER_EMAIL", "noreply@trendscout.click")
+
+    if not resend_key:
+        return {"records_processed": 0, "details": {"status": "error", "reason": "Resend not configured"}}
+
+    sent_count = 0
+    errors = []
+
+    async with httpx.AsyncClient() as client:
+        for lead in leads:
+            try:
+                resp = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                    json={"from": f"TrendScout <{sender_email}>", "to": [lead["email"]], "subject": "Your weekly UK product trends", "html": html_body},
+                    timeout=10,
+                )
+                if resp.status_code in (200, 201):
+                    sent_count += 1
+                else:
+                    errors.append(f"{lead['email']}: {resp.status_code}")
+            except Exception as e:
+                errors.append(f"{lead['email']}: {str(e)}")
+
+    await db.digest_log.insert_one({
+        "type": "lead_subscriber_digest",
+        "sent_at": datetime.now(timezone.utc).isoformat(),
+        "total_leads": len(leads),
+        "sent_count": sent_count,
+        "errors": errors[:10],
+    })
+
+    logger.info(f"Lead subscriber digest: sent {sent_count}/{len(leads)}, errors: {len(errors)}")
+    return {"records_processed": sent_count, "details": {"total": len(leads), "sent": sent_count, "errors": len(errors)}}

@@ -190,7 +190,7 @@ function ProductDetailModal({ pid, open, onClose, onImport, importing }) {
                     alt=""
                     className="max-h-full max-w-full object-contain"
                     data-testid="product-detail-image"
-                  />
+                   loading="lazy" />
                   {images.length > 1 && (
                     <>
                       <button
@@ -218,7 +218,7 @@ function ProductDetailModal({ pid, open, onClose, onImport, importing }) {
                           i === activeImage ? 'border-indigo-500 ring-1 ring-indigo-200' : 'border-transparent opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <img src={img} alt="" className="w-full h-full object-cover"  loading="lazy" />
                       </button>
                     ))}
                   </div>
@@ -269,7 +269,7 @@ function ProductDetailModal({ pid, open, onClose, onImport, importing }) {
                     <div key={v.vid || i} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
                       <div className="flex items-center gap-2 min-w-0">
                         {v.image && (
-                          <img src={v.image} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                          <img src={v.image} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0"  loading="lazy" />
                         )}
                         <span className="text-sm text-slate-700 truncate">{v.name || v.sku || `Variant ${i + 1}`}</span>
                       </div>
@@ -353,7 +353,7 @@ function SupplierComparisonCard({ supplier }) {
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
           {supplier.image_url ? (
-            <img src={supplier.image_url} alt="" className="w-16 h-16 rounded-lg object-cover bg-slate-100 flex-shrink-0" />
+            <img src={supplier.image_url} alt="" className="w-16 h-16 rounded-lg object-cover bg-slate-100 flex-shrink-0"  loading="lazy" />
           ) : (
             <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
               <Package className="h-6 w-6 text-slate-300" />

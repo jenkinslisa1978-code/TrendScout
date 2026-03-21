@@ -162,7 +162,7 @@ export default function StoreBuilderModal({ product, isOpen, onClose }) {
               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
                 <div className="w-16 h-16 rounded-lg bg-slate-200 flex items-center justify-center">
                   {product.image_url ? (
-                    <img src={product.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                    <img src={product.image_url} alt="" className="w-full h-full object-cover rounded-lg"  loading="lazy" /> 
                   ) : (
                     <Store className="h-6 w-6 text-slate-400" />
                   )}

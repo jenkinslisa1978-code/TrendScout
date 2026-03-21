@@ -167,7 +167,7 @@ export default function WeeklyWinnersPage() {
                           src={product.image_url} 
                           alt={product.product_name}
                           className="w-12 h-12 rounded-lg object-cover shrink-0"
-                        />
+                         loading="lazy" />
                       )}
                       
                       {/* Product Info */}

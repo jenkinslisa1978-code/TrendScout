@@ -342,7 +342,7 @@ function StoreAnalysis({ data }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {displayProducts.map((p, i) => (
                 <div key={i} className="bg-slate-50 rounded-lg p-3 space-y-2">
-                  {p.image_url && <img src={p.image_url} alt="" className="w-full h-24 object-cover rounded-lg" />}
+                  {p.image_url && <img src={p.image_url} alt="" className="w-full h-24 object-cover rounded-lg"  loading="lazy" /> }
                   <p className="text-xs font-semibold text-slate-800 line-clamp-2">{p.title}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-900">${p.price}</span>

@@ -79,7 +79,7 @@ export default function SeoPage() {
               {/* Image */}
               <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={p.image_url} alt={p.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"  loading="lazy" /> 
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <Package className="h-12 w-12 text-slate-300" />

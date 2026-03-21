@@ -70,7 +70,7 @@ export default function DailyOpportunitiesPanel() {
             </p>
             <div className="flex items-start gap-3">
               {top.image_url ? (
-                <img src={top.image_url} alt="" className="w-14 h-14 rounded-lg object-cover bg-slate-100 flex-shrink-0" />
+                <img src={top.image_url} alt="" className="w-14 h-14 rounded-lg object-cover bg-slate-100 flex-shrink-0"  loading="lazy" /> 
               ) : (
                 <div className="w-14 h-14 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
                   <Package className="h-6 w-6 text-amber-400" />
@@ -152,7 +152,7 @@ function ProductMiniList({ products, navigate }) {
           data-testid={`daily-opp-${p.id}`}
         >
           {p.image_url ? (
-            <img src={p.image_url} alt="" className="w-9 h-9 rounded-md object-cover bg-slate-100 flex-shrink-0" />
+            <img src={p.image_url} alt="" className="w-9 h-9 rounded-md object-cover bg-slate-100 flex-shrink-0"  loading="lazy" /> 
           ) : (
             <div className="w-9 h-9 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0">
               <Package className="h-4 w-4 text-slate-400" />

@@ -241,7 +241,7 @@ function AdCard({ ad, isSaved, onSave, onDetail }) {
     <Card className="border-0 shadow-md hover:shadow-lg transition-shadow overflow-hidden group cursor-pointer" data-testid="ad-card" onClick={onDetail}>
       <div className="aspect-video bg-slate-100 relative overflow-hidden">
         {ad.thumbnail_url || ad.image_url ? (
-          <img src={ad.thumbnail_url || ad.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          <img src={ad.thumbnail_url || ad.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"  loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ImageIcon className="h-8 w-8 text-slate-300" />
@@ -292,7 +292,7 @@ function AdDetailModal({ ad, onClose, isSaved, onSave }) {
         {/* Image */}
         <div className="relative aspect-video bg-slate-100">
           {ad.image_url ? (
-            <img src={ad.image_url} alt="" className="w-full h-full object-cover rounded-t-2xl" />
+            <img src={ad.image_url} alt="" className="w-full h-full object-cover rounded-t-2xl"  loading="lazy" />
           ) : (
             <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-12 w-12 text-slate-300" /></div>
           )}

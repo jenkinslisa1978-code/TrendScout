@@ -154,7 +154,7 @@ export default function QuickLaunchFlow() {
         <div className={`rounded-xl border p-4 mb-4 ${step >= 1 ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-200 bg-slate-50'}`}>
           <div className="flex items-start gap-4">
             {topProduct.image_url ? (
-              <img src={topProduct.image_url} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+              <img src={topProduct.image_url} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0"  loading="lazy" /> 
             ) : (
               <div className="w-16 h-16 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
                 <Sparkles className="h-6 w-6 text-indigo-400" />

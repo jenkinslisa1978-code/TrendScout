@@ -88,7 +88,7 @@ export default function TikTokIntelligencePage() {
                     <span className="w-6 text-sm font-bold text-slate-300 text-right">#{i + 1}</span>
                     <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                       {p.image_url ? (
-                        <img src={p.image_url} alt="" className="w-full h-full object-cover" />
+                        <img src={p.image_url} alt="" className="w-full h-full object-cover"  loading="lazy" /> 
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><Package className="h-4 w-4 text-slate-300" /></div>
                       )}

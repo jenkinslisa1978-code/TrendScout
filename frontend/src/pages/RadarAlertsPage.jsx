@@ -160,7 +160,7 @@ export default function RadarAlertsPage() {
                         <Icon className="h-4 w-4" />
                       </div>
                       {ev.image_url && (
-                        <img src={ev.image_url} alt="" className="h-9 w-9 rounded-lg object-cover" />
+                        <img src={ev.image_url} alt="" className="h-9 w-9 rounded-lg object-cover"  loading="lazy" /> 
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-800 truncate">{ev.title}</p>

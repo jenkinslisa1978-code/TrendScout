@@ -257,7 +257,7 @@ export default function PublicProductPage() {
                     src={product.image_url} 
                     alt={product.product_name}
                     className="w-32 h-32 rounded-xl object-cover shadow-md"
-                  />
+                   loading="lazy" />
                 )}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">

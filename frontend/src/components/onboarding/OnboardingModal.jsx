@@ -271,7 +271,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
                   <div className="flex items-start gap-3">
                     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center flex-shrink-0">
                       {featuredProduct.image_url ? (
-                        <img src={featuredProduct.image_url} alt="" className="w-full h-full rounded-xl object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                        <img src={featuredProduct.image_url} alt="" className="w-full h-full rounded-xl object-cover" onError={(e) => { e.target.style.display = 'none'; }} /> 
                       ) : (
                         <Package className="h-6 w-6 text-indigo-400" />
                       )}

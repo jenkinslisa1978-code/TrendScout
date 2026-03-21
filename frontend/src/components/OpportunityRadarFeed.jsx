@@ -104,7 +104,7 @@ export default function OpportunityRadarFeed() {
 
                   {/* Image */}
                   {evt.image_url ? (
-                    <img src={evt.image_url} alt="" className="w-9 h-9 rounded-md object-cover bg-slate-100 flex-shrink-0" />
+                    <img src={evt.image_url} alt="" className="w-9 h-9 rounded-md object-cover bg-slate-100 flex-shrink-0"  loading="lazy" /> 
                   ) : (
                     <div className="w-9 h-9 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0">
                       <Package className="h-4 w-4 text-slate-400" />

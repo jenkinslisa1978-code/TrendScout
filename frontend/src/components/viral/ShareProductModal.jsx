@@ -140,7 +140,7 @@ export default function ShareProductModal({
                     src={product.image_url} 
                     alt={product.product_name}
                     className="w-20 h-20 rounded-lg object-cover"
-                  />
+                   loading="lazy" />
                 )}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-lg text-slate-900 truncate">

@@ -67,7 +67,7 @@ export default function DailyPicksSection() {
             >
               <div className="relative h-28 bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"  loading="lazy" /> 
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Package className="h-8 w-8 text-slate-300" />

@@ -412,7 +412,7 @@ export default function TrendingProductPage() {
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
                         {r.image_url && !r.image_url.includes('01jrA-8DXYL') ? (
-                          <img src={r.image_url} alt="" className="w-full h-full rounded-lg object-contain" />
+                          <img src={r.image_url} alt="" className="w-full h-full rounded-lg object-contain"  loading="lazy" />
                         ) : (
                           <Package className="h-5 w-5 text-slate-600" />
                         )}
@@ -531,7 +531,7 @@ function ImageGallery({ images, productName, radarDetected }) {
               src={currentImage}
               alt={productName}
               className="w-full h-full object-contain p-6 group-hover:scale-110 transition-transform duration-500"
-            />
+             loading="lazy" />
           ) : (
             <div className="flex items-center justify-center h-full">
               <Package className="h-20 w-20 text-slate-700" />
@@ -577,7 +577,7 @@ function ImageGallery({ images, productName, radarDetected }) {
                   idx === currentIdx ? 'border-indigo-500 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
                 }`}
               >
-                <img src={url} alt="" className="w-full h-full object-cover" />
+                <img src={url} alt="" className="w-full h-full object-cover"  loading="lazy" />
               </button>
             ))}
           </div>
@@ -595,7 +595,7 @@ function ImageGallery({ images, productName, radarDetected }) {
             src={currentImage}
             alt={productName}
             className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
-          />
+           loading="lazy" />
           <button
             onClick={() => setZoomed(false)}
             className="absolute top-6 right-6 text-white/70 hover:text-white text-2xl font-light"

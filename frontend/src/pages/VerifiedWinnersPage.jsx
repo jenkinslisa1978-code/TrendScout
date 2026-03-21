@@ -171,7 +171,7 @@ function WinnerCard({ winner, rank, onUpvote }) {
 
           {/* Image */}
           {w.product_image ? (
-            <img src={w.product_image} alt="" className="h-16 w-16 rounded-lg object-cover" />
+            <img src={w.product_image} alt="" className="h-16 w-16 rounded-lg object-cover"  loading="lazy" />
           ) : (
             <div className="h-16 w-16 rounded-lg bg-slate-100 flex items-center justify-center">
               <ImageIcon className="h-6 w-6 text-slate-300" />

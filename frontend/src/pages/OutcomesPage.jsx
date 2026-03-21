@@ -233,7 +233,7 @@ function OutcomeRow({ outcome, isEditing, editForm, onStartEdit, onCancelEdit, o
     <div className="p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors" data-testid={`outcome-${outcome.id}`}>
       <div className="flex items-start gap-3">
         {outcome.image_url ? (
-          <img src={outcome.image_url} alt="" className="w-14 h-14 rounded-lg object-cover bg-slate-100 flex-shrink-0" />
+          <img src={outcome.image_url} alt="" className="w-14 h-14 rounded-lg object-cover bg-slate-100 flex-shrink-0"  loading="lazy" />
         ) : (
           <div className="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
             <Package className="h-6 w-6 text-slate-400" />

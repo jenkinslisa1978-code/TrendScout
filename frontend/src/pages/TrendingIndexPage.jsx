@@ -99,7 +99,7 @@ export default function TrendingIndexPage() {
                     <Card className="border-0 shadow-md hover:shadow-xl transition-all overflow-hidden">
                       <div className="aspect-video bg-slate-100 relative overflow-hidden">
                         {p.image_url ? (
-                          <img src={p.image_url} alt={p.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          <img src={p.image_url} alt={p.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"  loading="lazy" /> 
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Eye className="h-8 w-8 text-slate-300" />

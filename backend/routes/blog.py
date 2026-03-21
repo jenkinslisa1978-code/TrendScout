@@ -469,3 +469,135 @@ async def unsubscribe_from_digest(request: Request):
 
 
 routers = [blog_router, digest_router]
+
+
+
+@blog_router.post("/seed")
+async def seed_blog_articles():
+    """Seed starter blog articles. Skips articles that already exist by slug."""
+    seeded = 0
+    now = datetime.now(timezone.utc)
+
+    for i, article in enumerate(SEED_ARTICLES):
+        exists = await db.blog_posts.find_one({"slug": article["slug"]})
+        if exists:
+            continue
+        doc = {
+            "id": str(uuid.uuid4()),
+            "slug": article["slug"],
+            "title": article["title"],
+            "meta_description": article["meta_description"],
+            "category": article["category"],
+            "category_slug": slugify(article["category"]),
+            "content": article["content"],
+            "tags": article["tags"],
+            "products": [],
+            "status": "published",
+            "published_at": (now - timedelta(days=(len(SEED_ARTICLES) - i) * 3)).isoformat(),
+            "created_at": now.isoformat(),
+            "ai_generated": False,
+        }
+        try:
+            await db.blog_posts.insert_one(doc)
+            seeded += 1
+        except Exception:
+            pass
+
+    set_cached("blog_posts_list", None)
+    return {"status": "ok", "seeded": seeded}
+
+
+# ── Blog Seed Articles ──────────────────────────────────────
+SEED_ARTICLES = [
+    {
+        "title": "How to Validate a Product Idea Before Spending a Penny",
+        "slug": "how-to-validate-product-idea-uk",
+        "meta_description": "Learn the 7-step framework UK ecommerce sellers use to validate product ideas before investing. Avoid costly mistakes with data-driven research.",
+        "category": "Guides",
+        "tags": ["product-validation", "uk-ecommerce", "dropshipping", "beginners"],
+        "content": {
+            "intro": "Every successful UK ecommerce seller knows that the difference between a winning product and a money pit comes down to validation. Before you spend on stock, ads, or suppliers, here is a proven framework to test whether your product idea has real potential in the UK market.",
+            "sections": [
+                {
+                    "heading": "Why Most Product Ideas Fail",
+                    "content": "Research from the British Retail Consortium shows that over 60% of new product launches underperform expectations. The common thread? Sellers rely on gut feeling instead of data.\n\nThe UK market has unique characteristics — VAT at 20%, higher shipping costs, different seasonal patterns, and a customer base that values quality over rock-bottom pricing. What works on Amazon.com does not automatically translate to Amazon.co.uk or Shopify stores targeting UK buyers."
+                },
+                {
+                    "heading": "The 7-Signal Validation Framework",
+                    "content": "At TrendScout, we score every product across 7 key signals:\n\n1. **Demand Signal** — Is there growing search volume and social buzz?\n2. **Competition Level** — How saturated is the market?\n3. **Margin Potential** — Can you make 30%+ after VAT, shipping, and returns?\n4. **Trend Direction** — Is this emerging, peaking, or declining?\n5. **Supplier Availability** — Can you source reliably with good MOQs?\n6. **Ad Viability** — Is the CPA reasonable for this product type?\n7. **UK Market Fit** — Does this product resonate with UK buyers specifically?\n\nA product needs to score well on at least 5 of these 7 signals to be worth pursuing."
+                },
+                {
+                    "heading": "Free Tools to Start Validating Today",
+                    "content": "You do not need a paid subscription to begin. Our free tools can help:\n\n- **Profit Margin Calculator** — Factor in UK VAT, shipping, and platform fees\n- **ROAS Calculator** — Check if your ad spend makes sense\n- **UK VAT Calculator** — Understand your real costs\n- **Product Pricing Tool** — Find the right price point for UK buyers\n\nThese give you a solid starting point before committing to deeper research."
+                },
+                {
+                    "heading": "What Separates Winners from the Rest",
+                    "content": "After analysing thousands of UK product launches, the pattern is clear: winners validate with data, losers follow hype.\n\nThe best sellers spend 2-3 weeks researching before placing a single order. They check competitor reviews for gaps, test ad creatives with small budgets, and calculate their true margin including returns (which average 15-20% for UK ecommerce).\n\nIf you want to see what a thorough product analysis looks like, check our sample product report — it shows exactly the kind of data you should gather before committing to any product."
+                }
+            ],
+            "product_highlights": [],
+            "conclusion": "Product validation is not glamorous, but it is the single highest-ROI activity for any ecommerce seller. Start with our free calculators, review the sample analysis to understand what good research looks like, and only commit money when the data supports your decision."
+        },
+    },
+    {
+        "title": "UK VAT for Ecommerce Sellers: The Complete 2026 Guide",
+        "slug": "uk-vat-ecommerce-sellers-guide-2026",
+        "meta_description": "Everything UK ecommerce sellers need to know about VAT in 2026. Registration thresholds, rates, margin calculation, and common mistakes to avoid.",
+        "category": "Guides",
+        "tags": ["vat", "uk-tax", "ecommerce", "dropshipping", "margins"],
+        "content": {
+            "intro": "VAT is the single biggest factor that separates UK ecommerce profitability from US numbers. If you are running — or planning to run — an online store in the UK, understanding VAT is not optional. Here is everything you need to know for 2026.",
+            "sections": [
+                {
+                    "heading": "VAT Registration: When and Why",
+                    "content": "You must register for VAT when your taxable turnover exceeds the threshold (currently around 90,000 pounds). However, many sellers register voluntarily before hitting this threshold because:\n\n- You can reclaim VAT on business purchases\n- It looks more professional to B2B buyers\n- Some platforms require it\n\nThe key decision is whether the administrative overhead is worth the benefits at your current stage."
+                },
+                {
+                    "heading": "How VAT Affects Your Real Margins",
+                    "content": "Here is where most new sellers get caught out. If you sell a product for 24.99 pounds including VAT, your actual revenue is only 20.83 pounds. That 20% immediately comes off the top.\n\nWhen calculating margins, you must work with ex-VAT numbers. A product that looks like it has a 40% margin on paper might only have 20% after VAT is properly accounted for.\n\nUse our free UK VAT Calculator to see the real numbers for your products."
+                },
+                {
+                    "heading": "Common VAT Mistakes to Avoid",
+                    "content": "**Mistake 1: Ignoring VAT in margin calculations.** Always calculate margins on ex-VAT figures.\n\n**Mistake 2: Not accounting for import VAT.** If you source from outside the UK, you pay import VAT at the border.\n\n**Mistake 3: Mixing up inclusive and exclusive pricing.** UK consumers expect VAT-inclusive prices. Your advertised price must include VAT.\n\n**Mistake 4: Forgetting about the flat rate scheme.** For smaller sellers, the flat rate VAT scheme can simplify things and sometimes save money."
+                },
+                {
+                    "heading": "VAT and Dropshipping",
+                    "content": "Dropshipping adds complexity because the goods often ship directly from overseas suppliers. Since Brexit, UK VAT rules require that the seller (you) is responsible for VAT on goods under 135 pounds.\n\nThis means you need to charge VAT to your UK customers and remit it to HMRC, even if your supplier is in China. Factor this into your pricing from day one."
+                }
+            ],
+            "product_highlights": [],
+            "conclusion": "VAT is a fact of UK ecommerce life, but it does not have to be a profit killer. Build it into your pricing model from the start, use accurate calculators, and you will avoid the nasty surprises that catch out less prepared sellers."
+        },
+    },
+    {
+        "title": "TikTok Shop UK: Is It Worth It for Product Sellers in 2026?",
+        "slug": "tiktok-shop-uk-worth-it-2026",
+        "meta_description": "Is TikTok Shop UK a viable sales channel in 2026? We analyse the pros, cons, fees, and which products actually sell well on TikTok Shop.",
+        "category": "Channels",
+        "tags": ["tiktok-shop", "uk-ecommerce", "social-commerce", "viral-products"],
+        "content": {
+            "intro": "TikTok Shop has gone from a novelty to a serious sales channel for UK ecommerce sellers. But is it right for your products? We break down the reality of selling on TikTok Shop UK based on data from thousands of product listings.",
+            "sections": [
+                {
+                    "heading": "The TikTok Shop Opportunity",
+                    "content": "TikTok Shop UK has seen explosive growth. The platform combines entertainment with impulse buying in a way no other channel does. Products that demonstrate well on video — gadgets, beauty, fitness, home organisation — can go from zero to thousands of sales in days.\n\nThe key advantage is organic reach. Unlike Shopify (where you pay for every visitor) or Amazon (where you compete on keywords), TikTok can deliver massive free traffic if your content hits."
+                },
+                {
+                    "heading": "Which Products Work on TikTok Shop UK",
+                    "content": "Based on our analysis of top-performing TikTok Shop products in the UK:\n\n- **Price point:** 10-30 pounds performs best. High enough for decent margins, low enough for impulse buys.\n- **Visual appeal:** Products that look satisfying or surprising on camera.\n- **Problem-solvers:** Items that fix a relatable everyday annoyance.\n- **Before/after potential:** Products where the transformation is visible.\n\nProducts that require explanation, have complex sizing, or lack visual appeal struggle on TikTok regardless of how good they are."
+                },
+                {
+                    "heading": "The Fees and Margins Reality",
+                    "content": "TikTok Shop takes a commission (currently around 5-8% depending on category), plus you need to factor in:\n\n- Shipping costs (TikTok users expect fast delivery)\n- Sample costs for creators\n- Content creation time or costs\n- Returns (higher than average due to impulse buying)\n\nAfter all costs, aim for a minimum 25% net margin to make TikTok Shop worthwhile. Use our Profit Margin Calculator to model your specific numbers."
+                },
+                {
+                    "heading": "Getting Started: A Practical Approach",
+                    "content": "Do not go all-in on TikTok Shop immediately. Instead:\n\n1. Research what is trending using TrendScout's trend data\n2. Test 2-3 products with small inventory\n3. Create or commission 5-10 short videos per product\n4. Engage with TikTok Shop affiliates who will promote for commission\n5. Scale what works, cut what does not\n\nThe sellers who win on TikTok treat it as a content game first and a selling game second."
+                }
+            ],
+            "product_highlights": [],
+            "conclusion": "TikTok Shop UK is a genuine opportunity in 2026, but it is not for every product or every seller. If your products are visual, affordable, and solve a clear problem, it is worth testing. Use data to guide your product selection and start small before scaling."
+        },
+    },
+]
+

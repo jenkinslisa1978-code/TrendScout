@@ -42,7 +42,7 @@ function ProductRow({ product, onPush, pushing }) {
   return (
     <div className="flex items-center gap-3 p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors" data-testid={`embedded-product-${product.id}`}>
       {product.image_url ? (
-        <img src={product.image_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" />
+        <img src={product.image_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100"  loading="lazy" /> 
       ) : (
         <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
           <Package className="h-4 w-4 text-slate-400" />

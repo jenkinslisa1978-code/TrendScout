@@ -133,7 +133,7 @@ export default function AdTestsPage() {
               >
                 <CardContent className="p-4 flex items-center gap-4">
                   {t.image_url ? (
-                    <img src={t.image_url} alt="" className="w-14 h-14 rounded-xl object-cover bg-slate-100 flex-shrink-0" />
+                    <img src={t.image_url} alt="" className="w-14 h-14 rounded-xl object-cover bg-slate-100 flex-shrink-0"  loading="lazy" />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
                       <Package className="h-6 w-6 text-slate-400" />
