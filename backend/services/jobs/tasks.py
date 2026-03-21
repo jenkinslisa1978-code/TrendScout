@@ -646,10 +646,10 @@ async def weekly_blog_generation(db, params: Dict[str, Any]) -> Dict[str, Any]:
             continue
 
         try:
-            # Import the generate function from server module
-            from server import _generate_blog_post
+            from routes.blog import _generate_blog_post
             await _generate_blog_post(cat_name.lower().replace(" ", "-").replace("&", "and"))
             generated += 1
+            import asyncio
             await asyncio.sleep(5)  # Rate limit between generations
         except Exception as e:
             logging.warning(f"Blog generation failed for {cat_name}: {e}")
