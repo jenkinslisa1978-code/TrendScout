@@ -8,6 +8,7 @@ import EmailCapture from '@/components/EmailCapture';
 import ShareResult from '@/components/ShareResult';
 import TikTokAdBudgetCalculator from '@/components/TikTokAdBudgetCalculator';
 import ProductValidationChecklist from '@/components/ProductValidationChecklist';
+import AccuracyDisclaimer from '@/components/AccuracyDisclaimer';
 import { ArrowRight, Calculator, PoundSterling, BarChart3, TrendingUp, Receipt, CheckCircle, Video, ClipboardCheck } from 'lucide-react';
 
 function ProfitMarginCalculator() {
@@ -295,6 +296,9 @@ export default function FreeToolsPage() {
 
             {/* Active tool */}
             {ActiveComponent && <ActiveComponent />}
+
+            {/* Accuracy disclaimer */}
+            <AccuracyDisclaimer type="calculator" className="mt-4" />
 
             {/* Email capture — shown after tool delivers value */}
             <div className="mt-8">

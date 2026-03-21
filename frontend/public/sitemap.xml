@@ -2341,9 +2341,15 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/changelog</loc>
+    <loc>https://trendscout.click/methodology</loc>
     <lastmod>2026-03-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/accuracy</loc>
+    <lastmod>2026-03-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>

@@ -6,6 +6,8 @@ import PageMeta, { breadcrumbSchema, webPageSchema } from '@/components/PageMeta
 import { ViabilityBadge } from '@/components/ViabilityBadge';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import useScrollDepth from '@/hooks/useScrollDepth';
+import AccuracyDisclaimer from '@/components/AccuracyDisclaimer';
+import ConfidenceIndicator from '@/components/ConfidenceIndicator';
 import {
   ArrowRight, TrendingUp, Shield, Target, PoundSterling, Truck,
   AlertTriangle, Check, X, BarChart3, Zap, Store, Eye, Layers,
@@ -126,6 +128,7 @@ export default function SampleAnalysisPage() {
                       <span className="text-sm text-slate-400">/100</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">Combined opportunity score across all signals</p>
+                    <ConfidenceIndicator level="high" className="mt-2" />
                   </div>
                   <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-5">
                     <p className="text-xs font-medium text-indigo-600 mb-2">UK Viability Score</p>
@@ -133,6 +136,7 @@ export default function SampleAnalysisPage() {
                       <ViabilityBadge score={PRODUCT.viabilityScore} size="lg" showLabel expandable productName={PRODUCT.name} />
                     </div>
                     <p className="text-xs text-slate-500 mt-2">Commercial viability in the UK market</p>
+                    <ConfidenceIndicator level="high" className="mt-2" />
                   </div>
                 </div>
 
@@ -148,6 +152,13 @@ export default function SampleAnalysisPage() {
                     {signalBar('Social buzz', PRODUCT.socialBuzz, Eye)}
                     {signalBar('Supplier availability', PRODUCT.supplierAvailability, Truck)}
                   </div>
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    <span className="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-slate-500">Google Trends UK</span>
+                    <span className="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-slate-500">Amazon UK BSR</span>
+                    <span className="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-slate-500">TikTok Shop</span>
+                    <span className="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-slate-500">CJ Dropshipping</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-2">Last updated: 2 hours ago</p>
                 </div>
 
                 {/* AI Summary */}
@@ -280,6 +291,7 @@ export default function SampleAnalysisPage() {
         {/* Mid-page CTA */}
         <section className="py-10 px-6 bg-slate-50">
           <div className="max-w-2xl mx-auto text-center">
+            <AccuracyDisclaimer type="score" className="mb-6 text-left" />
             <p className="text-sm text-slate-500 mb-2">This is a sample analysis. Real products include live data, daily updates, and full competitive intelligence.</p>
             <h2 className="font-manrope text-xl font-bold text-slate-900">
               Get this level of analysis on every trending product
@@ -294,9 +306,9 @@ export default function SampleAnalysisPage() {
                   Start Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/uk-product-viability-score">
+              <Link to="/methodology">
                 <Button variant="outline" className="border-slate-300 text-slate-700 rounded-lg font-medium px-6 h-11">
-                  How Viability Scores Work
+                  How We Score Products
                 </Button>
               </Link>
             </div>
@@ -309,7 +321,8 @@ export default function SampleAnalysisPage() {
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Related</h3>
             <div className="flex flex-wrap gap-2">
               <Link to="/trending-products" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Trending Products</Link>
-              <Link to="/uk-product-viability-score" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">UK Viability Score</Link>
+              <Link to="/methodology" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Scoring Methodology</Link>
+              <Link to="/accuracy" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Accuracy Report</Link>
               <Link to="/how-it-works" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">How It Works</Link>
               <Link to="/pricing" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Pricing</Link>
               <Link to="/free-tools" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Free Tools</Link>

@@ -45,8 +45,11 @@ export function ViabilityBadge({ score, size = 'md', showLabel = true, expandabl
           <p className="text-xs text-slate-500 leading-relaxed">
             This score estimates whether the product is commercially viable in the UK, based on trend momentum, saturation, margin potential, shipping practicality, VAT impact, and channel fit.
           </p>
-          <a href="/uk-product-viability-score" className="inline-block mt-2 text-xs font-medium text-indigo-600 hover:text-indigo-700">
+          <a href="/methodology" className="inline-block mt-2 text-xs font-medium text-indigo-600 hover:text-indigo-700">
             Learn how this score works &rarr;
+          </a>
+          <a href="/accuracy" className="inline-block ml-3 mt-2 text-xs font-medium text-slate-500 hover:text-slate-700">
+            How accurate is this? &rarr;
           </a>
         </div>
       )}

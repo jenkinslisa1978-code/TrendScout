@@ -210,6 +210,8 @@ export default function LandingLayout({ children }) {
                 <li><Link to="/product-quiz" className="text-slate-500 hover:text-indigo-600 transition-colors">Product Quiz</Link></li>
                 <li><Link to="/sample-product-analysis" className="text-slate-500 hover:text-indigo-600 transition-colors">Sample Analysis</Link></li>
                 <li><Link to="/changelog" className="text-slate-500 hover:text-indigo-600 transition-colors">Changelog</Link></li>
+                <li><Link to="/methodology" className="text-slate-500 hover:text-indigo-600 transition-colors">Methodology</Link></li>
+                <li><Link to="/accuracy" className="text-slate-500 hover:text-indigo-600 transition-colors">Accuracy</Link></li>
                 <li><Link to="/pricing" className="text-slate-500 hover:text-indigo-600 transition-colors">Pricing</Link></li>
                 <li><Link to="/how-it-works" className="text-slate-500 hover:text-indigo-600 transition-colors">How It Works</Link></li>
               </ul>

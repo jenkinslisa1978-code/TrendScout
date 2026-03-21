@@ -109,6 +109,8 @@ const BestProductsUkPage = lazy(() => import("@/pages/BestProductsUkPage"));
 const TikTokProductResearchUkPage = lazy(() => import("@/pages/TikTokProductResearchUkPage"));
 const ShopifyProductResearchUkPage = lazy(() => import("@/pages/ShopifyProductResearchUkPage"));
 const SampleAnalysisPage = lazy(() => import("@/pages/SampleAnalysisPage"));
+const MethodologyPage = lazy(() => import("@/pages/MethodologyPage"));
+const AccuracyPage = lazy(() => import("@/pages/AccuracyPage"));
 
 // Comparison
 const ComparisonPage = lazy(() => import("@/pages/ComparisonPage"));
@@ -211,6 +213,8 @@ function AppRoutes() {
       <Route path="/compare/:slug" element={<ComparisonPage />} />
       <Route path="/product-quiz" element={<ProductQuizPage />} />
       <Route path="/changelog" element={<ChangelogPage />} />
+      <Route path="/methodology" element={<MethodologyPage />} />
+      <Route path="/accuracy" element={<AccuracyPage />} />
       <Route path="/uk-product-viability-score" element={<ViabilityScorePage />} />
       <Route path="/dropshipping-product-research-uk" element={<DropshippingUkPage />} />
       <Route path="/winning-products-uk" element={<WinningProductsUkPage />} />

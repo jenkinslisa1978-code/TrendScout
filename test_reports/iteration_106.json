@@ -1,0 +1,112 @@
+{
+  "summary": "Iteration 106 testing complete. All trust and accuracy features verified: 1) Methodology page loads with 7 signal explanations, weight distribution bar, 5 FAQs, confidence levels section, and disclaimers section, 2) Accuracy page loads with 4 case studies (predicted vs actual), 3 summary stats (85% margin accuracy, 78% trend direction, 4h refresh), and 3 limitations, 3) Sample product analysis shows 2 High confidence indicators, 4 data source labels (Google Trends UK, Amazon UK BSR, TikTok Shop, CJ Dropshipping), 'Last updated' timestamp, and accuracy disclaimer, 4) Free Tools page shows accuracy disclaimer ('Calculator results are estimates...') and all 6 tool tabs, 5) Comparison pages have correct FAQ counts (Jungle Scout: 3, Sell The Trend: 2), 6) Footer has Methodology and Accuracy links, 7) ViabilityBadge expandable links to /methodology and /accuracy verified.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "/methodology page loads with data-testid='methodology-page'",
+    "Methodology page has 7/7 signal cards with data-testid",
+    "Weight distribution bar present showing all 7 signals totaling 100%",
+    "Methodology page has 5 FAQ items",
+    "Confidence levels section present with High/Medium/Low descriptions",
+    "Methodology disclaimers section present",
+    "/accuracy page loads with data-testid='accuracy-page'",
+    "Accuracy page has 4 case studies (Portable Neck Fan, LED Strip Lights, Protein Shaker, Magnetic Phone Mount)",
+    "Summary stats: 85% margin accuracy, 78% trend direction, 4h refresh cycle",
+    "Accuracy limitations section has 3 items (Viral products, New categories, Supplier pricing)",
+    "/sample-product-analysis shows 2 'High confidence' indicators",
+    "Signal breakdown has 4 data source labels: Google Trends UK, Amazon UK BSR, TikTok Shop, CJ Dropshipping",
+    "'Last updated: 2 hours ago' timestamp present",
+    "Accuracy disclaimer (type='score') present on sample analysis",
+    "/tools page loads with data-testid='free-tools-page'",
+    "All 6 tool tabs present: profit, roas, vat, pricing, tiktok-ads, validation",
+    "Calculator accuracy disclaimer present with text 'Calculator results are estimates...'",
+    "/compare/jungle-scout-vs-trendscout has 3 FAQ items",
+    "/compare/sell-the-trend-vs-trendscout has 2 FAQ items",
+    "Footer has Methodology link",
+    "Footer has Accuracy link",
+    "ViabilityBadge expandable shows explainer with methodology link",
+    "ViabilityBadge expandable shows explainer with accuracy link",
+    "ConfidenceIndicator links to /methodology#confidence-levels"
+  ],
+  "test_report_links": [
+    "/app/test_reports/iteration_106.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MethodologyPage.jsx has well-structured SIGNALS array with 7 items, each containing name, weight, icon, color, sources, description, and calculation method",
+    "AccuracyPage.jsx has CASE_STUDIES array with 4 curated examples showing predicted vs actual data - MOCKED data (intentional)",
+    "AccuracyDisclaimer.jsx provides 4 contextual disclaimer types: margin, score, trend, calculator",
+    "ConfidenceIndicator.jsx correctly links to /methodology#confidence-levels anchor",
+    "ViabilityBadge.jsx expandable state includes both /methodology and /accuracy links",
+    "LandingLayout.jsx footer includes Methodology and Accuracy links in PRODUCT section"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend only testing)",
+    "frontend": "100% (all 24 tests passed)"
+  },
+  "test_credentials": "None required for public pages",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 106 tested all trust and accuracy features. All working correctly: Methodology page with 7-signal framework, weight distribution bar, FAQs, confidence levels. Accuracy page with 4 case studies and limitations. Sample analysis with confidence indicators, data source labels, timestamps. Tools page with calculator disclaimer. Comparison pages with FAQs. Footer links. ViabilityBadge expandable links. Note: Accuracy page case studies use MOCKED/curated example data (intentional per requirements).",
+  "verified_features": {
+    "methodology_page": {
+      "url": "/methodology",
+      "signals": 7,
+      "weight_distribution_bar": true,
+      "faqs": 5,
+      "confidence_levels_section": true,
+      "disclaimers_section": true,
+      "status": "working"
+    },
+    "accuracy_page": {
+      "url": "/accuracy",
+      "case_studies": 4,
+      "summary_stats": ["85% margin accuracy", "78% trend direction", "4h refresh"],
+      "limitations": 3,
+      "status": "working",
+      "note": "Case studies use MOCKED curated example data (intentional)"
+    },
+    "sample_analysis_confidence": {
+      "url": "/sample-product-analysis",
+      "confidence_indicators": 2,
+      "data_source_labels": ["Google Trends UK", "Amazon UK BSR", "TikTok Shop", "CJ Dropshipping"],
+      "last_updated_timestamp": true,
+      "accuracy_disclaimer": true,
+      "status": "working"
+    },
+    "tools_page_disclaimer": {
+      "url": "/tools",
+      "tool_tabs": 6,
+      "calculator_disclaimer": "Calculator results are estimates based on the values you provide...",
+      "status": "working"
+    },
+    "comparison_page_faqs": {
+      "jungle_scout": {"faq_count": 3},
+      "sell_the_trend": {"faq_count": 2},
+      "status": "working"
+    },
+    "footer_links": {
+      "methodology": true,
+      "accuracy": true,
+      "status": "working"
+    },
+    "viability_badge_expandable": {
+      "methodology_link": true,
+      "accuracy_link": true,
+      "status": "working"
+    }
+  },
+  "mocked_apis": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": ["AccuracyPage case studies are curated examples - intentional per requirements"]
+  }
+}
