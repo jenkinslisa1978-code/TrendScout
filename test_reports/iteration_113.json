@@ -1,0 +1,137 @@
+{
+  "summary": "Iteration 113 - Testing email capture gate for Quick Viability Search. All tests passed (10 backend, 20+ frontend checks). Email gate flow works correctly: 1 free search → email gate appears → email capture unlocks 3 more → exhausted state after 4 total.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "POST /api/leads/capture accepts valid email with source 'quick_viability_gate'",
+    "POST /api/leads/capture rejects email without @ symbol",
+    "POST /api/leads/capture rejects empty email",
+    "POST /api/leads/capture rejects whitespace-only email",
+    "POST /api/leads/capture accepts email with different source values",
+    "POST /api/leads/capture works without context field",
+    "POST /api/leads/capture works without source field (defaults to 'unknown')",
+    "POST /api/leads/capture handles duplicate emails via upsert",
+    "POST /api/leads/capture normalizes email to lowercase",
+    "POST /api/leads/capture handles special characters in context",
+    "Quick Viability Search allows 1 free search without email",
+    "After first search, email capture gate appears with 'Unlock 3 more free searches' heading",
+    "Email gate has email input field",
+    "Email gate has 'Unlock' submit button",
+    "Email gate has 'No spam' privacy note",
+    "Search counter shows progress dots and 'X free searches left' text",
+    "Submitting email via gate calls POST /api/leads/capture",
+    "After email capture, gate disappears",
+    "After email capture, user can make 3 more searches (4 total)",
+    "Search counter updates correctly: 2 left → 1 left → exhausted",
+    "After all 4 searches exhausted, 'searches exhausted' state shows",
+    "Exhausted state shows 'You've used all your free searches' message",
+    "Exhausted state shows 'Start Free — Unlimited Searches' signup CTA",
+    "Search input is disabled when all searches are exhausted",
+    "LocalStorage key ts_viability_searches persists state across reloads",
+    "LocalStorage key ts_viability_email persists email across reloads",
+    "Viability result card renders with score (X/100 format)",
+    "Viability result card renders with verdict badge",
+    "Viability result card renders with signal breakdown",
+    "Viability result card renders with strengths list",
+    "Viability result card renders with risks list",
+    "Suggestion chips still work for first search",
+    "Clicking suggestion chip fills input (does not auto-submit)",
+    "Interactive demo section still renders below",
+    "Hero section still works",
+    "Trust bar still works",
+    "Features highlight section still works",
+    "Product showcase section still works",
+    "Final CTA section still works",
+    "No critical console errors"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_leads_capture.py",
+    "/app/test_reports/pytest/leads_capture_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "QuickViabilitySearch.jsx correctly implements email gate logic with FREE_BEFORE_GATE=1 and FREE_AFTER_GATE=3",
+    "LocalStorage keys ts_viability_searches and ts_viability_email properly persist state",
+    "Email gate form correctly calls POST /api/leads/capture with source='quick_viability_gate'",
+    "Backend leads.py endpoint properly validates email and uses upsert to avoid duplicates",
+    "Search counter progress dots correctly show filled/unfilled state based on count",
+    "Exhausted state properly disables search input and shows signup CTA",
+    "All data-testid attributes present for testing: email-gate, email-gate-input, email-gate-submit, email-gate-success, searches-exhausted, exhausted-signup-cta, search-counter"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_leads_capture.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+  "test_credentials": "None required (public endpoints)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 113 verified email capture gate for QuickViabilitySearch. Flow: (1) First search works free → result shows + email gate appears, (2) Enter email → POST /api/leads/capture called + 3 more unlocked, (3) After 4 total searches → exhausted state with signup CTA. LocalStorage keys: ts_viability_searches (JSON with count/gated), ts_viability_email (email string). Backend endpoint at POST /api/leads/capture accepts {email, source, context} and uses upsert. All homepage sections still work.",
+  "verified_features": {
+    "email_capture_gate": {
+      "gate_appears_after_first_search": true,
+      "gate_heading": "Unlock 3 more free searches",
+      "gate_email_input": true,
+      "gate_unlock_button": true,
+      "gate_privacy_note": "No spam. Unsubscribe anytime.",
+      "email_capture_api_call": "POST /api/leads/capture with source='quick_viability_gate'",
+      "gate_disappears_after_capture": true,
+      "unlocks_3_more_searches": true
+    },
+    "search_counter": {
+      "progress_dots": true,
+      "searches_left_text": true,
+      "updates_correctly": true
+    },
+    "exhausted_state": {
+      "appears_after_4_searches": true,
+      "message": "You've used all your free searches",
+      "signup_cta": "Start Free — Unlimited Searches",
+      "input_disabled": true
+    },
+    "localStorage_persistence": {
+      "ts_viability_searches": "JSON with count and gated fields",
+      "ts_viability_email": "email string",
+      "persists_across_reload": true
+    },
+    "result_card": {
+      "score": true,
+      "verdict": true,
+      "signals": true,
+      "strengths": true,
+      "risks": true,
+      "cta_button": true
+    },
+    "suggestion_chips": {
+      "count": 4,
+      "fills_input": true,
+      "auto_submits": false
+    },
+    "other_sections": {
+      "interactive_demo": true,
+      "hero": true,
+      "trust_bar": true,
+      "features": true,
+      "products": true,
+      "final_cta": true
+    }
+  },
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  },
+  "console_errors": {
+    "count": 1,
+    "details": "Minor 403 error (likely external resource) - not affecting functionality"
+  }
+}
