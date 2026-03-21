@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import PageMeta, { organizationSchema, websiteSchema, softwareAppSchema } from '@/components/PageMeta';
 import { ViabilityIndicator } from '@/components/ViabilityBadge';
+import { RevealSection, RevealStagger } from '@/hooks/useScrollReveal';
 import {
   TrendingUp, ArrowRight, Check, Search, BarChart3, Shield,
   Zap, Package, ChevronRight, Globe, PoundSterling, RefreshCw,
@@ -37,7 +38,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.08),transparent)]" />
         <div className="relative mx-auto max-w-7xl px-6 pt-16 pb-8 lg:px-8 lg:pt-24 lg:pb-16">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-            <div className="max-w-xl">
+            <RevealSection direction="right" className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 border border-indigo-100 px-3.5 py-1.5 mb-6">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
@@ -80,8 +81,8 @@ export default function LandingPage() {
                 <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> UK-focused data</span>
                 <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Updated daily</span>
               </div>
-            </div>
-            <div className="relative lg:ml-4">
+            </RevealSection>
+            <RevealSection direction="left" delay={200} className="relative lg:ml-4">
               <div className="absolute -inset-4 bg-gradient-to-r from-indigo-100/40 via-violet-100/30 to-transparent rounded-3xl blur-2xl" />
               <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-900/10 border border-slate-200/60 bg-white">
                 <img
@@ -101,7 +102,7 @@ export default function LandingPage() {
                   <p className="text-sm font-bold text-slate-900 font-mono">150+</p>
                 </div>
               </div>
-            </div>
+            </RevealSection>
           </div>
         </div>
       </section>
@@ -121,7 +122,7 @@ export default function LandingPage() {
       {/* ═══ QUICK FEATURE HIGHLIGHTS ═══ */}
       <section className="py-20 lg:py-24 bg-white" data-testid="features-highlight-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <RevealSection className="text-center max-w-2xl mx-auto mb-14">
             <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Why TrendScout</p>
             <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               Everything you need to find profitable products
@@ -129,8 +130,8 @@ export default function LandingPage() {
             <p className="mt-3 text-base text-slate-500">
               From trend detection to launch decisions — built specifically for UK ecommerce sellers.
             </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          </RevealSection>
+          <RevealStagger className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5" staggerMs={100}>
             {[
               { icon: Search, title: 'Trend Detection', desc: 'Spot rising products across TikTok, Amazon, Shopify, and Google Trends before they peak.' },
               { icon: Shield, title: 'Competition Analysis', desc: 'See how many sellers are active, how crowded the ad space is, and where gaps exist.' },
@@ -148,43 +149,45 @@ export default function LandingPage() {
                 </div>
               );
             })}
-          </div>
-          <div className="mt-10 text-center">
+          </RevealStagger>
+          <RevealSection delay={400} className="mt-10 text-center">
             <Link to="/features">
               <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl font-medium" data-testid="see-all-features-btn">
                 See all features <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-          </div>
+          </RevealSection>
         </div>
       </section>
 
       {/* ═══ LIVE TRENDING PRODUCTS ═══ */}
       <section className="py-20 lg:py-24 bg-slate-50" data-testid="product-showcase-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
-            <div>
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Live Data</p>
-              <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                Products trending right now
-              </h2>
-              <p className="mt-2 text-base text-slate-500">
-                Real products scored and updated daily with{' '}
-                <Link to="/uk-product-viability-score" className="text-indigo-600 hover:text-indigo-700 font-medium">UK Viability Scores</Link>.
-              </p>
+          <RevealSection>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+              <div>
+                <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Live Data</p>
+                <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  Products trending right now
+                </h2>
+                <p className="mt-2 text-base text-slate-500">
+                  Real products scored and updated daily with{' '}
+                  <Link to="/uk-product-viability-score" className="text-indigo-600 hover:text-indigo-700 font-medium">UK Viability Scores</Link>.
+                </p>
+              </div>
+              <Link to="/trending-products">
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm" data-testid="view-all-products-btn" onClick={() => trackEvent(EVENTS.TRENDING_VIEW, { source: 'homepage' })}>
+                  View all products <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
-            <Link to="/trending-products">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm" data-testid="view-all-products-btn" onClick={() => trackEvent(EVENTS.TRENDING_VIEW, { source: 'homepage' })}>
-                View all products <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+          </RevealSection>
           {products.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <RevealStagger className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" staggerMs={120}>
               {products.slice(0, 3).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </RevealStagger>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[1,2,3].map(i => <div key={i} className="rounded-xl border border-slate-200 bg-white p-6 h-52 animate-pulse" />)}
@@ -194,33 +197,35 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ FINAL CTA ═══ */}
-      <section className="py-20" data-testid="final-cta-section">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="relative rounded-2xl bg-slate-900 overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.15),transparent_60%)]" />
-            <div className="relative p-10 sm:p-16 text-center">
-              <h2 className="font-manrope text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight max-w-2xl mx-auto">
-                Validate your next product before you waste money on ads or stock
-              </h2>
-              <p className="mt-5 text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
-                Start free. Browse trending products, check UK Viability Scores, and explore margin insights — no credit card needed.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/signup">
-                  <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="final-cta-primary" onClick={() => trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: 'Start Free', source: 'final_cta' })}>
-                    Start Free <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link to="/pricing">
-                  <Button variant="ghost" size="lg" className="text-base px-8 h-12 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl" data-testid="final-cta-secondary" onClick={() => trackEvent(EVENTS.PRICING_VIEW, { source: 'homepage_cta' })}>
-                    See Pricing
-                  </Button>
-                </Link>
+      <RevealSection>
+        <section className="py-20" data-testid="final-cta-section">
+          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+            <div className="relative rounded-2xl bg-slate-900 overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.15),transparent_60%)]" />
+              <div className="relative p-10 sm:p-16 text-center">
+                <h2 className="font-manrope text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight max-w-2xl mx-auto">
+                  Validate your next product before you waste money on ads or stock
+                </h2>
+                <p className="mt-5 text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
+                  Start free. Browse trending products, check UK Viability Scores, and explore margin insights — no credit card needed.
+                </p>
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Link to="/signup">
+                    <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="final-cta-primary" onClick={() => trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: 'Start Free', source: 'final_cta' })}>
+                      Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link to="/pricing">
+                    <Button variant="ghost" size="lg" className="text-base px-8 h-12 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl" data-testid="final-cta-secondary" onClick={() => trackEvent(EVENTS.PRICING_VIEW, { source: 'homepage_cta' })}>
+                      See Pricing
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </RevealSection>
     </LandingLayout>
   );
 }

@@ -4,6 +4,7 @@ import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import PageMeta from '@/components/PageMeta';
+import { RevealSection, RevealStagger } from '@/hooks/useScrollReveal';
 import {
   ArrowRight, Search, BarChart3, Shield, Zap, Package,
   ChevronRight, Globe, ShoppingBag, Store, Target,
@@ -27,13 +28,15 @@ export default function FeaturesPage() {
       <section className="relative bg-gradient-to-b from-slate-50 via-white to-white overflow-hidden pt-16 pb-12 lg:pt-24 lg:pb-16" data-testid="features-hero">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.06),transparent)]" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8 text-center">
-          <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Features</p>
-          <h1 className="font-manrope text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.1]" data-testid="features-headline">
-            Built for <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">smarter product decisions</span>
-          </h1>
-          <p className="mt-5 text-base sm:text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto">
-            TrendScout combines multi-channel trend data, UK-specific viability analysis, and AI-powered scoring to help you find products that can actually sell.
-          </p>
+          <RevealSection>
+            <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Features</p>
+            <h1 className="font-manrope text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.1]" data-testid="features-headline">
+              Built for <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">smarter product decisions</span>
+            </h1>
+            <p className="mt-5 text-base sm:text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto">
+              TrendScout combines multi-channel trend data, UK-specific viability analysis, and AI-powered scoring to help you find products that can actually sell.
+            </p>
+          </RevealSection>
         </div>
       </section>
 
@@ -41,7 +44,7 @@ export default function FeaturesPage() {
       <section className="py-20 lg:py-24 bg-white" data-testid="core-features-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="relative order-2 lg:order-1">
+            <RevealSection direction="left" className="relative order-2 lg:order-1">
               <div className="absolute -inset-8 bg-gradient-to-br from-indigo-50/50 to-violet-50/30 rounded-3xl" />
               <div className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200/60">
                 <img
@@ -52,8 +55,8 @@ export default function FeaturesPage() {
                   data-testid="analysis-visual"
                 />
               </div>
-            </div>
-            <div className="order-1 lg:order-2">
+            </RevealSection>
+            <RevealSection direction="right" delay={150} className="order-1 lg:order-2">
               <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Core Capabilities</p>
               <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-snug">
                 Trend data is easy.<br />Profitable decisions are harder.
@@ -83,7 +86,7 @@ export default function FeaturesPage() {
                   );
                 })}
               </div>
-            </div>
+            </RevealSection>
           </div>
         </div>
       </section>
@@ -92,7 +95,7 @@ export default function FeaturesPage() {
       <section className="py-20 lg:py-24 bg-slate-50" data-testid="uk-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
+            <RevealSection direction="right">
               <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">UK-Focused</p>
               <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Not every viral product works in the UK
@@ -128,8 +131,8 @@ export default function FeaturesPage() {
                   </Button>
                 </Link>
               </div>
-            </div>
-            <div className="relative">
+            </RevealSection>
+            <RevealSection direction="left" delay={200} className="relative">
               <div className="absolute -inset-6 bg-gradient-to-br from-indigo-50/40 to-blue-50/30 rounded-3xl" />
               <div className="relative">
                 <img
@@ -140,7 +143,7 @@ export default function FeaturesPage() {
                   data-testid="uk-map-visual"
                 />
               </div>
-            </div>
+            </RevealSection>
           </div>
         </div>
       </section>
@@ -149,7 +152,7 @@ export default function FeaturesPage() {
       <section className="py-20 lg:py-24 bg-white" data-testid="methodology-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-start">
-            <div>
+            <RevealSection>
               <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Scoring Model</p>
               <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Scored on 7 signals. Not vibes.
@@ -167,8 +170,8 @@ export default function FeaturesPage() {
                   See our accuracy tracking <ArrowRight className="ml-1.5 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
-            </div>
-            <div className="space-y-3">
+            </RevealSection>
+            <RevealStagger className="space-y-3" staggerMs={80}>
               {[
                 { label: 'Trend momentum', desc: 'Is demand growing, peaking, or declining?', pct: 82 },
                 { label: 'Market saturation', desc: 'How many sellers are already active?', pct: 45 },
@@ -192,7 +195,7 @@ export default function FeaturesPage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </RevealStagger>
           </div>
         </div>
       </section>
@@ -200,13 +203,13 @@ export default function FeaturesPage() {
       {/* ═══ USE CASES ═══ */}
       <section className="py-20 lg:py-24 bg-slate-50" data-testid="use-cases-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <RevealSection className="text-center max-w-2xl mx-auto mb-14">
             <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Solutions</p>
             <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               Built for how UK sellers actually work
             </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          </RevealSection>
+          <RevealStagger className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" staggerMs={100}>
             {[
               { icon: Store, title: 'Shopify sellers', desc: 'Find products to test on your Shopify store. Push products directly from TrendScout to your store as drafts.', link: '/for-shopify' },
               { icon: ShoppingBag, title: 'Amazon UK sellers', desc: 'Spot products gaining demand on Amazon.co.uk before the category gets crowded.', link: '/for-amazon-uk' },
@@ -229,7 +232,7 @@ export default function FeaturesPage() {
                 </Link>
               );
             })}
-          </div>
+          </RevealStagger>
         </div>
       </section>
 
@@ -237,7 +240,7 @@ export default function FeaturesPage() {
       <section className="py-20 bg-white" data-testid="free-tools-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <RevealSection direction="right">
               <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Free Tools</p>
               <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Try before you commit
@@ -252,48 +255,52 @@ export default function FeaturesPage() {
                   </Button>
                 </Link>
               </div>
-            </div>
-            <div className="rounded-xl overflow-hidden border border-slate-200/60 shadow-lg">
-              <img
-                src={TRENDING_IMG}
-                alt="TrendScout product research interface"
-                className="w-full h-auto"
-                loading="lazy"
-                data-testid="trending-visual"
-              />
-            </div>
+            </RevealSection>
+            <RevealSection direction="left" delay={200}>
+              <div className="rounded-xl overflow-hidden border border-slate-200/60 shadow-lg">
+                <img
+                  src={TRENDING_IMG}
+                  alt="TrendScout product research interface"
+                  className="w-full h-auto"
+                  loading="lazy"
+                  data-testid="trending-visual"
+                />
+              </div>
+            </RevealSection>
           </div>
         </div>
       </section>
 
       {/* ═══ CTA ═══ */}
-      <section className="py-20" data-testid="features-cta-section">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="relative rounded-2xl bg-slate-900 overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.15),transparent_60%)]" />
-            <div className="relative p-10 sm:p-16 text-center">
-              <h2 className="font-manrope text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight max-w-2xl mx-auto">
-                Ready to find your next winning product?
-              </h2>
-              <p className="mt-5 text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
-                Start free. Browse trending products, check UK Viability Scores, and explore margin insights — no credit card needed.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/signup">
-                  <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="features-cta-primary" onClick={() => trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: 'Start Free', source: 'features_cta' })}>
-                    Start Free <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link to="/pricing">
-                  <Button variant="ghost" size="lg" className="text-base px-8 h-12 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl" data-testid="features-cta-secondary">
-                    See Pricing
-                  </Button>
-                </Link>
+      <RevealSection>
+        <section className="py-20" data-testid="features-cta-section">
+          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+            <div className="relative rounded-2xl bg-slate-900 overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.15),transparent_60%)]" />
+              <div className="relative p-10 sm:p-16 text-center">
+                <h2 className="font-manrope text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight max-w-2xl mx-auto">
+                  Ready to find your next winning product?
+                </h2>
+                <p className="mt-5 text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
+                  Start free. Browse trending products, check UK Viability Scores, and explore margin insights — no credit card needed.
+                </p>
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Link to="/signup">
+                    <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="features-cta-primary" onClick={() => trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: 'Start Free', source: 'features_cta' })}>
+                      Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link to="/pricing">
+                    <Button variant="ghost" size="lg" className="text-base px-8 h-12 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl" data-testid="features-cta-secondary">
+                      See Pricing
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </RevealSection>
     </LandingLayout>
   );
 }

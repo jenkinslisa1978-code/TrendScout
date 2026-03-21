@@ -13,28 +13,30 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Completed Features
 
+### Scroll-Triggered Fade-In Animations (March 21, 2026)
+- **useScrollReveal hook**: IntersectionObserver-based scroll reveal with directional animations
+- **RevealSection component**: Fade-in with configurable direction (up/down/left/right) and delay
+- **RevealStagger component**: Staggered child reveals with configurable timing
+- Applied to both homepage and features page sections
+- Verified: visual smoke test passed
+
 ### Homepage Split into Separate Pages (March 21, 2026)
 - **Slim homepage**: Hero + trust bar + 4 feature cards + 3 live trending products + final CTA (~3036px)
-- **New /features page**: Core capabilities (with analysis image), UK intelligence (with map), 7-signal methodology, 6 use cases, free tools, CTA (~5223px)
-- **Navigation updated**: "Features" added as first top-level nav link with active state highlighting
-- **Route added**: `/features` lazy-loaded in App.js
+- **New /features page**: Core capabilities, UK intelligence, 7-signal methodology, 6 use cases, free tools, CTA
+- **Navigation updated**: "Features" added as first top-level nav link
 - Verified: iteration_109 (100%, 22/22 tests)
 
 ### Homepage Visual Redesign (March 21, 2026)
 - 4 AI-generated images: dashboard mockup, product analysis, UK data map, trending products interface
-- Split hero layout, visual storytelling, gradient accents, modern card design
 - Verified: iteration_108 (100%, 21/21 tests)
 
 ### Prediction Accuracy Tracking System (March 21, 2026)
 - GET /api/accuracy/stats, prediction snapshots, 30/90 day reviews, accuracy page
-- Honesty overhaul: removed fabricated stats, real vs estimated transparency
+- Honesty overhaul: removed fabricated stats
 - Verified: iteration_107 (100%)
 
-### Trust & Accuracy Framework (March 21, 2026)
-- Methodology page, Confidence indicators, Accuracy disclaimers, Data source labels
-- Verified: iteration_106 (100%)
-
 ### All Previous Features
+- Trust & Accuracy Framework, Methodology page, Confidence indicators
 - Changelog, 6 free tools, FAQ schema, Trial expiry, A/B framework, Scoring consolidation
 - CRO: Exit-intent, Social proof, Quiz, Digest, Tool recommender, Shareable results
 - Performance: Code splitting, Lazy loading, react-snap, Blog automation
@@ -48,6 +50,11 @@ AI product research and launch intelligence for UK ecommerce sellers.
 | send_lead_subscriber_digest | Monday 9 AM | Trending products email to leads |
 | send_weekly_email_digest | Monday 10 AM | Digest to registered users |
 | send_trial_expiry_notifications | Every 2h | Email expired trial users |
+
+## Key Files
+- `/app/frontend/src/pages/LandingPage.jsx` - Focused homepage
+- `/app/frontend/src/pages/FeaturesPage.jsx` - Detailed features page
+- `/app/frontend/src/hooks/useScrollReveal.js` - Scroll animation hook
 
 ## Remaining
 - Wire `useABTest` hook to hero CTA (P1)
