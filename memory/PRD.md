@@ -13,6 +13,18 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Completed Features
 
+### Homepage Visual Redesign (March 21, 2026)
+- **Hero section**: Split layout with headline on left, AI-generated dashboard mockup on right
+- **4 AI-generated images**: Dashboard mockup, product analysis visual, UK ecommerce data map, trending products interface
+- **Visual storytelling**: Each major section now paired with relevant imagery
+- **Feature showcase**: Product viability analysis image + feature cards
+- **UK section**: UK data map visual with feature badges
+- **Free tools teaser**: New section promoting free calculators
+- **Improved hierarchy**: Section labels, gradient accents, modern card design with hover effects
+- **Floating badge**: Products tracked counter on hero
+- **Responsive**: Fully tested on desktop and mobile
+- Verified: iteration_108 (100%, 21/21 tests)
+
 ### Prediction Accuracy Tracking System (March 21, 2026)
 - **GET /api/accuracy/stats**: Live endpoint returning real tracked accuracy data
 - **Prediction snapshots**: Every scored product is snapshotted (score, margin, trend, signals)
@@ -43,5 +55,5 @@ AI product research and launch intelligence for UK ecommerce sellers.
 | send_trial_expiry_notifications | Every 2h | Email expired trial users |
 
 ## Remaining
-- Set `REACT_APP_GA4_ID` in production .env
-- Wire `useABTest` hook to hero CTA
+- Wire `useABTest` hook to hero CTA (P1)
+- Set `REACT_APP_GA4_ID` in production .env (P2)
