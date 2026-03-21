@@ -25,89 +25,83 @@ AI product research and launch intelligence for UK ecommerce sellers. Discover t
 
 ## ALL Features — COMPLETED
 
-### Phase 3: CRO, Lead Capture, Performance (March 19, 2026)
+### Phase 3b: CRO Enhancement — 6 New Features (March 21, 2026)
 
-**Sample Product Analysis Page:**
-- Public-facing page at /sample-product-analysis with mock Portable Neck Fan data
-- Viability score, 7-signal breakdown, AI summary, channel fit, strengths/risks
-- Scroll depth tracking via useScrollDepth hook
+**1. Exit-Intent Popup (ExitIntentPopup.jsx):**
+- Triggers on desktop when mouse leaves viewport top
+- Offers "UK Product Research Checklist" lead magnet
+- Email capture via /api/leads/capture (source=exit_intent)
+- localStorage dismissal for 7 days
+- Only shows to non-authenticated visitors
 
-**Email Lead Capture:**
-- Reusable EmailCapture component
-- Integrated into: FreeToolsPage, SeoLandingTemplate, ComparisonPage
-- Backend: POST /api/leads/capture endpoint (upsert, validates email)
-- Analytics: EMAIL_CAPTURE_VIEW, EMAIL_CAPTURE_SUBMIT events
+**2. Social Proof Toast Notifications (SocialProofToast.jsx):**
+- Periodic toast notifications on marketing pages
+- Random UK names/cities with realistic actions (MOCKED data)
+- First appears after 8 seconds, repeats every 25-40 seconds
+- Only shows to non-authenticated visitors
 
-**Content Expansion:**
-- 4 new high-intent landing pages: /best-products-to-sell-online-uk, /tiktok-shop-product-research-uk, /shopify-product-research-uk, /product-validation-uk
-- 2 new competitor comparisons: Helium 10, Ecomhunt (merged into ComparisonPage)
+**3. Interactive Product Quiz (/product-quiz):**
+- 4-step quiz: channel, stage, challenge, budget
+- Personalized recommendation with match percentage
+- Email capture for "detailed report"
+- Plan recommendation (Free/Starter/Pro/Elite)
+- Added to nav dropdown and footer
 
-**Performance Optimisation:**
-- Route-level code splitting: 80+ pages lazy-loaded via React.lazy()
-- Only LandingPage and NotFoundPage are eager-loaded
-- Suspense fallback with branded spinner
-- Font loading optimisation (media=print with onload)
+**4. Weekly Email Digest (POST /api/leads/send-digest):**
+- Admin-only endpoint (auth via STRIPE_WEBHOOK_SECRET)
+- Sends top 5 trending products to all opted-in leads
+- HTML email template via Resend API
+- Logs digest sends in digest_log collection
+- Leads automatically opted-in on capture (digest_opt_in: true)
 
-**Conversion Path Improvements:**
-- Mid-page CTA in SeoLandingTemplate after features ("See a sample product report")
-- Social proof in bottom CTAs ("Join 2,000+ UK sellers already using TrendScout")
-- EmailCapture as low-commitment alternative on all landing + comparison pages
-- "Compare Plans" replaced "See Trending Products" in bottom CTA for stronger conversion intent
-- Cross-linking: mid-page links to /tools, /sample-product-analysis
+**5. Tool Recommender (ToolRecommender.jsx):**
+- 3-question inline widget: market, channels, priority
+- Embedded in comparison pages between verdict and CTA
+- Honest recommendation (can suggest competitor is better for US/Amazon-only sellers)
+- Scoring logic based on UK focus, multi-channel, and priorities
 
-**Scroll Depth Analytics:**
-- useScrollDepth hook fires SCROLL_DEPTH events at 25%, 50%, 75%, 100%
-- Active on: SeoLandingTemplate, ComparisonPage, SampleAnalysisPage
+**6. Shareable Calculator Results (ShareResult.jsx):**
+- Copy-to-clipboard and X/Twitter share buttons
+- Integrated into all 4 calculators on /tools page
+- Native share API support on mobile
+- Branded share text with TrendScout attribution
 
-**Cleanup:**
-- Deleted redundant MoreComparisonsPage.jsx and removed its route from App.js
+**Verified:** 100% — iteration_102.json
 
-**Verified:** 100% — iteration_100.json (base), iteration_101.json (improvements)
+### Phase 3a: CRO Base, Lead Capture, Performance (March 19, 2026)
+- Sample Product Analysis Page (/sample-product-analysis)
+- Email Lead Capture (EmailCapture component + /api/leads/capture)
+- 4 new high-intent landing pages
+- 2 new competitor comparisons (Helium 10, Ecomhunt)
+- Route-level code splitting (80+ lazy-loaded pages)
+- Scroll depth analytics (25/50/75/100% thresholds)
+- Mid-page CTAs, social proof, email capture on SeoLandingTemplate
+- Verified: 100% — iteration_100 + iteration_101
 
 ### Phase 2: Analytics, Schema, Viability Score, SEO (March 19, 2026)
-
-**GA4 Analytics Bridge:**
-- Analytics service with GA4 gtag() bridge
-- 20+ named event constants
-- Events wired to hero CTAs, pricing toggle, plan selection, comparison CTAs, free tool tabs
-
-**JSON-LD Schema Markup:** All public pages have appropriate schema
-
-**UK Product Viability Score (Flagship Feature):**
-- Dedicated page, ViabilityBadge, ViabilityIndicator components
-- Live on homepage product cards
-
-**New UK Landing Pages:** 4 pages with SeoLandingTemplate
-
-**Trust/Policy Pages:** Cookie policy, refund policy
-
-**Verified:** 100% — iteration_99.json
+- GA4 Analytics Bridge, JSON-LD Schema, UK Product Viability Score
+- 4 UK Landing Pages, Trust/Policy Pages
+- Verified: 100% — iteration_99.json
 
 ### Phase 1: Website Rebuild (March 19, 2026)
-- Homepage, Pricing, How It Works, About, Contact pages rebuilt
-- 4 UK landing pages, 3 competitor comparison pages
-- Free Tools page (4 calculators), Navigation with dropdowns
-- SEO meta tags + OG tags
+- Complete public site rebuild, 4 UK landing pages, 3 comparison pages
+- Free Tools, Navigation, Footer, SEO
 - Verified: 100% — iteration_98.json
-
-### Previously Completed
-(See prior PRD for full list: Shopify OAuth, launch scores, AI generators, content gating, free trials, etc.)
 
 ## Backlog
 
 ### P0 — High Priority
 - Configure GA4 measurement ID (REACT_APP_GA4_ID) in production .env
-- SSR/static generation for marketing pages (requires Next.js migration or pre-rendering solution)
+- SSR/static generation for marketing pages
 
 ### P1 — Medium Priority
 - Blog content strategy and article templates
 - Changelog / product updates page
-- Image lazy loading for product images (consider react-lazy-load-image-component)
-- Bundle size analysis and further tree shaking
+- Image lazy loading for product images
+- Bundle size analysis
 
 ### P2 — Lower Priority
 - More free tools (TikTok Ad Budget calculator, Product Validation Checklist)
 - FAQ schema on comparison pages
-- SoftwareApplication schema on UK landing pages
-- Backend scoring consolidation (unify launch_score + overall_score)
+- Backend scoring consolidation
 - Trial expiry notification emails
