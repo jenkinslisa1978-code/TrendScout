@@ -3,12 +3,15 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { TrendingUp, Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ExitIntentPopup from '@/components/ExitIntentPopup';
+import SocialProofToast from '@/components/SocialProofToast';
 
 const NAV_ITEMS = [
   { name: 'Product', children: [
     { name: 'Trending Products', href: '/trending-products', desc: 'Browse rising products across channels' },
     { name: 'Leaderboard', href: '/top-trending-products', desc: 'Top-performing products ranked by score' },
     { name: 'Free Tools', href: '/free-tools', desc: 'Profit calculators and validation tools' },
+    { name: 'Product Quiz', href: '/product-quiz', desc: 'Find out which tool suits you' },
   ]},
   { name: 'Solutions', children: [
     { name: 'For Shopify Sellers', href: '/for-shopify' },
@@ -204,6 +207,7 @@ export default function LandingLayout({ children }) {
                 <li><Link to="/top-trending-products" className="text-slate-500 hover:text-indigo-600 transition-colors">Leaderboard</Link></li>
                 <li><Link to="/uk-product-viability-score" className="text-slate-500 hover:text-indigo-600 transition-colors">UK Viability Score</Link></li>
                 <li><Link to="/free-tools" className="text-slate-500 hover:text-indigo-600 transition-colors">Free Tools</Link></li>
+                <li><Link to="/product-quiz" className="text-slate-500 hover:text-indigo-600 transition-colors">Product Quiz</Link></li>
                 <li><Link to="/sample-product-analysis" className="text-slate-500 hover:text-indigo-600 transition-colors">Sample Analysis</Link></li>
                 <li><Link to="/pricing" className="text-slate-500 hover:text-indigo-600 transition-colors">Pricing</Link></li>
                 <li><Link to="/how-it-works" className="text-slate-500 hover:text-indigo-600 transition-colors">How It Works</Link></li>
@@ -259,6 +263,14 @@ export default function LandingLayout({ children }) {
           </div>
         </div>
       </footer>
+
+      {/* Conversion components — only for non-authenticated visitors */}
+      {!isAuthenticated && (
+        <>
+          <ExitIntentPopup />
+          <SocialProofToast />
+        </>
+      )}
     </div>
   );
 }

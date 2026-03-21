@@ -6,6 +6,7 @@ import PageMeta, { faqSchema, breadcrumbSchema, webPageSchema } from '@/componen
 import { trackEvent, EVENTS } from '@/services/analytics';
 import useScrollDepth from '@/hooks/useScrollDepth';
 import EmailCapture from '@/components/EmailCapture';
+import ToolRecommender from '@/components/ToolRecommender';
 import { ArrowRight, Check, X, Minus } from 'lucide-react';
 
 const COMPARISONS = {
@@ -217,6 +218,13 @@ export default function ComparisonPage() {
           <div className="max-w-3xl mx-auto">
             <h2 className="font-manrope text-xl font-bold text-slate-900 mb-4">The verdict</h2>
             <p className="text-base text-slate-600 leading-relaxed">{data.verdict}</p>
+          </div>
+        </section>
+
+        {/* Tool Recommender */}
+        <section className="py-10 px-6 bg-slate-50">
+          <div className="max-w-xl mx-auto">
+            <ToolRecommender />
           </div>
         </section>
 

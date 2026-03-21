@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import PageMeta, { faqSchema, breadcrumbSchema } from '@/components/PageMeta';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import EmailCapture from '@/components/EmailCapture';
+import ShareResult from '@/components/ShareResult';
 import { ArrowRight, Calculator, PoundSterling, BarChart3, TrendingUp, Receipt, CheckCircle } from 'lucide-react';
 
 function ProfitMarginCalculator() {
@@ -60,6 +61,13 @@ function ProfitMarginCalculator() {
           </div>
         </div>
       )}
+      {sellingNum > 0 && (
+        <ShareResult
+          tool="Profit Margin"
+          resultText={`My UK profit margin is ${marginPct.toFixed(1)}%`}
+          detail={`£${netProfit.toFixed(2)} net profit per unit (after 20% VAT)`}
+        />
+      )}
     </div>
   );
 }
@@ -100,6 +108,13 @@ function RoasCalculator() {
             </p>
           </div>
         </div>
+      )}
+      {adNum > 0 && (
+        <ShareResult
+          tool="ROAS"
+          resultText={`My ROAS is ${roas.toFixed(2)}x`}
+          detail={roas >= 2 ? 'Profitable!' : roas >= 1 ? 'Break-even' : 'Needs optimisation'}
+        />
       )}
     </div>
   );
@@ -146,6 +161,13 @@ function VatCalculator() {
             <p className="font-mono text-base font-bold text-emerald-600">&pound;{total.toFixed(2)}</p>
           </div>
         </div>
+      )}
+      {num > 0 && (
+        <ShareResult
+          tool="UK VAT"
+          resultText={`£${exVat.toFixed(2)} + £${vatAmount.toFixed(2)} VAT = £${total.toFixed(2)}`}
+          detail="Calculated with UK 20% VAT"
+        />
       )}
     </div>
   );
@@ -194,6 +216,13 @@ function PricingCalculator() {
             <p className="font-mono text-xl font-bold text-emerald-600">&pound;{profit.toFixed(2)}</p>
           </div>
         </div>
+      )}
+      {sellingPrice > 0 && (
+        <ShareResult
+          tool="Product Pricing"
+          resultText={`Recommended selling price: £${sellingPrice.toFixed(2)}`}
+          detail={`£${profit.toFixed(2)} profit per unit at ${targetMargin}% margin`}
+        />
       )}
     </div>
   );

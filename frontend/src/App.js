@@ -113,6 +113,9 @@ const SampleAnalysisPage = lazy(() => import("@/pages/SampleAnalysisPage"));
 // Comparison
 const ComparisonPage = lazy(() => import("@/pages/ComparisonPage"));
 
+// Quiz
+const ProductQuizPage = lazy(() => import("@/pages/ProductQuizPage"));
+
 // Page loading fallback
 const PageLoader = () => (
   <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
@@ -203,6 +206,7 @@ function AppRoutes() {
       <Route path="/for-amazon-uk" element={<ForAmazonUkPage />} />
       <Route path="/for-tiktok-shop-uk" element={<ForTikTokShopUkPage />} />
       <Route path="/compare/:slug" element={<ComparisonPage />} />
+      <Route path="/product-quiz" element={<ProductQuizPage />} />
       <Route path="/uk-product-viability-score" element={<ViabilityScorePage />} />
       <Route path="/dropshipping-product-research-uk" element={<DropshippingUkPage />} />
       <Route path="/winning-products-uk" element={<WinningProductsUkPage />} />
