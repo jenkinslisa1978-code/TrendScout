@@ -5,7 +5,7 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Architecture
 - Backend: FastAPI + MongoDB + Redis + APScheduler
-- Frontend: React CRA + Shadcn/UI + Tailwind + react-snap
+- Frontend: React CRA + Shadcn/UI + Tailwind
 - Auth: JWT + refresh cookie | Email: Resend | Payments: Stripe
 - AI: GPT-5.2 via Emergent LLM Key (emergentintegrations)
 
@@ -14,24 +14,28 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Completed Features
 
-### 3-Email Drip Sequence for Viability Leads (March 21, 2026)
+### Deployment Fix (Feb 2026)
+- Removed `react-snap` postbuild script that caused Alpine Linux build failure (`apt-get` incompatible)
+- Cleaned `.gitignore` to allow `.env` files for Emergent deployment
+- Deployment agent confirms: APPROVED, no blockers
+
+### 3-Email Drip Sequence for Viability Leads (March 2026)
 - **Email 1 (Instant)**: Viability result email with score, verdict, strengths, risks, summary + signup CTA
 - **Email 2 (Day 2)**: "3 Trending Products This Week" with top scored products + trial CTA
 - **Email 3 (Day 5)**: "Your free trial is waiting" with feature list + urgency CTA
 - **Drip tracking**: `drip_emails_sent` array in leads collection prevents duplicate sends
 - **Cron job**: `send_lead_drip_emails` runs daily at 9 AM UTC, checks lead age, skips converted users
-- **Bug fix**: Fixed leads.py to use `from common.database import db` instead of broken `request.app.state.db`
 - Verified: iteration_114 (100%, 17/17 backend tests)
 
-### Email Capture Gate (March 21, 2026)
-- 1 free search → email gate → 3 more unlocked → exhausted state with signup CTA
+### Email Capture Gate (March 2026)
+- 1 free search -> email gate -> 3 more unlocked -> exhausted state with signup CTA
 - Verified: iteration_113 (100%)
 
-### Interactive Demo & Quick Viability Search (March 21, 2026)
+### Interactive Demo & Quick Viability Search (March 2026)
 - AI-powered quick viability check (GPT-5.2) + 4-step product tour
 - Verified: iteration_112 (100%)
 
-### Visual Redesign Suite (March 21, 2026)
+### Visual Redesign Suite (March 2026)
 - Homepage split + /features page + How It Works walkthrough + Pricing enhancement
 - Scroll-triggered animations (RevealSection/RevealStagger)
 - 8 AI-generated images across pages
@@ -40,7 +44,7 @@ AI product research and launch intelligence for UK ecommerce sellers.
 ### All Previous Features
 - Prediction Accuracy Tracking, Trust Framework, Methodology page
 - Changelog, 6 free tools, Trial expiry, A/B framework, CRO suite
-- Performance: Code splitting, lazy loading, react-snap, blog automation
+- Performance: Code splitting, lazy loading, blog automation
 
 ## Scheduled Tasks
 | Task | Schedule | Description |
@@ -57,6 +61,8 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - POST /api/leads/capture — Email lead capture + instant drip email
 - GET /api/accuracy/stats — Prediction accuracy metrics
 
-## Remaining
+## Remaining Tasks
 - Wire `useABTest` hook to hero CTA (P1)
-- Set `REACT_APP_GA4_ID` in production .env (P2)
+- Set `REACT_APP_GA4_ID` in production .env (P1 - user needs to provide GA4 ID)
+- Add UTM tracking to email CTA links (P2)
+- Re-add static prerendering with Alpine-compatible solution (P2)
