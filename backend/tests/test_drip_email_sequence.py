@@ -16,7 +16,7 @@ import requests
 import os
 from datetime import datetime, timezone
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://hero-proof-redesign.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://scout-deploy-2.preview.emergentagent.com')
 
 
 class TestLeadCaptureWithViabilityResult:
