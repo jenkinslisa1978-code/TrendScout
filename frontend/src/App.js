@@ -43,6 +43,7 @@ const TikTokIntelligencePage = lazy(() => import("@/pages/TikTokIntelligencePage
 
 // Admin
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
+const AdminHubPage = lazy(() => import("@/pages/AdminHubPage"));
 const AdminAutomationPage = lazy(() => import("@/pages/AdminAutomationPage"));
 const AnalyticsDashboardPage = lazy(() => import("@/pages/AnalyticsDashboardPage"));
 const AdminImageReviewPage = lazy(() => import("@/pages/AdminImageReviewPage"));
@@ -319,6 +320,14 @@ function AppRoutes() {
         element={
           <AdminRoute>
             <AdminPage />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/hub"
+        element={
+          <AdminRoute>
+            <AdminHubPage />
           </AdminRoute>
         }
       />

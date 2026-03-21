@@ -63,6 +63,14 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - POST /api/leads/capture — Email lead capture + instant drip email
 - GET /api/accuracy/stats — Prediction accuracy metrics
 
+### Admin Command Center (Feb 2026)
+- In-app admin hub at `/admin/hub` — single page overview of everything
+- Quick stats bar: MRR, paid subs, leads, signups, emails sent, total users
+- Admin Checklist: setup items, daily monitoring, weekly tasks with quick links
+- "What to Watch" cards: Revenue Health, Lead Quality, Email Performance, System Health
+- Technical Reference: env variables, scheduled tasks table, external dashboard links
+- Updated sidebar nav: 7 admin tools (Command Center, Growth & Revenue, Products, Automation, System Health, Image Review, Integrations)
+
 ### Admin Growth & Revenue Dashboard (Feb 2026)
 - Full analytics dashboard at `/admin/analytics` (admin-only access)
 - Revenue KPIs: MRR, new revenue, paid subscribers with period-over-period trends

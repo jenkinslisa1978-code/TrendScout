@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Search, Bookmark, LogOut, TrendingUp,
   Shield, ChevronRight, Bell, Zap, Sparkles, Store, FileText,
   Settings, Gift, Target, Activity, Wifi, Brain, Radar,
-  ShoppingBag, Video, Menu, X,
+  ShoppingBag, Video, Menu, X, BarChart3, Package, Image,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,9 +40,12 @@ const eliteNavigation = [
 ];
 
 const adminNavigation = [
-  { name: 'Admin Panel', href: '/admin', icon: Shield },
+  { name: 'Command Center', href: '/admin/hub', icon: Shield },
+  { name: 'Growth & Revenue', href: '/admin/analytics', icon: BarChart3 },
+  { name: 'Products', href: '/admin', icon: Package },
   { name: 'Automation', href: '/admin/automation', icon: Zap },
   { name: 'System Health', href: '/admin/health', icon: Activity },
+  { name: 'Image Review', href: '/admin/image-review', icon: Image },
   { name: 'Integrations', href: '/admin/integrations', icon: Wifi },
 ];
 
