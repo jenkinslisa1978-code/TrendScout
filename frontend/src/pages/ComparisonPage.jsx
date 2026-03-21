@@ -272,7 +272,7 @@ export default function ComparisonPage() {
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="font-manrope text-2xl font-bold text-slate-900">Try TrendScout free</h2>
             <p className="mt-3 text-base text-slate-500">See the difference for yourself. Browse trending products with UK viability data — no credit card needed.</p>
-            <p className="mt-1 text-xs text-slate-400">Join 2,000+ UK sellers already using TrendScout</p>
+            <p className="mt-1 text-xs text-slate-400">Free to start. No credit card required.</p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link to="/signup">
                 <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11" data-testid="comparison-cta" onClick={() => trackEvent(EVENTS.COMPARE_PAGE_CTA, { competitor: data.competitor, cta_label: 'Start Free' })}>

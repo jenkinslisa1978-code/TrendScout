@@ -140,7 +140,7 @@ export default function SeoLandingTemplate({ headline, subtitle, intro, features
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="font-manrope text-2xl font-bold text-slate-900">{ctaText || 'Start validating products today'}</h2>
             <p className="mt-3 text-base text-slate-500">Free to start. No credit card needed.</p>
-            <p className="mt-1 text-xs text-slate-400">Join 2,000+ UK sellers already using TrendScout</p>
+            <p className="mt-1 text-xs text-slate-400">Free to start. No credit card required.</p>
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link to="/signup">
                 <Button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold px-6 h-11" onClick={() => trackEvent(EVENTS.UK_LANDING_CTA, { page_type: 'seo_landing', cta_label: 'Start Free', position: 'bottom' })}>

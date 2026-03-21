@@ -1692,3 +1692,86 @@ async def send_trial_expiry_notifications(db, params: Dict[str, Any] = None) -> 
 
     logger.info(f"Trial expiry notifications: sent {sent_count}/{len(expired_trials)}")
     return {"records_processed": sent_count, "details": {"total": len(expired_trials), "sent": sent_count}}
+
+
+
+@TaskRegistry.register(
+    name="review_prediction_accuracy",
+    description="Compare product prediction snapshots against current market data",
+    default_schedule="0 6 * * *"  # Daily at 6 AM UTC
+)
+async def review_prediction_accuracy(db, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    1. Snapshot new products that don't have a prediction record yet.
+    2. Review 30-day-old snapshots against current data.
+    3. Review 90-day-old snapshots against current data.
+    """
+    from routes.accuracy import snapshot_prediction, review_prediction
+
+    now = datetime.now(timezone.utc)
+    reviewed_count = 0
+    snapshotted_count = 0
+
+    # Step 1: Snapshot products that have scores but no snapshot yet
+    snapshotted_ids = set()
+    async for snap in db.prediction_snapshots.find({}, {"product_id": 1, "_id": 0}):
+        snapshotted_ids.add(snap["product_id"])
+
+    products_to_snapshot = await db.products.find(
+        {"launch_score": {"$exists": True, "$gt": 0}},
+        {"_id": 0}
+    ).limit(50).to_list(50)
+
+    for p in products_to_snapshot:
+        pid = p.get("id") or p.get("product_id", "")
+        if pid and pid not in snapshotted_ids:
+            try:
+                await snapshot_prediction(db, pid, p)
+                snapshotted_count += 1
+            except Exception as e:
+                logger.error(f"Failed to snapshot {pid}: {e}")
+
+    # Step 2: Review snapshots that are 30+ days old and not yet reviewed
+    thirty_days_ago = (now - timedelta(days=30)).isoformat()
+    pending_30d = await db.prediction_snapshots.find(
+        {"snapshot_date": {"$lte": thirty_days_ago}, "reviewed_30d": False}
+    ).limit(20).to_list(20)
+
+    for snap in pending_30d:
+        pid = snap["product_id"]
+        current = await db.products.find_one({"id": pid}, {"_id": 0})
+        if not current:
+            current = await db.products.find_one({"product_id": pid}, {"_id": 0})
+        if current:
+            try:
+                await review_prediction(db, snap, current, "30d")
+                reviewed_count += 1
+            except Exception as e:
+                logger.error(f"Failed 30d review for {pid}: {e}")
+
+    # Step 3: Review snapshots that are 90+ days old and not yet reviewed
+    ninety_days_ago = (now - timedelta(days=90)).isoformat()
+    pending_90d = await db.prediction_snapshots.find(
+        {"snapshot_date": {"$lte": ninety_days_ago}, "reviewed_90d": False}
+    ).limit(20).to_list(20)
+
+    for snap in pending_90d:
+        pid = snap["product_id"]
+        current = await db.products.find_one({"id": pid}, {"_id": 0})
+        if not current:
+            current = await db.products.find_one({"product_id": pid}, {"_id": 0})
+        if current:
+            try:
+                await review_prediction(db, snap, current, "90d")
+                reviewed_count += 1
+            except Exception as e:
+                logger.error(f"Failed 90d review for {pid}: {e}")
+
+    logger.info(f"Accuracy review: {snapshotted_count} new snapshots, {reviewed_count} reviews completed")
+    return {
+        "records_processed": snapshotted_count + reviewed_count,
+        "details": {
+            "new_snapshots": snapshotted_count,
+            "reviews_completed": reviewed_count,
+        }
+    }
