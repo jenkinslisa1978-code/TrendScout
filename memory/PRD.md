@@ -14,51 +14,40 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Completed Features
 
+### Email Capture Gate on Quick Viability Search (March 21, 2026)
+- **1 free search** without email, then email gate appears: "Unlock 3 more free searches"
+- **Email capture** via POST /api/leads/capture (source: 'quick_viability_gate', context: searched product)
+- **3 more searches** unlocked after email, progress dots + "X searches left" counter
+- **Exhausted state** after 4 total: disabled input + "Sign up for unlimited" CTA
+- **localStorage persistence**: ts_viability_searches (count), ts_viability_email (email)
+- Verified: iteration_113 (100%, 10 backend + 20+ frontend tests)
+
 ### Interactive Demo & Quick Viability Search (March 21, 2026)
-- **Quick Viability Search**: "Try It Now" section on homepage — type any product idea, get instant AI-powered UK viability assessment (score, verdict, signals, strengths, risks, summary). No signup required.
-- **Backend endpoint**: POST /api/public/quick-viability — uses GPT-5.2 via Emergent LLM Key, returns structured JSON
-- **Interactive Product Tour**: 4-step clickable walkthrough (Browse → Score → Analyse → Launch) with mock browser chrome, mock product data, step progress indicator, and "Next" navigation
-- **Suggestion chips**: 4 pre-filled product ideas for quick testing
-- Verified: iteration_112 (100%, 8 backend + 25+ frontend tests)
+- Quick viability search with AI-powered UK viability assessment (GPT-5.2)
+- Interactive 4-step product tour (Browse/Score/Analyse/Launch)
+- Verified: iteration_112 (100%)
 
 ### Pricing Page Visual Enhancement (March 21, 2026)
-- Gradient headline, plan icons, trust strip, improved comparison table, FAQ accordion
-- Verified: iteration_111 (100%, 21/21 tests)
+- Gradient headline, plan icons, trust strip, comparison table, FAQ accordion
+- Verified: iteration_111 (100%)
 
 ### How It Works Visual Walkthrough (March 21, 2026)
 - 4-step walkthrough with AI-generated illustrations, interactive FAQ
-- Verified: iteration_110 (100%, 22/22 tests)
+- Verified: iteration_110 (100%)
 
-### Scroll-Triggered Animations (March 21, 2026)
-- useScrollReveal hook with RevealSection + RevealStagger, applied site-wide
-
-### Homepage Split (March 21, 2026)
-- Slim homepage + dedicated /features page + nav updated
-- Verified: iteration_109 (100%, 22/22 tests)
-
-### Homepage Visual Redesign (March 21, 2026)
-- 4 AI-generated images, verified: iteration_108 (100%, 21/21 tests)
+### Homepage Split + Visual Redesign (March 21, 2026)
+- Slim homepage + /features page + scroll animations + AI images
+- Verified: iterations 108-109 (100%)
 
 ### All Previous Features
 - Prediction Accuracy Tracking, Trust Framework, Methodology page
-- Changelog, 6 free tools, FAQ schema, Trial expiry, A/B framework
-- CRO: Exit-intent, Social proof, Quiz, Digest, Tool recommender
-- Performance: Code splitting, Lazy loading, react-snap, Blog automation
-
-## Key Files
-- `/app/frontend/src/pages/LandingPage.jsx` - Homepage
-- `/app/frontend/src/pages/FeaturesPage.jsx` - Features
-- `/app/frontend/src/pages/HowItWorksPage.jsx` - Visual walkthrough
-- `/app/frontend/src/pages/PricingPage.jsx` - Pricing
-- `/app/frontend/src/components/QuickViabilitySearch.jsx` - AI search
-- `/app/frontend/src/components/InteractiveDemo.jsx` - Product tour
-- `/app/frontend/src/hooks/useScrollReveal.js` - Scroll animations
-- `/app/backend/routes/public.py` - Quick viability API
+- Changelog, 6 free tools, Trial expiry, A/B framework, CRO suite
+- Performance: Code splitting, lazy loading, react-snap, blog automation
 
 ## Key API Endpoints
-- POST /api/public/quick-viability — AI product viability check (public, no auth)
+- POST /api/public/quick-viability — AI product viability check (public)
+- POST /api/leads/capture — Email lead capture
 - GET /api/accuracy/stats — Prediction accuracy metrics
-- POST /api/leads/capture — Lead capture
 - POST /api/blog/seed — Blog content generation
 
 ## Remaining
