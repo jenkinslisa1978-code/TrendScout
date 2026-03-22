@@ -73,6 +73,13 @@ Each platform requires the user to register a developer app:
 | Google Ads | console.cloud.google.com | Ads |
 | TikTok Ads | business-api.tiktok.com | Ads |
 
+### Deployment Fix — jsdom & react-snap Cleanup (March 2026)
+- **Removed** `jsdom@29.0.1` from dependencies (was causing Node engine incompatibility error in production: required `^20.19.0`, production had `20.18.1`)
+- **Removed** `react-snap` from devDependencies (unused — replaced by custom `prerender.js`)
+- **Removed** orphaned `reactSnap` config block from `package.json`
+- `prerender.js` never imported jsdom; only uses built-in `fs` and `path`
+- Verified: `yarn install` + `yarn build` succeed cleanly
+
 ## Remaining Tasks
 - P1: Set REACT_APP_GA4_ID in production .env (user needs GA4 ID)
 - P1: Configure Resend webhook URL in Resend dashboard
