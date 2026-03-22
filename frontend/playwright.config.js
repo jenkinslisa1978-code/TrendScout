@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'https://scout-deploy-2.preview.emergentagent.com';
+const BASE_URL = process.env.BASE_URL || 'https://analytics-fix-28.preview.emergentagent.com';
 
 export default defineConfig({
   testDir: './e2e',

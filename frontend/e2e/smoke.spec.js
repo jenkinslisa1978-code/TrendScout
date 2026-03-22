@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API = process.env.BASE_URL || 'https://scout-deploy-2.preview.emergentagent.com';
+const API = process.env.BASE_URL || 'https://analytics-fix-28.preview.emergentagent.com';
 
 // --- P0: Crawlability ---
 
