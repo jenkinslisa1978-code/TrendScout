@@ -1,5 +1,6 @@
 import { batchGenerateAlerts, getAlertStats } from '@/lib/automation/alerts';
 import { API_URL } from '@/lib/config';
+import { getAuthHeaders } from '@/lib/api';
 
 /**
  * Get all alerts from backend API
@@ -45,9 +46,11 @@ export const createAlertsForProducts = async (products) => {
  */
 export const markAlertRead = async (alertId) => {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_URL}/api/alerts/${alertId}/read`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -66,9 +69,11 @@ export const markAlertRead = async (alertId) => {
  */
 export const dismissAlertById = async (alertId) => {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_URL}/api/alerts/${alertId}/dismiss`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
+      credentials: 'include',
     });
     
     if (!response.ok) {

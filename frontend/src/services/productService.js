@@ -1,5 +1,6 @@
 import { runFullAutomation, batchRunAutomation } from '@/lib/automation';
 import { API_URL } from '@/lib/config';
+import { getAuthHeaders } from '@/lib/api';
 
 // Get all products from backend API
 export const getProducts = async (filters = {}) => {
@@ -206,9 +207,11 @@ export const getCategories = async () => {
 // Create product via backend API - with automation
 export const createProduct = async (productData, runAutomation = true) => {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_URL}/api/products`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
+      credentials: 'include',
       body: JSON.stringify(productData),
     });
     
@@ -227,9 +230,11 @@ export const createProduct = async (productData, runAutomation = true) => {
 // Update product via backend API - with automation
 export const updateProduct = async (id, productData, runAutomation = true) => {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_URL}/api/products/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
+      credentials: 'include',
       body: JSON.stringify(productData),
     });
     
@@ -248,8 +253,11 @@ export const updateProduct = async (id, productData, runAutomation = true) => {
 // Delete product via backend API
 export const deleteProduct = async (id) => {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_URL}/api/products/${id}`, {
       method: 'DELETE',
+      headers,
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -301,9 +309,11 @@ export const getDashboardStats = async () => {
 // Run automation on all products via backend API
 export const runAutomationOnAllProducts = async () => {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_URL}/api/automation/run`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
+      credentials: 'include',
       body: JSON.stringify({ job_type: 'full_pipeline' }),
     });
     
