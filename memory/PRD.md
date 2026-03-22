@@ -73,6 +73,18 @@ Each platform requires the user to register a developer app:
 | Google Ads | console.cloud.google.com | Ads |
 | TikTok Ads | business-api.tiktok.com | Ads |
 
+### Homepage Conversion Redesign (March 2026)
+- **Hero rewrite**: "Stop guessing. Find products that actually sell in the UK." — sharper, more commercially persuasive
+- **Who it's for section**: Moved up near top — Shopify sellers, Amazon UK sellers, TikTok Shop UK sellers, UK ecommerce founders
+- **UK differentiation**: Prominent "Not every viral product works in the UK" section with US vs UK comparison visual
+- **How it works**: Clean 3-step flow — Discover → Analyse UK viability → Launch with confidence
+- **Feature highlights**: Tightened to outcome-focused copy (Trend detection, Competition analysis, Profit estimation, AI launch insights)
+- **Pricing preview**: Compact plan cards on homepage with Growth plan highlighted as "Best for serious sellers"
+- **CTA language**: Action-oriented throughout — "Find Winning Products", "See How It Works", "View Sample Analysis"
+- **Trust strip**: Enhanced — "Built for UK ecommerce sellers", "7-signal scoring model", "Multi-channel product intelligence"
+- **Pricing page**: Updated taglines ("Start validating product ideas", "Best for serious sellers", "For agencies and power users")
+- Verified: iteration_116 (100% — 32/32 tests)
+
 ### Deployment Fix — jsdom & react-snap Cleanup (March 2026)
 - **Removed** `jsdom@29.0.1` from dependencies (was causing Node engine incompatibility error in production: required `^20.19.0`, production had `20.18.1`)
 - **Removed** `react-snap` from devDependencies (unused — replaced by custom `prerender.js`)
