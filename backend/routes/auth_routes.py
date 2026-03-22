@@ -13,6 +13,11 @@ from common.limiter import limiter
 auth_router = APIRouter(prefix="/api/auth")
 
 
+ADMIN_EMAILS = set(
+    e.strip() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()
+) | {"jenkinslisa1978@gmail.com", "reviewer@trendscout.click"}
+
+
 @auth_router.get("/profile")
 async def auth_profile(current_user: AuthenticatedUser = Depends(get_current_user)):
     profile = await db.profiles.find_one({"id": current_user.user_id}, {"_id": 0})
@@ -20,7 +25,8 @@ async def auth_profile(current_user: AuthenticatedUser = Depends(get_current_use
         profile = {
             "id": current_user.user_id,
             "email": current_user.email,
-            "is_admin": current_user.email == "jenkinslisa1978@gmail.com",
+            "is_admin": current_user.email in ADMIN_EMAILS,
+            "role": "admin" if current_user.email in ADMIN_EMAILS else "user",
             "subscription_plan": "free",
         }
         await db.profiles.update_one(
@@ -28,6 +34,14 @@ async def auth_profile(current_user: AuthenticatedUser = Depends(get_current_use
             {"$set": profile},
             upsert=True,
         )
+    # Always sync admin status from email list
+    if current_user.email in ADMIN_EMAILS and (not profile.get("is_admin") or profile.get("role") != "admin"):
+        await db.profiles.update_one(
+            {"id": current_user.user_id},
+            {"$set": {"is_admin": True, "role": "admin"}}
+        )
+        profile["is_admin"] = True
+        profile["role"] = "admin"
     return profile
 
 
