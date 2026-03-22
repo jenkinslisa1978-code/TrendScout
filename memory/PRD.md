@@ -8,115 +8,73 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - Frontend: React CRA + Shadcn/UI + Tailwind
 - Auth: JWT + refresh cookie | Email: Resend | Payments: Stripe
 - AI: GPT-5.2 via Emergent LLM Key (emergentintegrations)
+- Real-time: WebSocket (native FastAPI/Starlette)
 
 ## Test Credentials
 - reviewer@trendscout.click / ShopifyReview2026!
 
 ## Completed Features
 
-### Deployment Fix (Feb 2026)
-- Removed `react-snap` postbuild script that caused Alpine Linux build failure (`apt-get` incompatible)
-- Fixed `CI=true` build failure by setting `CI=false` in the build script (ESLint warnings treated as errors)
-- Cleaned dead react-snap hydration code from `index.js`
-- Cleaned `.gitignore` to allow `.env` files for Emergent deployment
-- Deployment agent confirms: APPROVED, no blockers
+### Real-time WebSocket Notifications (March 2026)
+- **Backend**: WebSocket endpoint at `/api/ws/notifications` with connection manager
+- **Backend**: All automation and ingestion routes broadcast `job_started`, `job_progress`, `job_completed`, `job_failed` events
+- **Frontend**: `useNotifications` hook with auto-reconnect and ping keepalive
+- **Frontend**: `NotificationFeed` component — bell icon with dropdown showing live activity, active jobs with progress bars, and completed/failed job history
+- Visible to ALL logged-in users (not admin-only)
+- Verified: iteration_115 (100%)
 
-### 3-Email Drip Sequence for Viability Leads (March 2026)
-- **Email 1 (Instant)**: Viability result email with score, verdict, strengths, risks, summary + signup CTA
-- **Email 2 (Day 2)**: "3 Trending Products This Week" with top scored products + trial CTA
-- **Email 3 (Day 5)**: "Your free trial is waiting" with feature list + urgency CTA
-- **Drip tracking**: `drip_emails_sent` array in leads collection prevents duplicate sends
-- **Cron job**: `send_lead_drip_emails` runs daily at 9 AM UTC, checks lead age, skips converted users
-- Verified: iteration_114 (100%, 17/17 backend tests)
+### Real OAuth 2.0 Flows (March 2026)
+- **7 platforms**: Shopify, Etsy, Amazon Seller, TikTok Shop, Meta (Facebook/Instagram), Google Ads, TikTok Ads
+- **Backend service**: Generic OAuth handler with state management, PKCE support (Etsy), encrypted token storage
+- **Backend routes**: `GET /api/oauth/platforms`, `POST /api/oauth/{platform}/init`, `GET /api/oauth/{platform}/callback`, `GET /api/oauth/{platform}/setup`
+- **Frontend**: OAuth Connections section on `/settings/connections` with "Connect with OAuth" buttons
+- **Frontend**: OAuth modal with setup instructions, redirect URI display, Client ID/Secret inputs
+- **Security**: State tokens, encrypted credentials, CSRF protection on init endpoint
+- User provides their own Client ID + Client Secret per platform (BYO credentials)
+- Verified: iteration_115 (100%)
 
-### Email Capture Gate (March 2026)
-- 1 free search -> email gate -> 3 more unlocked -> exhausted state with signup CTA
-- Verified: iteration_113 (100%)
-
-### Interactive Demo & Quick Viability Search (March 2026)
-- AI-powered quick viability check (GPT-5.2) + 4-step product tour
-- Verified: iteration_112 (100%)
-
-### Visual Redesign Suite (March 2026)
-- Homepage split + /features page + How It Works walkthrough + Pricing enhancement
-- Scroll-triggered animations (RevealSection/RevealStagger)
-- 8 AI-generated images across pages
-- Verified: iterations 108-111 (all 100%)
-
-### All Previous Features
-- Prediction Accuracy Tracking, Trust Framework, Methodology page
-- Changelog, 6 free tools, Trial expiry, A/B framework, CRO suite
-- Performance: Code splitting, lazy loading, blog automation
-
-### A/B Testing on Hero CTA (Feb 2026)
-- Wired useABTest hook to landing page hero CTA and final CTA
-- Tests 3 variants each: "Start Free" / "Try TrendScout Free" / "Get Started Now"
-- Tracks conversions via trackABConversion()
-
-### UTM Tracking on All Email CTAs (Feb 2026)
-- Added utm_source, utm_medium, utm_campaign, utm_content to all drip email links
-- Covers: viability result (instant), trending products (day 2), trial prompt (day 5), weekly digest, trial expiry
-
-### Resend Webhook Email Tracking (Feb 2026)
-- POST /api/webhooks/resend — receives open/click/bounce/complaint events
-- GET /api/webhooks/resend/stats — aggregated open rate, click rate, delivery stats
-- Email engagement card added to Growth & Revenue dashboard
-- Lead records updated with engagement data (opened, clicked, bounced)
-
-### Social & Supplier Connections (Feb 2026)
-- Added Social & Marketplaces: TikTok Shop, Instagram Shopping, Amazon Seller
-- Added Suppliers: AliExpress, CJ Dropshipping, Zendrop
-- Backend: POST /api/connections/supplier, POST /api/connections/social
-- Frontend: New sections on PlatformConnectionsPage with connect/disconnect UI
-
-### Static Prerendering (Feb 2026)
-- Alpine-compatible prerender script (jsdom, no Puppeteer/Chromium)
-- Generates static HTML shells for 8 public routes (features, pricing, how-it-works, etc.)
-- Runs automatically after build via postbuild script
-
-### Connect Accounts Prompt (Feb 2026)
-- "Connect Your Accounts" banner on Dashboard and My Stores pages
-- Shows 4 categories: Stores, Social, Ad Accounts, Suppliers
-- CTA links to /settings/connections page
-- Dismissible (localStorage persisted), auto-hides when 3+ connections active
-
-### CSRF Fix for Admin Buttons (Feb 2026, updated March 2026)
-- Fixed 403 errors on Run Scoring, AI Summaries, Full Data Sync, Data Ingestion buttons
-- Root cause: raw fetch() without CSRF tokens
-- Fix: Converted ALL frontend service files to use apiPost/apiPut/apiDelete/apiGet from api.js
-- Also fixed "body stream already read" errors by adding .catch() to response.json()
+### CSRF Bug Fix — Admin Automation Buttons (March 2026)
+- Fixed "body stream already read", "Failed to run trend scoring", "Failed to generate summaries" errors
+- Root cause: raw fetch() without CSRF tokens and unsafe response.json() calls
+- Fix: Converted ALL service files to use apiPost/apiGet/apiPut/apiDelete from api.js
 - Files fixed: DataIngestionPanel.jsx, productService.js, alertService.js, automationLogService.js
-- Verified: iteration_114 (100%, 8/8 backend + 7/7 frontend)
+- Verified: iteration_114 (100%)
 
-### Admin Command Center (Feb 2026)
-- In-app admin hub at `/admin/hub`
-- Quick stats bar: MRR, paid subs, leads, signups, emails sent, total users
-- Admin Checklist: setup items, daily monitoring, weekly tasks with quick links
-
-### Admin Growth & Revenue Dashboard (Feb 2026)
-- Full analytics dashboard at `/admin/analytics` (admin-only access)
-- Revenue KPIs, Lead capture metrics, Email drip performance
-- Backend endpoint: `GET /api/analytics/growth?days=30`
-
-## Scheduled Tasks
-| Task | Schedule | Description |
-|------|----------|-------------|
-| send_lead_drip_emails | Daily 9 AM | Day 2 trending + Day 5 trial drip emails |
-| review_prediction_accuracy | Daily 6 AM | Snapshot + review predictions |
-| weekly_blog_generation | Monday 8 AM | Auto-generate blog posts |
-| send_lead_subscriber_digest | Monday 9 AM | Trending products email to leads |
-| send_weekly_email_digest | Monday 10 AM | Digest to registered users |
-| send_trial_expiry_notifications | Every 2h | Email expired trial users |
+### Previous Completed Features
+- Deployment blockers fixed (react-snap removed, CI=true warnings, .gitignore)
+- Admin Command Center (/admin/hub) and Growth Analytics (/admin/analytics)
+- Platform Connections: Stores, Ads, Social, Suppliers with health check
+- A/B testing on Hero CTA, UTM tracking on emails, Resend webhooks
+- Static prerendering (jsdom for Alpine), Connect Accounts prompt
+- 3-email drip sequence, Email capture gate, Quick viability search
+- Visual redesign suite, Interactive demo, Trust framework
+- Prediction accuracy tracking, Methodology page, Changelog
+- 6 free tools, Trial expiry, CRO suite, Code splitting
 
 ## Key API Endpoints
-- POST /api/public/quick-viability — AI product viability check (public)
-- POST /api/leads/capture — Email lead capture + instant drip email
-- GET /api/accuracy/stats — Prediction accuracy metrics
-- POST /api/automation/run — Run full automation pipeline (admin)
-- POST /api/ingestion/amazon — Import Amazon products (admin)
-- POST /api/ingestion/full-sync — Full data sync from all sources (admin)
+- POST /api/automation/run — Run automation pipeline (broadcasts WS events)
+- POST /api/ingestion/amazon — Import Amazon products (broadcasts WS events)
+- POST /api/ingestion/full-sync — Full data sync (broadcasts WS events)
+- WS /api/ws/notifications — Real-time WebSocket notifications
+- GET /api/oauth/platforms — List OAuth-enabled platforms with setup info
+- POST /api/oauth/{platform}/init — Start OAuth flow
+- GET /api/oauth/{platform}/callback — Handle OAuth callback
+- GET /api/oauth/{platform}/setup — Platform setup instructions
+
+## OAuth Platform Setup Guide
+Each platform requires the user to register a developer app:
+| Platform | Developer Portal | Connection Type |
+|----------|-----------------|-----------------|
+| Shopify | partners.shopify.com | Store |
+| Etsy | etsy.com/developers | Store |
+| Amazon Seller | sellercentral.amazon.co.uk | Social |
+| TikTok Shop | partner.tiktokshop.com | Social |
+| Meta (FB/IG) | developers.facebook.com | Ads |
+| Google Ads | console.cloud.google.com | Ads |
+| TikTok Ads | business-api.tiktok.com | Ads |
 
 ## Remaining Tasks
-- Set `REACT_APP_GA4_ID` in production .env (P1 - user needs to provide GA4 ID)
-- Configure Resend webhook URL in Resend dashboard: POST https://trendscout.click/api/webhooks/resend
-- Build real OAuth flows for Shopify, TikTok Shop, etc. (P2 - currently UI only)
+- P1: Set REACT_APP_GA4_ID in production .env (user needs GA4 ID)
+- P1: Configure Resend webhook URL in Resend dashboard
+- P2: Implement actual data sync from connected OAuth stores (pull products from Shopify, etc.)
+- P3: Add OAuth token refresh logic for expired tokens

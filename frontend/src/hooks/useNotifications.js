@@ -87,8 +87,10 @@ export function useNotifications() {
   }, []);
 
   useEffect(() => {
-    connect();
+    // Small delay to ensure auth token is available after login
+    const timer = setTimeout(connect, 1000);
     return () => {
+      clearTimeout(timer);
       clearTimeout(reconnectTimeoutRef.current);
       clearInterval(pingIntervalRef.current);
       if (wsRef.current) {
