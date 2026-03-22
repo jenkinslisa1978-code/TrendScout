@@ -78,6 +78,8 @@ from routes.trial import routers as trial_routers
 from routes.leads import routers as leads_routers
 from routes.accuracy import routers as accuracy_routers
 from routes.webhooks import routers as webhook_routers
+from routes.ws import routers as ws_routers
+from routes.oauth import routers as oauth_routers
 
 # Include all routers
 all_router_groups = [
@@ -98,6 +100,8 @@ all_router_groups = [
     leads_routers,
     accuracy_routers,
     webhook_routers,
+    ws_routers,
+    oauth_routers,
 ]
 
 for group in all_router_groups:

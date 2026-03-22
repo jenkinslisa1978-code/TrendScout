@@ -23,6 +23,7 @@ from common.scoring import (
     should_generate_early_trend_alert,
 )
 from common.models import *
+from services.ws_manager import notify_job_started, notify_job_progress, notify_job_completed, notify_job_failed
 
 automation_router = APIRouter(prefix="/api/automation")
 
@@ -30,6 +31,8 @@ automation_router = APIRouter(prefix="/api/automation")
 async def run_automation(request: RunAutomationRequest):
     """Run automation on products"""
     try:
+        await notify_job_started(request.job_type.value)
+
         # Get products from request or database
         if request.products:
             products = request.products
@@ -38,6 +41,7 @@ async def run_automation(request: RunAutomationRequest):
             products = await cursor.to_list(1000)
         
         if not products:
+            await notify_job_completed(request.job_type.value, result={"processed": 0, "message": "No products to process"})
             return {"success": True, "message": "No products to process", "processed": 0}
         
         # Create log entry
@@ -54,14 +58,18 @@ async def run_automation(request: RunAutomationRequest):
         # Process products
         processed_products = []
         alerts = []
+        total = len(products)
         
-        for product in products:
+        for i, product in enumerate(products):
             result = run_full_automation(product)
             processed_products.append(result['product'])
             if result['alert']:
                 alerts.append(result['alert'])
             if result.get('early_alert'):
                 alerts.append(result['early_alert'])
+            # Send progress every 20 products
+            if (i + 1) % 20 == 0 or i == total - 1:
+                await notify_job_progress(request.job_type.value, i + 1, total, detail=f"Processed {i + 1}/{total} products")
         
         # Update products in database
         for product in processed_products:
@@ -85,6 +93,11 @@ async def run_automation(request: RunAutomationRequest):
                 "alerts_generated": len(alerts),
             }}
         )
+
+        await notify_job_completed(request.job_type.value, result={
+            "processed": len(processed_products),
+            "alerts_generated": len(alerts),
+        })
         
         return {
             "success": True,
@@ -95,6 +108,7 @@ async def run_automation(request: RunAutomationRequest):
         
     except Exception as e:
         logging.error(f"Automation error: {str(e)}")
+        await notify_job_failed(request.job_type.value, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @automation_router.get("/logs")

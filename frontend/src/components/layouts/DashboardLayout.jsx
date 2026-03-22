@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { getUnreadAlertCount } from '@/services/alertService';
 import { Link2, Trophy } from 'lucide-react';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
+import NotificationFeed from '@/components/NotificationFeed';
+import { useNotifications } from '@/hooks/useNotifications';
 import PageExplanation from '@/components/PageExplanation';
 
 const navigation = [
@@ -54,6 +56,7 @@ export default function DashboardLayout({ children }) {
   const { user, profile, signOut, isDemoMode } = useAuth();
   const [alertCount, setAlertCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { notifications, connected, activeJobs, clearNotifications } = useNotifications();
 
   const isElite = profile?.plan === 'elite' || profile?.role === 'admin' || isDemoMode;
 
@@ -186,7 +189,12 @@ export default function DashboardLayout({ children }) {
             </span>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <NotificationCenter />
+            <NotificationFeed
+              notifications={notifications}
+              connected={connected}
+              activeJobs={activeJobs}
+              onClear={clearNotifications}
+            />
             <Link to="/settings/notifications">
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
                 <Settings className="h-4 w-4" />
@@ -215,7 +223,12 @@ export default function DashboardLayout({ children }) {
           <span className="font-manrope text-base font-bold text-slate-900">TrendScout</span>
         </Link>
         <div className="flex items-center gap-1">
-          <NotificationCenter />
+          <NotificationFeed
+            notifications={notifications}
+            connected={connected}
+            activeJobs={activeJobs}
+            onClear={clearNotifications}
+          />
         </div>
       </div>
 

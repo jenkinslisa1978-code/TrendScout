@@ -23,6 +23,7 @@ from common.scoring import (
     should_generate_early_trend_alert,
 )
 from common.models import *
+from services.ws_manager import notify_job_started, notify_job_progress, notify_job_completed, notify_job_failed
 
 from services.data_ingestion.tiktok_import import TikTokImporter
 from services.data_ingestion.amazon_import import AmazonImporter
@@ -66,7 +67,6 @@ async def get_data_sources():
 @ingestion_router.post("/tiktok")
 async def run_tiktok_import(request: ImportRequest):
     """Import trending products from TikTok"""
-    # Create automation log
     log_id = str(uuid.uuid4())
     log = {
         "id": log_id,
@@ -76,6 +76,7 @@ async def run_tiktok_import(request: ImportRequest):
         "import_source": "tiktok",
     }
     await db.automation_logs.insert_one(log)
+    await notify_job_started("tiktok_import", source="tiktok")
     
     try:
         importer = TikTokImporter(db)
@@ -84,14 +85,13 @@ async def run_tiktok_import(request: ImportRequest):
             limit=request.limit
         )
         
-        # Clean _id from products
         if result.get('products'):
             for p in result['products']:
                 p.pop('_id', None)
+            await notify_job_progress("tiktok_import", len(result['products']), request.limit, source="tiktok", detail="Running automation on imported products")
             automation_result = await run_automation_on_products(result['products'])
             result['automation'] = automation_result
         
-        # Update log
         await db.automation_logs.update_one(
             {"id": log_id},
             {"$set": {
@@ -102,9 +102,8 @@ async def run_tiktok_import(request: ImportRequest):
             }}
         )
         
-        # Remove products from response to reduce payload size
         result.pop('products', None)
-        
+        await notify_job_completed("tiktok_import", source="tiktok", result={"inserted": result.get('inserted', 0), "updated": result.get('updated', 0)})
         return result
         
     except Exception as e:
@@ -112,6 +111,7 @@ async def run_tiktok_import(request: ImportRequest):
             {"id": log_id},
             {"$set": {"status": "failed", "error_message": str(e)}}
         )
+        await notify_job_failed("tiktok_import", source="tiktok", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @ingestion_router.post("/amazon")
@@ -126,6 +126,7 @@ async def run_amazon_import(request: ImportRequest):
         "import_source": "amazon",
     }
     await db.automation_logs.insert_one(log)
+    await notify_job_started("amazon_import", source="amazon")
     
     try:
         importer = AmazonImporter(db)
@@ -134,10 +135,10 @@ async def run_amazon_import(request: ImportRequest):
             limit=request.limit
         )
         
-        # Clean _id from products
         if result.get('products'):
             for p in result['products']:
                 p.pop('_id', None)
+            await notify_job_progress("amazon_import", len(result['products']), request.limit, source="amazon", detail="Running automation on imported products")
             automation_result = await run_automation_on_products(result['products'])
             result['automation'] = automation_result
         
@@ -152,6 +153,7 @@ async def run_amazon_import(request: ImportRequest):
         )
         
         result.pop('products', None)
+        await notify_job_completed("amazon_import", source="amazon", result={"inserted": result.get('inserted', 0), "updated": result.get('updated', 0)})
         return result
         
     except Exception as e:
@@ -159,6 +161,7 @@ async def run_amazon_import(request: ImportRequest):
             {"id": log_id},
             {"$set": {"status": "failed", "error_message": str(e)}}
         )
+        await notify_job_failed("amazon_import", source="amazon", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @ingestion_router.post("/supplier")
@@ -173,6 +176,7 @@ async def run_supplier_import(request: ImportRequest):
         "import_source": "supplier",
     }
     await db.automation_logs.insert_one(log)
+    await notify_job_started("supplier_import", source="supplier")
     
     try:
         importer = SupplierImporter(db)
@@ -181,10 +185,10 @@ async def run_supplier_import(request: ImportRequest):
             limit=request.limit
         )
         
-        # Clean _id from products
         if result.get('products'):
             for p in result['products']:
                 p.pop('_id', None)
+            await notify_job_progress("supplier_import", len(result['products']), request.limit, source="supplier", detail="Running automation")
             automation_result = await run_automation_on_products(result['products'])
             result['automation'] = automation_result
         
@@ -199,6 +203,7 @@ async def run_supplier_import(request: ImportRequest):
         )
         
         result.pop('products', None)
+        await notify_job_completed("supplier_import", source="supplier", result={"inserted": result.get('inserted', 0), "updated": result.get('updated', 0)})
         return result
         
     except Exception as e:
@@ -206,6 +211,7 @@ async def run_supplier_import(request: ImportRequest):
             {"id": log_id},
             {"$set": {"status": "failed", "error_message": str(e)}}
         )
+        await notify_job_failed("supplier_import", source="supplier", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @ingestion_router.post("/supplier/csv")
@@ -261,6 +267,7 @@ async def run_full_data_sync(request: ImportRequest):
         "import_source": "all",
     }
     await db.automation_logs.insert_one(log)
+    await notify_job_started("full_data_sync", source="all")
     
     results = {
         "tiktok": None,
@@ -272,14 +279,17 @@ async def run_full_data_sync(request: ImportRequest):
     
     try:
         # Import from TikTok
+        await notify_job_progress("full_data_sync", 1, 4, source="tiktok", detail="Importing from TikTok")
         tiktok_importer = TikTokImporter(db)
         results["tiktok"] = await tiktok_importer.import_products(limit=request.limit)
         
         # Import from Amazon
+        await notify_job_progress("full_data_sync", 2, 4, source="amazon", detail="Importing from Amazon")
         amazon_importer = AmazonImporter(db)
         results["amazon"] = await amazon_importer.import_products(limit=request.limit)
         
         # Import from Suppliers
+        await notify_job_progress("full_data_sync", 3, 4, source="supplier", detail="Importing from Suppliers")
         supplier_importer = SupplierImporter(db)
         results["supplier"] = await supplier_importer.import_products(limit=request.limit)
         
@@ -290,6 +300,7 @@ async def run_full_data_sync(request: ImportRequest):
                 all_products.extend(results[source]["products"])
         
         # Run automation on all imported products
+        await notify_job_progress("full_data_sync", 4, 4, detail=f"Running automation on {len(all_products)} products")
         if all_products:
             automation_result = await run_automation_on_products(all_products)
             results["automation"] = automation_result
@@ -315,6 +326,11 @@ async def run_full_data_sync(request: ImportRequest):
             }}
         )
         
+        await notify_job_completed("full_data_sync", source="all", result={
+            "total_imported": results["total_imported"],
+            "total_alerts": results["total_alerts"],
+        })
+        
         return {
             "success": True,
             "total_imported": results["total_imported"],
@@ -331,6 +347,7 @@ async def run_full_data_sync(request: ImportRequest):
             {"id": log_id},
             {"$set": {"status": "failed", "error_message": str(e)}}
         )
+        await notify_job_failed("full_data_sync", source="all", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 async def run_automation_on_products(products: List[Dict]) -> Dict:

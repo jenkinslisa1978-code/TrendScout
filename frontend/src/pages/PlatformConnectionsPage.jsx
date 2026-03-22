@@ -14,9 +14,10 @@ import {
 } from '@/components/ui/dialog';
 import {
   Store, Megaphone, Plus, Check, X, ExternalLink, Trash2,
-  ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse, Truck,
+  ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse, Truck, KeyRound,
 } from 'lucide-react';
 import api, { apiGet, apiPost, apiDelete } from '@/lib/api';
+import { toast } from 'sonner';
 
 const STORE_ICONS = {
   shopify: '🟢',
@@ -141,6 +142,80 @@ export default function PlatformConnectionsPage() {
   const [shopifyAccessToken, setShopifyAccessToken] = useState('');
   const [shopifyLoading, setShopifyLoading] = useState(false);
   const [shopifyError, setShopifyError] = useState('');
+
+  // OAuth state
+  const [oauthPlatforms, setOauthPlatforms] = useState({});
+  const [oauthModal, setOauthModal] = useState(null);
+  const [oauthForm, setOauthForm] = useState({ client_id: '', client_secret: '', shop_domain: '' });
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const [oauthError, setOauthError] = useState('');
+
+  // Fetch OAuth platforms
+  useEffect(() => {
+    const fetchOAuth = async () => {
+      try {
+        const res = await apiGet('/api/oauth/platforms');
+        const data = await res.json().catch(() => ({}));
+        setOauthPlatforms(data.platforms || {});
+      } catch {}
+    };
+    fetchOAuth();
+  }, []);
+
+  // Handle OAuth callback results from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthSuccess = params.get('oauth_success');
+    const oauthError = params.get('oauth_error');
+    const platform = params.get('platform');
+
+    if (oauthSuccess) {
+      toast.success(`${oauthSuccess} connected successfully via OAuth!`);
+      window.history.replaceState({}, '', window.location.pathname);
+      fetchData();
+    } else if (oauthError) {
+      toast.error(`OAuth failed for ${platform || 'platform'}: ${oauthError}`);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [fetchData]);
+
+  const handleOAuthInit = async () => {
+    if (!oauthForm.client_id || !oauthForm.client_secret) return;
+    setOauthLoading(true);
+    setOauthError('');
+    try {
+      const body = {
+        client_id: oauthForm.client_id.trim(),
+        client_secret: oauthForm.client_secret.trim(),
+      };
+      if (oauthModal?.requires_shop_domain && oauthForm.shop_domain) {
+        let domain = oauthForm.shop_domain.trim().toLowerCase();
+        if (!domain.endsWith('.myshopify.com')) {
+          domain = `${domain}.myshopify.com`;
+        }
+        body.shop_domain = domain;
+      }
+      const res = await apiPost(`/api/oauth/${oauthModal.key}/init`, body);
+      const data = await res.json().catch(() => ({}));
+      if (data.oauth_url) {
+        window.location.href = data.oauth_url;
+      } else {
+        setOauthError(data.detail || 'Failed to start OAuth flow');
+      }
+    } catch (err) {
+      setOauthError('Failed to initiate OAuth. Please check your credentials.');
+    } finally {
+      setOauthLoading(false);
+    }
+  };
+
+  const openOAuthModal = (platformKey) => {
+    const config = oauthPlatforms[platformKey];
+    if (!config) return;
+    setOauthModal({ key: platformKey, ...config });
+    setOauthForm({ client_id: '', client_secret: '', shop_domain: '' });
+    setOauthError('');
+  };
 
   const handleShopifyConnect = async () => {
     if (!shopifyDomain.trim() || !shopifyAccessToken.trim()) return;
@@ -510,6 +585,63 @@ export default function PlatformConnectionsPage() {
           </div>
         </div>
 
+        {/* OAuth Connect Section */}
+        {Object.keys(oauthPlatforms).length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <KeyRound className="h-5 w-5 text-teal-600" />
+              <h2 className="text-lg font-semibold text-slate-900">OAuth Connections</h2>
+              <Badge className="bg-teal-100 text-teal-700 border-teal-200 text-[10px]">Secure Login</Badge>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              Connect platforms securely using OAuth. You'll be redirected to each platform to authorize access — no API keys stored on our end.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(oauthPlatforms).map(([key, config]) => {
+                const connected = isConnected(config.connection_type, key);
+                return (
+                  <Card key={key} className={`border ${connected ? 'border-teal-200 bg-teal-50/30' : 'border-slate-200 hover:border-teal-200 transition-colors'}`}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-slate-900 text-sm">{config.name}</p>
+                          <p className="text-[10px] text-slate-400 uppercase">{config.connection_type}</p>
+                        </div>
+                        {connected ? (
+                          <Badge className="bg-teal-100 text-teal-700 border-teal-200">Connected</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-slate-400">Available</Badge>
+                        )}
+                      </div>
+                      {!connected && (
+                        <Button
+                          size="sm"
+                          className="w-full bg-teal-600 hover:bg-teal-700 text-xs"
+                          onClick={() => openOAuthModal(key)}
+                          data-testid={`oauth-connect-${key}`}
+                        >
+                          <KeyRound className="h-3 w-3 mr-1" /> Connect with OAuth
+                        </Button>
+                      )}
+                      {connected && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-red-500 hover:text-red-700 text-xs"
+                          onClick={() => handleDisconnect(config.connection_type, key)}
+                          data-testid={`oauth-disconnect-${key}`}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" /> Disconnect
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* How It Works */}
         <Card className="border-slate-200">
           <CardContent className="p-6">
@@ -654,6 +786,98 @@ export default function PlatformConnectionsPage() {
             >
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
               {saving ? 'Connecting...' : 'Connect'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* OAuth Modal */}
+      <Dialog open={!!oauthModal} onOpenChange={() => setOauthModal(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-teal-600" />
+              Connect {oauthModal?.name} via OAuth
+            </DialogTitle>
+            <DialogDescription>
+              Enter your app credentials to securely connect via OAuth 2.0. You'll be redirected to authorize.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Setup Instructions */}
+            {oauthModal?.instructions && (
+              <div className="bg-teal-50 border border-teal-200 rounded-lg p-3">
+                <p className="text-[11px] font-semibold text-teal-800 mb-1">Setup Instructions</p>
+                <pre className="text-[10px] text-teal-700 whitespace-pre-wrap font-sans leading-relaxed">
+                  {oauthModal.instructions}
+                </pre>
+                {oauthModal.setup_url && (
+                  <a href={oauthModal.setup_url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal-600 underline flex items-center gap-1 mt-2">
+                    Open Developer Portal <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Redirect URI */}
+            {oauthModal?.redirect_uri && (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <p className="text-[10px] font-semibold text-slate-600 mb-1">Redirect URI (add this to your app)</p>
+                <code className="text-[10px] bg-white border border-slate-200 rounded px-2 py-1 block break-all" data-testid="oauth-redirect-uri">
+                  {oauthModal.redirect_uri}
+                </code>
+              </div>
+            )}
+
+            {/* Shop Domain (if required, e.g., Shopify) */}
+            {oauthModal?.requires_shop_domain && (
+              <div>
+                <Label className="text-sm font-medium">Shop Domain</Label>
+                <Input
+                  placeholder="your-store.myshopify.com"
+                  value={oauthForm.shop_domain}
+                  onChange={(e) => setOauthForm({ ...oauthForm, shop_domain: e.target.value })}
+                  data-testid="oauth-shop-domain"
+                />
+              </div>
+            )}
+
+            <div>
+              <Label className="text-sm font-medium">Client ID / App Key</Label>
+              <Input
+                placeholder="Enter your Client ID"
+                value={oauthForm.client_id}
+                onChange={(e) => setOauthForm({ ...oauthForm, client_id: e.target.value })}
+                data-testid="oauth-client-id"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Client Secret / App Secret</Label>
+              <Input
+                type="password"
+                placeholder="Enter your Client Secret"
+                value={oauthForm.client_secret}
+                onChange={(e) => setOauthForm({ ...oauthForm, client_secret: e.target.value })}
+                data-testid="oauth-client-secret"
+              />
+            </div>
+
+            {oauthError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700" data-testid="oauth-error">{oauthError}</div>
+            )}
+
+            <Button
+              onClick={handleOAuthInit}
+              disabled={oauthLoading || !oauthForm.client_id || !oauthForm.client_secret}
+              className="w-full bg-teal-600 hover:bg-teal-700"
+              data-testid="oauth-start-btn"
+            >
+              {oauthLoading ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Redirecting...</>
+              ) : (
+                <><KeyRound className="mr-2 h-4 w-4" /> Authorize with {oauthModal?.name}</>
+              )}
             </Button>
           </div>
         </DialogContent>
