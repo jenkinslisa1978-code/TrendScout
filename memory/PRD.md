@@ -48,21 +48,6 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - Changelog, 6 free tools, Trial expiry, A/B framework, CRO suite
 - Performance: Code splitting, lazy loading, blog automation
 
-## Scheduled Tasks
-| Task | Schedule | Description |
-|------|----------|-------------|
-| send_lead_drip_emails | Daily 9 AM | Day 2 trending + Day 5 trial drip emails |
-| review_prediction_accuracy | Daily 6 AM | Snapshot + review predictions |
-| weekly_blog_generation | Monday 8 AM | Auto-generate blog posts |
-| send_lead_subscriber_digest | Monday 9 AM | Trending products email to leads |
-| send_weekly_email_digest | Monday 10 AM | Digest to registered users |
-| send_trial_expiry_notifications | Every 2h | Email expired trial users |
-
-## Key API Endpoints
-- POST /api/public/quick-viability — AI product viability check (public)
-- POST /api/leads/capture — Email lead capture + instant drip email
-- GET /api/accuracy/stats — Prediction accuracy metrics
-
 ### A/B Testing on Hero CTA (Feb 2026)
 - Wired useABTest hook to landing page hero CTA and final CTA
 - Tests 3 variants each: "Start Free" / "Try TrendScout Free" / "Get Started Now"
@@ -91,32 +76,47 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ### Connect Accounts Prompt (Feb 2026)
 - "Connect Your Accounts" banner on Dashboard and My Stores pages
-- Shows 4 categories: Stores (Shopify, WooCommerce, Etsy, Amazon), Social (TikTok Shop, Instagram), Ad Accounts (Facebook, Google, TikTok Ads), Suppliers (AliExpress, CJ, Zendrop)
-- CTA links to existing /settings/connections page
+- Shows 4 categories: Stores, Social, Ad Accounts, Suppliers
+- CTA links to /settings/connections page
 - Dismissible (localStorage persisted), auto-hides when 3+ connections active
-- Backend connections API already exists at /api/connections
 
-### CSRF Fix for Admin Buttons (Feb 2026)
+### CSRF Fix for Admin Buttons (Feb 2026, updated March 2026)
 - Fixed 403 errors on Run Scoring, AI Summaries, Full Data Sync, Data Ingestion buttons
-- Root cause: productService.js, DataIngestionPanel.jsx, alertService.js used raw fetch() without CSRF tokens
-- Fixed by adding getAuthHeaders() to all POST/PUT/DELETE fetch calls
+- Root cause: raw fetch() without CSRF tokens
+- Fix: Converted ALL frontend service files to use apiPost/apiPut/apiDelete/apiGet from api.js
+- Also fixed "body stream already read" errors by adding .catch() to response.json()
+- Files fixed: DataIngestionPanel.jsx, productService.js, alertService.js, automationLogService.js
+- Verified: iteration_114 (100%, 8/8 backend + 7/7 frontend)
 
 ### Admin Command Center (Feb 2026)
-- In-app admin hub at `/admin/hub` — single page overview of everything
+- In-app admin hub at `/admin/hub`
 - Quick stats bar: MRR, paid subs, leads, signups, emails sent, total users
 - Admin Checklist: setup items, daily monitoring, weekly tasks with quick links
-- "What to Watch" cards: Revenue Health, Lead Quality, Email Performance, System Health
-- Technical Reference: env variables, scheduled tasks table, external dashboard links
-- Updated sidebar nav: 7 admin tools (Command Center, Growth & Revenue, Products, Automation, System Health, Image Review, Integrations)
 
 ### Admin Growth & Revenue Dashboard (Feb 2026)
 - Full analytics dashboard at `/admin/analytics` (admin-only access)
-- Revenue KPIs: MRR, new revenue, paid subscribers with period-over-period trends
-- Lead capture metrics: total leads, sources breakdown, top product searches
-- Email drip performance: delivery rates per step (instant, day 2, day 5)
-- User plan distribution and conversion funnel visualization
+- Revenue KPIs, Lead capture metrics, Email drip performance
 - Backend endpoint: `GET /api/analytics/growth?days=30`
+
+## Scheduled Tasks
+| Task | Schedule | Description |
+|------|----------|-------------|
+| send_lead_drip_emails | Daily 9 AM | Day 2 trending + Day 5 trial drip emails |
+| review_prediction_accuracy | Daily 6 AM | Snapshot + review predictions |
+| weekly_blog_generation | Monday 8 AM | Auto-generate blog posts |
+| send_lead_subscriber_digest | Monday 9 AM | Trending products email to leads |
+| send_weekly_email_digest | Monday 10 AM | Digest to registered users |
+| send_trial_expiry_notifications | Every 2h | Email expired trial users |
+
+## Key API Endpoints
+- POST /api/public/quick-viability — AI product viability check (public)
+- POST /api/leads/capture — Email lead capture + instant drip email
+- GET /api/accuracy/stats — Prediction accuracy metrics
+- POST /api/automation/run — Run full automation pipeline (admin)
+- POST /api/ingestion/amazon — Import Amazon products (admin)
+- POST /api/ingestion/full-sync — Full data sync from all sources (admin)
 
 ## Remaining Tasks
 - Set `REACT_APP_GA4_ID` in production .env (P1 - user needs to provide GA4 ID)
 - Configure Resend webhook URL in Resend dashboard: POST https://trendscout.click/api/webhooks/resend
+- Build real OAuth flows for Shopify, TikTok Shop, etc. (P2 - currently UI only)
