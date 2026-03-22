@@ -1,129 +1,137 @@
-<analysis>**original_problem_statement**: The user wants to enhance the TrendScout website to be more persuasive and more measurable. Recent focus shifted to fixing production deployment blockers, building an admin analytics dashboard, fixing broken API calls (CSRF 403s) on automation buttons, adding prompts for users to connect external stores/social accounts, and clearing a backlog of tasks (A/B testing, UTM tracking, custom static pre-rendering, email webhooks). 
+<analysis>**original_problem_statement**: The user wants to enhance the TrendScout website to be more persuasive and more measurable. Recent focus shifted to fixing production deployment blockers. After successfully fixing production CSRF automation bugs, building real OAuth flows, real-time WebSocket notifications, and creating a reviewer demo account, the user attempted to deploy to production. The deployment is currently failing with build errors, and the agent was instructed to resolve them.
 
-**User's preferred language**: English (INSTRUCT next agent to respond in English)
+**User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?**: 
-TrendScout is a live UK-focused ecommerce intelligence platform (React + FastAPI + MongoDB). It features an Admin Command Center (), a comprehensive Growth & Revenue Analytics dashboard (), and a Platform Connections hub ( for Stores, Ads, Social, and Suppliers). It uses a custom Node.js script ( with ) for Alpine-compatible static pre-rendering to bypass previous Docker build failures. 
+TrendScout is a live UK-focused ecommerce intelligence platform (React + FastAPI + MongoDB). It features an Admin Command Center (), a comprehensive Growth & Revenue Analytics dashboard (), and a Platform Connections hub (). It now includes real-time WebSocket notifications for background jobs, fully functional API client wrappers (CSRF-protected), and OAuth 2.0 flows for external integrations (Shopify, Etsy, Amazon Seller, TikTok Shop, Meta, Google Ads). It uses a custom Node.js script ( with ) for Alpine-compatible static pre-rendering.
 
 **Last working item**:
-- **Last item agent was working**: Debugging 3 specific runtime errors reported by the user immediately after deploying the latest code to production. The agent executed a bash command checking backend logs and found a Pydantic Enum validation error related to .
+- **Last item agent was working**: Debugging deployment build failures based on the user-provided build logs. The agent called the , which flagged a missing Supervisor configuration, but the agent has not yet implemented the fix or addressed the Node engine mismatch shown in the raw logs.
 - **Status**: IN PROGRESS
-- **Agent Testing Done**: N (Mid-investigation)
-- **Which testing method agent to use?**: manual testing by curl / python -c, followed by screenshot tool to verify frontend UI fixes.
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: manual testing by execute bash for build commands (e.g. yarn install v1.22.22
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+[4/4] Building fresh packages...
+success Saved lockfile.
+Done in 0.03s.) / backend testing agent.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Pydantic Enum Validation Error in Automation/Ingestion (P0)
-   - **Attempted fixes**: Agent pulled recent logs and found a validation error: . 
+- **Issue 1**: Deployment Build Failure (Node version incompatibility & Missing Supervisor Config) (P0)
+   - **Attempted fixes**: Agent invoked  which identified a missing . 
    - **Next debug checklist**: 
-      - Identify which endpoint triggered this error (likely  or ).
-      - Check frontend files (, ) to see what  string is being sent.
-      - Check  or the specific router to see the defined  for job types.
-      - Align the frontend payload with the backend Enum or expand the backend Enum to accept the string.
-   - **Why fix this issue and what will be achieved with the fix?**: The user's production automation/sync buttons are failing due to this payload mismatch.
+      - **CRITICAL**: The raw build logs in the user's message explicitly show an error during yarn install v1.22.22
+[1/4] Resolving packages...
+success Already up-to-date.
+Done in 0.02s.: . You MUST downgrade  in  to a version compatible with Node v20.18.1 (e.g.,  or ) or adjust yarn install v1.22.22
+[1/4] Resolving packages...
+success Already up-to-date.
+Done in 0.02s. flags.
+      - Address the missing Supervisor configuration: Create  with proper program sections for frontend (port 3000) and backend (port 8001) as instructed by the deployment agent.
+   - **Why fix this issue and what will be achieved with the fix?**: The application is currently blocked from deploying to production due to these container build step failures.
    - **Status**: IN PROGRESS
    - **Is recurring issue?**: N
-   - **Should Test frontend/backend/both after fix?**: Both
-   - **Blocked on other issue**: None
-
-- **Issue 2**: Unidentified Frontend/Backend Errors from User Screenshots (P0)
-   - **Attempted fixes**: Agent just received the screenshots but hasn't fully analyzed them. 
-   - **Next debug checklist**:
-      - Use  on the images (, , ) provided in the last user message to understand the exact visual errors.
-      - Correlate the visual errors with backend logs.
-   - **Why fix this issue and what will be achieved with the fix?**: Production is displaying explicit errors to the user.
-   - **Status**: NOT STARTED
-   - **Is recurring issue?**: N
-   - **Should Test frontend/backend/both after fix?**: Both
+   - **Should Test frontend/backend/both after fix?**: Both (Verify via bash that yarn install v1.22.22
+[1/4] Resolving packages...
+success Already up-to-date.
+Done in 0.02s. succeeds, then run tests).
    - **Blocked on other issue**: None
 
 **In progress Task List**: 
-- None (All feature backlog tasks were completed. Currently in bug-fix mode).
+- None (Feature backlog is cleared; currently in deployment-fix mode).
 
 **Upcoming and Future Tasks**:
-- **Task 1**: Build real OAuth flows for Shopify, TikTok Shop, etc. (P2 - Currently it is UI only, actual OAuth logic needs expanding beyond the existing base Shopify skeleton).
+- **Task 1**: Assist user with setting up developer accounts for the new OAuth platforms (Shopify, Meta, etc.) once the deployment is successful. (P2)
 
 **Completed work in this session**:
-- Deployment blockers fixed (Removed , fixed , handled  warnings). (DONE)
-- Built Admin Command Center () and Analytics Dashboard (). (DONE)
-- Fixed CSRF 403 Forbidden errors on frontend buttons by swapping raw  with the  client wrappers (, ). (DONE)
-- Built Connect Your Accounts prompt on Dashboard & My Stores pages. (DONE)
-- Expanded Platform Connections page () to include Social and Suppliers. (DONE)
-- Wired A/B testing to Hero CTA (). (DONE)
-- Added UTM tracking to drip email links. (DONE)
-- Configured Resend webhook for email open/click tracking (). (DONE)
-- Created custom  script using  to replace  for static generation on Alpine Linux. (DONE)
+- Fixed all 3 production errors (body stream already read, Failed to run trend scoring, etc.) by replacing raw  calls with  client wrappers (, , ) across , , , and . (DONE)
+- Implemented real-time WebSocket Notifications feed ( hook, , backend ) for live activity tracking on automation jobs. (DONE)
+- Built backend OAuth 2.0 flow endpoints (, ) and integrated frontend OAuth buttons on . (DONE)
+- Created a demo reviewer account () with 'Elite' privileges. (DONE)
 
 **Earlier issues found/mentioned but not fixed**:
-- User reported no products are coming up on production. The agent verified the API works and data exists (using  filter) in the preview environment, attributing the blank state to the user needing to redeploy. The user has since redeployed, but if products are *still* missing, this needs to be investigated alongside the 3 recent errors.
+- None
 
 **Known issue recurrence from previous fork**:
 - None
 
 **Code Architecture**:
-- : Custom script for static HTML generation at build time (replaces ).
+- : Custom script for static HTML generation at build time (replaces ) using .
+-  & : Manages WebSocket broadcasting for real-time progress updates.
+-  & : Secure OAuth 2.0 token exchange and encrypted storage infrastructure.
 - : Enforces double-submit cookies on non-GET requests.
-- : Handles incoming Resend email events.
-- : API for managing user external platform integrations.
 
 **Key Technical Concepts**:
-- **CSRF Protection**: The FastAPI backend has strict CSRF middleware. Frontend MUST use the helper functions in  (e.g., , ) which automatically inject the  header. Raw  calls will fail with a 403.
-- **Static Prerendering**: Because the deployment container runs Alpine Linux, Puppeteer/Chromium fails to install. Pre-rendering is now handled natively via  in . 
+- **CSRF Protection**: Frontend MUST use helper functions in  (e.g., ). Raw  will fail with 403 Forbidden.
+- **WebSockets**: Backend uses  to push events to authenticated clients. 
+- **Token Encryption**: Platform access tokens are encrypted at rest using Fernet symmetric encryption ().
 
 **key DB schema**:
-- :  (Tracks Store, Ad, Social, Supplier links).
-- : Utilizes  for authorizing access to  routes. Auto-flags specific emails.
+- :  
+- : 
 
 **changes in tech stack**:
-- **Removed**: 
-- **Added**:  (for frontend static generation)
+- **Added**: usage: websockets [--version | <uri>] (Python package).
+- **Update Required**:  (Frontend package needs downgrading due to Alpine container Node version limits).
 
 **All files of reference**:
-- : Contains the Enums triggering the current Pydantic failure.
--  & : Frontend services making the failing API calls.
-- : Mandatory API client wrapper.
+-  &  (New WebSocket logic)
+-  &  (New frontend WS listeners)
+-  &  (New OAuth logic)
+-  (File needs to be created to fix deployment blocker)
+-  (Requires  dependency modification)
 
 **Areas that need refactoring**:
-- Automation Enums (Frontend strings vs Backend Pydantic models are out of sync).
+- Frontend package dependencies (urgent version downgrade for  required for build stability).
 
 **key api endpoints**:
+- : Real-time event stream.
+- : Initiates OAuth authorization.
+- : Handles OAuth redirect.
 - : Runs backend AI generation pipelines.
-- : Triggers scraping jobs.
-- : Captures email engagement data.
 
 **Critical Info for New Agent**:
-- **Environment**: The user is actively testing on production ().
-- **CSRF Rule**: If you build new buttons/actions, ALWAYS use  (, , etc.) instead of raw . Raw fetch will trigger 403 Forbidden errors for authenticated users.
-- **Testing Admin Features**: You can log in using  / . It has admin privileges auto-granted.
+- **Deployment Blocker Context**: The  caught the missing , but completely missed the yarn install v1.22.22
+[1/4] Resolving packages...
+success Already up-to-date.
+Done in 0.02s. failure prominently visible in the user's raw logs (). You must fix both issues for the deployment to succeed.
+- **CSRF Rule**: If building new features, ALWAYS use  (, , etc.) instead of raw .
 
 **documents and test reports created in this job**:
 -  updated.
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**:
-1. User: do the future tasks (Agent asked for clarification)
-2. User: do all tasks (Agent implemented all 5 backlog items)
-3. User: no products are coming up + screenshot (Agent verified data exists, told user to redeploy)
-4. User: still errors + 3 screenshots 
-5. *Pending Human Issue*: Analyze the 3 screenshots and fix the 3 specific errors occurring on the production environment. 
+1. User: proceed (Agent proceeded to fix 3 production CSRF bugs)
+2. User: yes please. can we also build the real oAuth flows? (Agent planned out WS and OAuth)
+3. User: 1. all 2. tell me what to do 3. visible to all (Clarified feature scopes)
+4. User: yes lets set up all developer accounts
+5. User: can you set up a demo account and let me have login details.
+6. User: c / I need a demo account for this app for a reviewer to use (Agent created the  account)
+7. *Pending Human Issue*: Use deployment agent to identify the issues. Sharing build error logs when trying to deploy... (Agent ran the deployment agent but still needs to implement the fixes for the build errors).
 
 **Project Health Check**:
-- Broken: YES (Automation / Data Sync endpoints throwing 500 Pydantic Enum errors).
+- Broken: YES (Production deployment build process is failing).
 - Mocked: NO.
 
 **3rd Party Integrations**:
 - OpenAI GPT-5.2 — uses Emergent LLM Key
 - Resend (Emails/Webhooks) — requires User API Key
 - Stripe (Payments) — requires User API Key
-- Shopify / WooCommerce / TikTok Ads / Meta Ads (OAuth/API Setup pending)
+- Shopify / Etsy / Amazon Seller / TikTok Shop / Meta Ads / Google Ads (OAuth endpoints built, pending user App Credentials)
 
 **Testing status**:
-- Testing agent used after significant changes: NO (relied on bash scripts, curls, and screenshot tools)
+- Testing agent used after significant changes: YES (iteration 114, 115)
 - Troubleshoot agent used after agent stuck in loop: NO
 - Test files created: None
-- Known regressions: Payload mismatch causing Pydantic enum errors on Automation endpoints.
+- Known regressions: Build process breaking on  Node version checks.
 
 **Credentials to test flow:**
 - Admin Test Account:  / 
+- Demo Test Account:  / 
 
 **What agent forgot to execute**:
-- The agent was mid-investigation into the  Enum error and has not yet addressed the specific visual errors contained in the 3 images the user uploaded (, , ). The next agent MUST analyze these images to identify all the remaining issues.</analysis>
+- The agent ran the deployment agent but neglected to execute the actual code changes required to fix the deployment blockers. The agent specifically missed addressing the Node/ engine incompatibility evident in the user's provided build logs. Ensure this is fixed immediately.</analysis>
