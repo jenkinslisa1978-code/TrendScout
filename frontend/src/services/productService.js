@@ -1,6 +1,6 @@
 import { runFullAutomation, batchRunAutomation } from '@/lib/automation';
 import { API_URL } from '@/lib/config';
-import { getAuthHeaders } from '@/lib/api';
+import { getAuthHeaders, apiPost, apiDelete as apiDeleteFn } from '@/lib/api';
 
 // Get all products from backend API
 export const getProducts = async (filters = {}) => {
@@ -207,19 +207,13 @@ export const getCategories = async () => {
 // Create product via backend API - with automation
 export const createProduct = async (productData, runAutomation = true) => {
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/api/products`, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify(productData),
-    });
+    const response = await apiPost('/api/products', productData);
+    const result = await response.json().catch(() => ({}));
     
     if (!response.ok) {
-      throw new Error('Failed to create product');
+      throw new Error(result.detail || 'Failed to create product');
     }
     
-    const result = await response.json();
     return { data: result.data, error: null, alert: result.alert };
   } catch (error) {
     console.error('Error creating product:', error);
@@ -230,19 +224,13 @@ export const createProduct = async (productData, runAutomation = true) => {
 // Update product via backend API - with automation
 export const updateProduct = async (id, productData, runAutomation = true) => {
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/api/products/${id}`, {
-      method: 'PUT',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify(productData),
-    });
+    const response = await apiPost(`/api/products/${id}`, productData);
+    const result = await response.json().catch(() => ({}));
     
     if (!response.ok) {
-      throw new Error('Failed to update product');
+      throw new Error(result.detail || 'Failed to update product');
     }
     
-    const result = await response.json();
     return { data: result.data, error: null, alert: result.alert };
   } catch (error) {
     console.error('Error updating product:', error);
@@ -253,12 +241,7 @@ export const updateProduct = async (id, productData, runAutomation = true) => {
 // Delete product via backend API
 export const deleteProduct = async (id) => {
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/api/products/${id}`, {
-      method: 'DELETE',
-      headers,
-      credentials: 'include',
-    });
+    const response = await apiDeleteFn(`/api/products/${id}`);
     
     if (!response.ok) {
       throw new Error('Failed to delete product');
@@ -309,19 +292,12 @@ export const getDashboardStats = async () => {
 // Run automation on all products via backend API
 export const runAutomationOnAllProducts = async () => {
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/api/automation/run`, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify({ job_type: 'full_pipeline' }),
-    });
+    const response = await apiPost('/api/automation/run', { job_type: 'full_pipeline' });
+    const result = await response.json().catch(() => ({}));
     
     if (!response.ok) {
-      throw new Error('Failed to run automation');
+      throw new Error(result.detail || 'Failed to run automation');
     }
-    
-    const result = await response.json();
     
     // Fetch updated products
     const { data: products } = await getProducts({});

@@ -1,6 +1,6 @@
 import { batchGenerateAlerts, getAlertStats } from '@/lib/automation/alerts';
 import { API_URL } from '@/lib/config';
-import { getAuthHeaders } from '@/lib/api';
+import { apiPut } from '@/lib/api';
 
 /**
  * Get all alerts from backend API
@@ -46,12 +46,7 @@ export const createAlertsForProducts = async (products) => {
  */
 export const markAlertRead = async (alertId) => {
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/api/alerts/${alertId}/read`, {
-      method: 'PUT',
-      headers,
-      credentials: 'include',
-    });
+    const response = await apiPut(`/api/alerts/${alertId}/read`);
     
     if (!response.ok) {
       throw new Error('Failed to mark alert as read');
@@ -69,12 +64,7 @@ export const markAlertRead = async (alertId) => {
  */
 export const dismissAlertById = async (alertId) => {
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/api/alerts/${alertId}/dismiss`, {
-      method: 'PUT',
-      headers,
-      credentials: 'include',
-    });
+    const response = await apiPut(`/api/alerts/${alertId}/dismiss`);
     
     if (!response.ok) {
       throw new Error('Failed to dismiss alert');

@@ -1,0 +1,77 @@
+{
+  "summary": "Iteration 114 - Testing TrendScout admin automation button fixes for CSRF handling and response.json() body stream issues. All 8 backend tests passed. All 7 frontend automation buttons work correctly with success toasts. No 'body stream already read' errors found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "POST /api/automation/run with job_type full_pipeline returns success (200)",
+    "GET /api/automation/logs returns data array (200)",
+    "GET /api/automation/stats returns stats with expected fields (200)",
+    "POST /api/ingestion/amazon with limit 5 returns success (200)",
+    "POST /api/ingestion/tiktok with limit 5 returns success (200)",
+    "POST /api/ingestion/supplier with limit 5 returns success (200)",
+    "POST /api/ingestion/full-sync with limit 5 returns success (200)",
+    "GET /api/ingestion/sources returns 3+ sources (200)",
+    "Frontend: 'Run Scoring' card click shows success toast 'Updated 229 products'",
+    "Frontend: 'AI Summaries' card click shows success toast 'Generated AI summaries for 229 products'",
+    "Frontend: 'Generate Alerts' card click shows success toast 'Generated 37 new alerts'",
+    "Frontend: Amazon 'Run Import' button shows success toast 'Imported 15 products from Amazon Movers & Shakers'",
+    "Frontend: TikTok 'Run Import' button shows success toast 'Imported 15 products from TikTok Creative Center'",
+    "Frontend: Supplier 'Run Import' button shows success toast 'Imported 15 products from Supplier Feeds'",
+    "Frontend: 'Full Data Sync' button shows success 'Full Sync Complete - Imported 45 products • Generated 14 alerts'",
+    "No 'body stream already read' errors in console",
+    "No 'Failed to run trend scoring' errors",
+    "No 'Failed to generate summaries' errors"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_automation_ingestion.py",
+    "/app/test_reports/pytest/automation_ingestion_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "api.js correctly implements CSRF token handling via getCsrfToken() reading __Host-csrf cookie",
+    "apiPost/apiGet/apiPut/apiDelete wrappers properly include credentials: 'include' for cookie handling",
+    "All response.json() calls now have .catch(() => ({})) to prevent body stream errors",
+    "DataIngestionPanel.jsx correctly uses apiPost from @/lib/api for all import endpoints",
+    "productService.js correctly uses apiPost for /api/automation/run endpoint",
+    "alertService.js correctly uses apiPut for alert operations",
+    "automationLogService.js correctly uses apiGet for logs/stats endpoints",
+    "WebSocket connection errors are unrelated to the fix (notification system, not automation)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_automation_ingestion.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (7/7 automation buttons work correctly)"
+  },
+  "test_credentials": "reviewer@trendscout.click / ShopifyReview2026!",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 114 verified the fix for admin automation button failures. The root cause was raw fetch() calls without CSRF handling and unsafe response.json() calls. Fix: All raw fetch calls converted to use apiPost/apiGet/apiPut/apiDelete from @/lib/api.js which handles auth, CSRF tokens, and 401 retries. All automation endpoints work: /api/automation/run, /api/automation/logs, /api/automation/stats, /api/ingestion/amazon, /api/ingestion/tiktok, /api/ingestion/supplier, /api/ingestion/full-sync. Admin page at /admin/automation has quick action cards (Run Scoring, AI Summaries, Generate Alerts) and Data Sources tab with Run Import buttons.",
+  "verified_fix": {
+    "original_errors": [
+      "Failed to execute json on Response: body stream already read",
+      "Failed to run trend scoring",
+      "Failed to generate summaries"
+    ],
+    "root_cause": "Raw fetch() calls without CSRF handling and unsafe response.json() calls",
+    "fix_applied": "Converted all raw fetch calls to use apiPost/apiGet/apiPut/apiDelete from api.js with CSRF tokens and .catch() on response.json()",
+    "verification_result": "All automation buttons now work correctly with success toasts, no body stream errors"
+  },
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  },
+  "console_errors": {
+    "count": 2,
+    "details": "WebSocket connection errors (notification system, unrelated to fix) and 403 for external resources (favicon/analytics)"
+  }
+}

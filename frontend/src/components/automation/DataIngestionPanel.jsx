@@ -21,8 +21,7 @@ import {
   Database
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_URL } from '@/lib/config';
-import { getAuthHeaders } from '@/lib/api';
+import { apiPost } from '@/lib/api';
 
 const DATA_SOURCES = [
   {
@@ -62,15 +61,8 @@ export default function DataIngestionPanel() {
     setResults(prev => ({ ...prev, [source.id]: null }));
 
     try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_URL}${source.endpoint}`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({ limit: parseInt(productLimit) }),
-      });
-
-      const data = await response.json();
+      const response = await apiPost(source.endpoint, { limit: parseInt(productLimit) });
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok && data.success) {
         setResults(prev => ({
@@ -107,15 +99,8 @@ export default function DataIngestionPanel() {
     setResults({});
 
     try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`${API_URL}/api/ingestion/full-sync`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({ limit: parseInt(productLimit) }),
-      });
-
-      const data = await response.json();
+      const response = await apiPost('/api/ingestion/full-sync', { limit: parseInt(productLimit) });
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok && data.success) {
         setResults({

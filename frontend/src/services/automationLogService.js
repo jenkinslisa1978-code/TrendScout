@@ -1,4 +1,4 @@
-import { API_URL } from '@/lib/config';
+import { apiGet } from '@/lib/api';
 
 /**
  * Automation Log Types
@@ -11,7 +11,6 @@ export const AutomationJobTypes = {
   AI_SUMMARY: 'ai_summary',
   ALERT_GENERATION: 'alert_generation',
   PRODUCT_IMPORT: 'product_import',
-  CSV_IMPORT: 'csv_import',
   SCHEDULED_DAILY: 'scheduled_daily',
   TIKTOK_IMPORT: 'tiktok_import',
   AMAZON_IMPORT: 'amazon_import',
@@ -73,13 +72,13 @@ export const getAutomationLogs = async (options = {}) => {
   const { limit = 50 } = options;
 
   try {
-    const response = await fetch(`${API_URL}/api/automation/logs?limit=${limit}`);
+    const response = await apiGet(`/api/automation/logs?limit=${limit}`);
+    const result = await response.json().catch(() => ({}));
     
     if (!response.ok) {
       throw new Error('Failed to fetch automation logs');
     }
     
-    const result = await response.json();
     return { data: result.data || [], error: null };
   } catch (error) {
     console.error('Error fetching automation logs:', error);
@@ -92,13 +91,12 @@ export const getAutomationLogs = async (options = {}) => {
  */
 export const getAutomationStats = async () => {
   try {
-    const response = await fetch(`${API_URL}/api/automation/stats`);
+    const response = await apiGet('/api/automation/stats');
+    const stats = await response.json().catch(() => ({}));
     
     if (!response.ok) {
       throw new Error('Failed to fetch automation stats');
     }
-    
-    const stats = await response.json();
     
     // Transform backend stats to frontend format
     return {
