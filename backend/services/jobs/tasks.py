@@ -1537,7 +1537,7 @@ async def send_lead_subscriber_digest(db, params: Dict[str, Any] = None) -> Dict
         <tbody>{product_rows}</tbody>
       </table>
       <div style="text-align:center;margin-top:24px;">
-        <a href="{site_url}/trending-products" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">See all trending products</a>
+        <a href="{site_url}/trending-products?utm_source=email&utm_medium=digest&utm_campaign=weekly_digest&utm_content=cta_see_all" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">See all trending products</a>
       </div>
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;">
         <p style="font-size:12px;color:#94a3b8;text-align:center;margin:0;">You received this because you subscribed at TrendScout.<br/>Reply with "unsubscribe" to stop.</p>
@@ -1657,7 +1657,7 @@ async def send_trial_expiry_notifications(db, params: Dict[str, Any] = None) -> 
               </p>
 
               <div style="text-align:center;margin:24px 0;">
-                <a href="{site_url}/pricing" style="display:inline-block;background:#4f46e5;color:#fff;padding:14px 32px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
+                <a href="{site_url}/pricing?utm_source=email&utm_medium=drip&utm_campaign=trial_expiry&utm_content=cta_choose_plan" style="display:inline-block;background:#4f46e5;color:#fff;padding:14px 32px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
                   Upgrade to Pro — £39/month
                 </a>
               </div>

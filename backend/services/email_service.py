@@ -235,7 +235,7 @@ class EmailService:
             </td>
           </tr></table>
           <div style="text-align:center;margin-top:24px;">
-            <a href="{site}/signup" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:10px;">
+            <a href="{site}/signup?utm_source=email&utm_medium=drip&utm_campaign=viability_result&utm_content=cta_full_analysis" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:10px;">
               Get Full Analysis — Start Free
             </a>
             <p style="font-size:12px;color:#94a3b8;margin-top:8px;">No credit card needed. Cancel anytime.</p>
@@ -289,7 +289,7 @@ class EmailService:
             <p style="font-size:12px;color:#64748b;margin:0;">Start your free trial to see margins, competition, and AI ad angles.</p>
           </div>
           <div style="text-align:center;margin-top:20px;">
-            <a href="{site}/signup" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:10px;">
+            <a href="{site}/signup?utm_source=email&utm_medium=drip&utm_campaign=trending_day2&utm_content=cta_free_trial" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:10px;">
               Start Free Trial
             </a>
           </div>
@@ -335,7 +335,7 @@ class EmailService:
             <p style="font-size:12px;color:#78350f;margin:0;">Try everything free for 7 days. If it's not useful, cancel with one click.</p>
           </div>
           <div style="text-align:center;margin-top:24px;">
-            <a href="{site}/signup" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:10px;">
+            <a href="{site}/signup?utm_source=email&utm_medium=drip&utm_campaign=trial_day5&utm_content=cta_start_trial" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:10px;">
               Start Your Free Trial
             </a>
           </div>

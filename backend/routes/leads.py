@@ -145,7 +145,7 @@ async def send_weekly_digest(request: Request):
           </table>
           
           <div style="text-align:center;margin-top:24px;">
-            <a href="{site_url}/trending-products" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
+            <a href="{site_url}/trending-products?utm_source=email&utm_medium=digest&utm_campaign=lead_digest&utm_content=cta_trending" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
               See all trending products
             </a>
           </div>

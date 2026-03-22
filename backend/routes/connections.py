@@ -90,13 +90,57 @@ SUPPORTED_AD_PLATFORMS = {
     },
 }
 
+SUPPORTED_SUPPLIERS = {
+    "aliexpress": {
+        "name": "AliExpress",
+        "fields": ["api_key", "api_secret"],
+        "help": "Register at portals.aliexpress.com → Create an app → Get your App Key and App Secret from the API console.",
+        "url": "https://portals.aliexpress.com",
+    },
+    "cj_dropshipping": {
+        "name": "CJ Dropshipping",
+        "fields": ["api_key"],
+        "help": "Log in to cjdropshipping.com → My CJ → API Management → Generate your API Key.",
+        "url": "https://cjdropshipping.com",
+    },
+    "zendrop": {
+        "name": "Zendrop",
+        "fields": ["api_key"],
+        "help": "Log in to app.zendrop.com → Settings → API → Generate API Key.",
+        "url": "https://app.zendrop.com",
+    },
+}
+
+SUPPORTED_SOCIAL = {
+    "tiktok_shop": {
+        "name": "TikTok Shop",
+        "fields": ["store_url", "api_key", "api_secret"],
+        "help": "Go to seller.tiktok.com → Settings → Developer → Create an app → Get your App Key and App Secret.",
+        "url": "https://seller.tiktok.com",
+    },
+    "instagram_shopping": {
+        "name": "Instagram Shopping",
+        "fields": ["access_token", "account_id"],
+        "help": "Connect via business.facebook.com → Commerce Manager → Link your Instagram account and generate a token.",
+        "url": "https://business.facebook.com/commerce",
+    },
+    "amazon_seller": {
+        "name": "Amazon Seller",
+        "fields": ["store_url", "api_key", "api_secret"],
+        "help": "Go to sellercentral.amazon.co.uk → Settings → User Permissions → Developer → Get your SP-API credentials.",
+        "url": "https://sellercentral.amazon.co.uk",
+    },
+}
+
 
 @connections_router.get("/platforms")
 async def get_supported_platforms():
-    """Get all supported platforms for stores and ads"""
+    """Get all supported platforms for stores, ads, suppliers, and social"""
     return {
         "stores": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"]} for k, v in SUPPORTED_STORES.items()},
         "ads": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"]} for k, v in SUPPORTED_AD_PLATFORMS.items()},
+        "suppliers": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"]} for k, v in SUPPORTED_SUPPLIERS.items()},
+        "social": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"]} for k, v in SUPPORTED_SOCIAL.items()},
     }
 
 
@@ -112,6 +156,8 @@ async def get_user_connections(
 
     store_connections = [c for c in connections if c.get("connection_type") == "store"]
     ad_connections = [c for c in connections if c.get("connection_type") == "ads"]
+    supplier_connections = [c for c in connections if c.get("connection_type") == "supplier"]
+    social_connections = [c for c in connections if c.get("connection_type") == "social"]
 
     return {
         "stores": [
@@ -135,6 +181,27 @@ async def get_user_connections(
                 "account_id": c.get("account_id", ""),
             }
             for c in ad_connections
+        ],
+        "suppliers": [
+            {
+                "platform": c["platform"],
+                "name": SUPPORTED_SUPPLIERS.get(c["platform"], {}).get("name", c["platform"]),
+                "connected": True,
+                "connected_at": c.get("connected_at"),
+                "status": c.get("status", "active"),
+            }
+            for c in supplier_connections
+        ],
+        "social": [
+            {
+                "platform": c["platform"],
+                "name": SUPPORTED_SOCIAL.get(c["platform"], {}).get("name", c["platform"]),
+                "connected": True,
+                "connected_at": c.get("connected_at"),
+                "status": c.get("status", "active"),
+                "store_url": c.get("store_url", ""),
+            }
+            for c in social_connections
         ],
     }
 
@@ -237,6 +304,96 @@ async def connect_ad_platform(
         "success": True,
         "platform": req.platform,
         "message": f"{SUPPORTED_AD_PLATFORMS[req.platform]['name']} connected successfully",
+    }
+
+
+class SupplierConnectionRequest(BaseModel):
+    platform: str  # aliexpress, cj_dropshipping, zendrop
+    api_key: str
+    api_secret: Optional[str] = None
+
+
+class SocialConnectionRequest(BaseModel):
+    platform: str  # tiktok_shop, instagram_shopping, amazon_seller
+    store_url: Optional[str] = None
+    api_key: Optional[str] = None
+    api_secret: Optional[str] = None
+    access_token: Optional[str] = None
+    account_id: Optional[str] = None
+
+
+@connections_router.post("/supplier")
+async def connect_supplier(
+    req: SupplierConnectionRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Connect a supplier platform"""
+    user_id = current_user.user_id
+
+    if req.platform not in SUPPORTED_SUPPLIERS:
+        raise HTTPException(status_code=400, detail=f"Unsupported supplier: {req.platform}. Supported: {list(SUPPORTED_SUPPLIERS.keys())}")
+
+    connection = {
+        "user_id": user_id,
+        "connection_type": "supplier",
+        "platform": req.platform,
+        "api_key": req.api_key,
+        "api_secret": req.api_secret,
+        "status": "active",
+        "connected_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    await db.platform_connections.update_one(
+        {"user_id": user_id, "platform": req.platform, "connection_type": "supplier"},
+        {"$set": connection},
+        upsert=True,
+    )
+
+    logger.info(f"User {user_id} connected supplier: {req.platform}")
+
+    return {
+        "success": True,
+        "platform": req.platform,
+        "message": f"{SUPPORTED_SUPPLIERS[req.platform]['name']} connected successfully",
+    }
+
+
+@connections_router.post("/social")
+async def connect_social(
+    req: SocialConnectionRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Connect a social/marketplace platform"""
+    user_id = current_user.user_id
+
+    if req.platform not in SUPPORTED_SOCIAL:
+        raise HTTPException(status_code=400, detail=f"Unsupported platform: {req.platform}. Supported: {list(SUPPORTED_SOCIAL.keys())}")
+
+    connection = {
+        "user_id": user_id,
+        "connection_type": "social",
+        "platform": req.platform,
+        "store_url": req.store_url,
+        "api_key": req.api_key,
+        "api_secret": req.api_secret,
+        "access_token": req.access_token,
+        "account_id": req.account_id,
+        "status": "active",
+        "connected_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    await db.platform_connections.update_one(
+        {"user_id": user_id, "platform": req.platform, "connection_type": "social"},
+        {"$set": connection},
+        upsert=True,
+    )
+
+    logger.info(f"User {user_id} connected social: {req.platform}")
+
+    return {
+        "success": True,
+        "platform": req.platform,
+        "message": f"{SUPPORTED_SOCIAL[req.platform]['name']} connected successfully",
     }
 
 

@@ -62,6 +62,7 @@ export default function AnalyticsDashboardPage() {
   const [data, setData] = useState(null);
   const [funnel, setFunnel] = useState(null);
   const [growth, setGrowth] = useState(null);
+  const [emailStats, setEmailStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
 
@@ -71,10 +72,12 @@ export default function AnalyticsDashboardPage() {
       api.get(`/api/analytics/dashboard?days=${days}`).then(r => r.data).catch(() => null),
       api.get(`/api/analytics/funnel?days=${days}`).then(r => r.data).catch(() => null),
       api.get(`/api/analytics/growth?days=${days}`).then(r => r.data).catch(() => null),
-    ]).then(([dashData, funnelData, growthData]) => {
+      api.get('/api/webhooks/resend/stats').then(r => r.data).catch(() => null),
+    ]).then(([dashData, funnelData, growthData, emailData]) => {
       setData(dashData);
       setFunnel(funnelData);
       setGrowth(growthData);
+      setEmailStats(emailData);
       setLoading(false);
     });
   }, [days]);
@@ -199,6 +202,44 @@ export default function AnalyticsDashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Email Engagement (from Resend webhooks) */}
+          {emailStats && (
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Mail className="h-5 w-5 text-emerald-500" />
+                Email Engagement
+              </CardTitle>
+              <CardDescription>Open & click rates from Resend</CardDescription>
+            </CardHeader>
+            <CardContent data-testid="email-engagement">
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                  <p className="font-mono text-2xl font-bold text-emerald-600">{emailStats.open_rate || 0}%</p>
+                  <p className="text-xs text-slate-500">Open Rate</p>
+                </div>
+                <div className="bg-indigo-50 rounded-xl p-3 text-center">
+                  <p className="font-mono text-2xl font-bold text-indigo-600">{emailStats.click_rate || 0}%</p>
+                  <p className="text-xs text-slate-500">Click Rate</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                {[
+                  { label: 'Delivered', value: emailStats.total_delivered, color: 'text-slate-700' },
+                  { label: 'Opened', value: emailStats.total_opened, color: 'text-emerald-600' },
+                  { label: 'Clicked', value: emailStats.total_clicked, color: 'text-indigo-600' },
+                  { label: 'Bounced', value: emailStats.total_bounced, color: 'text-red-500' },
+                ].map(row => (
+                  <div key={row.label} className="flex justify-between items-center py-1 border-b border-slate-50 last:border-0">
+                    <span className="text-slate-500">{row.label}</span>
+                    <span className={`font-bold font-mono ${row.color}`}>{row.value || 0}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          )}
 
           {/* Lead Sources + Top Searches */}
           <Card className="border-slate-200 shadow-sm">

@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Store, Megaphone, Plus, Check, X, ExternalLink, Trash2,
-  ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse,
+  ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse, Truck,
 } from 'lucide-react';
 import api, { apiGet, apiPost, apiDelete } from '@/lib/api';
 
@@ -107,7 +107,8 @@ export default function PlatformConnectionsPage() {
     setSaving(true);
     setError('');
     try {
-      const endpoint = connectModal.type === 'store' ? '/api/connections/store' : '/api/connections/ads';
+      const typeMap = { store: '/api/connections/store', ads: '/api/connections/ads', supplier: '/api/connections/supplier', social: '/api/connections/social' };
+      const endpoint = typeMap[connectModal.type] || '/api/connections/store';
       const body = { platform: connectModal.key, ...formData };
       const res = await apiPost(endpoint, body);
       const data = await res.json();
@@ -171,7 +172,7 @@ export default function PlatformConnectionsPage() {
   };
 
   const isConnected = (type, platform) => {
-    const list = type === 'store' ? connections.stores : connections.ads;
+    const list = connections[type === 'store' ? 'stores' : type === 'ads' ? 'ads' : type === 'supplier' ? 'suppliers' : 'social'] || [];
     return list?.some((c) => c.platform === platform);
   };
 
@@ -391,6 +392,112 @@ export default function PlatformConnectionsPage() {
                           className="flex-1 bg-purple-600 hover:bg-purple-700 text-xs"
                           onClick={() => openConnect('ads', key, platform)}
                           data-testid={`connect-${key}-ads`}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Connect
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Social & Marketplace Platforms */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+            <Globe className="h-5 w-5 text-violet-500" />
+            Social & Marketplaces
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(platforms.social || {}).map(([key, platform]) => {
+              const connected = isConnected('social', key);
+              return (
+                <Card key={key} className={`border ${connected ? 'border-violet-200 bg-violet-50/30' : 'border-slate-200'}`}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-slate-900 text-sm">{platform.name}</p>
+                        <p className="text-xs text-slate-500">{connected ? 'Connected' : 'Not connected'}</p>
+                      </div>
+                      {connected && <div className="h-2.5 w-2.5 rounded-full bg-violet-500" />}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {connected ? (
+                        <>
+                          <Button variant="outline" size="sm" className="flex-1 text-xs" disabled>
+                            <Check className="h-3 w-3 mr-1" /> Connected
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700"
+                            onClick={() => handleDisconnect('social', key)}
+                            data-testid={`disconnect-${key}-social`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-violet-600 hover:bg-violet-700 text-xs"
+                          onClick={() => openConnect('social', key, platform)}
+                          data-testid={`connect-${key}-social`}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Connect
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Supplier Platforms */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+            <Truck className="h-5 w-5 text-amber-500" />
+            Suppliers
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(platforms.suppliers || {}).map(([key, platform]) => {
+              const connected = isConnected('supplier', key);
+              return (
+                <Card key={key} className={`border ${connected ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200'}`}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-slate-900 text-sm">{platform.name}</p>
+                        <p className="text-xs text-slate-500">{connected ? 'Connected' : 'Not connected'}</p>
+                      </div>
+                      {connected && <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {connected ? (
+                        <>
+                          <Button variant="outline" size="sm" className="flex-1 text-xs" disabled>
+                            <Check className="h-3 w-3 mr-1" /> Connected
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700"
+                            onClick={() => handleDisconnect('supplier', key)}
+                            data-testid={`disconnect-${key}-supplier`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-amber-600 hover:bg-amber-700 text-xs"
+                          onClick={() => openConnect('supplier', key, platform)}
+                          data-testid={`connect-${key}-supplier`}
                         >
                           <Plus className="h-3 w-3 mr-1" /> Connect
                         </Button>

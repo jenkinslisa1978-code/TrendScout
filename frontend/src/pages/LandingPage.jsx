@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import LandingLayout from '@/components/layouts/LandingLayout';
 import { Button } from '@/components/ui/button';
 import { trackEvent, EVENTS } from '@/services/analytics';
+import useABTest, { trackABConversion } from '@/hooks/useABTest';
 import PageMeta, { organizationSchema, websiteSchema, softwareAppSchema } from '@/components/PageMeta';
 import { ViabilityIndicator } from '@/components/ViabilityBadge';
 import { RevealSection, RevealStagger } from '@/hooks/useScrollReveal';
@@ -18,6 +19,8 @@ const HERO_IMG = 'https://static.prod-images.emergentagent.com/jobs/ac2f3a7b-43f
 
 export default function LandingPage() {
   const [products, setProducts] = useState([]);
+  const heroCta = useABTest('hero_cta', ['Start Free', 'Try TrendScout Free', 'Get Started Now']);
+  const finalCta = useABTest('final_cta', ['Start Free', 'Start Your Free Trial', 'Join Free']);
 
   useEffect(() => {
     fetch(`${API_URL}/api/public/trending-products?limit=3`)
@@ -61,9 +64,9 @@ export default function LandingPage() {
                     size="lg"
                     className="bg-indigo-600 hover:bg-indigo-700 text-white text-base px-8 h-12 font-semibold rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all"
                     data-testid="hero-cta-primary"
-                    onClick={() => trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: 'Start Free', source: 'hero' })}
+                    onClick={() => { trackABConversion('hero_cta'); trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: heroCta, source: 'hero' }); }}
                   >
-                    Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                    {heroCta} <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link to="/trending-products">
@@ -219,8 +222,8 @@ export default function LandingPage() {
                 </p>
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link to="/signup">
-                    <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="final-cta-primary" onClick={() => trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: 'Start Free', source: 'final_cta' })}>
-                      Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                    <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="final-cta-primary" onClick={() => { trackABConversion('final_cta'); trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: finalCta, source: 'final_cta' }); }}>
+                      {finalCta} <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
                   <Link to="/pricing">

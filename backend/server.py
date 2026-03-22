@@ -77,6 +77,7 @@ from routes.cj_dropshipping import routers as cj_routers
 from routes.trial import routers as trial_routers
 from routes.leads import routers as leads_routers
 from routes.accuracy import routers as accuracy_routers
+from routes.webhooks import routers as webhook_routers
 
 # Include all routers
 all_router_groups = [
@@ -96,6 +97,7 @@ all_router_groups = [
     trial_routers,
     leads_routers,
     accuracy_routers,
+    webhook_routers,
 ]
 
 for group in all_router_groups:

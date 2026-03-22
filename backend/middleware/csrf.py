@@ -18,6 +18,8 @@ CSRF_EXEMPT_PATHS = {
     "/api/auth/signup-submit",
     "/api/auth/forgot-password",
     "/api/auth/reset-password",
+    "/api/webhooks/resend",
+    "/api/stripe/webhook",
 }
 
 # Only enforce CSRF on routes that use cookie auth

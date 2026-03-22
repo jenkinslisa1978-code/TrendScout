@@ -63,6 +63,32 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - POST /api/leads/capture — Email lead capture + instant drip email
 - GET /api/accuracy/stats — Prediction accuracy metrics
 
+### A/B Testing on Hero CTA (Feb 2026)
+- Wired useABTest hook to landing page hero CTA and final CTA
+- Tests 3 variants each: "Start Free" / "Try TrendScout Free" / "Get Started Now"
+- Tracks conversions via trackABConversion()
+
+### UTM Tracking on All Email CTAs (Feb 2026)
+- Added utm_source, utm_medium, utm_campaign, utm_content to all drip email links
+- Covers: viability result (instant), trending products (day 2), trial prompt (day 5), weekly digest, trial expiry
+
+### Resend Webhook Email Tracking (Feb 2026)
+- POST /api/webhooks/resend — receives open/click/bounce/complaint events
+- GET /api/webhooks/resend/stats — aggregated open rate, click rate, delivery stats
+- Email engagement card added to Growth & Revenue dashboard
+- Lead records updated with engagement data (opened, clicked, bounced)
+
+### Social & Supplier Connections (Feb 2026)
+- Added Social & Marketplaces: TikTok Shop, Instagram Shopping, Amazon Seller
+- Added Suppliers: AliExpress, CJ Dropshipping, Zendrop
+- Backend: POST /api/connections/supplier, POST /api/connections/social
+- Frontend: New sections on PlatformConnectionsPage with connect/disconnect UI
+
+### Static Prerendering (Feb 2026)
+- Alpine-compatible prerender script (jsdom, no Puppeteer/Chromium)
+- Generates static HTML shells for 8 public routes (features, pricing, how-it-works, etc.)
+- Runs automatically after build via postbuild script
+
 ### Connect Accounts Prompt (Feb 2026)
 - "Connect Your Accounts" banner on Dashboard and My Stores pages
 - Shows 4 categories: Stores (Shopify, WooCommerce, Etsy, Amazon), Social (TikTok Shop, Instagram), Ad Accounts (Facebook, Google, TikTok Ads), Suppliers (AliExpress, CJ, Zendrop)
@@ -92,7 +118,5 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - Backend endpoint: `GET /api/analytics/growth?days=30`
 
 ## Remaining Tasks
-- Wire `useABTest` hook to hero CTA (P1)
 - Set `REACT_APP_GA4_ID` in production .env (P1 - user needs to provide GA4 ID)
-- Add UTM tracking to email CTA links (P2)
-- Re-add static prerendering with Alpine-compatible solution (P2)
+- Configure Resend webhook URL in Resend dashboard: POST https://trendscout.click/api/webhooks/resend
