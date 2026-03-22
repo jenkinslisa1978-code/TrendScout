@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }) {
             })}
           </>
         )}
-        {(profile?.role === 'admin' || isDemoMode) && (
+        {(profile?.role === 'admin' || profile?.is_admin || isDemoMode) && (
           <>
             <div className="my-4 border-t border-slate-100" />
             <div className="mb-2">
