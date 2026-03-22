@@ -19,7 +19,7 @@ const PLANS = [
     name: 'Starter',
     monthlyPrice: 19,
     annualPrice: 15,
-    tagline: 'For beginners validating first products',
+    tagline: 'Start validating product ideas',
     icon: Eye,
     features: [
       '10 product views per day',
@@ -30,7 +30,7 @@ const PLANS = [
       'UK viability indicators',
       'Email support',
     ],
-    cta: 'Start 7-day free trial',
+    cta: 'Try free for 7 days',
     popular: false,
   },
   {
@@ -38,7 +38,7 @@ const PLANS = [
     name: 'Growth',
     monthlyPrice: 39,
     annualPrice: 31,
-    tagline: 'For active sellers testing multiple ideas',
+    tagline: 'Best for serious sellers',
     icon: TrendingUp,
     features: [
       'Unlimited product discovery',
@@ -51,7 +51,7 @@ const PLANS = [
       'Saved product workspace',
       'Priority email support',
     ],
-    cta: 'Start 7-day free trial',
+    cta: 'Start free trial',
     popular: true,
   },
   {
@@ -59,7 +59,7 @@ const PLANS = [
     name: 'Pro',
     monthlyPrice: 79,
     annualPrice: 63,
-    tagline: 'For agencies, power users, and serious sellers',
+    tagline: 'For agencies and power users',
     icon: Rocket,
     features: [
       'Everything in Growth',
@@ -72,7 +72,7 @@ const PLANS = [
       'Unlimited insights',
       'Priority support',
     ],
-    cta: 'Start 7-day free trial',
+    cta: 'Start free trial',
     popular: false,
   },
 ];
@@ -307,7 +307,7 @@ export default function PricingPage() {
                         <>{plan.cta} <ArrowRight className="h-4 w-4 ml-1.5" /></>
                       )}
                     </Button>
-                    <p className="text-center text-xs text-slate-400 mt-3">7-day free trial. Cancel anytime.</p>
+                    <p className="text-center text-xs text-slate-400 mt-3">Try before you commit. Cancel anytime.</p>
                   </div>
                 );
               })}
