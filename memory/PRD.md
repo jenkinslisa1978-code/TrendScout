@@ -63,6 +63,18 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - POST /api/leads/capture — Email lead capture + instant drip email
 - GET /api/accuracy/stats — Prediction accuracy metrics
 
+### Connect Accounts Prompt (Feb 2026)
+- "Connect Your Accounts" banner on Dashboard and My Stores pages
+- Shows 4 categories: Stores (Shopify, WooCommerce, Etsy, Amazon), Social (TikTok Shop, Instagram), Ad Accounts (Facebook, Google, TikTok Ads), Suppliers (AliExpress, CJ, Zendrop)
+- CTA links to existing /settings/connections page
+- Dismissible (localStorage persisted), auto-hides when 3+ connections active
+- Backend connections API already exists at /api/connections
+
+### CSRF Fix for Admin Buttons (Feb 2026)
+- Fixed 403 errors on Run Scoring, AI Summaries, Full Data Sync, Data Ingestion buttons
+- Root cause: productService.js, DataIngestionPanel.jsx, alertService.js used raw fetch() without CSRF tokens
+- Fixed by adding getAuthHeaders() to all POST/PUT/DELETE fetch calls
+
 ### Admin Command Center (Feb 2026)
 - In-app admin hub at `/admin/hub` — single page overview of everything
 - Quick stats bar: MRR, paid subs, leads, signups, emails sent, total users

@@ -51,6 +51,7 @@ import QuickLaunchFlow from '@/components/dashboard/QuickLaunchFlow';
 import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import DataTrustBanner from '@/components/dashboard/DataTrustBanner';
+import ConnectAccountsPrompt from '@/components/dashboard/ConnectAccountsPrompt';
 import BeginnerPanel from '@/components/dashboard/BeginnerPanel';
 import ProductDecisionPanel from '@/components/dashboard/ProductDecisionPanel';
 
@@ -203,6 +204,9 @@ export default function DashboardPage() {
 
         {/* Data Trust Banner */}
         <DataTrustBanner />
+
+        {/* Connect Accounts Prompt */}
+        <ConnectAccountsPrompt />
 
         {/* Beginner Panel */}
         <BeginnerPanel />

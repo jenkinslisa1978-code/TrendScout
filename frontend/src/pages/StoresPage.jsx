@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUserStores, deleteStore, getStoreLimits } from '@/services/storeService';
+import ConnectAccountsPrompt from '@/components/dashboard/ConnectAccountsPrompt';
 
 // Status configuration with colors and progress
 const STATUS_CONFIG = {
@@ -208,6 +209,9 @@ export default function StoresPage() {
         {!canCreateStore && (
           <StoreLimitPrompt currentCount={stores.length} maxCount={maxStores === -1 ? 'unlimited' : maxStores} />
         )}
+
+        {/* Connect Accounts Prompt */}
+        <ConnectAccountsPrompt />
 
         {/* Loading State */}
         {loading ? (
