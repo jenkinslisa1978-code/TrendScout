@@ -211,7 +211,9 @@ function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/uk-product-research" element={<UkProductResearchPage />} />
       <Route path="/for-shopify" element={<ForShopifyPage />} />
+      <Route path="/for-shopify-sellers" element={<ForShopifyPage />} />
       <Route path="/for-amazon-uk" element={<ForAmazonUkPage />} />
+      <Route path="/for-amazon-uk-sellers" element={<ForAmazonUkPage />} />
       <Route path="/for-tiktok-shop-uk" element={<ForTikTokShopUkPage />} />
       <Route path="/compare/:slug" element={<ComparisonPage />} />
       <Route path="/product-quiz" element={<ProductQuizPage />} />
@@ -220,9 +222,11 @@ function AppRoutes() {
       <Route path="/accuracy" element={<AccuracyPage />} />
       <Route path="/uk-product-viability-score" element={<ViabilityScorePage />} />
       <Route path="/dropshipping-product-research-uk" element={<DropshippingUkPage />} />
+      <Route path="/dropshipping-uk" element={<DropshippingUkPage />} />
       <Route path="/winning-products-uk" element={<WinningProductsUkPage />} />
       <Route path="/product-validation-uk" element={<ProductValidationUkPage />} />
       <Route path="/uk-ecommerce-trend-analysis" element={<TrendAnalysisUkPage />} />
+      <Route path="/trend-analysis-uk" element={<TrendAnalysisUkPage />} />
       <Route path="/cookie-policy" element={<CookiePolicyPage />} />
       <Route path="/refund-policy" element={<RefundPolicyPage />} />
       <Route path="/sample-product-analysis" element={<SampleAnalysisPage />} />
@@ -542,6 +546,8 @@ function AppRoutes() {
   );
 }
 
+import CookieConsentBanner from "@/components/CookieConsentBanner";
+
 function App() {
   return (
     <ErrorBoundary>
@@ -551,6 +557,7 @@ function App() {
             <BrowserRouter>
               <PageTracker />
               <AppRoutes />
+              <CookieConsentBanner />
               <Toaster 
                 position="top-right" 
                 richColors 

@@ -104,6 +104,19 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* Scoring methodology note */}
+        <section className="py-12 bg-white">
+          <div className="max-w-3xl mx-auto px-6">
+            <h2 className="font-manrope text-xl font-bold text-slate-900 mb-4">How our scoring works</h2>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Every product on TrendScout receives a UK Viability Score — a 0-100 rating based on seven weighted factors including trend momentum, market saturation, margin potential, shipping practicality, return risk, channel fit, and UK commercial suitability. The methodology is fully transparent and explained on our <Link to="/methodology" className="text-indigo-600 font-medium">methodology page</Link>.
+            </p>
+            <p className="text-sm text-slate-600 leading-relaxed mt-3">
+              We do not guarantee product success. What we provide is better data to inform faster, smarter decisions. You can see exactly how the scoring works on a real product by viewing our <Link to="/sample-product-analysis" className="text-indigo-600 font-medium">sample product analysis</Link>.
+            </p>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="py-16 bg-white">
           <div className="max-w-2xl mx-auto px-6 text-center">

@@ -19,8 +19,8 @@ const HERO_IMG = 'https://static.prod-images.emergentagent.com/jobs/ac2f3a7b-43f
 
 export default function LandingPage() {
   const [products, setProducts] = useState([]);
-  const heroCta = useABTest('hero_cta', ['Find Winning Products', 'Start Free', 'Try TrendScout Free']);
-  const finalCta = useABTest('final_cta', ['Find Winning Products', 'Start Free', 'Start Your Free Trial']);
+  const heroCta = useABTest('hero_cta', ['Start Free', 'Explore Trending Products', 'Try TrendScout Free']);
+  const finalCta = useABTest('final_cta', ['Start Free', 'Explore Trending Products', 'Try TrendScout Free']);
 
   useEffect(() => {
     fetch(`${API_URL}/api/public/trending-products?limit=3`)
@@ -52,12 +52,26 @@ export default function LandingPage() {
                 <span className="text-xs font-semibold text-indigo-700 tracking-wide">UK-first product intelligence</span>
               </div>
               <h1 className="font-manrope text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight text-slate-900 leading-[1.08]" data-testid="hero-headline">
-                Stop guessing.{' '}
-                <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Find products that actually sell in the UK.</span>
+                Find products that can{' '}
+                <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">actually sell in the UK.</span>
               </h1>
               <p className="mt-5 text-base sm:text-lg text-slate-500 leading-relaxed" data-testid="hero-subheadline">
-                Discover trending products, analyse competition, estimate UK viability, and make smarter launch decisions for Shopify, TikTok Shop, and Amazon UK &mdash; before you spend on ads or stock.
+                TrendScout helps UK ecommerce sellers discover product demand, analyse competition, and check commercial viability &mdash; before spending money on ads, stock, or supplier orders.
               </p>
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex items-start gap-2.5">
+                  <TrendingUp className="h-4 w-4 text-indigo-600 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-600"><strong className="text-slate-800">Trend detection</strong> &mdash; spot rising demand across TikTok, Amazon, and Shopify</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Shield className="h-4 w-4 text-indigo-600 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-600"><strong className="text-slate-800">Saturation analysis</strong> &mdash; see how crowded a niche is before entering</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <PoundSterling className="h-4 w-4 text-indigo-600 mt-0.5 shrink-0" />
+                  <span className="text-sm text-slate-600"><strong className="text-slate-800">UK viability</strong> &mdash; margins, VAT, shipping, and channel fit scored</span>
+                </div>
+              </div>
               <div className="mt-8 flex flex-col sm:flex-row items-start gap-3">
                 <Link to="/signup">
                   <Button
@@ -375,13 +389,37 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ═══ PROOF — SEE BEFORE SIGNUP ═══ */}
+      <section className="py-14 lg:py-16 bg-white border-y border-slate-100" data-testid="proof-section">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <RevealSection>
+            <div className="rounded-2xl bg-slate-50 border border-slate-200 p-8 sm:p-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-2">See the product first</p>
+                <h2 className="font-manrope text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  Want to see what TrendScout actually shows you?
+                </h2>
+                <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-lg">
+                  View a full sample product analysis — including UK Viability Score, margin estimates, channel fit, competition data, and AI summary. No signup needed.
+                </p>
+              </div>
+              <Link to="/sample-product-analysis" className="shrink-0">
+                <Button className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold px-6 h-11" data-testid="proof-cta" onClick={() => trackEvent(EVENTS.SAMPLE_ANALYSIS_CTA, { source: 'homepage_proof' })}>
+                  View Sample Analysis <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </RevealSection>
+        </div>
+      </section>
+
       {/* ═══ PRICING PREVIEW ═══ */}
       <section className="py-16 lg:py-20 bg-white" data-testid="pricing-preview-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <RevealSection className="text-center max-w-2xl mx-auto mb-12">
             <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Pricing</p>
             <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              One winning product pays for months of TrendScout
+              One good product decision pays for itself many times over
             </h2>
             <p className="mt-3 text-base text-slate-500">
               Start free. Upgrade when you're ready. Cancel anytime.

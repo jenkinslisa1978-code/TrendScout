@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -38,27 +38,43 @@
         <!-- Google Tag Manager / GA4: Set REACT_APP_GTM_ID (GTM-XXXXXXX) or REACT_APP_GA4_ID (G-XXXXXXXXXX) in .env -->
         <script>
           (function(){
-            // Google Tag Manager
-            var gtmId = '%REACT_APP_GTM_ID%';
-            if (gtmId && gtmId !== '' && !gtmId.startsWith('%')) {
-              var s = document.createElement('script');
-              s.async = true;
-              s.src = 'https://www.googletagmanager.com/gtm.js?id=' + gtmId;
-              var dl = window.dataLayer = window.dataLayer || [];
-              dl.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-              document.head.appendChild(s);
+            // Cookie consent check — only load analytics after explicit consent
+            var hasConsent = false;
+            try { hasConsent = localStorage.getItem('ts_cookie_consent') === 'accepted'; } catch(e) {}
+
+            function loadAnalytics() {
+              // Google Tag Manager
+              var gtmId = '%REACT_APP_GTM_ID%';
+              if (gtmId && gtmId !== '' && !gtmId.startsWith('%')) {
+                var s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://www.googletagmanager.com/gtm.js?id=' + gtmId;
+                var dl = window.dataLayer = window.dataLayer || [];
+                dl.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+                document.head.appendChild(s);
+              }
+              // Google Analytics 4 (standalone)
+              var gaId = '%REACT_APP_GA4_ID%';
+              if (gaId && gaId !== '' && !gaId.startsWith('%')) {
+                var g = document.createElement('script');
+                g.async = true;
+                g.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+                document.head.appendChild(g);
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){window.dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag('js', new Date());
+                gtag('config', gaId);
+              }
             }
-            // Google Analytics 4 (standalone)
-            var gaId = '%REACT_APP_GA4_ID%';
-            if (gaId && gaId !== '' && !gaId.startsWith('%')) {
-              var g = document.createElement('script');
-              g.async = true;
-              g.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
-              document.head.appendChild(g);
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){window.dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', gaId);
+
+            // Load immediately if already consented, otherwise wait for consent event
+            if (hasConsent) {
+              loadAnalytics();
+            } else {
+              window.addEventListener('ts_consent_granted', function() {
+                loadAnalytics();
+              }, { once: true });
             }
           })();
         </script>

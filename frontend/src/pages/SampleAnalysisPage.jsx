@@ -16,7 +16,7 @@ import {
 
 const PRODUCT = {
   name: 'Portable Neck Fan (Bladeless)',
-  image: null,
+  image: 'https://static.prod-images.emergentagent.com/jobs/173bdaf4-17db-477d-83bd-7b7fbed579b3/images/9c63ca952efdcd4067f65aadc7ea63d3a39abc374a28d42c9c251ffaeefcb9d1.png',
   category: 'Personal Electronics',
   launchScore: 74,
   viabilityScore: 78,
@@ -94,6 +94,26 @@ export default function SampleAnalysisPage() {
         schema={[
           webPageSchema('Sample Product Analysis', 'See how TrendScout analyses a real product for UK commercial viability.', '/sample-product-analysis'),
           breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'Sample Product Analysis' }]),
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: PRODUCT.name,
+            image: PRODUCT.image,
+            description: PRODUCT.aiSummary,
+            category: PRODUCT.category,
+            offers: {
+              '@type': 'AggregateOffer',
+              priceCurrency: 'GBP',
+              lowPrice: '18.99',
+              highPrice: '27.99',
+            },
+            review: {
+              '@type': 'Review',
+              author: { '@type': 'Organization', name: 'TrendScout' },
+              reviewBody: PRODUCT.aiSummary,
+              reviewRating: { '@type': 'Rating', ratingValue: String(PRODUCT.viabilityScore), bestRating: '100', worstRating: '0' },
+            },
+          },
         ]}
       />
       <div className="bg-white" data-testid="sample-analysis-page">
@@ -104,12 +124,21 @@ export default function SampleAnalysisPage() {
               <Eye className="h-3.5 w-3.5 text-indigo-600" />
               <span className="text-xs font-medium text-indigo-700">Sample analysis — see what TrendScout shows you</span>
             </div>
-            <h1 className="font-manrope text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight" data-testid="sample-headline">
-              Product Analysis: {PRODUCT.name}
-            </h1>
-            <p className="mt-3 text-base text-slate-500">
-              This is a sample product analysis showing the kind of intelligence TrendScout provides for every trending product. Real data. Real scoring. Real UK viability assessment.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+              {PRODUCT.image && (
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
+                  <img src={PRODUCT.image} alt={PRODUCT.name} className="w-full h-full object-cover" loading="eager" />
+                </div>
+              )}
+              <div>
+                <h1 className="font-manrope text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight" data-testid="sample-headline">
+                  Product Analysis: {PRODUCT.name}
+                </h1>
+                <p className="mt-3 text-base text-slate-500">
+                  This is a sample product analysis showing the intelligence TrendScout provides for every trending product. Real scoring methodology. Real UK viability assessment.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -320,12 +349,14 @@ export default function SampleAnalysisPage() {
           <div className="max-w-4xl mx-auto">
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Related</h3>
             <div className="flex flex-wrap gap-2">
-              <Link to="/trending-products" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Trending Products</Link>
+              <Link to="/trending-products" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Explore Trending Products</Link>
+              <Link to="/uk-product-viability-score" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">UK Viability Score Explained</Link>
               <Link to="/methodology" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Scoring Methodology</Link>
-              <Link to="/accuracy" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Accuracy Report</Link>
+              <Link to="/pricing" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">View Pricing</Link>
               <Link to="/how-it-works" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">How It Works</Link>
-              <Link to="/pricing" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Pricing</Link>
-              <Link to="/free-tools" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Free Tools</Link>
+              <Link to="/for-shopify-sellers" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">For Shopify Sellers</Link>
+              <Link to="/for-tiktok-shop-uk" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">For TikTok Shop UK</Link>
+              <Link to="/for-amazon-uk-sellers" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">For Amazon UK Sellers</Link>
             </div>
           </div>
         </section>

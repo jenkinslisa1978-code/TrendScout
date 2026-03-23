@@ -46,9 +46,13 @@ const scheduleFlush = () => {
 };
 
 /**
- * Send event to GA4 via gtag() if available.
+ * Send event to GA4 via gtag() if available AND user has consented.
  */
 const sendToGA4 = (eventName, params = {}) => {
+  try {
+    const consent = localStorage.getItem('ts_cookie_consent');
+    if (consent !== 'accepted') return; // Only fire GA4 after explicit consent
+  } catch { return; }
   if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
     window.gtag('event', eventName, {
       ...params,

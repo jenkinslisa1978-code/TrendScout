@@ -10,7 +10,7 @@ _CSP_ENFORCE = os.environ.get("FEATURE_CSP_ENFORCE", "false").lower() == "true"
 
 CSP_DIRECTIVES = "; ".join([
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://assets.emergent.sh https://us.i.posthog.com https://*.posthog.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://us.i.posthog.com https://*.posthog.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",

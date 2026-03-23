@@ -205,9 +205,9 @@ export default function ViabilityScorePage() {
                   Start Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/trending-products">
-                <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg font-medium px-6 h-11" data-testid="viability-cta-products">
-                  Browse Trending Products
+              <Link to="/sample-product-analysis">
+                <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg font-medium px-6 h-11" data-testid="viability-cta-sample">
+                  View Sample Analysis
                 </Button>
               </Link>
             </div>
@@ -219,10 +219,12 @@ export default function ViabilityScorePage() {
           <div className="max-w-4xl mx-auto">
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Related</h3>
             <div className="flex flex-wrap gap-2">
+              <Link to="/sample-product-analysis" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Sample Product Analysis</Link>
               <Link to="/how-it-works" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">How It Works</Link>
               <Link to="/uk-product-research" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">UK Product Research</Link>
-              <Link to="/pricing" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Pricing</Link>
-              <Link to="/free-tools" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Free Tools</Link>
+              <Link to="/trending-products" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">Trending Products</Link>
+              <Link to="/pricing" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">View Pricing</Link>
+              <Link to="/for-shopify-sellers" className="text-sm text-indigo-600 bg-indigo-50 rounded-md px-3 py-1.5 font-medium">For Shopify Sellers</Link>
             </div>
           </div>
         </section>
