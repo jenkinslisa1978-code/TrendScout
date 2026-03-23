@@ -1,27 +1,22 @@
 User-agent: *
 Allow: /
 
-Disallow: /dashboard
-Disallow: /dashboard/
-Disallow: /admin
-Disallow: /admin/
-Disallow: /api/
-Disallow: /settings
-Disallow: /settings/
-Disallow: /onboarding
-Disallow: /saved-products
+# Block private app routes
 Disallow: /login
 Disallow: /signup
-Disallow: /reset-password
-Disallow: /forgot-password
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /settings
+Disallow: /api/
+Disallow: /onboarding
 Disallow: /verify-email
-Disallow: /notification
-Disallow: /ad-tests
-Disallow: /radar-alerts
-Disallow: /competitors
-Disallow: /launch-hub
-Disallow: /profitability
-Disallow: /search
-Disallow: /tiktok-intelligence
+Disallow: /digest
+
+# Allow public assets
+Allow: /static/
+Allow: /sitemap.xml
+Allow: /robots.txt
+Allow: /favicon.ico
+Allow: /og-image.png
 
 Sitemap: https://trendscout.click/sitemap.xml
