@@ -1,8 +1,8 @@
 /**
- * Analytics Service — Tracks user events via internal batch API + GA4 gtag bridge.
+ * Analytics Service — Tracks user events via internal batch API + GTM dataLayer.
  * 
  * Internal events batch to /api/analytics/batch every 3 seconds.
- * GA4 events fire via window.gtag() when GA4 is configured.
+ * GTM events push to window.dataLayer; GA4 (G-S9J8EPWKF9) is configured inside GTM.
  */
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -46,15 +46,17 @@ const scheduleFlush = () => {
 };
 
 /**
- * Send event to GA4 via gtag() if available AND user has consented.
+ * Push event to dataLayer for GTM to pick up (GA4 is configured inside GTM).
+ * Only pushes if user has consented to analytics cookies.
  */
-const sendToGA4 = (eventName, params = {}) => {
+const sendToDataLayer = (eventName, params = {}) => {
   try {
     const consent = localStorage.getItem('ts_cookie_consent');
-    if (consent !== 'accepted') return; // Only fire GA4 after explicit consent
+    if (consent !== 'accepted') return;
   } catch { return; }
-  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
-    window.gtag('event', eventName, {
+  if (typeof window !== 'undefined' && window.dataLayer) {
+    window.dataLayer.push({
+      event: eventName,
       ...params,
       page_path: window.location.pathname,
     });
@@ -76,8 +78,8 @@ export const trackEvent = (event, properties = {}) => {
   });
   scheduleFlush();
 
-  // GA4 bridge
-  sendToGA4(event, properties);
+  // GTM dataLayer bridge (GA4 is managed inside GTM)
+  sendToDataLayer(event, properties);
 };
 
 /**

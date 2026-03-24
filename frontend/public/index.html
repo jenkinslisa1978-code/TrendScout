@@ -35,45 +35,41 @@
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
         <title>TrendScout | AI Product Research for UK Ecommerce Sellers</title>
-        <!-- Google Tag Manager / GA4: Set REACT_APP_GTM_ID (GTM-XXXXXXX) or REACT_APP_GA4_ID (G-XXXXXXXXXX) in .env -->
+        <!-- Google Tag Manager: consent-gated. GA4 (G-S9J8EPWKF9) is configured inside GTM, not loaded separately. -->
         <script>
+          window.dataLayer = window.dataLayer || [];
+          // Default consent state: deny analytics until user accepts
+          window.dataLayer.push({
+            'event': 'consent_default',
+            'analytics_consent': 'denied'
+          });
+
           (function(){
-            // Cookie consent check — only load analytics after explicit consent
+            var gtmId = '%REACT_APP_GTM_ID%';
+            if (!gtmId || gtmId === '' || gtmId.startsWith('%')) return;
+
             var hasConsent = false;
             try { hasConsent = localStorage.getItem('ts_cookie_consent') === 'accepted'; } catch(e) {}
 
-            function loadAnalytics() {
-              // Google Tag Manager
-              var gtmId = '%REACT_APP_GTM_ID%';
-              if (gtmId && gtmId !== '' && !gtmId.startsWith('%')) {
-                var s = document.createElement('script');
-                s.async = true;
-                s.src = 'https://www.googletagmanager.com/gtm.js?id=' + gtmId;
-                var dl = window.dataLayer = window.dataLayer || [];
-                dl.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-                document.head.appendChild(s);
-              }
-              // Google Analytics 4 (standalone)
-              var gaId = '%REACT_APP_GA4_ID%';
-              if (gaId && gaId !== '' && !gaId.startsWith('%')) {
-                var g = document.createElement('script');
-                g.async = true;
-                g.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
-                document.head.appendChild(g);
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){window.dataLayer.push(arguments);}
-                window.gtag = gtag;
-                gtag('js', new Date());
-                gtag('config', gaId);
-              }
+            function loadGTM() {
+              // Signal consent granted to GTM/dataLayer
+              window.dataLayer.push({
+                'event': 'consent_update',
+                'analytics_consent': 'granted'
+              });
+              // Load GTM container script
+              var s = document.createElement('script');
+              s.async = true;
+              s.src = 'https://www.googletagmanager.com/gtm.js?id=' + gtmId + '&l=dataLayer';
+              document.head.appendChild(s);
+              window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
             }
 
-            // Load immediately if already consented, otherwise wait for consent event
             if (hasConsent) {
-              loadAnalytics();
+              loadGTM();
             } else {
               window.addEventListener('ts_consent_granted', function() {
-                loadAnalytics();
+                loadGTM();
               }, { once: true });
             }
           })();
@@ -82,10 +78,8 @@
 
     </head>
     <body>
-        <!-- Google Tag Manager noscript fallback -->
-        <noscript>
-            <iframe src="https://www.googletagmanager.com/ns.html?id=%REACT_APP_GTM_ID%" height="0" width="0" style="display:none;visibility:hidden"></iframe>
-        </noscript>
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5V7G36GN" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <noscript>
             <style>
                 .nojs-shell { font-family:'Manrope','Inter',system-ui,sans-serif; max-width:720px; margin:0 auto; padding:40px 24px; color:#1e293b; }
