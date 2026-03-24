@@ -16,6 +16,12 @@ AI product research and launch intelligence for UK ecommerce sellers.
 
 ## Completed Work
 
+### QA Audit & Bug Fixes (March 2026)
+- Fixed mobile horizontal overflow on homepage (P1) - applied `overflow-x: clip` to body, `flex-wrap` to footer links
+- Verified login error handling works correctly (toast shows on invalid credentials)
+- Full end-to-end QA audit completed: all routes, APIs, forms, navigation, mobile responsiveness, cookie consent, legal pages - all passing
+- Test report: /app/test_reports/iteration_120.json (100% pass rate)
+
 ### GTM Integration (March 2026)
 - GTM container GTM-5V7G36GN installed in index.html head (consent-gated)
 - GTM noscript iframe immediately after body tag
@@ -39,8 +45,8 @@ AI product research and launch intelligence for UK ecommerce sellers.
 - Stripe subscriptions, admin tools, OAuth, WebSocket notifications
 
 ## Remaining Tasks
-- P1: Configure GA4 tag inside GTM console (G-S9J8EPWKF9)
-- P1: Configure Resend webhook URL
+- P1: Configure GA4 tag inside GTM console (G-S9J8EPWKF9) - User task
+- P1: Configure Resend webhook URL - User task
 - P2: OAuth data sync from connected stores
 - P3: Token refresh logic
 
