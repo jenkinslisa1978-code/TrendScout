@@ -52,7 +52,7 @@ export default function LandingLayout({ children }) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] overflow-x-hidden">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100/80">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3 lg:px-8">
@@ -257,7 +257,7 @@ export default function LandingLayout({ children }) {
 
           <div className="border-t border-slate-100 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-slate-400">&copy; {new Date().getFullYear()} TrendScout. All rights reserved.</p>
-            <div className="flex items-center gap-5 text-xs text-slate-400">
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-400">
               <Link to="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-slate-600 transition-colors">Terms of Service</Link>
               <Link to="/cookie-policy" className="hover:text-slate-600 transition-colors">Cookies</Link>
