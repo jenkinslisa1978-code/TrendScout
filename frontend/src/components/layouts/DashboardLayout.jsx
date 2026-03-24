@@ -30,6 +30,7 @@ const navigation = [
   { name: 'Product Sourcing', href: '/cj-sourcing', icon: ShoppingBag },
   { name: 'Saved Products', href: '/saved', icon: Bookmark },
   { name: 'My Stores', href: '/stores', icon: Store },
+  { name: 'Shopify Products', href: '/shopify-products', icon: ShoppingBag },
   { name: 'Connections', href: '/settings/connections', icon: Link2 },
   { name: 'API Access', href: '/api-docs', icon: Shield },
   { name: 'Reports', href: '/reports', icon: FileText },

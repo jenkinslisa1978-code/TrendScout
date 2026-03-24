@@ -198,9 +198,17 @@ async def oauth_callback(request: Request):
 
     logger.info(f"Shopify OAuth completed for user {user_id}, shop {shop}")
 
-    # 5. Redirect to frontend connections page
+    # 5. Register webhooks for real-time sync
+    try:
+        from routes.shopify_webhooks import register_webhooks
+        registered = await register_webhooks(shop, access_token)
+        logger.info(f"Registered {len(registered)} webhooks for {shop}: {registered}")
+    except Exception as e:
+        logger.warning(f"Webhook registration failed for {shop}: {e}")
+
+    # 6. Redirect to frontend connections page with success
     frontend_url = os.environ.get("SITE_URL", "")
-    return RedirectResponse(url=f"{frontend_url}/settings/connections?shopify=connected")
+    return RedirectResponse(url=f"{frontend_url}/settings/connections?oauth_success=shopify")
 
 
 @shopify_oauth_router.get("/oauth/status")

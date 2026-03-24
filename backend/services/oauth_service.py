@@ -310,3 +310,120 @@ def get_platform_setup_info(platform: str, site_url: str) -> dict:
         "instructions": config["setup_instructions"].format(redirect_uri=redirect_uri),
         "connection_type": config["connection_type"],
     }
+
+
+async def refresh_platform_token(user_id: str, platform: str) -> str | None:
+    """
+    Refresh an expired OAuth token for a platform.
+    Returns the new access token or None if refresh fails.
+    Shopify offline tokens don't expire — only call this for platforms with refresh_token.
+    """
+    config = OAUTH_PLATFORMS.get(platform)
+    if not config:
+        return None
+
+    conn = await db.platform_connections.find_one(
+        {"user_id": user_id, "platform": platform},
+        {"_id": 0},
+    )
+    if not conn or not conn.get("refresh_token_encrypted"):
+        return None
+
+    refresh_token = decrypt_token(conn["refresh_token_encrypted"])
+    token_url = config["token_url"]
+
+    # Get credentials (app-level or stored)
+    env_cid, env_csec = get_platform_credentials(platform)
+    client_id = env_cid or conn.get("oauth_data", {}).get("client_id", "")
+    client_secret = env_csec or ""
+
+    if not client_id or not client_secret:
+        logger.warning(f"Cannot refresh token for {platform}: missing credentials")
+        return None
+
+    payload = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(token_url, data=payload)
+            if resp.status_code not in (200, 201):
+                logger.error(f"Token refresh failed for {platform}: {resp.status_code} {resp.text[:200]}")
+                # Mark connection as needing reauth
+                await db.platform_connections.update_one(
+                    {"user_id": user_id, "platform": platform},
+                    {"$set": {"status": "expired", "last_refresh_error": resp.text[:200]}},
+                )
+                return None
+            token_data = resp.json()
+    except Exception as e:
+        logger.error(f"Token refresh error for {platform}: {e}")
+        return None
+
+    new_access_token = token_data.get("access_token")
+    new_refresh_token = token_data.get("refresh_token")
+    if not new_access_token:
+        return None
+
+    update = {
+        "access_token": new_access_token,
+        "access_token_encrypted": encrypt_token(new_access_token),
+        "status": "active",
+        "oauth_data.refreshed_at": datetime.now(timezone.utc).isoformat(),
+        "oauth_data.expires_in": token_data.get("expires_in"),
+    }
+    if new_refresh_token:
+        update["refresh_token_encrypted"] = encrypt_token(new_refresh_token)
+
+    await db.platform_connections.update_one(
+        {"user_id": user_id, "platform": platform},
+        {"$set": update},
+    )
+
+    logger.info(f"Token refreshed for user {user_id}, platform {platform}")
+    return new_access_token
+
+
+async def get_valid_token(user_id: str, platform: str) -> str | None:
+    """
+    Get a valid access token for a platform, refreshing if needed.
+    Returns the access token or None if no valid token is available.
+    """
+    conn = await db.platform_connections.find_one(
+        {"user_id": user_id, "platform": platform},
+        {"_id": 0},
+    )
+    if not conn:
+        return None
+
+    access_token = conn.get("access_token")
+    if not access_token and conn.get("access_token_encrypted"):
+        access_token = decrypt_token(conn["access_token_encrypted"])
+
+    # Check if token might be expired (if expires_in was tracked)
+    expires_in = conn.get("oauth_data", {}).get("expires_in")
+    connected_at = conn.get("connected_at") or conn.get("oauth_data", {}).get("refreshed_at")
+    if expires_in and connected_at:
+        from dateutil.parser import parse as parse_dt
+        try:
+            connected_time = parse_dt(connected_at)
+            elapsed = (datetime.now(timezone.utc) - connected_time).total_seconds()
+            if elapsed > (expires_in - 300):  # Refresh 5 min before expiry
+                refreshed = await refresh_platform_token(user_id, platform)
+                if refreshed:
+                    return refreshed
+        except Exception:
+            pass
+
+    if conn.get("status") == "expired":
+        # Try refreshing
+        refreshed = await refresh_platform_token(user_id, platform)
+        if refreshed:
+            return refreshed
+        return None
+
+    return access_token

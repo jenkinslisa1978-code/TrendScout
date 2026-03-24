@@ -755,9 +755,21 @@ async def check_connection_health(
                 message = str(e)[:100]
 
             # Update connection status in DB
+            new_status = status
+            # If error with 401, try token refresh
+            if status == "error" and "401" in message:
+                from services.oauth_service import refresh_platform_token
+                refreshed = await refresh_platform_token(user_id, platform)
+                if refreshed:
+                    new_status = "refreshed"
+                    message = "Token was expired but has been refreshed"
+                else:
+                    new_status = "expired"
+                    message = "Token expired — please reconnect"
+
             await db.platform_connections.update_one(
                 {"user_id": user_id, "platform": platform, "connection_type": conn_type},
-                {"$set": {"health_status": status, "health_checked_at": datetime.now(timezone.utc).isoformat(), "health_message": message}},
+                {"$set": {"health_status": new_status, "health_checked_at": datetime.now(timezone.utc).isoformat(), "health_message": message}},
             )
 
             results.append({

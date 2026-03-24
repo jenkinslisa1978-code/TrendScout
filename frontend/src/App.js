@@ -71,6 +71,7 @@ const StoresPage = lazy(() => import("@/pages/StoresPage"));
 const StoreDetailPage = lazy(() => import("@/pages/StoreDetailPage"));
 const StorePreviewPage = lazy(() => import("@/pages/StorePreviewPage"));
 const ShopifyAnalyzerPage = lazy(() => import("@/pages/ShopifyAnalyzerPage"));
+const ShopifyProductsPage = lazy(() => import("@/pages/ShopifyProductsPage"));
 const ShopifyAppPage = lazy(() => import("@/pages/ShopifyAppPage"));
 const ShopifyEmbeddedDashboard = lazy(() => import("@/pages/ShopifyEmbeddedDashboard"));
 
@@ -412,6 +413,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <StoreDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/shopify-products"
+        element={
+          <ProtectedRoute>
+            <ShopifyProductsPage />
           </ProtectedRoute>
         }
       />
