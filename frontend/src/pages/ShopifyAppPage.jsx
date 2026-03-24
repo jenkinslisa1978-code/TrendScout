@@ -25,10 +25,10 @@ const FEATURES = [
 ];
 
 const INSTALL_STEPS = [
-  { step: 1, title: 'Create a Shopify App', desc: 'In your Shopify Admin, go to Settings > Apps and sales channels > Develop apps > Create an app.' },
-  { step: 2, title: 'Configure API Scopes', desc: 'Under "Configuration", add: read_products, write_products, read_inventory, write_inventory.' },
-  { step: 3, title: 'Install the App', desc: 'Click "Install app" and confirm. Copy the Admin API access token shown.' },
-  { step: 4, title: 'Connect in TrendScout', desc: 'Go to Settings > Connections, enter your store URL and paste the access token.' },
+  { step: 1, title: 'Go to Connections', desc: 'In your TrendScout dashboard, navigate to Connections in the sidebar.' },
+  { step: 2, title: 'Enter Your Store Domain', desc: 'Type your Shopify store domain (e.g. your-store.myshopify.com) into the Shopify card.' },
+  { step: 3, title: 'Authorise on Shopify', desc: 'Click "Connect with Shopify" — you\'ll be redirected to Shopify to approve the connection.' },
+  { step: 4, title: 'Start Syncing', desc: 'Once connected, go to Shopify Products in the sidebar to sync and manage your store\'s products.' },
 ];
 
 function FeatureCard({ icon: Icon, title, desc }) {
@@ -189,7 +189,7 @@ export default function ShopifyAppPage() {
               <Shield className="h-4 w-4 text-green-600" /> Security
             </h4>
             <p className="text-xs text-slate-500 mt-1">
-              Your Admin API access token is encrypted at rest using Fernet symmetric encryption. We never store tokens in plaintext. All API communication uses HTTPS.
+              Your OAuth access tokens are obtained securely via Shopify's consent flow and encrypted at rest using Fernet symmetric encryption. We never store tokens in plaintext. All API communication uses HTTPS.
             </p>
           </div>
         </div>
