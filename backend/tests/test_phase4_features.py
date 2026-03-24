@@ -9,7 +9,7 @@ import json
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://release-candidate-4.preview.emergentagent.com"
+    BASE_URL = "https://bug-fixes-preview-1.preview.emergentagent.com"
 
 TEST_EMAIL = "jenkinslisa1978@gmail.com"
 TEST_PASSWORD = "admin123456"
