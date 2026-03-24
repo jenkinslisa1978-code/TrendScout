@@ -4,6 +4,7 @@ Handles state management, token exchange, and encrypted storage.
 """
 import secrets
 import logging
+import os
 import httpx
 from typing import Optional, Dict
 from datetime import datetime, timezone
@@ -25,6 +26,7 @@ OAUTH_PLATFORMS = {
         "scopes": "read_products,write_products,read_inventory,write_inventory",
         "requires_shop_domain": True,
         "connection_type": "store",
+        "env_prefix": "SHOPIFY",
         "setup_url": "https://partners.shopify.com",
         "setup_instructions": "1. Go to partners.shopify.com and create a Partner account\n2. Create a new App\n3. Under 'App setup', note your Client ID and Client Secret\n4. Add your redirect URI: {redirect_uri}\n5. Select scopes: read_products, write_products, read_inventory, write_inventory",
     },
@@ -36,6 +38,7 @@ OAUTH_PLATFORMS = {
         "requires_shop_domain": False,
         "connection_type": "store",
         "uses_pkce": True,
+        "env_prefix": "ETSY",
         "setup_url": "https://www.etsy.com/developers",
         "setup_instructions": "1. Go to etsy.com/developers and sign in\n2. Click 'Create a New App'\n3. Fill in app name: TrendScout, description: Ecommerce intelligence\n4. Note your Keystring (Client ID)\n5. Add redirect URI: {redirect_uri}",
     },
@@ -46,6 +49,7 @@ OAUTH_PLATFORMS = {
         "scopes": "",
         "requires_shop_domain": False,
         "connection_type": "social",
+        "env_prefix": "AMAZON_SELLER",
         "setup_url": "https://sellercentral.amazon.co.uk/apps/manage",
         "setup_instructions": "1. Go to sellercentral.amazon.co.uk → Apps & Services → Develop Apps\n2. Register as a developer if not already\n3. Create a new app, select SP-API\n4. Note your Client ID (LWA App ID) and Client Secret\n5. Add redirect URI: {redirect_uri}",
     },
@@ -56,6 +60,7 @@ OAUTH_PLATFORMS = {
         "scopes": "product.read,product.edit,order.read",
         "requires_shop_domain": False,
         "connection_type": "social",
+        "env_prefix": "TIKTOK_SHOP",
         "setup_url": "https://partner.tiktokshop.com",
         "setup_instructions": "1. Go to partner.tiktokshop.com and register as a developer\n2. Create a new app\n3. Note your App Key (Client ID) and App Secret\n4. Add redirect URI: {redirect_uri}\n5. Request permissions: product.read, product.edit, order.read",
     },
@@ -66,6 +71,7 @@ OAUTH_PLATFORMS = {
         "scopes": "pages_manage_posts,instagram_basic,instagram_content_publish,ads_management,catalog_management",
         "requires_shop_domain": False,
         "connection_type": "ads",
+        "env_prefix": "META",
         "setup_url": "https://developers.facebook.com",
         "setup_instructions": "1. Go to developers.facebook.com → My Apps → Create App\n2. Select 'Business' type\n3. Add Facebook Login product\n4. Under Settings → Basic, note your App ID (Client ID) and App Secret\n5. Under Facebook Login → Settings, add redirect URI: {redirect_uri}\n6. Under Permissions, request: pages_manage_posts, instagram_basic, ads_management",
     },
@@ -76,6 +82,7 @@ OAUTH_PLATFORMS = {
         "scopes": "https://www.googleapis.com/auth/adwords",
         "requires_shop_domain": False,
         "connection_type": "ads",
+        "env_prefix": "GOOGLE_ADS",
         "setup_url": "https://console.cloud.google.com",
         "setup_instructions": "1. Go to console.cloud.google.com → Create/select a project\n2. Enable the Google Ads API\n3. Go to Credentials → Create Credentials → OAuth 2.0 Client ID\n4. Select 'Web application'\n5. Add redirect URI: {redirect_uri}\n6. Note your Client ID and Client Secret\n7. Apply for a Google Ads developer token at ads.google.com → Tools → API Centre",
     },
@@ -86,10 +93,31 @@ OAUTH_PLATFORMS = {
         "scopes": "",
         "requires_shop_domain": False,
         "connection_type": "ads",
+        "env_prefix": "TIKTOK_ADS",
         "setup_url": "https://business-api.tiktok.com/portal/apps",
         "setup_instructions": "1. Go to business-api.tiktok.com → Create an app\n2. Select Marketing API\n3. Note your App ID and Secret\n4. Add redirect URI: {redirect_uri}\n5. Submit for review",
     },
 }
+
+
+def get_platform_credentials(platform: str) -> tuple:
+    """Get client_id and client_secret from env vars for a platform.
+    Returns (client_id, client_secret) or (None, None) if not configured."""
+    config = OAUTH_PLATFORMS.get(platform)
+    if not config:
+        return None, None
+    prefix = config.get("env_prefix", platform.upper())
+    client_id = os.environ.get(f"{prefix}_CLIENT_ID", "")
+    client_secret = os.environ.get(f"{prefix}_CLIENT_SECRET", "")
+    if client_id and client_secret:
+        return client_id, client_secret
+    return None, None
+
+
+def is_oauth_ready(platform: str) -> bool:
+    """Check if a platform has app-level OAuth credentials configured."""
+    cid, csec = get_platform_credentials(platform)
+    return bool(cid and csec)
 
 
 async def initiate_oauth(
@@ -125,7 +153,8 @@ async def initiate_oauth(
     # Handle PKCE if needed
     code_verifier = None
     if config.get("uses_pkce"):
-        import hashlib, base64
+        import hashlib
+        import base64
         code_verifier = secrets.token_urlsafe(64)
         code_challenge = base64.urlsafe_b64encode(
             hashlib.sha256(code_verifier.encode()).digest()

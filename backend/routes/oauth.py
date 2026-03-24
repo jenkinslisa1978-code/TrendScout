@@ -1,6 +1,8 @@
 """
 Generic OAuth routes for all supported platforms.
-Each platform uses: POST /api/oauth/{platform}/init → GET /api/oauth/{platform}/callback
+Supports two modes per platform:
+  1. App-level credentials (env vars) — user just clicks Connect
+  2. User-provided credentials — user enters their own client_id/secret
 """
 from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from fastapi.responses import RedirectResponse
@@ -15,6 +17,8 @@ from services.oauth_service import (
     initiate_oauth,
     handle_oauth_callback,
     get_platform_setup_info,
+    get_platform_credentials,
+    is_oauth_ready,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,27 +29,26 @@ SITE_URL = os.environ.get("SITE_URL", os.environ.get("REACT_APP_BACKEND_URL", ""
 
 
 class OAuthInitRequest(BaseModel):
-    client_id: str
-    client_secret: str
-    shop_domain: Optional[str] = None  # Required for Shopify
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    shop_domain: Optional[str] = None
 
 
 @oauth_router.get("/platforms")
 async def get_oauth_platforms():
-    """List all supported OAuth platforms with setup instructions."""
+    """List all supported OAuth platforms with setup instructions and readiness status."""
     site_url = SITE_URL
     platforms = {}
     for key, config in OAUTH_PLATFORMS.items():
         info = get_platform_setup_info(key, site_url)
-        # Check if credentials are configured
-        env_prefix = key.upper().replace("-", "_")
-        has_client_id = bool(os.environ.get(f"{env_prefix}_CLIENT_ID", ""))
-        has_client_secret = bool(os.environ.get(f"{env_prefix}_CLIENT_SECRET", ""))
+        oauth_ready = is_oauth_ready(key)
 
         platforms[key] = {
             **info,
-            "configured": has_client_id and has_client_secret,
+            "configured": oauth_ready,
+            "oauth_ready": oauth_ready,
             "requires_shop_domain": config.get("requires_shop_domain", False),
+            "connection_type": config.get("connection_type", "store"),
         }
     return {"platforms": platforms}
 
@@ -58,8 +61,8 @@ async def init_platform_oauth(
 ):
     """
     Start OAuth flow for a platform.
-    User provides their own client_id and client_secret.
-    Returns the OAuth authorization URL to redirect the user to.
+    If TrendScout has app-level credentials, user doesn't need to provide any.
+    Otherwise, user provides their own client_id and client_secret.
     """
     if platform not in OAUTH_PLATFORMS:
         raise HTTPException(status_code=400, detail=f"Unsupported platform: {platform}. Supported: {list(OAUTH_PLATFORMS.keys())}")
@@ -68,14 +71,25 @@ async def init_platform_oauth(
     if config.get("requires_shop_domain") and not req.shop_domain:
         raise HTTPException(status_code=400, detail="shop_domain is required for this platform")
 
+    # Try app-level credentials first, then user-provided
+    env_cid, env_csec = get_platform_credentials(platform)
+    client_id = env_cid or req.client_id
+    client_secret = env_csec or req.client_secret
+
+    if not client_id or not client_secret:
+        raise HTTPException(
+            status_code=400,
+            detail="This platform requires credentials. Provide client_id and client_secret, or ask your admin to configure them.",
+        )
+
     redirect_uri = f"{SITE_URL}/api/oauth/{platform}/callback"
 
     try:
         result = await initiate_oauth(
             platform=platform,
             user_id=current_user.user_id,
-            client_id=req.client_id,
-            client_secret=req.client_secret,
+            client_id=client_id,
+            client_secret=client_secret,
             redirect_uri=redirect_uri,
             shop_domain=req.shop_domain,
         )
@@ -111,7 +125,6 @@ async def platform_oauth_callback(
         )
 
     if not code or not state:
-        # Some platforms use different param names
         params = dict(request.query_params)
         code = code or params.get("auth_code") or params.get("authorization_code")
         state = state or params.get("state")

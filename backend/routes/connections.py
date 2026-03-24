@@ -135,12 +135,29 @@ SUPPORTED_SOCIAL = {
 
 @connections_router.get("/platforms")
 async def get_supported_platforms():
-    """Get all supported platforms for stores, ads, suppliers, and social"""
+    """Get all supported platforms for stores, ads, suppliers, and social.
+    Includes oauth_ready flag for platforms with app-level credentials."""
+    from services.oauth_service import is_oauth_ready
+
+    # Map connection platform keys to oauth platform keys
+    OAUTH_MAP = {
+        "shopify": "shopify", "etsy": "etsy",
+        "meta": "meta", "tiktok": "tiktok_ads", "google": "google_ads",
+    }
+
+    def enrich(key, v):
+        oauth_key = OAUTH_MAP.get(key)
+        return {
+            "name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"],
+            "oauth_ready": is_oauth_ready(oauth_key) if oauth_key else False,
+            "oauth_key": oauth_key,
+        }
+
     return {
-        "stores": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"]} for k, v in SUPPORTED_STORES.items()},
-        "ads": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"]} for k, v in SUPPORTED_AD_PLATFORMS.items()},
-        "suppliers": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"]} for k, v in SUPPORTED_SUPPLIERS.items()},
-        "social": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"]} for k, v in SUPPORTED_SOCIAL.items()},
+        "stores": {k: enrich(k, v) for k, v in SUPPORTED_STORES.items()},
+        "ads": {k: enrich(k, v) for k, v in SUPPORTED_AD_PLATFORMS.items()},
+        "suppliers": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"], "oauth_ready": False} for k, v in SUPPORTED_SUPPLIERS.items()},
+        "social": {k: {"name": v["name"], "fields": v["fields"], "help": v["help"], "url": v["url"], "oauth_ready": False} for k, v in SUPPORTED_SOCIAL.items()},
     }
 
 

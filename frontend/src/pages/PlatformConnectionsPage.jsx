@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Store, Megaphone, Plus, Check, X, ExternalLink, Trash2,
-  ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse, Truck, KeyRound,
+  ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse, Truck, KeyRound, RefreshCw,
 } from 'lucide-react';
 import api, { apiGet, apiPost, apiDelete } from '@/lib/api';
 import { toast } from 'sonner';
@@ -139,9 +139,9 @@ export default function PlatformConnectionsPage() {
   };
 
   const [shopifyDomain, setShopifyDomain] = useState('');
-  const [shopifyAccessToken, setShopifyAccessToken] = useState('');
   const [shopifyLoading, setShopifyLoading] = useState(false);
   const [shopifyError, setShopifyError] = useState('');
+  const [syncLoading, setSyncLoading] = useState(false);
 
   // OAuth state
   const [oauthPlatforms, setOauthPlatforms] = useState({});
@@ -218,7 +218,7 @@ export default function PlatformConnectionsPage() {
   };
 
   const handleShopifyConnect = async () => {
-    if (!shopifyDomain.trim() || !shopifyAccessToken.trim()) return;
+    if (!shopifyDomain.trim()) return;
     setShopifyLoading(true);
     setShopifyError('');
     try {
@@ -226,23 +226,52 @@ export default function PlatformConnectionsPage() {
       if (!domain.endsWith('.myshopify.com')) {
         domain = `${domain}.myshopify.com`;
       }
-      const response = await api.post('/api/connections/store', {
-        platform: 'shopify',
-        store_url: `https://${domain}`,
-        access_token: shopifyAccessToken.trim(),
-      });
-      if (!response.ok || !response.data.success) {
-        setShopifyError(response.data.detail || response.data.error?.message || 'Failed to connect Shopify store');
-        return;
+      // Use OAuth flow — backend uses TrendScout's app credentials
+      const res = await apiPost('/api/shopify/oauth/init', { shop_domain: domain });
+      const data = await res.json();
+      if (data.oauth_url) {
+        window.location.href = data.oauth_url;
+      } else {
+        setShopifyError(data.detail || 'Failed to start Shopify connection');
       }
-      setShopifyDomain('');
-      setShopifyAccessToken('');
-      fetchData();
     } catch (err) {
       console.error('Shopify connect error:', err);
       setShopifyError('Failed to connect to Shopify. Please try again.');
     } finally {
       setShopifyLoading(false);
+    }
+  };
+
+  const handleSyncProducts = async () => {
+    setSyncLoading(true);
+    try {
+      const res = await apiPost('/api/shopify/sync-products');
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Synced ${data.synced_count} products from Shopify`);
+      } else {
+        toast.error(data.error || 'Sync failed');
+      }
+    } catch {
+      toast.error('Product sync failed');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleOAuthConnect = async (key, platform) => {
+    // For oauth_ready platforms (non-Shopify), use the generic OAuth init
+    try {
+      const oauthKey = platform.oauth_key || key;
+      const res = await apiPost(`/api/oauth/${oauthKey}/init`, {});
+      const data = await res.json();
+      if (data.oauth_url) {
+        window.location.href = data.oauth_url;
+      } else {
+        toast.error(data.detail || `Failed to start ${platform.name} connection`);
+      }
+    } catch {
+      toast.error(`Failed to connect to ${platform.name}`);
     }
   };
 
@@ -340,9 +369,24 @@ export default function PlatformConnectionsPage() {
                     <div className="flex gap-2">
                       {connected ? (
                         <>
-                          <Button variant="outline" size="sm" className="flex-1 text-xs" disabled>
-                            <Check className="h-3 w-3 mr-1" /> Connected
-                          </Button>
+                          {key === 'shopify' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-xs"
+                              onClick={handleSyncProducts}
+                              disabled={syncLoading}
+                              data-testid="sync-shopify-btn"
+                            >
+                              {syncLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                              {syncLoading ? 'Syncing...' : 'Sync Products'}
+                            </Button>
+                          )}
+                          {key !== 'shopify' && (
+                            <Button variant="outline" size="sm" className="flex-1 text-xs" disabled>
+                              <Check className="h-3 w-3 mr-1" /> Connected
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -353,28 +397,19 @@ export default function PlatformConnectionsPage() {
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </>
-                      ) : key === 'shopify' ? (
+                      ) : platform.oauth_ready ? (
                         <div className="w-full space-y-2">
-                          <input
-                            type="text"
-                            placeholder="your-store.myshopify.com"
-                            value={shopifyDomain}
-                            onChange={(e) => setShopifyDomain(e.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            data-testid="shopify-domain-input"
-                          />
-                          <input
-                            type="password"
-                            placeholder="Admin API access token"
-                            value={shopifyAccessToken}
-                            onChange={(e) => setShopifyAccessToken(e.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            data-testid="shopify-access-token-input"
-                          />
-                          <p className="text-[10px] text-slate-400 leading-relaxed">
-                            In your Shopify admin: <span className="font-medium text-slate-500">Settings &gt; Apps &gt; Develop apps &gt; Create app &gt; Configure Admin API scopes &gt; Install</span>, then copy the Admin API access token.
-                          </p>
-                          {shopifyError && (
+                          {key === 'shopify' && (
+                            <input
+                              type="text"
+                              placeholder="your-store.myshopify.com"
+                              value={shopifyDomain}
+                              onChange={(e) => setShopifyDomain(e.target.value)}
+                              className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              data-testid="shopify-domain-input"
+                            />
+                          )}
+                          {shopifyError && key === 'shopify' && (
                             <div className="bg-red-50 border border-red-200 rounded-md p-2 text-xs text-red-700" data-testid="shopify-error">
                               {shopifyError}
                             </div>
@@ -382,14 +417,14 @@ export default function PlatformConnectionsPage() {
                           <Button
                             size="sm"
                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs"
-                            onClick={handleShopifyConnect}
-                            disabled={shopifyLoading || !shopifyDomain.trim() || !shopifyAccessToken.trim()}
-                            data-testid="connect-shopify-btn"
+                            onClick={key === 'shopify' ? handleShopifyConnect : () => handleOAuthConnect(key, platform)}
+                            disabled={key === 'shopify' ? (shopifyLoading || !shopifyDomain.trim()) : false}
+                            data-testid={`connect-${key}-btn`}
                           >
-                            {shopifyLoading ? (
+                            {shopifyLoading && key === 'shopify' ? (
                               <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Connecting...</>
                             ) : (
-                              <><Plus className="h-3 w-3 mr-1" /> Connect Shopify Store</>
+                              <><Link2 className="h-3 w-3 mr-1" /> Connect with {platform.name}</>
                             )}
                           </Button>
                         </div>
@@ -461,6 +496,15 @@ export default function PlatformConnectionsPage() {
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </>
+                      ) : platform.oauth_ready ? (
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-purple-600 hover:bg-purple-700 text-xs"
+                          onClick={() => handleOAuthConnect(key, platform)}
+                          data-testid={`connect-${key}-ads-oauth`}
+                        >
+                          <Link2 className="h-3 w-3 mr-1" /> Connect with {platform.name}
+                        </Button>
                       ) : (
                         <Button
                           size="sm"
