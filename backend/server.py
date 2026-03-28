@@ -227,18 +227,25 @@ async def startup_db():
     await db.tiktok_hashtags.create_index("hashtag", unique=True)
     logger.info("Database indexes created")
 
-    # Auto-seed products and accounts if the database is empty
-    product_count = await db.products.count_documents({})
-    user_count = await db.auth_users.count_documents({})
-    if product_count == 0 or user_count == 0:
-        logger.info(f"Database needs seeding (products={product_count}, users={user_count}) — running auto-seed...")
+    # Auto-seed products and accounts if the database is empty (non-blocking)
+    import asyncio
+
+    async def _auto_seed():
         try:
-            from seed_database import seed_database
-            result = await seed_database()
-            count = result.get("products_processed", 0) if isinstance(result, dict) else 0
-            logger.info(f"Auto-seed complete: {count} products inserted")
+            product_count = await db.products.count_documents({})
+            user_count = await db.auth_users.count_documents({})
+            if product_count == 0 or user_count == 0:
+                logger.info(f"Database needs seeding (products={product_count}, users={user_count}) — running auto-seed...")
+                from seed_database import seed_database
+                result = await seed_database()
+                count = result.get("products_processed", 0) if isinstance(result, dict) else 0
+                logger.info(f"Auto-seed complete: {count} products")
+            else:
+                logger.info(f"Database already seeded (products={product_count}, users={user_count})")
         except Exception as e:
-            logger.error(f"Auto-seed failed: {e}")
+            logger.error(f"Auto-seed failed (non-fatal): {e}")
+
+    asyncio.create_task(_auto_seed())
 
     await regenerate_sitemap()
 

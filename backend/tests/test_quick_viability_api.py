@@ -7,7 +7,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://bug-fixes-preview-1.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://db-seeding-async.preview.emergentagent.com')
 
 class TestQuickViabilityAPI:
     """Tests for POST /api/public/quick-viability endpoint"""
