@@ -235,21 +235,85 @@ async def startup_db():
 
     # Auto-seed products and accounts if the database is empty (non-blocking)
     import asyncio
+    import bcrypt
+    import uuid
+    from datetime import datetime, timezone, timedelta
 
     async def _auto_seed():
+        """Idempotent seed — only creates what's missing, never deletes existing data."""
         try:
             product_count = await db.products.count_documents({})
             user_count = await db.auth_users.count_documents({})
-            if product_count == 0 or user_count == 0:
-                logger.info(f"Database needs seeding (products={product_count}, users={user_count}) — running auto-seed...")
-                from seed_database import seed_database
-                result = await seed_database()
-                count = result.get("products_processed", 0) if isinstance(result, dict) else 0
-                logger.info(f"Auto-seed complete: {count} products")
-            else:
+
+            if product_count > 0 and user_count > 0:
                 logger.info(f"Database already seeded (products={product_count}, users={user_count})")
+                return
+
+            # Seed users if missing (always check, never delete)
+            if user_count == 0:
+                logger.info("No users found — creating default accounts...")
+                accounts = [
+                    {"email": "reviewer@trendscout.click", "password": "ShopifyReview2026!", "full_name": "Admin", "role": "admin", "plan": "elite"},
+                    {"email": "demo@trendscout.click", "password": "DemoReview2026!", "full_name": "Demo User", "role": "authenticated", "plan": "elite"},
+                ]
+                for acct in accounts:
+                    existing = await db.auth_users.find_one({"email": acct["email"]})
+                    if existing:
+                        logger.info(f"  User {acct['email']} already exists")
+                        continue
+                    user_id = str(uuid.uuid4())
+                    password_hash = bcrypt.hashpw(acct["password"].encode(), bcrypt.gensalt()).decode()
+                    await db.auth_users.insert_one({
+                        "id": user_id,
+                        "email": acct["email"],
+                        "password_hash": password_hash,
+                        "full_name": acct["full_name"],
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                    })
+                    is_admin = acct["role"] == "admin"
+                    await db.profiles.update_one(
+                        {"email": acct["email"]},
+                        {"$set": {
+                            "id": user_id, "email": acct["email"], "name": acct["full_name"],
+                            "is_admin": is_admin, "role": acct["role"], "plan": acct["plan"],
+                            "subscription_plan": acct["plan"],
+                            "created_at": datetime.now(timezone.utc).isoformat(),
+                        }},
+                        upsert=True,
+                    )
+                    await db.subscriptions.update_one(
+                        {"user_id": user_id},
+                        {"$set": {
+                            "id": f"sub-{user_id[:8]}", "user_id": user_id,
+                            "plan_name": acct["plan"], "status": "active",
+                            "current_period_start": datetime.now(timezone.utc).isoformat(),
+                            "current_period_end": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
+                            "cancel_at_period_end": False,
+                            "created_at": datetime.now(timezone.utc).isoformat(),
+                        }},
+                        upsert=True,
+                    )
+                    logger.info(f"  Created user: {acct['email']} ({acct['role']})")
+
+            # Seed products if missing (import full seed script for product data)
+            if product_count == 0:
+                logger.info("No products found — running full product seed...")
+                try:
+                    from seed_database import seed_database
+                    result = await seed_database()
+                    count = result.get("products_processed", 0) if isinstance(result, dict) else 0
+                    logger.info(f"Product seed complete: {count} products")
+                except Exception as e:
+                    logger.error(f"Product seed failed: {e}")
+            else:
+                logger.info(f"Products already exist ({product_count}), skipping product seed")
+
+            final_products = await db.products.count_documents({})
+            final_users = await db.auth_users.count_documents({})
+            logger.info(f"Auto-seed finished: products={final_products}, users={final_users}")
+
         except Exception as e:
-            logger.error(f"Auto-seed failed (non-fatal): {e}")
+            logger.error(f"Auto-seed failed (non-fatal): {e}", exc_info=True)
 
     asyncio.create_task(_auto_seed())
 
