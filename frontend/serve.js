@@ -71,6 +71,43 @@ const DYNAMIC_SSR_ROUTES = {
       return html;
     },
   },
+  '/discover': {
+    api: '/api/public/daily-picks',
+    title: 'Discover Validated Product Ideas for the UK Market | TrendScout',
+    description: 'Browse AI-validated product ideas with demand scores, margin estimates, and competition data. Updated daily.',
+    render: (data) => {
+      const products = data?.picks || data?.products || data || [];
+      if (!Array.isArray(products) || products.length === 0) return '<p>No products found.</p>';
+      let html = `<h1>Discover Validated Product Ideas</h1>\n`;
+      html += `<p>Browse ${products.length} validated product opportunities for the UK market.</p>\n`;
+      for (const p of products.slice(0, 15)) {
+        html += `<article>\n`;
+        html += `  <h2>${escapeHtml(p.product_name || p.title || '')}</h2>\n`;
+        if (p.category) html += `  <p>Category: ${escapeHtml(p.category)}</p>\n`;
+        if (p.metrics?.demand_score) html += `  <p>Demand: ${p.metrics.demand_score}/100</p>\n`;
+        html += `</article>\n`;
+      }
+      return html;
+    },
+  },
+  '/reports/weekly-winning-products': {
+    api: '/api/public/top-trending',
+    title: 'Weekly Winning Products Report - UK Market | TrendScout',
+    description: 'This week\'s top performing product opportunities in the UK ecommerce market. Validated demand data and profit margins.',
+    render: (data) => {
+      const products = data?.products || data || [];
+      if (!Array.isArray(products) || products.length === 0) return '<p>Report not available.</p>';
+      let html = `<h1>Weekly Winning Products - UK Market</h1>\n`;
+      html += `<p>Top ${products.length} product opportunities this week.</p>\n`;
+      for (const p of products.slice(0, 10)) {
+        html += `<article>\n`;
+        html += `  <h2>${escapeHtml(p.product_name || p.title || '')}</h2>\n`;
+        if (p.category) html += `  <p>Category: ${escapeHtml(p.category)}</p>\n`;
+        html += `</article>\n`;
+      }
+      return html;
+    },
+  },
 };
 
 function escapeHtml(str) {

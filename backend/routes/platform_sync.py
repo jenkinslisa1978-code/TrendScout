@@ -239,4 +239,84 @@ async def sync_amazon_products(
     }
 
 
+# ==================== SYNC HISTORY ====================
+
+@platform_sync_router.get("/history")
+async def get_sync_history(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get sync history for the current user."""
+    history = []
+    cursor = db.sync_history.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0},
+    ).sort("completed_at", -1).limit(50)
+    async for doc in cursor:
+        history.append(doc)
+
+    return {"success": True, "history": history, "total": len(history)}
+
+
+@platform_sync_router.get("/history/summary")
+async def get_sync_summary(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get a summary of sync activity across all platforms."""
+    # Get latest sync per platform
+    pipeline = [
+        {"$match": {"user_id": current_user.user_id}},
+        {"$sort": {"completed_at": -1}},
+        {"$group": {
+            "_id": "$platform",
+            "last_sync": {"$first": "$completed_at"},
+            "last_status": {"$first": "$status"},
+            "last_count": {"$first": "$synced_count"},
+            "total_syncs": {"$sum": 1},
+            "total_products": {"$sum": "$synced_count"},
+            "error_count": {"$sum": {"$cond": [{"$eq": ["$status", "error"]}, 1, 0]}},
+        }},
+    ]
+    summaries = {}
+    async for doc in db.sync_history.aggregate(pipeline):
+        plat = doc["_id"]
+        summaries[plat] = {
+            "platform": plat,
+            "last_sync": doc["last_sync"],
+            "last_status": doc["last_status"],
+            "last_count": doc["last_count"],
+            "total_syncs": doc["total_syncs"],
+            "total_products": doc["total_products"],
+            "error_count": doc["error_count"],
+        }
+
+    # Count synced products per platform
+    product_pipeline = [
+        {"$match": {"user_id": current_user.user_id}},
+        {"$group": {"_id": "$platform", "count": {"$sum": 1}}},
+    ]
+    async for doc in db.synced_products.aggregate(product_pipeline):
+        plat = doc["_id"]
+        if plat in summaries:
+            summaries[plat]["current_products"] = doc["count"]
+
+    return {"success": True, "summary": summaries}
+
+
+# ==================== MANUAL SYNC WITH HISTORY LOGGING ====================
+
+async def _log_sync(user_id: str, platform: str, shop: str, count: int, error: str = None):
+    """Log a sync event to history."""
+    await db.sync_history.insert_one({
+        "user_id": user_id,
+        "platform": platform,
+        "shop": shop,
+        "synced_count": count,
+        "status": "success" if not error else "error",
+        "error": error,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "trigger": "manual",
+    })
+
+
 routers = [platform_sync_router]

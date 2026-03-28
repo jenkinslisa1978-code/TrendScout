@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiGet, apiPost } from '@/lib/api';
+import SyncHistory from '@/components/SyncHistory';
 
 const PLATFORM_INFO = {
   shopify: { name: 'Shopify', color: 'emerald', icon: '🟢', syncEndpoint: '/api/shopify/sync-products' },
@@ -180,6 +181,9 @@ export default function SyncedProductsPage() {
             })}
           </div>
         )}
+
+        {/* Sync History */}
+        <SyncHistory />
 
         {/* No products state */}
         {products.length === 0 && (

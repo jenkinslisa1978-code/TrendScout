@@ -1868,3 +1868,249 @@ async def send_lead_drip_emails(db, params: dict = None) -> dict:
             "errors": errors[:10],
         }
     }
+
+
+
+# ==================== AUTO-SYNC CONNECTED STORES ====================
+
+@TaskRegistry.register(
+    name="auto_sync_connected_stores",
+    description="Auto-sync products from all connected stores every 6 hours",
+    default_schedule="0 */6 * * *"
+)
+async def auto_sync_connected_stores(db, params: dict = None) -> dict:
+    """
+    Automatically sync products from all active store connections.
+    Runs every 6 hours. Logs sync history for each platform.
+    """
+    from common.encryption import decrypt_token
+    import httpx
+
+    synced_total = 0
+    errors = []
+    sync_results = []
+
+    # Find all active store connections
+    connections = []
+    cursor = db.platform_connections.find(
+        {"status": "active", "connection_type": {"$in": ["store", "oauth"]}},
+        {"_id": 0}
+    )
+    async for conn in cursor:
+        connections.append(conn)
+
+    logger.info(f"Auto-sync: Found {len(connections)} active store connections")
+
+    for conn in connections:
+        platform = conn.get("platform", "unknown")
+        user_id = conn.get("user_id", "")
+        shop = conn.get("store_url") or conn.get("shop_domain") or conn.get("shop_name", "")
+        sync_start = datetime.now(timezone.utc)
+        count = 0
+        error_msg = None
+
+        try:
+            if platform == "shopify":
+                count = await _sync_shopify_products(db, conn)
+            elif platform == "etsy":
+                count = await _sync_etsy_products(db, conn)
+            elif platform == "woocommerce":
+                count = await _sync_woocommerce_products(db, conn)
+            else:
+                continue
+
+            synced_total += count
+        except Exception as e:
+            error_msg = str(e)[:200]
+            errors.append(f"{platform}/{user_id}: {error_msg}")
+            logger.warning(f"Auto-sync error for {platform}/{user_id}: {e}")
+
+        # Log sync history
+        await db.sync_history.insert_one({
+            "user_id": user_id,
+            "platform": platform,
+            "shop": shop,
+            "synced_count": count,
+            "status": "success" if not error_msg else "error",
+            "error": error_msg,
+            "started_at": sync_start.isoformat(),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "trigger": "scheduled",
+        })
+
+        sync_results.append({
+            "platform": platform,
+            "user_id": user_id,
+            "count": count,
+            "status": "success" if not error_msg else "error",
+        })
+
+    logger.info(f"Auto-sync complete: {synced_total} products synced, {len(errors)} errors")
+    return {
+        "records_processed": synced_total,
+        "details": {
+            "connections_processed": len(connections),
+            "total_synced": synced_total,
+            "results": sync_results,
+            "errors": errors[:10],
+        }
+    }
+
+
+async def _sync_shopify_products(db, conn: dict) -> int:
+    """Sync products from a Shopify connection."""
+    from common.encryption import decrypt_token
+    import httpx
+
+    access_token = conn.get("access_token", "")
+    try:
+        access_token = decrypt_token(access_token)
+    except Exception:
+        pass
+
+    shop_domain = conn.get("store_url") or conn.get("shop_domain", "")
+    if not shop_domain or not access_token:
+        return 0
+
+    base_url = shop_domain.rstrip("/")
+    if not base_url.startswith("http"):
+        base_url = f"https://{base_url}"
+
+    count = 0
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(
+            f"{base_url}/admin/api/2024-07/products.json",
+            headers={"X-Shopify-Access-Token": access_token},
+            params={"limit": 250, "fields": "id,title,status,product_type,vendor,variants,images,handle"},
+        )
+        if resp.status_code != 200:
+            raise Exception(f"Shopify API returned {resp.status_code}")
+
+        products = resp.json().get("products", [])
+        for prod in products:
+            variant = prod.get("variants", [{}])[0] if prod.get("variants") else {}
+            images = prod.get("images", [])
+            doc = {
+                "user_id": conn["user_id"],
+                "platform": "shopify",
+                "platform_id": str(prod["id"]),
+                "shopify_id": prod["id"],
+                "title": prod.get("title", ""),
+                "status": prod.get("status", "active"),
+                "product_type": prod.get("product_type", ""),
+                "vendor": prod.get("vendor", ""),
+                "price": str(variant.get("price", "0")),
+                "inventory_quantity": variant.get("inventory_quantity", 0),
+                "image_url": images[0]["src"] if images else "",
+                "shop_domain": shop_domain,
+                "synced_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await db.synced_products.update_one(
+                {"user_id": conn["user_id"], "platform": "shopify", "platform_id": doc["platform_id"]},
+                {"$set": doc},
+                upsert=True,
+            )
+            count += 1
+    return count
+
+
+async def _sync_etsy_products(db, conn: dict) -> int:
+    """Sync products from an Etsy connection."""
+    from common.encryption import decrypt_token
+    import httpx
+
+    access_token = conn.get("access_token", "")
+    try:
+        access_token = decrypt_token(access_token)
+    except Exception:
+        pass
+
+    shop_id = conn.get("shop_id") or conn.get("store_url", "")
+    if not shop_id or not access_token:
+        return 0
+
+    count = 0
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(
+            f"https://openapi.etsy.com/v3/application/shops/{shop_id}/listings/active",
+            headers={"Authorization": f"Bearer {access_token}", "x-api-key": conn.get("client_id", "")},
+            params={"limit": 100},
+        )
+        if resp.status_code != 200:
+            raise Exception(f"Etsy API returned {resp.status_code}")
+
+        listings = resp.json().get("results", [])
+        for listing in listings:
+            doc = {
+                "user_id": conn["user_id"],
+                "platform": "etsy",
+                "platform_id": str(listing.get("listing_id", "")),
+                "title": listing.get("title", ""),
+                "price": str(listing.get("price", {}).get("amount", 0) / listing.get("price", {}).get("divisor", 100)),
+                "status": listing.get("state", "active"),
+                "quantity": listing.get("quantity", 0),
+                "shop_name": shop_id,
+                "synced_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await db.synced_products.update_one(
+                {"user_id": conn["user_id"], "platform": "etsy", "platform_id": doc["platform_id"]},
+                {"$set": doc},
+                upsert=True,
+            )
+            count += 1
+    return count
+
+
+async def _sync_woocommerce_products(db, conn: dict) -> int:
+    """Sync products from a WooCommerce connection."""
+    from common.encryption import decrypt_token
+    import httpx
+
+    store_url = conn.get("store_url", "").rstrip("/")
+    api_key = conn.get("api_key", "")
+    api_secret = conn.get("api_secret", "")
+
+    try:
+        api_key = decrypt_token(api_key) if api_key else ""
+    except Exception:
+        pass
+    try:
+        api_secret = decrypt_token(api_secret) if api_secret else ""
+    except Exception:
+        pass
+
+    if not store_url or not api_key or not api_secret:
+        return 0
+
+    count = 0
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(
+            f"{store_url}/wp-json/wc/v3/products",
+            auth=(api_key, api_secret),
+            params={"per_page": 100, "status": "publish"},
+        )
+        if resp.status_code != 200:
+            raise Exception(f"WooCommerce API returned {resp.status_code}")
+
+        products = resp.json()
+        for prod in products:
+            images = prod.get("images", [])
+            doc = {
+                "user_id": conn["user_id"],
+                "platform": "woocommerce",
+                "platform_id": str(prod.get("id", "")),
+                "title": prod.get("name", ""),
+                "price": prod.get("price", "0"),
+                "status": prod.get("status", "publish"),
+                "quantity": prod.get("stock_quantity") or 0,
+                "image_url": images[0].get("src", "") if images else "",
+                "shop_name": store_url.replace("https://", "").replace("http://", ""),
+                "synced_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await db.synced_products.update_one(
+                {"user_id": conn["user_id"], "platform": "woocommerce", "platform_id": doc["platform_id"]},
+                {"$set": doc},
+                upsert=True,
+            )
+            count += 1
+    return count
