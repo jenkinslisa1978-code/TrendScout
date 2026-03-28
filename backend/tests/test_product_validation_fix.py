@@ -20,7 +20,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://db-seeding-async.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://cro-audit-staging.preview.emergentagent.com')
 
 class TestProductValidationFix:
     """Tests for product validation 'Insufficient Data' bug fix"""
