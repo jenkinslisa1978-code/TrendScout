@@ -65,7 +65,7 @@
     "zod": "^3.24.4"
   },
   "scripts": {
-    "start": "if [ -f build/index.html ]; then node prerender.js && node serve.js; else CI=false craco build && node prerender.js && node serve.js; fi",
+    "start": "node start.js",
     "dev": "craco start",
     "build": "CI=false craco build && node prerender.js",
     "test": "craco test"
