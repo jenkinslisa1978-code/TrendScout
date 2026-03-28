@@ -114,7 +114,7 @@ export default function LandingLayout({ children }) {
                 </Link>
                 <Link to="/signup">
                   <Button data-testid="signup-btn" className="bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm font-semibold text-sm h-9 px-5">
-                    Start Free
+                    Validate a Product
                   </Button>
                 </Link>
               </>
@@ -169,7 +169,7 @@ export default function LandingLayout({ children }) {
                       <Button variant="outline" className="w-full rounded-lg">Log in</Button>
                     </Link>
                     <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold">Start Free</Button>
+                      <Button className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold">Validate a Product</Button>
                     </Link>
                   </>
                 )}

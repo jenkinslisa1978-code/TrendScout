@@ -16,8 +16,8 @@ export default function AboutPage() {
   return (
     <LandingLayout>
       <PageMeta
-        title="About"
-        description="TrendScout is a product research and launch intelligence platform built specifically for UK ecommerce sellers."
+        title="About TrendScout — Why We Built a UK-First Product Validation Tool"
+        description="TrendScout was built because UK sellers deserve product research tools designed for UK economics — not US tools with a currency toggle. Learn our story."
         canonical="/about"
         schema={[
           { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About TrendScout', url: 'https://trendscout.click/about' },

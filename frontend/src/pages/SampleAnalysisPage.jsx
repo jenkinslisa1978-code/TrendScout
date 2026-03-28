@@ -88,8 +88,8 @@ export default function SampleAnalysisPage() {
   return (
     <LandingLayout>
       <PageMeta
-        title="Sample Product Analysis — Portable Neck Fan"
-        description="See how TrendScout analyses a real product. UK Viability Score, margin estimates, saturation data, channel fit, and AI summary — all in one view."
+        title="Live Product Analysis Example — See What You Get | TrendScout"
+        description="View a real TrendScout product analysis: UK Viability Score, margin breakdown, competition data, channel fit, and AI summary. No signup required."
         canonical="/sample-product-analysis"
         schema={[
           webPageSchema('Sample Product Analysis', 'See how TrendScout analyses a real product for UK commercial viability.', '/sample-product-analysis'),

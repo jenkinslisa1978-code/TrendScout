@@ -51,7 +51,7 @@ const PLANS = [
       'Saved product workspace',
       'Priority email support',
     ],
-    cta: 'Start free trial',
+    cta: 'Start validating products',
     popular: true,
   },
   {
@@ -72,7 +72,7 @@ const PLANS = [
       'Unlimited insights',
       'Priority support',
     ],
-    cta: 'Start free trial',
+    cta: 'Start validating products',
     popular: false,
   },
 ];
@@ -179,8 +179,8 @@ export default function PricingPage() {
   return (
     <LandingLayout>
       <PageMeta
-        title="Pricing — TrendScout"
-        description="Simple, transparent pricing for UK ecommerce sellers. Plans from £19/month. Start free, upgrade when ready."
+        title="Plans and Pricing — Start from £19/mo | TrendScout"
+        description="Simple pricing for UK product validation. Starter £19/mo, Growth £39/mo, Pro £79/mo. Start free, no credit card required. Cancel anytime."
         canonical="/pricing"
         schema={[
           softwareAppSchema,
@@ -197,7 +197,7 @@ export default function PricingPage() {
             <RevealSection>
               <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Pricing</p>
               <h1 className="font-manrope text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.1]" data-testid="pricing-headline">
-                Simple pricing.{' '}
+                Pick a plan.{' '}
                 <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Built for UK sellers.</span>
               </h1>
               <p className="mt-5 text-base sm:text-lg text-slate-500 leading-relaxed max-w-xl mx-auto">

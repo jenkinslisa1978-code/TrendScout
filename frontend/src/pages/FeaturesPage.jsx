@@ -19,8 +19,8 @@ export default function FeaturesPage() {
   return (
     <LandingLayout>
       <PageMeta
-        title="Features — TrendScout | UK Ecommerce Product Intelligence"
-        description="Explore TrendScout's features: multi-channel trend detection, UK viability scoring, competition analysis, AI launch decisions, free tools, and more."
+        title="Product Research Features for UK Ecommerce Sellers | TrendScout"
+        description="Trend detection, competition analysis, margin estimation, UK Viability Scores, AI launch insights, and free tools — built for UK sellers on Shopify, Amazon, and TikTok Shop."
         canonical="/features"
       />
 
@@ -286,8 +286,8 @@ export default function FeaturesPage() {
                 </p>
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link to="/signup">
-                    <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="features-cta-primary" onClick={() => trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: 'Start Free', source: 'features_cta' })}>
-                      Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                    <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="features-cta-primary" onClick={() => trackEvent(EVENTS.HOMEPAGE_PRIMARY_CTA, { cta_label: 'Validate Your First Product', source: 'features_cta' })}>
+                      Validate Your First Product <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
                   <Link to="/pricing">

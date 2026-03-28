@@ -82,46 +82,40 @@ const commonLinks = [
 const PAGES = {
 
   '/': {
-    title: 'TrendScout | AI Product Research for UK Ecommerce Sellers',
-    description: 'Find products that can actually sell in the UK. TrendScout helps UK ecommerce sellers discover product demand, analyse competition, and check commercial viability before launching.',
+    title: 'UK Product Validation Tool for Ecommerce Sellers | TrendScout',
+    description: 'Validate product ideas for the UK market before spending on ads or stock. TrendScout scores demand, competition, margins, and UK viability so you launch smarter.',
     canonical: '/',
     schema: [orgSchema, softwareSchema, { '@context': 'https://schema.org', '@type': 'WebSite', name: 'TrendScout', url: SITE }],
     body: `
-      <h1>Find products that can actually sell in the UK</h1>
-      <p>TrendScout helps UK ecommerce sellers discover product demand, analyse competition, and check UK commercial viability before spending money on ads, stock, or supplier orders.</p>
-      <h2>What TrendScout does</h2>
-      <ul>
-        <li><strong>Trend detection</strong> — spot rising demand across TikTok, Amazon, and Shopify before products peak or saturate.</li>
-        <li><strong>Saturation analysis</strong> — see how crowded a niche is before entering it.</li>
-        <li><strong>UK viability scoring</strong> — margins, VAT impact, shipping practicality, and channel fit scored for the UK market.</li>
-      </ul>
-      <h2>Who TrendScout is for</h2>
-      <ul>
-        <li><strong>Shopify sellers</strong> — find products with real UK demand before building a store around them.</li>
-        <li><strong>Amazon UK sellers</strong> — spot opportunities with margin potential after FBA fees, VAT, and returns.</li>
-        <li><strong>TikTok Shop UK sellers</strong> — go beyond viral views. Validate whether trending products can convert in the UK.</li>
-        <li><strong>UK ecommerce founders</strong> — make data-backed product decisions. Test fewer products. Waste less money.</li>
-      </ul>
-      <h2>Not every viral product works in the UK</h2>
-      <p>A product blowing up on US TikTok might have completely different economics here. 20% VAT, higher shipping costs, different consumer expectations, and smaller addressable markets all change the equation. TrendScout evaluates products based on UK commercial reality, not global hype alone.</p>
+      <h1>Validate product ideas for the UK market before you spend a penny</h1>
+      <p>TrendScout scores products across demand, competition, margins, and UK-specific factors so you know which ideas are worth testing. Built for UK Shopify sellers, Amazon FBA sellers, TikTok Shop sellers, and small product brands.</p>
       <h2>How it works</h2>
       <ol>
-        <li><strong>Discover products</strong> — browse products gaining traction across TikTok, Amazon, and Shopify.</li>
-        <li><strong>Analyse UK viability</strong> — every product is scored across 7 signals including margin potential, competition, VAT impact, and UK-specific demand.</li>
-        <li><strong>Launch with confidence</strong> — use AI-generated insights, profit projections, and competitive data to decide whether to test.</li>
+        <li><strong>Search or browse products</strong> — enter a product idea or browse products gaining traction across TikTok, Amazon UK, and Shopify.</li>
+        <li><strong>Get a UK Viability Score</strong> — every product is scored across 7 signals: demand, competition, margin potential, VAT impact, shipping, channel fit, and trend trajectory.</li>
+        <li><strong>Decide with confidence</strong> — use the score, margin estimates, and competition data to decide whether a product is worth testing.</li>
       </ol>
-      <h2>UK Product Viability Score</h2>
-      <p>Every product on TrendScout receives a UK Viability Score — a 0-100 rating reflecting UK commercial fit, not just popularity. The score evaluates trend momentum, market saturation, margin potential, shipping practicality, return risk, channel fit, and UK market suitability.</p>
-      <p><a href="/uk-product-viability-score">Learn how the UK Viability Score works</a> | <a href="/sample-product-analysis">See a sample product analysis</a></p>
+      <h2>The UK Viability Score</h2>
+      <p>A single 0-100 number that tells you if a product can work in the UK. Most tools show global trends and US data. A product blowing up on US TikTok might have completely different economics here — 20% VAT, higher shipping costs, and smaller addressable markets. The UK Viability Score evaluates products against 7 UK-specific signals so you see the real picture.</p>
+      <h2>Who TrendScout is for</h2>
+      <ul>
+        <li><strong>UK Shopify sellers</strong> researching new products to add to their store.</li>
+        <li><strong>Amazon FBA sellers</strong> validating ideas before sourcing and shipping inventory.</li>
+        <li><strong>TikTok Shop sellers</strong> who need more than viral views to decide on a product.</li>
+        <li><strong>Small ecommerce brands</strong> expanding their catalogue with data-backed decisions.</li>
+        <li><strong>Dropshippers</strong> who want UK-specific data, not US leftovers.</li>
+      </ul>
+      <h2>Where our data comes from</h2>
+      <p>TrendScout analyses publicly available data from Amazon UK (BSR, pricing, reviews), TikTok (hashtag trends, engagement), Shopify stores (product listings, ad libraries), and UK search data (Google Trends, search volume). No private data is scraped.</p>
       <h2>Pricing</h2>
-      <p>Plans start from £19/month. Start with a 7-day free trial. No credit card required. <a href="/pricing">View pricing</a>.</p>
-      <p><a href="/signup">Start Free</a> | <a href="/how-it-works">See How It Works</a> | <a href="/trending-products">Explore Trending Products</a></p>
+      <p>Plans start from £19/month. Start free, no credit card required. <a href="/pricing">View pricing</a>.</p>
+      <p><a href="/signup">Validate Your First Product</a> | <a href="/sample-product-analysis">See a Live Example</a> | <a href="/how-it-works">How It Works</a></p>
     `,
   },
 
   '/pricing': {
-    title: 'Pricing | TrendScout — UK Ecommerce Product Research Plans',
-    description: 'TrendScout pricing plans from £19/month. Start validating UK product ideas with a 7-day free trial. No credit card required. Cancel anytime.',
+    title: 'Plans and Pricing — Start from £19/mo | TrendScout',
+    description: 'Simple pricing for UK product validation. Starter £19/mo, Growth £39/mo, Pro £79/mo. Start free, no credit card required. Cancel anytime.',
     canonical: '/pricing',
     schema: [breadcrumb([{ name: 'Home', url: '/' }, { name: 'Pricing' }])],
     body: `
@@ -148,7 +142,7 @@ const PAGES = {
   },
 
   '/how-it-works': {
-    title: 'How It Works | TrendScout — UK Product Research Workflow',
+    title: 'How TrendScout Validates Products for the UK Market',
     description: 'See how TrendScout helps UK ecommerce sellers discover trending products, analyse competition, check UK viability, and make better launch decisions.',
     canonical: '/how-it-works',
     schema: [breadcrumb([{ name: 'Home', url: '/' }, { name: 'How It Works' }])],
@@ -177,7 +171,7 @@ const PAGES = {
   },
 
   '/sample-product-analysis': {
-    title: 'Sample Product Analysis | TrendScout — See What You Get',
+    title: 'Live Product Analysis Example — See What You Get | TrendScout',
     description: 'View a real sample product analysis from TrendScout. See the UK Viability Score, 7-signal breakdown, margin estimates, channel fit, competition data, and AI summary.',
     canonical: '/sample-product-analysis',
     schema: [breadcrumb([{ name: 'Home', url: '/' }, { name: 'Sample Product Analysis' }])],
@@ -291,7 +285,7 @@ const PAGES = {
   },
 
   '/about': {
-    title: 'About TrendScout | UK-First Ecommerce Intelligence Platform',
+    title: 'About TrendScout — Why We Built a UK-First Product Validation Tool',
     description: 'TrendScout is a UK-first AI product research platform helping ecommerce sellers discover demand, analyse competition, and validate products before launching.',
     canonical: '/about',
     schema: [orgSchema, breadcrumb([{ name: 'Home', url: '/' }, { name: 'About' }]), { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About TrendScout', description: 'UK-first ecommerce intelligence platform.' }],
@@ -335,7 +329,7 @@ const PAGES = {
   },
 
   '/features': {
-    title: 'Features | TrendScout — UK Ecommerce Product Research Tools',
+    title: 'Product Research Features for UK Ecommerce Sellers | TrendScout',
     description: 'Explore TrendScout features: trend detection, UK viability scoring, competition analysis, profit estimation, AI launch insights, and trend alerts for UK sellers.',
     canonical: '/features',
     schema: [breadcrumb([{ name: 'Home', url: '/' }, { name: 'Features' }])],

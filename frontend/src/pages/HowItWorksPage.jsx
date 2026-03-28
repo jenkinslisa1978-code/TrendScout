@@ -92,8 +92,8 @@ export default function HowItWorksPage() {
   return (
     <LandingLayout>
       <PageMeta
-        title="How It Works — TrendScout"
-        description="Learn how TrendScout evaluates products using a 7-signal scoring model, UK-specific viability analysis, and multi-channel trend detection."
+        title="How TrendScout Validates Products for the UK Market"
+        description="See how TrendScout scores products using 7 UK-specific signals: demand, competition, margins, VAT impact, shipping, channel fit, and trend trajectory."
         canonical="/how-it-works"
         schema={[
           webPageSchema('How TrendScout Works', 'Learn how TrendScout evaluates products using a 7-signal scoring model and UK-specific viability analysis.', '/how-it-works'),
@@ -355,7 +355,7 @@ export default function HowItWorksPage() {
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link to="/signup">
                     <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 text-base px-8 h-12 font-semibold rounded-xl shadow-lg" data-testid="hiw-cta-signup">
-                      Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                      Validate Your First Product <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
                   <Link to="/trending-products">
