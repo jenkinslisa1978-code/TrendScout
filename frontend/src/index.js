@@ -40,6 +40,8 @@ const rootElement = document.getElementById("root");
 // Hide prerender content once React takes over
 const prerenderEl = document.getElementById("prerender-content");
 if (prerenderEl) prerenderEl.style.display = "none";
+const ssrEl = document.getElementById("ssr-content");
+if (ssrEl) ssrEl.style.display = "none";
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(

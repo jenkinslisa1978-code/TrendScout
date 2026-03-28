@@ -20,6 +20,7 @@ import {
 import api, { apiGet, apiPost, apiDelete } from '@/lib/api';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import ConnectionWizard from '@/components/ConnectionWizard';
 
 const STORE_ICONS = {
   shopify: '🟢',
@@ -160,6 +161,7 @@ export default function PlatformConnectionsPage() {
   const [adminForm, setAdminForm] = useState({ client_id: '', client_secret: '' });
   const [adminSaving, setAdminSaving] = useState(false);
   const [showSecrets, setShowSecrets] = useState({});
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // Fetch OAuth platforms
   useEffect(() => {
@@ -362,16 +364,27 @@ export default function PlatformConnectionsPage() {
             <h1 className="text-2xl font-bold text-slate-900 font-manrope">Platform Connections</h1>
             <p className="text-slate-500 mt-1">Connect your store and ad accounts to auto-publish products and post ads</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={runHealthCheck}
-            disabled={healthChecking}
-            data-testid="health-check-btn"
-          >
-            {healthChecking ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <HeartPulse className="h-4 w-4 mr-1" />}
-            {healthChecking ? 'Checking...' : 'Health Check'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => setWizardOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700"
+              data-testid="connection-wizard-btn"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Connect Platform
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={runHealthCheck}
+              disabled={healthChecking}
+              data-testid="health-check-btn"
+            >
+              {healthChecking ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <HeartPulse className="h-4 w-4 mr-1" />}
+              {healthChecking ? 'Checking...' : 'Health Check'}
+            </Button>
+          </div>
         </div>
 
         {/* Health Check Results */}
@@ -1130,6 +1143,14 @@ export default function PlatformConnectionsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Connection Wizard */}
+      <ConnectionWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        platforms={platforms}
+        onConnected={fetchData}
+      />
     </DashboardLayout>
   );
 }
