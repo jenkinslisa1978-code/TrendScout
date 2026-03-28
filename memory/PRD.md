@@ -18,6 +18,15 @@ UK-focused product validation and trend analysis tool for ecommerce sellers.
 
 ## Completed Work
 
+### Deployment Fix - 520 Errors (March 28, 2026)
+- ROOT CAUSE: frontend/build was gitignored, causing craco build at container startup → K8s timeout
+- Fixed frontend/.gitignore to include /build for deployment
+- Rebuilt frontend with relative URLs (empty REACT_APP_BACKEND_URL) for universal compatibility
+- Made start.js serve fallback page instead of attempting craco build on timeout
+- Moved ALL backend startup tasks (indexes, sitemap, scheduler) to non-blocking background tasks
+- Fixed WebSocket URLs to use window.location.origin when REACT_APP_BACKEND_URL is empty
+- Deployment agent: PASS with zero blockers
+
 ### Product Comparison Tool (March 28, 2026)
 - Compare 2-4 products side-by-side on demand scores, margins, competition, pricing, trends
 - Compare checkboxes on product cards (hover-reveal, persist when selected)
