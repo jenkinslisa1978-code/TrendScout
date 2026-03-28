@@ -670,41 +670,77 @@ async def seed_database():
     }
     await db.automation_logs.insert_one(log)
     
-    # Create sample demo profile
-    print("Creating demo profile...")
-    demo_profile = {
-        'id': 'demo-user-id',
-        'email': 'demo@viralscout.com',
-        'full_name': 'Demo User',
-        'role': 'admin',
-        'plan': 'elite',
-        'created_at': datetime.now(timezone.utc).isoformat(),
-    }
-    await db.profiles.update_one(
-        {'id': demo_profile['id']},
-        {'$set': demo_profile},
-        upsert=True
-    )
+    # Create admin and demo user accounts with proper auth
+    import bcrypt
+    print("Creating user accounts...")
     
-    # Create demo subscription
-    print("Creating demo subscription...")
-    demo_sub = {
-        'id': 'demo-sub-id',
-        'user_id': 'demo-user-id',
-        'plan_name': 'elite',
-        'status': 'active',
-        'stripe_subscription_id': None,
-        'stripe_customer_id': None,
-        'current_period_start': datetime.now(timezone.utc).isoformat(),
-        'current_period_end': (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
-        'cancel_at_period_end': False,
-        'created_at': datetime.now(timezone.utc).isoformat(),
-    }
-    await db.subscriptions.update_one(
-        {'user_id': demo_sub['user_id']},
-        {'$set': demo_sub},
-        upsert=True
-    )
+    admin_accounts = [
+        {
+            'email': 'reviewer@trendscout.click',
+            'password': 'ShopifyReview2026!',
+            'full_name': 'Admin',
+            'role': 'admin',
+            'plan': 'elite',
+        },
+        {
+            'email': 'demo@trendscout.click',
+            'password': 'DemoReview2026!',
+            'full_name': 'Demo User',
+            'role': 'authenticated',
+            'plan': 'elite',
+        },
+    ]
+    
+    for acct in admin_accounts:
+        existing = await db.auth_users.find_one({"email": acct['email']})
+        if existing:
+            print(f"  User {acct['email']} already exists, skipping...")
+            continue
+        
+        user_id = str(uuid.uuid4())
+        password_hash = bcrypt.hashpw(acct['password'].encode(), bcrypt.gensalt()).decode()
+        
+        await db.auth_users.insert_one({
+            "id": user_id,
+            "email": acct['email'],
+            "password_hash": password_hash,
+            "full_name": acct['full_name'],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        
+        is_admin = acct['role'] == 'admin'
+        await db.profiles.update_one(
+            {"email": acct['email']},
+            {"$set": {
+                "id": user_id,
+                "email": acct['email'],
+                "name": acct['full_name'],
+                "is_admin": is_admin,
+                "role": acct['role'],
+                "plan": acct['plan'],
+                "subscription_plan": acct['plan'],
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }},
+            upsert=True
+        )
+        
+        await db.subscriptions.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "id": f"sub-{user_id[:8]}",
+                "user_id": user_id,
+                "plan_name": acct['plan'],
+                "status": "active",
+                "stripe_subscription_id": None,
+                "stripe_customer_id": None,
+                "current_period_start": datetime.now(timezone.utc).isoformat(),
+                "current_period_end": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
+                "cancel_at_period_end": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }},
+            upsert=True
+        )
+        print(f"  Created {acct['email']} ({acct['role']}/{acct['plan']})")
     
     print("\n Database seeded successfully!")
     print(f"   - {len(processed_products)} products")
