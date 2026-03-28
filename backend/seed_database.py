@@ -706,13 +706,14 @@ async def seed_database():
         upsert=True
     )
     
-    print("\n✅ Database seeded successfully!")
+    print("\n Database seeded successfully!")
     print(f"   - {len(processed_products)} products")
     print(f"   - {len(alerts)} alerts")
     print(f"   - 1 demo profile (admin/elite)")
     print(f"   - 1 automation log")
     
     client.close()
+    return {"products_processed": len(processed_products), "alerts_created": len(alerts)}
 
 if __name__ == "__main__":
     asyncio.run(seed_database())

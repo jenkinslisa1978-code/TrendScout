@@ -544,4 +544,20 @@ async def get_growth_metrics(
 
 
 
-routers = [image_review_router, analytics_router]
+admin_tools_router = APIRouter(prefix="/api/admin")
+
+
+@admin_tools_router.post("/reseed-products")
+async def reseed_products(current_user: AuthenticatedUser = Depends(get_current_user)):
+    """Admin-only: Reseed the products database."""
+    await require_admin(current_user)
+    try:
+        from seed_database import seed_database
+        result = await seed_database()
+        count = result.get("products_processed", 0) if isinstance(result, dict) else 0
+        return {"success": True, "products_processed": count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+routers = [image_review_router, analytics_router, admin_tools_router]

@@ -227,6 +227,18 @@ async def startup_db():
     await db.tiktok_hashtags.create_index("hashtag", unique=True)
     logger.info("Database indexes created")
 
+    # Auto-seed products if the database is empty
+    product_count = await db.products.count_documents({})
+    if product_count == 0:
+        logger.info("No products found in database — running auto-seed...")
+        try:
+            from seed_database import seed_database
+            result = await seed_database()
+            count = result.get("products_processed", 0) if isinstance(result, dict) else 0
+            logger.info(f"Auto-seed complete: {count} products inserted")
+        except Exception as e:
+            logger.error(f"Auto-seed failed: {e}")
+
     await regenerate_sitemap()
 
     try:
