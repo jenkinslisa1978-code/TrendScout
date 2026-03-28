@@ -81,6 +81,7 @@ from routes.accuracy import routers as accuracy_routers
 from routes.webhooks import routers as webhook_routers
 from routes.ws import routers as ws_routers
 from routes.oauth import routers as oauth_routers
+from routes.admin_oauth import routers as admin_oauth_routers
 
 # Include all routers
 all_router_groups = [
@@ -104,6 +105,7 @@ all_router_groups = [
     webhook_routers,
     ws_routers,
     oauth_routers,
+    admin_oauth_routers,
 ]
 
 for group in all_router_groups:
@@ -246,6 +248,13 @@ async def startup_db():
             logger.error(f"Auto-seed failed (non-fatal): {e}")
 
     asyncio.create_task(_auto_seed())
+
+    # Load OAuth credentials from DB into memory cache
+    try:
+        from services.oauth_service import load_db_credentials
+        await load_db_credentials()
+    except Exception as e:
+        logger.warning(f"Could not load OAuth credentials from DB: {e}")
 
     await regenerate_sitemap()
 

@@ -15,9 +15,11 @@ import {
 import {
   Store, Megaphone, Plus, Check, X, ExternalLink, Trash2,
   ShoppingBag, Globe, Loader2, AlertCircle, Link2, HeartPulse, Truck, KeyRound, RefreshCw,
+  Shield, Settings2, Eye, EyeOff, Save, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import api, { apiGet, apiPost, apiDelete } from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const STORE_ICONS = {
   shopify: '🟢',
@@ -48,6 +50,7 @@ const AD_AUTOMATION = {
 };
 
 export default function PlatformConnectionsPage() {
+  const { isAdmin } = useAuth();
   const [platforms, setPlatforms] = useState({ stores: {}, ads: {} });
   const [connections, setConnections] = useState({ stores: [], ads: [] });
   const [loading, setLoading] = useState(true);
@@ -150,6 +153,14 @@ export default function PlatformConnectionsPage() {
   const [oauthLoading, setOauthLoading] = useState(false);
   const [oauthError, setOauthError] = useState('');
 
+  // Admin OAuth credential management
+  const [adminCredentials, setAdminCredentials] = useState({});
+  const [adminExpanded, setAdminExpanded] = useState(false);
+  const [adminEditPlatform, setAdminEditPlatform] = useState(null);
+  const [adminForm, setAdminForm] = useState({ client_id: '', client_secret: '' });
+  const [adminSaving, setAdminSaving] = useState(false);
+  const [showSecrets, setShowSecrets] = useState({});
+
   // Fetch OAuth platforms
   useEffect(() => {
     const fetchOAuth = async () => {
@@ -215,6 +226,59 @@ export default function PlatformConnectionsPage() {
     setOauthModal({ key: platformKey, ...config });
     setOauthForm({ client_id: '', client_secret: '', shop_domain: '' });
     setOauthError('');
+  };
+
+  // Admin: Fetch OAuth credentials
+  const fetchAdminCredentials = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await apiGet('/api/admin/oauth/credentials');
+      const data = await res.json();
+      setAdminCredentials(data.credentials || {});
+    } catch {}
+  }, [isAdmin]);
+
+  useEffect(() => { fetchAdminCredentials(); }, [fetchAdminCredentials]);
+
+  const handleAdminSave = async () => {
+    if (!adminEditPlatform || !adminForm.client_id.trim() || !adminForm.client_secret.trim()) return;
+    setAdminSaving(true);
+    try {
+      const res = await apiPost('/api/admin/oauth/credentials', {
+        platform: adminEditPlatform,
+        client_id: adminForm.client_id.trim(),
+        client_secret: adminForm.client_secret.trim(),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+        setAdminEditPlatform(null);
+        setAdminForm({ client_id: '', client_secret: '' });
+        fetchAdminCredentials();
+        // Refresh platform data too (oauth_ready may have changed)
+        fetchData();
+      } else {
+        toast.error(data.detail || 'Failed to save credentials');
+      }
+    } catch {
+      toast.error('Failed to save credentials');
+    } finally {
+      setAdminSaving(false);
+    }
+  };
+
+  const handleAdminDelete = async (platform) => {
+    try {
+      const res = await apiDelete(`/api/admin/oauth/credentials/${platform}`);
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+        fetchAdminCredentials();
+        fetchData();
+      }
+    } catch {
+      toast.error('Failed to remove credentials');
+    }
   };
 
   const handleShopifyConnect = async () => {
@@ -330,6 +394,146 @@ export default function PlatformConnectionsPage() {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Admin OAuth Credential Management */}
+        {isAdmin && (
+          <Card className="border-amber-200 bg-amber-50/20" data-testid="admin-oauth-section">
+            <CardContent className="p-4">
+              <button
+                className="flex items-center justify-between w-full text-left"
+                onClick={() => setAdminExpanded(!adminExpanded)}
+                data-testid="admin-oauth-toggle"
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-amber-600" />
+                  <span className="text-base font-semibold text-slate-900">Admin: OAuth App Credentials</span>
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px]">Admin Only</Badge>
+                </div>
+                {adminExpanded ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
+              </button>
+
+              {adminExpanded && (
+                <div className="mt-4 space-y-3">
+                  <p className="text-xs text-slate-500">
+                    Configure OAuth app credentials for each platform. Once configured, users can connect with one click — no API keys needed.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {Object.entries(adminCredentials).map(([key, cred]) => (
+                      <div
+                        key={key}
+                        className={`rounded-lg border p-3 ${
+                          cred.configured
+                            ? 'border-emerald-200 bg-emerald-50/50'
+                            : 'border-slate-200 bg-white'
+                        }`}
+                        data-testid={`admin-cred-${key}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm text-slate-900">{cred.name}</span>
+                            <span className="text-[10px] text-slate-400 uppercase">{cred.connection_type}</span>
+                          </div>
+                          {cred.configured ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]">
+                              {cred.source === 'env' ? 'ENV' : 'Configured'}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-slate-400 text-[10px]">Not set</Badge>
+                          )}
+                        </div>
+
+                        {cred.configured && cred.client_id_preview && (
+                          <p className="text-[11px] text-slate-500 mb-2 font-mono">
+                            ID: {cred.client_id_preview}
+                            {cred.source === 'env' && <span className="text-amber-600 ml-1">(from .env)</span>}
+                          </p>
+                        )}
+
+                        {adminEditPlatform === key ? (
+                          <div className="space-y-2 mt-2">
+                            <Input
+                              placeholder="Client ID / App Key"
+                              value={adminForm.client_id}
+                              onChange={(e) => setAdminForm({ ...adminForm, client_id: e.target.value })}
+                              className="text-xs h-8"
+                              data-testid={`admin-cred-${key}-client-id`}
+                            />
+                            <Input
+                              type="password"
+                              placeholder="Client Secret / App Secret"
+                              value={adminForm.client_secret}
+                              onChange={(e) => setAdminForm({ ...adminForm, client_secret: e.target.value })}
+                              className="text-xs h-8"
+                              data-testid={`admin-cred-${key}-client-secret`}
+                            />
+                            {cred.setup_url && (
+                              <a
+                                href={cred.setup_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-blue-600 underline flex items-center gap-1"
+                              >
+                                Open Developer Portal <ExternalLink className="h-2.5 w-2.5" />
+                              </a>
+                            )}
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-xs h-7"
+                                onClick={handleAdminSave}
+                                disabled={adminSaving || !adminForm.client_id || !adminForm.client_secret}
+                                data-testid={`admin-save-${key}`}
+                              >
+                                {adminSaving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                                Save
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-7"
+                                onClick={() => { setAdminEditPlatform(null); setAdminForm({ client_id: '', client_secret: '' }); }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2 mt-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-xs h-7"
+                              onClick={() => {
+                                setAdminEditPlatform(key);
+                                setAdminForm({ client_id: '', client_secret: '' });
+                              }}
+                              data-testid={`admin-edit-${key}`}
+                            >
+                              <Settings2 className="h-3 w-3 mr-1" />
+                              {cred.configured ? 'Update' : 'Configure'}
+                            </Button>
+                            {cred.configured && cred.source !== 'env' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700 text-xs h-7"
+                                onClick={() => handleAdminDelete(key)}
+                                data-testid={`admin-delete-${key}`}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* E-Commerce Stores */}

@@ -101,8 +101,14 @@ OAUTH_PLATFORMS = {
 
 
 def get_platform_credentials(platform: str) -> tuple:
-    """Get client_id and client_secret from env vars for a platform.
+    """Get client_id and client_secret for a platform.
+    Priority: DB-stored credentials > env vars.
     Returns (client_id, client_secret) or (None, None) if not configured."""
+    # Check DB cache first (populated on startup / lazily)
+    if platform in _credentials_cache:
+        return _credentials_cache[platform]
+
+    # Fall back to env vars
     config = OAUTH_PLATFORMS.get(platform)
     if not config:
         return None, None
@@ -112,6 +118,49 @@ def get_platform_credentials(platform: str) -> tuple:
     if client_id and client_secret:
         return client_id, client_secret
     return None, None
+
+
+# In-memory cache for DB-stored credentials (refreshed on save/delete)
+_credentials_cache: dict = {}
+
+
+async def load_db_credentials():
+    """Load all platform credentials from DB into memory cache."""
+    global _credentials_cache
+    try:
+        cursor = db.oauth_credentials.find({}, {"_id": 0})
+        async for doc in cursor:
+            platform = doc.get("platform")
+            client_id = doc.get("client_id", "")
+            encrypted_secret = doc.get("client_secret_encrypted", "")
+            if platform and client_id and encrypted_secret:
+                try:
+                    client_secret = decrypt_token(encrypted_secret)
+                    _credentials_cache[platform] = (client_id, client_secret)
+                except Exception:
+                    logger.warning(f"Failed to decrypt credentials for {platform}")
+        logger.info(f"Loaded OAuth credentials for {len(_credentials_cache)} platforms from DB")
+    except Exception as e:
+        logger.warning(f"Could not load DB credentials: {e}")
+
+
+async def refresh_credentials_cache(platform: str = None):
+    """Refresh credentials cache for a specific platform or all."""
+    global _credentials_cache
+    if platform:
+        doc = await db.oauth_credentials.find_one({"platform": platform}, {"_id": 0})
+        if doc and doc.get("client_id") and doc.get("client_secret_encrypted"):
+            try:
+                _credentials_cache[platform] = (
+                    doc["client_id"],
+                    decrypt_token(doc["client_secret_encrypted"]),
+                )
+            except Exception:
+                _credentials_cache.pop(platform, None)
+        else:
+            _credentials_cache.pop(platform, None)
+    else:
+        await load_db_credentials()
 
 
 def is_oauth_ready(platform: str) -> bool:
