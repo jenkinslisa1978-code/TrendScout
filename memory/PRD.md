@@ -11,75 +11,56 @@ UK-focused product validation and trend analysis tool for ecommerce sellers.
 - Backend: FastAPI + MongoDB (Motor async driver)
 - AI: OpenAI GPT-5.2 (via Emergent LLM Key)
 - Payments: Stripe (GBP), Email: Resend
-- Analytics: GTM (GTM-5V7G36GN) -> GA4 (G-S9J8EPWKF9), consent-gated
-- Serving: Custom static server (serve.js) + prerendering (39 pages) + Dynamic SSR (3 routes)
+- Analytics: GTM -> GA4, consent-gated
+- Serving: Custom static server + prerendering + Dynamic SSR
 - Scheduling: APScheduler (26 tasks including auto-sync every 6h)
 - Build: `cd /app/frontend && CI=false yarn build && sudo supervisorctl restart frontend`
 
 ## Completed Work
 
-### Auto-Sync Scheduling (March 28, 2026)
-- APScheduler task `auto_sync_connected_stores` runs every 6 hours (0 */6 * * *)
-- Syncs products from all active Shopify/Etsy/WooCommerce connections
-- Logs sync history per-platform with success/error status and trigger type
-- Test report: /app/test_reports/iteration_126.json (100% pass)
+### Product Comparison Tool (March 28, 2026)
+- Compare 2-4 products side-by-side on demand scores, margins, competition, pricing, trends
+- Compare checkboxes on product cards (hover-reveal, persist when selected)
+- Floating compare bar when 2+ products selected
+- Save & share comparisons via public URL (/compare/:shareId)
+- Sections: Performance Scores, Financial Metrics, Trend & Growth, Score Comparison
+- Visual score bars with best-value highlighting
+- Backend: POST /api/compare, GET /api/compare/shared/:id, POST /api/compare/quick
+- Test: iteration_127.json (100% pass)
 
-### Sync History Dashboard (March 28, 2026)
-- Backend: GET /api/sync/history (recent 50 sync events)
-- Backend: GET /api/sync/history/summary (per-platform aggregates)
-- Frontend: SyncHistory component on /synced-products page
-- Shows last sync time, product counts, error rates per platform
-- Expandable log with manual/scheduled trigger badges
+### Auto-Sync Scheduling + Sync History (March 28, 2026)
+- 6-hour auto-sync for all connected Shopify/Etsy/WooCommerce stores
+- Sync history dashboard with per-platform stats
+- Test: iteration_126.json (100% pass)
 
-### Shopify Embedded Dashboard Polish (March 28, 2026)
-- Tabbed interface: Trending / Radar / Exports
-- Product sync from within Shopify admin
-- Quick action cards (Browse Products, Full Dashboard)
-- Sticky header with store name badge
-- Empty states per tab with contextual messaging
-- Route: /embedded?shop=xxx&host=xxx
+### Connection Wizard + Synced Products (March 28, 2026)
+- Step-by-step guided platform connection wizard
+- Multi-platform synced products dashboard
+- Test: iteration_125.json (100% pass)
 
-### Extended Dynamic SSR (March 28, 2026)
-- /trending-products: Live product data with JSON-LD schema
-- /discover: Daily picks injected for crawlers
-- /reports/weekly-winning-products: Top trending products
-- 5-minute in-memory cache, crawler detection via user-agent
-- Regular browsers get SPA (no SSR content visible)
+### Admin OAuth Credentials (March 28, 2026)
+- Admin panel for platform OAuth app credentials
+- Test: iteration_124.json (100% pass)
 
-### Connection Wizard (March 28, 2026)
-- Step-by-step guided modal for connecting platforms
-- 4-step progress bar: Choose Platform -> Setup Guide -> Enter Credentials -> Connect
-- Platforms grouped by E-Commerce / Advertising / Marketplaces
-
-### Multi-Platform Synced Products Dashboard (March 28, 2026)
-- /synced-products page with platform filter cards
-- Unified search and sort across all platforms
-- Backend: /api/sync/products, /api/sync/etsy/products, /api/sync/woocommerce/products
-
-### Admin OAuth Credential Management (March 28, 2026)
-- Admin panel on /settings/connections for platform OAuth credentials
-- Encrypted storage in MongoDB, cached in memory
-
-### CRO/SEO/Positioning Overhaul (March 2026)
-- Homepage rewrite, unique SEO titles per page
-
-### Shopify Integration Suite (March 2026)
-- One-click OAuth, Webhooks, Token refresh
+### Shopify Embedded Dashboard, Dynamic SSR, CRO/SEO (March 2026)
+- Tabbed embedded dashboard, SSR for 3 routes, full CRO rewrite
 
 ## Key Files
-- /app/frontend/src/components/ConnectionWizard.jsx
-- /app/frontend/src/components/SyncHistory.jsx
-- /app/frontend/src/pages/SyncedProductsPage.jsx
-- /app/frontend/src/pages/ShopifyEmbeddedDashboard.jsx
-- /app/frontend/src/pages/PlatformConnectionsPage.jsx
-- /app/backend/routes/platform_sync.py
-- /app/backend/routes/admin_oauth.py
-- /app/backend/services/jobs/tasks.py (auto_sync_connected_stores)
-- /app/backend/services/oauth_service.py
-- /app/frontend/serve.js (Static + Dynamic SSR)
+- /app/frontend/src/pages/ComparePage.jsx - Product comparison tool
+- /app/frontend/src/pages/TrendingProductsPage.jsx - Compare selection UI
+- /app/frontend/src/components/ConnectionWizard.jsx - Connection wizard
+- /app/frontend/src/components/SyncHistory.jsx - Sync history component
+- /app/frontend/src/pages/SyncedProductsPage.jsx - Multi-platform products
+- /app/frontend/src/pages/ShopifyEmbeddedDashboard.jsx - Embedded dashboard
+- /app/backend/routes/compare.py - Comparison API
+- /app/backend/routes/platform_sync.py - Sync endpoints
+- /app/backend/routes/admin_oauth.py - Admin OAuth CRUD
+- /app/backend/services/jobs/tasks.py - Scheduled tasks
+- /app/frontend/serve.js - Static + Dynamic SSR
+- /app/OAUTH_SETUP_GUIDE.md - Step-by-step OAuth setup guide
 
 ## Remaining Tasks (User Actions)
-- Create OAuth apps on Meta/Etsy/TikTok/Google developer portals, enter credentials via admin panel
+- Create OAuth apps using /app/OAUTH_SETUP_GUIDE.md
 - Configure GA4 tag in GTM console
 - Configure Resend webhook URL
 
