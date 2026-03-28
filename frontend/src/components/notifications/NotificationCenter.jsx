@@ -212,9 +212,8 @@ export default function NotificationCenter() {
 
     function connect() {
       if (!alive) return;
-      const base = process.env.REACT_APP_BACKEND_URL
-        .replace(/^https:/, 'wss:')
-        .replace(/^http:/, 'ws:');
+      const rawUrl = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+      const base = rawUrl.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
       ws = new WebSocket(`${base}/api/notifications/ws?token=${token}`);
 
       ws.onopen = () => { retryCount = 0; };

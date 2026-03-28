@@ -193,48 +193,54 @@ logger = logging.getLogger(__name__)
 async def startup_db():
     """Initialize database collections, indexes, and background services."""
     from common.database import db
-    from routes.seo import regenerate_sitemap
+    import asyncio
 
-    await db.products.create_index("id", unique=True)
-    await db.products.create_index("category")
-    await db.products.create_index("trend_score")
-    await db.products.create_index("trend_stage")
-    await db.products.create_index("source")
-    await db.products.create_index("fingerprint")
-    await db.products.create_index("source_id")
-    await db.products.create_index("market_score")
-    await db.products.create_index("market_label")
-    await db.trend_alerts.create_index("id", unique=True)
-    await db.trend_alerts.create_index("product_id")
-    await db.trend_alerts.create_index("created_at")
-    await db.automation_logs.create_index("id", unique=True)
-    await db.automation_logs.create_index("started_at")
-    await db.automation_logs.create_index("job_type")
-    await db.subscriptions.create_index("user_id", unique=True)
-    await db.profiles.create_index("id", unique=True)
-    await db.stores.create_index("id", unique=True)
-    await db.stores.create_index("owner_id")
-    await db.stores.create_index("status")
-    await db.store_products.create_index("id", unique=True)
-    await db.store_products.create_index("store_id")
-    await db.store_products.create_index("original_product_id")
-    await db.alerts.create_index("id", unique=True)
-    await db.alerts.create_index("product_id")
-    await db.alerts.create_index([("created_at", -1)])
-    await db.reports.create_index("metadata.id", unique=True)
-    await db.reports.create_index("metadata.slug", unique=True)
-    await db.reports.create_index("metadata.report_type")
-    await db.reports.create_index("metadata.is_latest")
-    await db.reports.create_index([("metadata.generated_at", -1)])
-    await db.scrape_cache.create_index("key", unique=True)
-    await db.scrape_cache.create_index("cached_at")
-    await db.source_health.create_index("source_name", unique=True)
-    await db.ingestion_runs.create_index([("started_at", -1)])
-    await db.tiktok_hashtags.create_index("hashtag", unique=True)
-    logger.info("Database indexes created")
+    # Create indexes in background — not needed before first request
+    async def _create_indexes():
+        try:
+            await db.products.create_index("id", unique=True)
+            await db.products.create_index("category")
+            await db.products.create_index("trend_score")
+            await db.products.create_index("trend_stage")
+            await db.products.create_index("source")
+            await db.products.create_index("fingerprint")
+            await db.products.create_index("source_id")
+            await db.products.create_index("market_score")
+            await db.products.create_index("market_label")
+            await db.trend_alerts.create_index("id", unique=True)
+            await db.trend_alerts.create_index("product_id")
+            await db.trend_alerts.create_index("created_at")
+            await db.automation_logs.create_index("id", unique=True)
+            await db.automation_logs.create_index("started_at")
+            await db.automation_logs.create_index("job_type")
+            await db.subscriptions.create_index("user_id", unique=True)
+            await db.profiles.create_index("id", unique=True)
+            await db.stores.create_index("id", unique=True)
+            await db.stores.create_index("owner_id")
+            await db.stores.create_index("status")
+            await db.store_products.create_index("id", unique=True)
+            await db.store_products.create_index("store_id")
+            await db.store_products.create_index("original_product_id")
+            await db.alerts.create_index("id", unique=True)
+            await db.alerts.create_index("product_id")
+            await db.alerts.create_index([("created_at", -1)])
+            await db.reports.create_index("metadata.id", unique=True)
+            await db.reports.create_index("metadata.slug", unique=True)
+            await db.reports.create_index("metadata.report_type")
+            await db.reports.create_index("metadata.is_latest")
+            await db.reports.create_index([("metadata.generated_at", -1)])
+            await db.scrape_cache.create_index("key", unique=True)
+            await db.scrape_cache.create_index("cached_at")
+            await db.source_health.create_index("source_name", unique=True)
+            await db.ingestion_runs.create_index([("started_at", -1)])
+            await db.tiktok_hashtags.create_index("hashtag", unique=True)
+            logger.info("Database indexes created")
+        except Exception as e:
+            logger.error(f"Index creation failed (non-fatal): {e}")
+
+    asyncio.create_task(_create_indexes())
 
     # Auto-seed products and accounts if the database is empty (non-blocking)
-    import asyncio
     import bcrypt
     import uuid
     from datetime import datetime, timezone, timedelta
@@ -324,20 +330,29 @@ async def startup_db():
     except Exception as e:
         logger.warning(f"Could not load OAuth credentials from DB: {e}")
 
-    await regenerate_sitemap()
+    # Non-blocking: sitemap + scheduler + worker
+    async def _deferred_startup():
+        try:
+            from routes.seo import regenerate_sitemap
+            await regenerate_sitemap()
+        except Exception as e:
+            logger.error(f"Sitemap generation failed (non-fatal): {e}")
 
-    try:
-        from services.jobs.worker import WorkerManager
-        from services.jobs.scheduler import SchedulerManager
-        worker_manager = WorkerManager.get_instance()
-        worker_manager.initialize(db)
-        await worker_manager.start()
-        scheduler_manager = SchedulerManager.get_instance()
-        scheduler_manager.initialize(db)
-        await scheduler_manager.start()
-        logger.info("Background worker and scheduler started")
-    except Exception as e:
-        logger.error(f"Failed to start background services: {e}")
+        try:
+            from services.jobs.worker import WorkerManager
+            from services.jobs.scheduler import SchedulerManager
+            worker_manager = WorkerManager.get_instance()
+            worker_manager.initialize(db)
+            await worker_manager.start()
+            scheduler_manager = SchedulerManager.get_instance()
+            scheduler_manager.initialize(db)
+            await scheduler_manager.start()
+            logger.info("Background worker and scheduler started")
+        except Exception as e:
+            logger.error(f"Failed to start background services: {e}")
+
+    asyncio.create_task(_deferred_startup())
+    logger.info("Startup complete — health endpoint ready")
 
 
 @app.on_event("shutdown")

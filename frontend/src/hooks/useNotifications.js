@@ -2,6 +2,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
+function getWsBase() {
+  if (API_URL) return API_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+  const loc = typeof window !== 'undefined' ? window.location : null;
+  if (!loc) return '';
+  return `${loc.protocol === 'https:' ? 'wss:' : 'ws:'}//${loc.host}`;
+}
+
 /**
  * Custom hook for WebSocket real-time notifications.
  * Connects to the backend WebSocket endpoint and provides live job updates.
@@ -16,7 +23,7 @@ export function useNotifications() {
 
   const connect = useCallback(() => {
     const token = localStorage.getItem('access_token') || '';
-    const wsUrl = API_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+    const wsUrl = getWsBase();
     const url = `${wsUrl}/api/ws/notifications?token=${token}`;
 
     try {
