@@ -12,12 +12,15 @@
  * while React app routes still work via SPA fallback.
  */
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { URL } = require('url');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const BUILD_DIR = path.join(__dirname, 'build');
 const ROOT_HTML = path.join(BUILD_DIR, 'index.html');
+// SSR uses localhost since backend runs in the same pod/container
 const BACKEND_URL = 'http://localhost:8001';
 
 const MIME_TYPES = {
@@ -144,9 +147,19 @@ async function fetchAndRenderSSR(route, config) {
   }
 
   try {
-    const resp = await fetch(`${BACKEND_URL}${config.api}`);
-    if (!resp.ok) throw new Error(`API returned ${resp.status}`);
-    const data = await resp.json();
+    const apiUrl = `${BACKEND_URL}${config.api}`;
+    const data = await new Promise((resolve, reject) => {
+      const urlObj = new URL(apiUrl);
+      const transport = urlObj.protocol === 'https:' ? https : http;
+      const req = transport.get(apiUrl, { timeout: 5000 }, (resp) => {
+        if (resp.statusCode !== 200) { reject(new Error(`API returned ${resp.statusCode}`)); return; }
+        let body = '';
+        resp.on('data', (chunk) => { body += chunk; });
+        resp.on('end', () => { try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    });
 
     const baseHtml = fs.readFileSync(ROOT_HTML, 'utf8');
     const renderedContent = config.render(data);

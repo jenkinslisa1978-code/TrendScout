@@ -22,8 +22,10 @@ load_dotenv()
 mongo_url = os.environ.get('MONGO_URL')
 db_name = os.environ.get('DB_NAME')
 
+# Don't crash on import — check at function call time instead
 if not mongo_url or not db_name:
-    raise ValueError("MONGO_URL and DB_NAME environment variables must be set")
+    import logging
+    logging.getLogger(__name__).warning("MONGO_URL or DB_NAME not set — seed_database will fail if called")
 
 # Sample product data - includes early trend detection signals
 SAMPLE_PRODUCTS = [
@@ -581,6 +583,8 @@ def process_product(product):
 
 async def seed_database():
     """Main seeding function"""
+    if not mongo_url or not db_name:
+        raise ValueError("MONGO_URL and DB_NAME must be set")
     print("Connecting to MongoDB...")
     client = AsyncIOMotorClient(mongo_url)
     db = client[db_name]
