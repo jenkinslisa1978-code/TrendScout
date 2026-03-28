@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import {
   TrendingUp, ArrowRight, Package, Zap, Radar, Lock,
   Sparkles, BarChart3, Eye, Flame, Clock, Search, ChevronRight,
   ArrowUpDown, Filter, SlidersHorizontal, ChevronDown,
+  ArrowLeftRight, X,
 } from 'lucide-react';
 import { API_URL } from '@/lib/config';
 import { SignupGate } from '@/components/SignupGate';
@@ -38,6 +39,7 @@ function getConfidence(score) {
 
 export default function TrendingProductsPage() {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [weekCount, setWeekCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,13 @@ export default function TrendingProductsPage() {
   const [minMargin, setMinMargin] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [searchParams] = useSearchParams();
+  const [compareIds, setCompareIds] = useState([]);
+
+  const toggleCompare = (id) => {
+    setCompareIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 4 ? [...prev, id] : prev
+    );
+  };
 
   useEffect(() => {
     const catParam = searchParams.get('category');
@@ -286,7 +295,7 @@ export default function TrendingProductsPage() {
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="product-grid">
               {(isAuthenticated ? filteredAndSorted : filteredAndSorted.slice(0, 3)).map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} compareIds={compareIds} toggleCompare={toggleCompare} />
               ))}
             </div>
             {!isAuthenticated && filteredAndSorted.length > 3 && (
@@ -312,21 +321,84 @@ export default function TrendingProductsPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Compare Bar */}
+      {compareIds.length >= 2 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-3" data-testid="compare-bar">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ArrowLeftRight className="h-5 w-5 text-indigo-500" />
+              <span className="text-sm font-medium text-slate-900">{compareIds.length} products selected</span>
+              <div className="flex items-center gap-1">
+                {compareIds.map(id => {
+                  const p = products.find(x => x.id === id);
+                  return (
+                    <Badge key={id} variant="outline" className="text-[10px] pl-2 pr-1 gap-1 max-w-[120px]">
+                      <span className="truncate">{p?.product_name?.substring(0, 15) || id.slice(0, 8)}</span>
+                      <button onClick={(e) => { e.stopPropagation(); toggleCompare(id); }} className="hover:text-red-500 ml-0.5">
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCompareIds([])}
+                className="text-xs"
+                data-testid="clear-compare"
+              >
+                Clear
+              </Button>
+              <Button
+                size="sm"
+                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => navigate(`/compare?ids=${compareIds.join(',')}`)}
+                data-testid="compare-now-btn"
+              >
+                <ArrowLeftRight className="h-3.5 w-3.5 mr-1.5" />
+                Compare Now
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── Enhanced Product Card ── */
-function ProductCard({ product }) {
+function ProductCard({ product, compareIds = [], toggleCompare }) {
   const conf = getConfidence(product.launch_score);
   const CIcon = conf.icon;
+  const isSelected = compareIds.includes(product.id);
 
   return (
-    <Link
-      to={`/trending/${product.slug}`}
-      className="group block bg-white rounded-2xl border border-slate-100 overflow-hidden hover:border-slate-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
-      data-testid={`product-card-${product.id}`}
-    >
+    <div className="relative group" data-testid={`product-card-${product.id}`}>
+      {/* Compare checkbox */}
+      {toggleCompare && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleCompare(product.id); }}
+          className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+            isSelected
+              ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
+              : 'bg-white/80 border-slate-300 opacity-0 group-hover:opacity-100 hover:border-indigo-400'
+          }`}
+          data-testid={`compare-check-${product.id}`}
+          title={isSelected ? 'Remove from comparison' : 'Add to comparison'}
+        >
+          {isSelected && <ArrowLeftRight className="h-3 w-3" />}
+        </button>
+      )}
+      <Link
+        to={`/trending/${product.slug}`}
+        className={`block bg-white rounded-2xl border overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${
+          isSelected ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-slate-100 hover:border-slate-200'
+        }`}
+      >
       {/* Image */}
       <div className="relative h-36 bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
         {product.image_url ? (
@@ -399,7 +471,8 @@ function ProductCard({ product }) {
           </span>
         </div>
       </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 

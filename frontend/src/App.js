@@ -73,6 +73,8 @@ const StorePreviewPage = lazy(() => import("@/pages/StorePreviewPage"));
 const ShopifyAnalyzerPage = lazy(() => import("@/pages/ShopifyAnalyzerPage"));
 const ShopifyProductsPage = lazy(() => import("@/pages/ShopifyProductsPage"));
 const SyncedProductsPage = lazy(() => import("@/pages/SyncedProductsPage"));
+const ComparePage = lazy(() => import("@/pages/ComparePage"));
+const SharedComparePage = lazy(() => import("@/pages/ComparePage").then(m => ({ default: m.SharedComparePage })));
 const ShopifyAppPage = lazy(() => import("@/pages/ShopifyAppPage"));
 const ShopifyEmbeddedDashboard = lazy(() => import("@/pages/ShopifyEmbeddedDashboard"));
 
@@ -207,6 +209,7 @@ function AppRoutes() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/trending-products" element={<TrendingProductsPage />} />
       <Route path="/trending/:slug" element={<TrendingProductPage />} />
+      <Route path="/compare/:shareId" element={<React.Suspense fallback={<div />}><SharedComparePage /></React.Suspense>} />
       <Route path="/p/:id" element={<PublicProductPage />} />
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/about" element={<AboutPage />} />
@@ -430,6 +433,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <SyncedProductsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/compare"
+        element={
+          <ProtectedRoute>
+            <ComparePage />
           </ProtectedRoute>
         }
       />

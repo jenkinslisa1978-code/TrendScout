@@ -83,6 +83,7 @@ from routes.ws import routers as ws_routers
 from routes.oauth import routers as oauth_routers
 from routes.admin_oauth import routers as admin_oauth_routers
 from routes.platform_sync import routers as platform_sync_routers
+from routes.compare import routers as compare_routers
 
 # Include all routers
 all_router_groups = [
@@ -108,6 +109,7 @@ all_router_groups = [
     oauth_routers,
     admin_oauth_routers,
     platform_sync_routers,
+    compare_routers,
 ]
 
 for group in all_router_groups:
