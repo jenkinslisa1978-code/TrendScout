@@ -18,23 +18,25 @@ UK-focused product validation and trend analysis tool for ecommerce sellers.
 
 ## Completed Work
 
-### Deployment Fix - 520 Errors (March 28, 2026) - COMPREHENSIVE
-Root causes identified and fixed:
-1. frontend/.gitignore excluded /build → container had no frontend → 520
-2. start.js ran craco build on startup → 30-60s timeout → K8s killed container → 520
-3. CRA's build script runs fs.emptyDirSync(build) - deletes committed build during Docker yarn build
+### Deployment Fix - 520 Errors (March 28, 2026) - FINAL
+Root causes identified and fixed (7 total):
+1. frontend/.gitignore excluded /build → no frontend in production
+2. start.js ran craco build on startup → K8s timeout
+3. CRA's build runs fs.emptyDirSync(build) - deletes committed build during Docker yarn build
 4. yarn.lock not committed → Docker builds got unpredictable package versions
-5. Backend startup was blocking (indexes, sitemap, scheduler) → health endpoint delayed
+5. Backend startup blocked on indexes/sitemap/scheduler → health endpoint delayed
 6. WebSocket URLs crashed when REACT_APP_BACKEND_URL was empty
+7. frontend/.env had preview URL → Docker yarn build would bake in wrong URL
 
-All 6 fixes applied:
-- FIX 1: Removed /build from frontend/.gitignore, committed 358 build files
-- FIX 2: Rewrote start.js - no craco build, fallback HTTP server if build missing, 30s prerender timeout
-- FIX 3: Rebuilt frontend with REACT_APP_BACKEND_URL="" (relative URLs work in all environments)
-- FIX 4: Committed yarn.lock for reproducible Docker builds
-- FIX 5: Moved ALL backend startup to asyncio.create_task (indexes, seed, sitemap, scheduler)
-- FIX 6: Fixed WebSocket URLs in useNotifications.js and NotificationCenter.jsx
-- Deployment agent: PASS x3, zero blockers
+Fixes applied:
+- Removed /build from frontend/.gitignore, committed 358 build files
+- Rewrote start.js: serve.js starts FIRST (port binds <100ms), prerender runs after via setTimeout
+- Fallback HTTP server if build missing (returns 200 so K8s doesn't kill pod)
+- Set REACT_APP_BACKEND_URL= (empty) in frontend/.env → relative URLs work in all environments
+- Committed yarn.lock for reproducible Docker builds
+- Backend: ALL startup tasks via asyncio.create_task (indexes, seed, sitemap, scheduler)
+- WebSocket URLs use window.location.origin fallback
+- Deployment agent: PASS x4, zero blockers. Frontend port binds in <100ms.
 
 ### Product Comparison Tool (March 28, 2026)
 - Compare 2-4 products side-by-side on demand scores, margins, competition, pricing, trends
