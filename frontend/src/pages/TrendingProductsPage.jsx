@@ -265,6 +265,15 @@ export default function TrendingProductsPage() {
               </div>
             ))}
           </div>
+        ) : filteredAndSorted.length === 0 && products.length === 0 ? (
+          <div className="text-center py-20">
+            <Package className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500 font-medium">Products are being loaded</p>
+            <p className="text-slate-400 text-sm mt-1">Our system is refreshing product data. Check back in a few minutes.</p>
+            <button onClick={() => window.location.reload()} className="text-indigo-600 text-sm font-medium mt-3 hover:underline">
+              Refresh page
+            </button>
+          </div>
         ) : filteredAndSorted.length === 0 ? (
           <div className="text-center py-20">
             <Package className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -297,7 +306,7 @@ export default function TrendingProductsPage() {
             <p className="mt-2 text-sm text-slate-500">Get supplier data, ad insights, and launch tools with a TrendScout account.</p>
             <Link to="/signup">
               <Button className="mt-5 bg-slate-900 hover:bg-slate-800 rounded-xl font-semibold" data-testid="cta-signup-btn">
-                Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
+                Validate Your First Product <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
