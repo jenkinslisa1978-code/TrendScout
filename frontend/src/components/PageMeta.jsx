@@ -8,7 +8,9 @@ import { Helmet } from 'react-helmet-async';
 export default function PageMeta({ title, description, canonical, schema, ogImage, ogType }) {
   const siteUrl = 'https://trendscout.click';
   const fullCanonical = canonical ? `${siteUrl}${canonical}` : undefined;
-  const fullTitle = title ? `${title} | TrendScout` : 'TrendScout | AI Product Research for UK Ecommerce Sellers';
+  const fullTitle = title
+    ? (title.includes('TrendScout') ? title : `${title} | TrendScout`)
+    : 'TrendScout | UK Product Validation Tool for Ecommerce Sellers';
   const desc = description || 'Find products that can actually sell in the UK. Discover trends, analyse competition, estimate margins, and launch faster across Shopify, TikTok Shop, and Amazon.co.uk.';
 
   return (
