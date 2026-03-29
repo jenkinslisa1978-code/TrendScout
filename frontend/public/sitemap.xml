@@ -91,25 +91,25 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/category/beauty</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://trendscout.click/category/home-office</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/category/mobile-accessories</loc>
+    <loc>https://trendscout.click/category/beauty</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://trendscout.click/category/pet-supplies</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/category/mobile-accessories</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -127,12 +127,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/category/kitchen</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://trendscout.click/category/health-personal-care</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
@@ -140,6 +134,12 @@
   </url>
   <url>
     <loc>https://trendscout.click/category/sports-outdoors</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/category/kitchen</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -205,6 +205,18 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://trendscout.click/product/6719d7f7-03e6-4f62-bf7e-76ad0099593e</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/trending/clear-acrylic-desk-organizer</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://trendscout.click/product/1d473d07-f2b0-495f-9b5e-779e24113cdc</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
@@ -217,13 +229,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/product/6719d7f7-03e6-4f62-bf7e-76ad0099593e</loc>
+    <loc>https://trendscout.click/product/0b6555a8-1f9b-4b8c-bf3e-24b23326e9fb</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/trending/clear-acrylic-desk-organizer</loc>
+    <loc>https://trendscout.click/trending/reusable-pet-hair-remover</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -241,25 +253,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/product/3fa33e42-e2ff-4b92-a122-36bc40f80371</loc>
+    <loc>https://trendscout.click/product/6c8f2302-be42-47bc-95ae-66d3a5eac53b</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/trending/ice-roller-face-massager</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/product/0b6555a8-1f9b-4b8c-bf3e-24b23326e9fb</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/trending/reusable-pet-hair-remover</loc>
+    <loc>https://trendscout.click/trending/mini-pocket-projector-1080p</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -296,30 +296,6 @@
   </url>
   <url>
     <loc>https://trendscout.click/trending/mini-projector</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/product/6c8f2302-be42-47bc-95ae-66d3a5eac53b</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/trending/mini-pocket-projector-1080p</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/product/ac757e50-101e-4553-bb26-2f71a0c7f7a8</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/trending/electric-heated-lunch-box</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -397,6 +373,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://trendscout.click/product/3fa33e42-e2ff-4b92-a122-36bc40f80371</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/trending/ice-roller-face-massager</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://trendscout.click/product/acffd937-13fe-452d-9f73-81fd5aaed7a0</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
@@ -404,6 +392,18 @@
   </url>
   <url>
     <loc>https://trendscout.click/trending/purple-teeth-whitening-strips-21-treatments-enamel-safe-no-sensitivity-no-slip-whitening-strips-fast-teeth-whitening-result-in-7-days-whitening-kit-for-coffee-wine-stains-removal</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/product/ac757e50-101e-4553-bb26-2f71a0c7f7a8</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/trending/electric-heated-lunch-box</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -493,25 +493,25 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/product/deca8bc3-23ea-4067-b570-83eeef8e128b</loc>
+    <loc>https://trendscout.click/product/504280d7-3c03-457b-8ec9-f5f109a79f37</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/trending/led-sunset-projection-lamp</loc>
+    <loc>https://trendscout.click/trending/portable-bladeless-neck-fan</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/product/829b5b3c-18ac-494d-981a-fda9ac465676</loc>
+    <loc>https://trendscout.click/product/4bd241c3-58ef-421c-8a2d-72493e83505b</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/trending/magsafe-car-phone-mount</loc>
+    <loc>https://trendscout.click/trending/adjustable-posture-corrector</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -541,13 +541,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/product/4bd241c3-58ef-421c-8a2d-72493e83505b</loc>
+    <loc>https://trendscout.click/product/deca8bc3-23ea-4067-b570-83eeef8e128b</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/trending/adjustable-posture-corrector</loc>
+    <loc>https://trendscout.click/trending/led-sunset-projection-lamp</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -577,6 +577,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://trendscout.click/product/829b5b3c-18ac-494d-981a-fda9ac465676</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/trending/magsafe-car-phone-mount</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://trendscout.click/product/9632400f-0018-4bce-80ec-241c122fab4d</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
@@ -584,42 +596,6 @@
   </url>
   <url>
     <loc>https://trendscout.click/trending/smart-water-bottle</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/product/504280d7-3c03-457b-8ec9-f5f109a79f37</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/trending/portable-bladeless-neck-fan</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/product/f885cc27-ae8e-49a6-8295-c6f86b99a8db</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/trending/galaxy-projector</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/product/5dd157fd-250c-4972-830b-87c8cd55e999</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/trending/smart-galaxy-star-projector</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -637,25 +613,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/product/b3052d56-000b-43cf-a0e5-366729f1b2b9</loc>
+    <loc>https://trendscout.click/product/f885cc27-ae8e-49a6-8295-c6f86b99a8db</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://trendscout.click/trending/smart-water-bottle-reminder</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/product/f49699d8-e7ad-42bd-bd16-2aa1d61d3f98</loc>
-    <lastmod>2026-03-29</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://trendscout.click/trending/mini-thermal-printer</loc>
+    <loc>https://trendscout.click/trending/galaxy-projector</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -692,6 +656,18 @@
   </url>
   <url>
     <loc>https://trendscout.click/trending/portable-neck-fan</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/product/5dd157fd-250c-4972-830b-87c8cd55e999</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/trending/smart-galaxy-star-projector</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -757,6 +733,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://trendscout.click/product/f49699d8-e7ad-42bd-bd16-2aa1d61d3f98</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/trending/mini-thermal-printer</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://trendscout.click/product/22ad5b35-3a4c-4dc9-88ed-736dfc4158f8</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
@@ -764,6 +752,18 @@
   </url>
   <url>
     <loc>https://trendscout.click/trending/posture-corrector</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/product/b3052d56-000b-43cf-a0e5-366729f1b2b9</loc>
+    <lastmod>2026-03-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://trendscout.click/trending/smart-water-bottle-reminder</loc>
     <lastmod>2026-03-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
