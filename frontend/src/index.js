@@ -37,11 +37,10 @@ onTTFB(reportVital);
 
 const rootElement = document.getElementById("root");
 
-// Hide prerender content once React takes over
-const prerenderEl = document.getElementById("prerender-content");
-if (prerenderEl) prerenderEl.style.display = "none";
-const ssrEl = document.getElementById("ssr-content");
-if (ssrEl) ssrEl.style.display = "none";
+// Hide ALL prerender/SSR content once React takes over
+document.querySelectorAll("#prerender-content, #ssr-content").forEach(el => {
+  el.style.display = "none";
+});
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(

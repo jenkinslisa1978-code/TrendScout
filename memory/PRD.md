@@ -18,6 +18,14 @@ UK-focused product validation and trend analysis tool for ecommerce sellers.
 
 ## Completed Work
 
+### Product Visibility Fix - P0 (March 29, 2026)
+Root cause: `prerender.js` was not idempotent — each run re-read `build/index.html` (already containing injected prerender content) and injected another `#prerender-content` div. After 9 runs, 9 duplicate divs (42KB) covered the React `#root` div. `index.js` only hid the first via `getElementById()`.
+Fixes applied:
+- Made `prerender.js` idempotent: strips prior prerender-content from base HTML before injecting
+- Fixed `index.js` to use `querySelectorAll` to hide ALL `#prerender-content` / `#ssr-content` elements
+- Added CSS safety net in `index.css`: `#prerender-content, #ssr-content { display: none !important; }`
+- Cleaned `build/index.html` and rebuilt frontend
+
 ### Deployment Fix - 520 Errors (March 28, 2026) - FINAL
 Root causes identified and fixed (7 total):
 1. frontend/.gitignore excluded /build → no frontend in production

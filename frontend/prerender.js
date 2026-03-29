@@ -16,7 +16,17 @@ const path = require('path');
 const { PAGES, ALIASES, SITE, commonLinks } = require('./prerender-data');
 
 const buildDir = path.join(__dirname, 'build');
-const baseHtml = fs.readFileSync(path.join(buildDir, 'index.html'), 'utf8');
+// Read base HTML and strip any previously-injected prerender content to stay idempotent
+let baseHtml = fs.readFileSync(path.join(buildDir, 'index.html'), 'utf8');
+// Remove ALL prerender-content blocks between </noscript> and <div id="root">
+const noscriptEnd = baseHtml.lastIndexOf('</noscript>');
+const rootStart = baseHtml.indexOf('<div id="root">');
+if (noscriptEnd !== -1 && rootStart !== -1) {
+  const before = baseHtml.substring(0, noscriptEnd + '</noscript>'.length);
+  const after = baseHtml.substring(rootStart);
+  baseHtml = before + '\n        ' + after;
+  console.log('[prerender] Stripped prior prerender content from base HTML (idempotent).');
+}
 
 // Collect all routes: explicit pages + aliases + extra routes
 const allRoutes = new Set([

@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide prerendered/SSR content immediately — React takes over */
+#prerender-content, #ssr-content { display: none !important; }
+
 /* Font families */
 .font-manrope {
     font-family: 'Manrope', sans-serif;
