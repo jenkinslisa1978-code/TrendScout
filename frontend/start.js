@@ -8,26 +8,50 @@
 const fs = require('fs');
 const path = require('path');
 
+// Prevent process crashes from propagating
+process.on('uncaughtException', (err) => {
+  console.error('[start] Uncaught exception:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[start] Unhandled rejection:', reason);
+});
+
 const BUILD_DIR = path.join(__dirname, 'build');
 const INDEX_HTML = path.join(BUILD_DIR, 'index.html');
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
-const buildValid = fs.existsSync(INDEX_HTML) && fs.statSync(INDEX_HTML).size > 100;
+let buildValid = false;
+try {
+  buildValid = fs.existsSync(INDEX_HTML) && fs.statSync(INDEX_HTML).size > 100;
+} catch (e) {
+  console.error('[start] Error checking build:', e.message);
+}
 
-if (!buildValid) {
-  // No build exists — start a minimal HTTP server so K8s doesn't kill the pod
-  console.error('[start] No valid build found. Starting fallback server.');
+console.log(`[start] Build valid: ${buildValid}, Port: ${PORT}`);
+
+function startFallback(reason) {
+  console.error(`[start] Starting fallback server. Reason: ${reason}`);
   const http = require('http');
-  const PORT = parseInt(process.env.PORT || '3000', 10);
   http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end('<html><body><h1>TrendScout</h1><p>Build pending.</p></body></html>');
-  }).listen(PORT, '0.0.0.0', () => console.log(`[start] Fallback on port ${PORT}`));
-} else {
-  // Start serve.js immediately (binds port in < 100ms)
-  console.log('[start] Starting static server...');
-  require('./serve.js');
+  }).listen(PORT, '0.0.0.0', () => console.log(`[start] Fallback listening on 0.0.0.0:${PORT}`));
+}
 
-  // Run prerender AFTER server is up (non-blocking, no event loop blocking)
+if (!buildValid) {
+  startFallback('No valid build found');
+} else {
+  try {
+    // Start serve.js immediately (binds port in < 100ms)
+    console.log('[start] Loading serve.js...');
+    require('./serve.js');
+    console.log('[start] serve.js loaded and listening.');
+  } catch (e) {
+    console.error(`[start] serve.js CRASHED: ${e.message}`);
+    startFallback(`serve.js error: ${e.message}`);
+  }
+
+  // Run prerender AFTER server is up (non-blocking)
   setTimeout(() => {
     try {
       const { exec } = require('child_process');

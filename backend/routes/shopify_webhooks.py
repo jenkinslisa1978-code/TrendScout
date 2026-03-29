@@ -10,7 +10,7 @@ import os
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request, HTTPException
-from database import db
+from common.database import db
 
 logger = logging.getLogger(__name__)
 

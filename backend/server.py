@@ -16,6 +16,17 @@ import logging
 import sentry_sdk
 from pathlib import Path
 
+# Configure logging EARLY so all startup messages are captured
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+logger.info("=== TrendScout API starting ===")
+logger.info(f"MONGO_URL set: {'yes' if os.environ.get('MONGO_URL') else 'NO'}")
+logger.info(f"DB_NAME set: {'yes' if os.environ.get('DB_NAME') else 'NO'}")
+logger.info(f"SITE_URL: {os.environ.get('SITE_URL', 'not set')}")
+
 # Load environment BEFORE importing anything else
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')

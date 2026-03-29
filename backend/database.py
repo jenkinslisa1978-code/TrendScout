@@ -1,9 +1,5 @@
 """
-Shared database connection for all route modules.
+DEPRECATED: Use common.database instead.
+This file exists for backward compatibility only.
 """
-import os
-from motor.motor_asyncio import AsyncIOMotorClient
-
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+from common.database import db, client  # noqa: F401

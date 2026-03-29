@@ -206,40 +206,56 @@ async function fetchAndRenderSSR(route, config) {
   }
 }
 
+// Prevent unhandled errors from crashing the process
+process.on('uncaughtException', (err) => {
+  console.error('[trendscout] Uncaught exception (kept alive):', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[trendscout] Unhandled rejection (kept alive):', reason);
+});
+
 const server = http.createServer(async (req, res) => {
-  const urlPath = req.url.split('?')[0].split('#')[0];
-  const decodedPath = decodeURIComponent(urlPath);
-  const userAgent = req.headers['user-agent'] || '';
+  try {
+    const urlPath = req.url.split('?')[0].split('#')[0];
+    const decodedPath = decodeURIComponent(urlPath);
+    const userAgent = req.headers['user-agent'] || '';
 
-  // 1. Try exact file match
-  const exactFile = path.join(BUILD_DIR, decodedPath);
-  if (fs.existsSync(exactFile) && fs.statSync(exactFile).isFile()) {
-    return serveFile(res, exactFile);
-  }
+    // 1. Try exact file match
+    const exactFile = path.join(BUILD_DIR, decodedPath);
+    if (fs.existsSync(exactFile) && fs.statSync(exactFile).isFile()) {
+      return serveFile(res, exactFile);
+    }
 
-  // 2. Dynamic SSR for crawlers on specific routes (before prerendered fallback)
-  const ssrConfig = DYNAMIC_SSR_ROUTES[decodedPath];
-  if (ssrConfig && CRAWLER_UA.test(userAgent)) {
-    const html = await fetchAndRenderSSR(decodedPath, ssrConfig);
-    if (html) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
-      return res.end(html);
+    // 2. Dynamic SSR for crawlers on specific routes (before prerendered fallback)
+    const ssrConfig = DYNAMIC_SSR_ROUTES[decodedPath];
+    if (ssrConfig && CRAWLER_UA.test(userAgent)) {
+      const html = await fetchAndRenderSSR(decodedPath, ssrConfig);
+      if (html) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+        return res.end(html);
+      }
+    }
+
+    // 3. Try directory index.html (prerendered pages)
+    const dirIndex = path.join(BUILD_DIR, decodedPath, 'index.html');
+    if (fs.existsSync(dirIndex) && fs.statSync(dirIndex).isFile()) {
+      return serveFile(res, dirIndex);
+    }
+
+    // 4. SPA fallback: serve root index.html for all other routes
+    if (fs.existsSync(ROOT_HTML)) {
+      return serveFile(res, ROOT_HTML);
+    }
+
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+  } catch (err) {
+    console.error(`[trendscout] Request error on ${req.url}: ${err.message}`);
+    if (!res.headersSent) {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Internal Server Error');
     }
   }
-
-  // 3. Try directory index.html (prerendered pages)
-  const dirIndex = path.join(BUILD_DIR, decodedPath, 'index.html');
-  if (fs.existsSync(dirIndex) && fs.statSync(dirIndex).isFile()) {
-    return serveFile(res, dirIndex);
-  }
-
-  // 4. SPA fallback: serve root index.html for all other routes
-  if (fs.existsSync(ROOT_HTML)) {
-    return serveFile(res, ROOT_HTML);
-  }
-
-  res.writeHead(404, { 'Content-Type': 'text/plain' });
-  res.end('Not Found');
 });
 
 server.listen(PORT, '0.0.0.0', () => {

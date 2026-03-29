@@ -18,13 +18,25 @@ UK-focused product validation and trend analysis tool for ecommerce sellers.
 
 ## Completed Work
 
-### Deployment 520 Error Fix (March 29, 2026)
-Root causes identified and fixed:
-1. `load_db_credentials()` in `server.py` was `await`ed during FastAPI startup — blocked server from accepting requests until Atlas responded (5-15s). Moved to `asyncio.create_task()`.
-2. MongoDB client had no connection timeouts. Atlas cold-connect can take 30s with default `serverSelectionTimeoutMS`. Added 5s timeouts.
-3. Added bare `/health` endpoint (no `/api` prefix, no DB dependency) for K8s readiness probes.
-4. `start.js` used `execSync` (blocks event loop). Changed to async `exec`.
-5. Health endpoint now returns 200 immediately; DB status is best-effort.
+### Deployment 520 Error Fixes (March 29, 2026) — Comprehensive
+Root causes and fixes across multiple iterations:
+
+**Round 1 — Startup Blocking:**
+1. `server.py`: `await load_db_credentials()` blocked FastAPI startup → moved to `asyncio.create_task()`
+2. `database.py`: No MongoDB connection timeouts → added 5s serverSelection/connect, 10s socket
+3. `server.py`: Added bare `/health` endpoint (no /api prefix, no DB) for K8s probes
+4. `health.py`: Health returns 200 immediately; DB status best-effort
+5. `start.js`: `execSync` → async `exec` for prerender
+
+**Round 2 — Memory/Import:**
+6. `ad_creative_service.py` + `ad_pipeline.py`: Module-level `from emergentintegrations.llm.chat import LlmChat` pulled in litellm (158MB) at startup → moved to lazy imports inside functions. Memory: 284MB → 157MB. Startup: 3.9s → 1.6s.
+
+**Round 3 — Crash Resilience:**
+7. `database.py` (stale duplicate): `shopify_webhooks.py` + `deps.py` imported from `/app/backend/database.py` (no timeouts) instead of `common/database.py` → fixed imports, made old file a re-export shim
+8. `common/database.py`: `os.environ['MONGO_URL']` crashes with KeyError → changed to `os.environ.get()` with logging
+9. `serve.js`: No error handling in async HTTP handler → added try-catch + `process.on('uncaughtException')`
+10. `start.js`: No fallback if serve.js crashes → added try-catch with fallback server
+11. `server.py`: Added startup logging (MONGO_URL set?, DB_NAME set?, SITE_URL)
 
 ### Product Alert Emails - Instant Alerts (March 29, 2026)
 Full end-to-end instant product alert email feature:

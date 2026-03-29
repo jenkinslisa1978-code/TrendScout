@@ -4,7 +4,7 @@ Shared dependencies used across route modules.
 import re
 import time as _time
 from fastapi import HTTPException
-from database import db
+from common.database import db
 from auth import AuthenticatedUser
 
 # ── Cache ──────────────────────────────────────────
