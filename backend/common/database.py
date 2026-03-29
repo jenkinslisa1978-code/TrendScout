@@ -1,9 +1,14 @@
 """
 Shared MongoDB connection for all route modules.
-Client is created LAZILY on first access to avoid crashing
-at import time if MongoDB Atlas DNS is slow/unreachable.
+
+Client is created LAZILY on first access to avoid crashing at import
+time if MongoDB Atlas DNS is slow or unreachable.
+
+MONGO_URL and DB_NAME are REQUIRED.  The process will crash with a clear
+error at first DB access if either is missing — no silent localhost fallback.
 """
 import os
+import sys
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,32 +17,25 @@ _client = None
 _db = None
 
 
-def _get_mongo_url():
-    url = os.environ.get('MONGO_URL', '')
-    if not url:
-        logger.critical("MONGO_URL is NOT SET")
-    return url
-
-
-def _get_db_name():
-    name = os.environ.get('DB_NAME', '')
-    if not name:
-        logger.critical("DB_NAME is NOT SET")
-    return name
-
-
 def _init_client():
-    """Create the Motor client lazily. Called on first attribute access."""
+    """Create the Motor client lazily.  Called on first attribute access."""
     global _client, _db
     if _client is not None:
         return
 
     from motor.motor_asyncio import AsyncIOMotorClient
 
-    mongo_url = _get_mongo_url()
-    db_name = _get_db_name()
+    mongo_url = os.environ.get("MONGO_URL", "")
+    db_name = os.environ.get("DB_NAME", "")
 
-    logger.info(f"Connecting to MongoDB: {mongo_url[:40]}... / DB: {db_name}")
+    if not mongo_url:
+        logger.critical("FATAL: MONGO_URL environment variable is not set. Exiting.")
+        sys.exit(1)
+    if not db_name:
+        logger.critical("FATAL: DB_NAME environment variable is not set. Exiting.")
+        sys.exit(1)
+
+    logger.info("Connecting to MongoDB: %s... / DB: %s", mongo_url[:40], db_name)
 
     _client = AsyncIOMotorClient(
         mongo_url,
@@ -49,9 +47,7 @@ def _init_client():
 
 
 class _LazyDB:
-    """Proxy that initializes the Motor client on first attribute access.
-    Allows `from common.database import db` to work at import time
-    without actually connecting to MongoDB."""
+    """Proxy that initializes the Motor client on first attribute access."""
 
     def __getattr__(self, name):
         _init_client()

@@ -187,24 +187,36 @@ IMAGES_DIR = ROOT_DIR / "static" / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/api/images", StaticFiles(directory=str(IMAGES_DIR)), name="product-images")
 
-# Serve React frontend static files in production
+# ---------------------------------------------------------------------------
+# Serve React frontend static files (single-service production mode)
+# ---------------------------------------------------------------------------
 FRONTEND_BUILD_DIR = ROOT_DIR.parent / "frontend" / "build"
-if FRONTEND_BUILD_DIR.exists() and (FRONTEND_BUILD_DIR / "static").exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "static")), name="static")
+
+if FRONTEND_BUILD_DIR.exists() and (FRONTEND_BUILD_DIR / "index.html").exists():
+    logger.info("Serving React frontend from %s", FRONTEND_BUILD_DIR)
+
+    # Serve hashed assets at /static (JS, CSS, media)
+    if (FRONTEND_BUILD_DIR / "static").exists():
+        app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "static")), name="static")
 
     @app.get("/{full_path:path}")
     async def serve_spa(request: Request, full_path: str):
-        file_path = FRONTEND_BUILD_DIR / full_path
+        """SPA catch-all: serve files if they exist, else index.html.
+        API routes that fall through return 404 JSON, NOT the SPA shell."""
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        # Prevent path traversal
+        try:
+            file_path = (FRONTEND_BUILD_DIR / full_path).resolve()
+            if not str(file_path).startswith(str(FRONTEND_BUILD_DIR.resolve())):
+                raise ValueError("path traversal")
+        except Exception:
+            return FileResponse(str(FRONTEND_BUILD_DIR / "index.html"))
         if file_path.is_file():
             return FileResponse(str(file_path))
         return FileResponse(str(FRONTEND_BUILD_DIR / "index.html"))
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+else:
+    logger.warning("Frontend build not found at %s — SPA routes will not be served", FRONTEND_BUILD_DIR)
 
 
 @app.on_event("startup")

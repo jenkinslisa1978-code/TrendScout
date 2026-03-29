@@ -1,0 +1,107 @@
+# render.yaml — single-service deployment for TrendScout
+# FastAPI serves both the API (/api/*) and the React SPA (everything else)
+services:
+  - type: web
+    name: trendscout
+    runtime: python
+    region: oregon
+    plan: starter
+    rootDir: .
+    buildCommand: >-
+      pip install -r backend/requirements.txt &&
+      cd frontend && yarn install --frozen-lockfile && CI=false yarn build
+    startCommand: cd backend && python -m uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # ── Required (app will crash without these) ──────────────────────
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: SITE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        value: "*"
+
+      # ── Auth / Stripe ───────────────────────────────────────────────
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_STARTER_PRICE_ID
+        sync: false
+      - key: STRIPE_PRO_PRICE_ID
+        sync: false
+      - key: STRIPE_ELITE_PRICE_ID
+        sync: false
+
+      # ── AI / LLM ───────────────────────────────────────────────────
+      - key: EMERGENT_LLM_KEY
+        sync: false
+
+      # ── Email ───────────────────────────────────────────────────────
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+
+      # ── Shopify ─────────────────────────────────────────────────────
+      - key: SHOPIFY_CLIENT_ID
+        sync: false
+      - key: SHOPIFY_CLIENT_SECRET
+        sync: false
+      - key: SHOPIFY_SCOPES
+        value: "read_products,write_products,read_inventory,write_inventory"
+
+      # ── CJ Dropshipping ────────────────────────────────────────────
+      - key: CJ_API_KEY
+        sync: false
+      - key: CJ_DROPSHIPPING_API_KEY
+        sync: false
+
+      # ── Meta / Ads ─────────────────────────────────────────────────
+      - key: META_AD_LIBRARY_TOKEN
+        sync: false
+
+      # ── Images ──────────────────────────────────────────────────────
+      - key: PEXELS_API_KEY
+        sync: false
+
+      # ── Observability ───────────────────────────────────────────────
+      - key: SENTRY_DSN
+        sync: false
+
+      # ── Feature flags ───────────────────────────────────────────────
+      - key: FEATURE_PRERENDER_PUBLIC
+        value: "true"
+      - key: FEATURE_NOJS_AUTH
+        value: "true"
+      - key: FEATURE_CSP_ENFORCE
+        value: "true"
+      - key: APP_VERSION
+        value: "1.0.0"
+
+      # ── Frontend (baked at build time via REACT_APP_ prefix) ────────
+      # Empty string = relative paths = same-origin API calls
+      - key: REACT_APP_BACKEND_URL
+        value: ""
+      - key: REACT_APP_SUPABASE_URL
+        sync: false
+      - key: REACT_APP_SUPABASE_ANON_KEY
+        sync: false
+      - key: REACT_APP_SENTRY_DSN
+        sync: false
+      - key: REACT_APP_SHOPIFY_CLIENT_ID
+        sync: false
+      - key: REACT_APP_GTM_ID
+        sync: false
+      - key: CI
+        value: "false"
+      - key: PYTHON_VERSION
+        value: "3.11.12"
+      - key: NODE_VERSION
+        value: "20"
