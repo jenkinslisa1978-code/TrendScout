@@ -18,6 +18,17 @@ UK-focused product validation and trend analysis tool for ecommerce sellers.
 
 ## Completed Work
 
+### Product Alert Emails - Instant Alerts (March 29, 2026)
+Full end-to-end instant product alert email feature:
+- Paid users only (starter+) can subscribe to categories with a minimum score threshold
+- Instant email alerts via Resend when new products matching criteria are detected (score 50+)
+- CRUD API: create, list, update, toggle, delete subscriptions + alert history
+- Frontend: /product-alerts page with create form (category dropdown, score slider), subscription list with toggle/delete, alert history
+- ProGate blocks free users with upgrade CTA
+- Hooked into product create/update endpoints via BackgroundTasks
+- Dedupe prevents duplicate alerts for the same product+user
+- Test: iteration_128.json (100% pass, 21 backend + 16 frontend tests)
+
 ### Product Visibility Fix - P0 (March 29, 2026)
 Root cause: `prerender.js` was not idempotent — each run re-read `build/index.html` (already containing injected prerender content) and injected another `#prerender-content` div. After 9 runs, 9 duplicate divs (42KB) covered the React `#root` div. `index.js` only hid the first via `getElementById()`.
 Fixes applied:
@@ -74,6 +85,8 @@ Fixes applied:
 - Tabbed embedded dashboard, SSR for 3 routes, full CRO rewrite
 
 ## Key Files
+- /app/backend/routes/product_alerts.py - Product alert subscriptions API
+- /app/frontend/src/pages/ProductAlertsPage.jsx - Product alerts UI
 - /app/frontend/src/pages/ComparePage.jsx - Product comparison tool
 - /app/frontend/src/pages/TrendingProductsPage.jsx - Compare selection UI
 - /app/frontend/src/components/ConnectionWizard.jsx - Connection wizard
