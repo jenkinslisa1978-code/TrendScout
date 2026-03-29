@@ -1,349 +1,135 @@
-<analysis>**original_problem_statement**: The user originally requested a full end-to-end quality audit. The conversation then shifted to building out platform integrations, where the agent implemented a one-click Shopify OAuth flow and a synced products dashboard. Following this, the user requested a complete CRO/SEO and positioning rewrite of the application. Finally, a critical issue arose where the production application had an empty database, causing logins to fail and products not to show. An attempt to auto-seed the database on startup caused the production backend to crash completely (Cloudflare 520 error). 
+<analysis>**original_problem_statement**: 
+The user initially reported that the production application was crashing with 520 errors and that products were visually hidden on the frontend. After resolving those and adding a Product Alert Email feature, the user requested the application be refactored for a Single-Service Deployment on Render (serving the built React app via FastAPI). Most recently, the user requested a new CJ Dropshipping API integration.
 
 PRODUCT REQUIREMENTS:
 - Provide clear CRO/SEO positioning (UK Product Validation Tool).
-- Ensure seamless third-party integrations (Shopify OAuth).
-- Ensure the production environment is properly seeded with initial data (products and default users) without crashing the server.
+- Ensure seamless third-party integrations (Shopify, Meta, TikTok, WooCommerce, CJ Dropshipping etc.).
+- Ensure stable deployment without health check timeouts or OOM errors.
+- Monolith architecture for production (FastAPI serving React SPA).
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?** 
-TrendScout is a React + FastAPI + MongoDB app. It features a custom static serving/prerendering pipeline for SEO.
-Recently added/updated:
-- Simplified one-click Shopify OAuth flow ().
-- Shopify Synced Products dashboard ().
-- Complete CRO/SEO rewrite of the homepage and metadata across all public pages.
-- An auto-seed script () integrated into the FastAPI startup event to populate an empty database with default products and admin/demo users.
+TrendScout is a FastAPI backend + React frontend application. It has recently been refactored from a split-service architecture to a single-service monolith for deployment on Render. FastAPI () now serves all  routes and falls back to serving the compiled React SPA static files. The application features lazy-loaded MongoDB connections and lazy-loaded LLM dependencies to ensure instantaneous server startup and prevent memory-related container crashes. A new Product Alert Email system via Resend is implemented. 
 
 **Last working item**:
-- **Last item agent was working**: Fixing a critical production backend crash (Cloudflare 520 error). The crash was caused because  was blocking the FastAPI startup event. The agent just changed it to run as a non-blocking background task using .
-- **Status**: USER VERIFICATION PENDING
-- **Agent Testing Done**: N (The agent applied the code change but finished the job before verifying if the backend successfully starts up with the new async task).
-- **Which testing method agent to use?** backend testing by  to  and verifying if products/users are populated in the DB.
-- **User Testing Done**: N
+- Last item agent was working: Building the CJ Dropshipping API integration. The agent was researching the CJ API documentation, reviewing the existing product data schema, and inspecting the APScheduler background tasks () to prepare for creating .
+- Status: IN PROGRESS
+- Agent Testing Done: N
+- Which testing method agent to use? backend testing agent (to verify CJ Dropshipping sync endpoint and data mapping) / manual testing by curl.
+- User Testing Done: N
 
-**All Pending/In progress Issue list**:
-Issue 1: Production backend crashing on startup (Cloudflare 520 Error) - P0
-
-Issues Detail:
-- Issue 1:
-   - Attempted fixes: Changed  to  inside  in  so that seeding doesn't block the server from accepting requests.
-   - Next debug checklist: 
-     1. Restart the backend using supervisor.
-     2.  the backend health check to ensure it starts immediately.
-     3. Check the application logs (==> /var/log/supervisor/backend.err.log <==
-2026-03-28 13:36:00,929 - services.jobs.scheduler - INFO - Registered scheduled task: scan_threshold_subscriptions (0 */6 * * *)
-2026-03-28 13:36:00,929 - services.jobs.scheduler - INFO - Registered scheduled task: weekly_competitor_scan (0 6 * * 1)
-2026-03-28 13:36:00,929 - services.jobs.scheduler - INFO - Registered scheduled task: weekly_blog_generation (0 8 * * 1)
-2026-03-28 13:36:00,929 - services.jobs.scheduler - INFO - Registered scheduled task: cleanup_stale_jobs (*/15 * * * *)
-2026-03-28 13:36:00,929 - services.jobs.scheduler - INFO - Registered scheduled task: generate_weekly_report (0 6 * * 1)
-2026-03-28 13:36:00,929 - services.jobs.scheduler - INFO - Registered scheduled task: generate_monthly_report (0 6 1 * *)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: scrape_real_data (0 */4 * * *)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: enrich_google_trends (0 */6 * * *)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: recompute_scores (0 */4 * * *)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: run_deduplication (0 8 * * *)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: send_weekly_email_digest (0 10 * * 1)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: send_product_of_the_week (0 11 * * 3)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: send_weekly_radar_digest (0 8 * * 1)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: enrich_product_images (0 */8 * * *)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: generate_weekly_digest (0 9 * * 1)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: send_lead_subscriber_digest (0 9 * * 1)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: send_trial_expiry_notifications (0 */2 * * *)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: review_prediction_accuracy (0 6 * * *)
-2026-03-28 13:36:00,930 - services.jobs.scheduler - INFO - Registered scheduled task: send_lead_drip_emails (0 9 * * *)
-2026-03-28 13:36:00,933 - services.jobs.scheduler - INFO - Scheduler started with 25 scheduled tasks
-2026-03-28 13:36:00,933 - server - INFO - Background worker and scheduler started
-INFO:     Application startup complete.
-2026-03-28 13:36:00,934 - services.jobs.queue - INFO - Job queue indexes created
-WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-2026-03-28 13:40:18,383 - services.jobs.scheduler - INFO - Scheduler stopped
-2026-03-28 13:40:18,383 - services.jobs.worker - INFO - Stopping background worker...
-2026-03-28 13:40:21,126 - services.jobs.worker - INFO - Worker loop ended
-2026-03-28 13:40:21,126 - services.jobs.worker - INFO - Background worker stopped
-2026-03-28 13:40:21,126 - server - INFO - Background services stopped
-INFO:     Application shutdown complete.
-INFO:     Finished server process [86]
-INFO:     Started server process [966]
-INFO:     Waiting for application startup.
-2026-03-28 13:40:25,942 - server - INFO - Database indexes created
-2026-03-28 13:40:25,946 - common.redis_cache - WARNING - Redis unavailable (Error 99 connecting to localhost:6379. Cannot assign requested address.), using in-memory fallback
-2026-03-28 13:40:25,946 - routes.seo - INFO - Sitemap regenerated: 172 URLs
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: ingest_trending_products
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: update_market_scores
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: update_competitor_data
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: update_ad_activity
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: update_supplier_data
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: generate_alerts
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: scan_threshold_subscriptions
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: weekly_competitor_scan
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: weekly_blog_generation
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: full_pipeline
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: cleanup_stale_jobs
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: generate_weekly_report
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: generate_monthly_report
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: scrape_real_data
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: enrich_google_trends
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: recompute_scores
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: run_deduplication
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: send_weekly_email_digest
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: send_product_of_the_week
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: send_weekly_radar_digest
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: enrich_product_images
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: generate_weekly_digest
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: send_lead_subscriber_digest
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: send_trial_expiry_notifications
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: review_prediction_accuracy
-2026-03-28 13:40:25,948 - services.jobs.tasks - INFO - Registered task: send_lead_drip_emails
-2026-03-28 13:40:25,962 - services.jobs.worker - INFO - Background worker started
-2026-03-28 13:40:25,962 - services.jobs.worker - INFO - Worker loop started
-2026-03-28 13:40:25,964 - server - INFO - Database already seeded (products=71, users=23)
-2026-03-28 13:40:25,965 - services.jobs.queue - INFO - Job queue indexes created
-2026-03-28 13:40:25,965 - services.jobs.scheduler - INFO - Registered scheduled task: ingest_trending_products (0 */4 * * *)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: update_market_scores (0 */2 * * *)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: update_competitor_data (0 */6 * * *)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: update_ad_activity (0 */4 * * *)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: update_supplier_data (0 */6 * * *)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: generate_alerts (0 * * * *)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: scan_threshold_subscriptions (0 */6 * * *)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: weekly_competitor_scan (0 6 * * 1)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: weekly_blog_generation (0 8 * * 1)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: cleanup_stale_jobs (*/15 * * * *)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: generate_weekly_report (0 6 * * 1)
-2026-03-28 13:40:25,966 - services.jobs.scheduler - INFO - Registered scheduled task: generate_monthly_report (0 6 1 * *)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: scrape_real_data (0 */4 * * *)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: enrich_google_trends (0 */6 * * *)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: recompute_scores (0 */4 * * *)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: run_deduplication (0 8 * * *)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: send_weekly_email_digest (0 10 * * 1)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: send_product_of_the_week (0 11 * * 3)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: send_weekly_radar_digest (0 8 * * 1)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: enrich_product_images (0 */8 * * *)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: generate_weekly_digest (0 9 * * 1)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: send_lead_subscriber_digest (0 9 * * 1)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: send_trial_expiry_notifications (0 */2 * * *)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: review_prediction_accuracy (0 6 * * *)
-2026-03-28 13:40:25,967 - services.jobs.scheduler - INFO - Registered scheduled task: send_lead_drip_emails (0 9 * * *)
-2026-03-28 13:40:25,968 - services.jobs.scheduler - INFO - Scheduler started with 25 scheduled tasks
-2026-03-28 13:40:25,968 - server - INFO - Background worker and scheduler started
-INFO:     Application startup complete.
-2026-03-28 13:40:25,969 - services.jobs.queue - INFO - Job queue indexes created
-INFO:     Will watch for changes in these directories: ['/app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [48] using WatchFiles
-
-==> /var/log/supervisor/backend.out.log <==
-INFO:     10.79.129.7:49890 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK
-INFO:     10.79.129.7:49890 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.5:60054 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.5:60054 - "GET /api/images/12bf3113-3411-4471-87ad-2cd06a8991fe_39b39fe8.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:47770 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.7:56346 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45992 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK
-INFO:     10.79.129.7:46004 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:46006 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45992 - "GET /api/images/12bf3113-3411-4471-87ad-2cd06a8991fe_39b39fe8.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45992 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.5:45696 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK
-INFO:     10.79.129.7:46004 - "GET /api/images/12bf3113-3411-4471-87ad-2cd06a8991fe_39b39fe8.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:46010 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45992 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45992 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.5:45696 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45992 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45992 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.5:41592 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.5:32944 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK
-INFO:     10.79.129.7:55868 - "GET /api/images/12bf3113-3411-4471-87ad-2cd06a8991fe_39b39fe8.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:55882 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.5:32944 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:35258 - "GET /api/public/trending-products?limit=5 HTTP/1.1" 200 OK
-INFO:     10.79.129.5:48712 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.129.5:48712 - "GET /api/trending?limit=5 HTTP/1.1" 404 Not Found
-INFO:     10.79.129.7:33788 - "GET /api/public/categories HTTP/1.1" 200 OK
-INFO:     10.79.129.7:35258 - "GET /api/public/trending-products?limit=50 HTTP/1.1" 200 OK
-INFO:     10.79.129.5:48712 - "GET /api/public/daily-picks HTTP/1.1" 200 OK
-INFO:     10.79.129.5:35754 - "GET /api/images/133651d4-120d-4865-aa45-ab77c741a77e_32a41c1d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:35258 - "GET /api/images/0b2182e0-af6e-44d5-8cde-aea3f78a9f38_5ea72b94.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.5:35754 - "GET /api/images/3c49c7f9-f7ca-4d92-a591-f6788a3d203b_9db84b33.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.7:35258 - "GET /api/images/23676b9e-0e13-4b5e-acd8-27770eb64f2e_22dc04c9.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.5:35754 - "GET /api/images/68f41478-9ca2-48c6-997d-b121e2ef8ee9_d452327d.jpg HTTP/1.1" 200 OK
-INFO:     10.79.129.5:35754 - "POST /api/analytics/batch HTTP/1.1" 200 OK
-INFO:     10.79.129.5:34500 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK
-INFO:     10.79.129.7:37902 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     10.79.129.5:56652 - "GET /api/public/trending-products?limit=2 HTTP/1.1" 200 OK
-INFO:     10.79.129.5:33166 - "POST /api/auth/login HTTP/1.1" 200 OK
-Connecting to MongoDB...
-Clearing existing data...
-Processing and inserting products...
-  Inserted 15 products
-Generating alerts...
-  Created 9 alerts
-Creating automation log...
-Creating demo profile...
-Creating demo subscription...
-
-✅ Database seeded successfully!
-   - 15 products
-   - 9 alerts
-   - 1 demo profile (admin/elite)
-   - 1 automation log
-INFO:     10.79.129.5:33166 - "POST /api/admin/reseed-products HTTP/1.1" 500 Internal Server Error
-INFO:     10.79.129.7:60878 - "POST /api/auth/login HTTP/1.1" 200 OK
-Connecting to MongoDB...
-Clearing existing data...
-Processing and inserting products...
-  Inserted 15 products
-Generating alerts...
-  Created 9 alerts
-Creating automation log...
-Creating demo profile...
-Creating demo subscription...
-
-✅ Database seeded successfully!
-   - 15 products
-   - 9 alerts
-   - 1 demo profile (admin/elite)
-   - 1 automation log
-INFO:     10.79.129.5:33740 - "POST /api/admin/reseed-products HTTP/1.1" 200 OK
-INFO:     10.79.129.5:35848 - "POST /api/auth/login HTTP/1.1" 200 OK
-Connecting to MongoDB...
-Clearing existing data...
-Processing and inserting products...
-  Inserted 15 products
-Generating alerts...
-  Created 9 alerts
-Creating automation log...
-Creating demo profile...
-Creating demo subscription...
-
- Database seeded successfully!
-   - 15 products
-   - 9 alerts
-   - 1 demo profile (admin/elite)
-   - 1 automation log
-INFO:     10.79.129.7:46728 - "POST /api/admin/reseed-products HTTP/1.1" 200 OK
-INFO:     10.79.129.7:56218 - "GET /api/public/trending-products?limit=5 HTTP/1.1" 200 OK
-INFO:     10.79.129.5:40780 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK
-INFO:     10.79.129.7:36426 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK
-INFO:     10.79.129.7:42170 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.129.5:34918 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.129.7:39560 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45954 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.129.5:41942 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     10.79.129.7:45954 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK
-INFO:     10.79.129.7:36494 - "GET /api/public/trending-products?limit=3 HTTP/1.1" 200 OK) to verify if the background  task completes successfully without throwing errors.
-     4. Verify the database actually seeded by attempting to log in or fetching trending products.
-   - Why fix this issue and what will be achieved with the fix? The production site is currently down (returning 520 errors on APIs). Fixing this restores functionality and ensures new deployments automatically get necessary mock data if the DB is empty.
-   - Status: USER VERIFICATION PENDING
-   - Is recurring issue? Y
-   - Should Test frontend/backend/both after fix? Backend.
-   - Blocked on other issue: None
+**All Pending/In progress Issue list**: 
+None. (All previous deployment 520 errors, OOM crashes, and frontend rendering bugs were successfully resolved).
 
 **In progress Task List**:
-None actively in progress. The focus should solely be on verifying the P0 crash fix.
+Task 1: CJ Dropshipping API Integration (P0)
 
-**Upcoming and Future Tasks**:
-- P1: Add Meta, Etsy, TikTok, Google Ads app credentials for one-click OAuth (currently only Shopify has app credentials).
-- P1: Configure GA4 in GTM console (User task).
+ Task Detail:
+  - Task 1: CJ Dropshipping API Integration
+     - Where to resume: Create  to authenticate using , fetch trending products, and map them to the existing MongoDB product schema. Create  and register it in . Hook this into the  endpoint.
+     - What will be achieved with this? Automated ingestion of supplier products directly from CJ Dropshipping.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix? Backend
+     - Blocked on something: Nothing.
+
+**Upcoming and Future Tasks**
+Upcoming Tasks:
+- P1: Configure GA4 tag in GTM console (User task).
 - P1: Configure Resend webhook URL pointing to the production domain (User task).
-- P2: Implement data synchronization from connected stores (Etsy, WooCommerce).
-- P2: Build an embedded Shopify app experience.
-- P3: Implement full SSR for dynamic pages (e.g., ).
 
-**Completed work in this session**:
-- Mobile homepage horizontal overflow fixed (DONE).
-- Simplified Shopify one-click OAuth flow (DONE).
-- Shopify Synced Products Dashboard () (DONE).
-- Token refresh logic and Webhook subscriptions for Shopify (DONE).
-- CRO/SEO/Positioning rewrite for Homepage and metadata updates across all public pages (DONE).
-- User instructions on  updated (DONE).
--  updated to stop blocking  files for deployment (DONE).
+Future Tasks:
+- P1: Create OAuth apps for Shopify/Meta/TikTok using .
+- P2: Stripe payment configuration for live subscriptions.
 
-**Earlier issues found/mentioned but not fixed**:
+**Completed work in this session**
+- Fixed idempotent prerender UI bug, preventing duplicate HTML injection (DONE)
+- Implemented full End-to-End Product Alert Emails feature using Resend (DONE)
+- Fixed K8s deployment 520 errors by making DB operations non-blocking at startup (DONE)
+- Fixed OOM container crashes by lazy-loading  (saved ~100MB RAM) (DONE)
+- Fixed fatal MongoDB import crash by implementing  for asynchronous DNS SRV lookups (DONE)
+- Refactored application for Render Single-Service Deployment (FastAPI serves React SPA, created  and ) (DONE)
+
+**Earlier issues found/mentioned but not fixed**
 None.
 
-**Known issue recurrence from previous fork**:
-- Issue recurrence in previous fork: None
-- Recurrence count: 0
-- Status: RESOLVED
+**Known issue recurrence from previous fork**
+- Issue recurrence in previous fork: Production backend crashing on startup (Cloudflare 520 Error).
+- Recurrence count: 4 
+- Status: RESOLVED (Root causes were synchronous DB connection timeouts and OOM kills due to module-level heavy imports. Completely refactored to lazy-loading).
 
-**Code Architecture**:
-- Frontend: React, TailwindCSS, Shadcn UI. Custom  handles SPA fallback + serving prerendered HTML.
-- Backend: FastAPI, Motor (Async MongoDB). Background scheduler manages cron jobs.
-- Shared: MongoDB via .
+**Code Architecture**
+- Backend (): FastAPI, Motor (Async MongoDB), APScheduler for background cron jobs. Serves APIs and static frontend files.
+- Frontend (): React, TailwindCSS, Shadcn UI. Compiles to .
+- Infrastructure: Configured via  as a single web service.
 
-**Key Technical Concepts**:
-- FastAPI background tasks and startup events ().
-- Generic OAuth flow handling token encryption using Fernet symmetric encryption.
-- React Router with distinct protected/public routes.
+**Key Technical Concepts**
+- Monolith SPA Serving:  handles API routes first, then serves  and static JS/CSS for unmatched routes.
+- Lazy Initialization: MongoDB client () and LLM libraries () are STRICTLY lazy-loaded to ensure the server binds to port 8001 within milliseconds, passing health checks.
 
-**key DB schema**:
+**key DB schema**
 - : 
-- :  (Used for actual login auth)
-- :  (Used for user data)
+- :  
+- :  (New)
 - : 
 
-**changes in tech stack**:
-- None
+**changes in tech stack**
+- Transitioned to Render Single-Service deployment.
+- Replaced eager MotorClient initialization with  and .
 
-**All files of reference**:
-- : Contains the  event where the background auto-seeding is triggered.
-- : Contains the logic to wipe and reseed the database (now modified to properly create ).
-- : Updated to show an accurate empty state when the DB has 0 products.
+**All files of reference**
+-  (To be created)
+-  (Job registry to add CJ sync)
+-  (For daily automation endpoints)
+-  (Contains the  logic)
+-  (Deployment configuration)
 
-**Areas that need refactoring**:
-- Tying a potentially long-running database seeding operation to the FastAPI startup event is brittle. If  fails or causes memory issues, it should be refactored into a dedicated deployment hook or a standalone script run before the server starts.
+**Areas that need refactoring**
+-  and  are mostly obsolete now that  acts as the monolith server for Render, but they were kept as potential fallbacks. 
 
-**key api endpoints**:
+**key api endpoints**
+-  (Bare health check for K8s/Render probes)
+-  (Full health check with DB status)
+-  (CRUD for product email alerts)
+-  (Target for CJ sync hook)
+
+**Critical Info for New Agent**
+- **CRITICAL**: Do NOT add module-level imports for heavy libraries (like , ) or synchronous database connections. They will cause OOM crashes or health-check timeouts. Always use lazy loading or function-level imports.
+- **CRITICAL**: The application is now configured to deploy as ONE service. Any new API routes must be properly prefixed with  in FastAPI so they do not conflict with the SPA static file catch-all in .
+- The  is expected to be loaded from environment variables.
+
+**documents and test reports created in this job**
 - 
 - 
 - 
 
-**Critical Info for New Agent**:
-- The previous agent diagnosed that the production database was entirely empty (no products, no users), meaning the client couldn't log in and saw empty screens. To fix this, the agent integrated  into the FastAPI startup event. However, this blocked the uvicorn event loop, causing a Cloudflare 520 error in production.
-- The agent's final action was wrapping the seed call in . **Your first action must be to verify if this fix actually works locally.** Check supervisor logs and ensure the backend starts cleanly without crashing and that the seeding finishes in the background.
-
-**documents and test reports created in this job**:
-- 
-- 
-- 
-- 
-
-**Last 10 User Messages and any pending HUMAN messages**:
-1. User asked if users can connect stores/ads and set them up from TrendScout.
-2. User agreed to focus on Shopify integration first.
-3. User asked to apply the simplified OAuth to all connections.
-4. User asked to do whatever future item the agent can.
-5. User asked if user instructions need amending.
-6. User requested a full CRO/SEO rewrite of the site.
-7. User told agent to call Deployer Agent and run health check.
-8. User complained trending products page is not showing results.
-9. User shared a screenshot showing 0 products on the production site.
-10. (Pending) User complained login details don't work and still no products on production.
+**Last 10 User Messages and any pending HUMAN messages** 
+1. User asked to confirm plan using .
+2. User provided multiple logs showing deployment 520 errors and health check timeouts.
+3. User provided logs showing OOM issues and container readiness failures.
+4. User requested the application be refactored for single-service deployment on Render.
+5. User asked where to find  files.
+6. User requested a new CJ Dropshipping API integration to fetch products automatically.
 
 **Project Health Check:**
-- Broken: YES (Production backend crashed on startup; pending verification of the async task fix).
+- Broken: NO.
 - Mocked: NO.
 
-**3rd Party Integrations**:
-- Shopify OAuth App — uses User API Key/Client Secret (configured in .env).
-- Meta, TikTok, Google Ads — requires User API Keys (Not yet configured for OAuth).
-- Google Tag Manager — uses User ID.
-- Stripe (Payments) — requires User API Key.
+**3rd Party Integrations** 
 - Resend (Email) — requires User API Key.
-- OpenAI GPT-5.2 — uses Emergent LLM Key.
+- OpenAI/Anthropic/Gemini — uses Emergent LLM Key.
+- Stripe (Payments) — requires User API Key.
+- CJ Dropshipping (Supplier Data) — requires User API Key (Pending task).
 
-**Testing status**:
-- Testing agent used after significant changes: YES
-- Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: None
-- Known regressions: Backend failed to start due to blocking database seed logic.
+**Testing status**
+- Testing agent used after significant changes: YES ( used for Product Alerts,  used for deployment fixes).
+- Troubleshoot agent used after agent stuck in loop: YES ( used).
+- Test files created: None.
+- Known regressions: None.
 
 **Credentials to test flow:**
 - Admin User:  / 
 - Demo User:  / 
 
-**What agent forgot to execute**:
-The agent wrote the fix for the Cloudflare 520 crash () but executed the  tool without running the backend locally to see if the server starts properly or if the background task throws errors.</analysis>
+**What agent forgot to execute**
+The agent was in the preliminary research phase of the CJ Dropshipping API integration and had not yet created  or written any code for it. The next agent must start immediately on building this integration.</analysis>
