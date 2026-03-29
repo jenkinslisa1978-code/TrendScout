@@ -664,7 +664,7 @@ async def get_product_competitors(product_id: str):
     }
 
 @api_router.post("/products")
-async def create_product(product: Product):
+async def create_product(product: Product, background_tasks: BackgroundTasks):
     """Create new product with automation"""
     product_dict = product.model_dump()
     
@@ -684,10 +684,14 @@ async def create_product(product: Product):
         if '_id' in result['alert']:
             del result['alert']['_id']
     
+    # Trigger instant product alerts in background
+    from routes.product_alerts import check_and_send_alerts
+    background_tasks.add_task(check_and_send_alerts, processed)
+    
     return {"data": processed, "alert": result['alert']}
 
 @api_router.put("/products/{product_id}")
-async def update_product(product_id: str, updates: Dict[str, Any]):
+async def update_product(product_id: str, updates: Dict[str, Any], background_tasks: BackgroundTasks):
     """Update product with automation"""
     existing = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not existing:
@@ -701,6 +705,10 @@ async def update_product(product_id: str, updates: Dict[str, Any]):
     processed = result['product']
     
     await db.products.update_one({"id": product_id}, {"$set": processed})
+    
+    # Trigger instant product alerts in background
+    from routes.product_alerts import check_and_send_alerts
+    background_tasks.add_task(check_and_send_alerts, processed)
     
     return {"data": processed, "alert": result['alert']}
 

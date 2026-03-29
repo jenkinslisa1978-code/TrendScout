@@ -35,6 +35,7 @@ const navigation = [
   { name: 'Connections', href: '/settings/connections', icon: Link2 },
   { name: 'API Access', href: '/api-docs', icon: Shield },
   { name: 'Reports', href: '/reports', icon: FileText },
+  { name: 'Product Alerts', href: '/product-alerts', icon: Bell },
   { name: 'Referrals', href: '/referrals', icon: Gift },
 ];
 

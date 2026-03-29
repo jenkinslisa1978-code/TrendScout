@@ -36,6 +36,7 @@ const ProfitabilitySimulatorPage = lazy(() => import("@/pages/ProfitabilitySimul
 const AdSpyPage = lazy(() => import("@/pages/AdSpyPage"));
 const CompetitorIntelPage = lazy(() => import("@/pages/CompetitorIntelPage"));
 const RadarAlertsPage = lazy(() => import("@/pages/RadarAlertsPage"));
+const ProductAlertsPage = lazy(() => import("@/pages/ProductAlertsPage"));
 const VerifiedWinnersPage = lazy(() => import("@/pages/VerifiedWinnersPage"));
 const CJSourcingPage = lazy(() => import("@/pages/CJSourcingPage"));
 const CompetitorTrackerPage = lazy(() => import("@/pages/CompetitorTrackerPage"));
@@ -452,6 +453,14 @@ function AppRoutes() {
       <Route path="/reports/monthly-market-trends" element={<PublicMonthlyReportPage />} />
 
       {/* Settings Routes */}
+      <Route
+        path="/product-alerts"
+        element={
+          <ProtectedRoute>
+            <ProductAlertsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/settings/notifications"
         element={

@@ -167,6 +167,52 @@ class EmailService:
         """
         return await self.send_email(to_email, f"TrendScout Alert: {product_name}", html)
 
+    async def send_instant_product_alert(self, to_email: str, product_name: str, category: str, score: int, product_id: str, trend_label: str = "Emerging") -> dict:
+        """Send instant product alert email when a high-scoring product matches a subscription."""
+        site = self.site_url or "https://trendscout.click"
+        score_color = "#10b981" if score >= 70 else "#6366f1" if score >= 50 else "#64748b"
+        html = f"""
+        <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:40px 24px;background:#ffffff;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;padding:10px;margin-bottom:8px;">
+              <span style="color:#fff;font-size:18px;font-weight:bold;">TS</span>
+            </div>
+            <h1 style="font-size:18px;font-weight:700;color:#1e293b;margin:8px 0 0;">New Product Alert</h1>
+          </div>
+
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;">
+            <p style="font-size:12px;color:#64748b;margin:0 0 4px;text-transform:uppercase;letter-spacing:0.5px;">Product Detected</p>
+            <h2 style="font-size:20px;font-weight:700;color:#1e293b;margin:0 0 4px;">{product_name}</h2>
+            <p style="font-size:13px;color:#94a3b8;margin:0 0 12px;">{category}</p>
+            <span style="font-family:monospace;font-size:36px;font-weight:800;color:{score_color};">{score}</span>
+            <span style="font-size:14px;color:#94a3b8;">/100</span>
+            <div style="margin-top:8px;">
+              <span style="display:inline-block;background:{score_color}20;color:{score_color};font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;">
+                {trend_label}
+              </span>
+            </div>
+          </div>
+
+          <p style="font-size:13px;color:#64748b;line-height:1.6;text-align:center;margin-bottom:20px;">
+            This product matched your alert criteria. Click below to view the full analysis.
+          </p>
+
+          <div style="text-align:center;">
+            <a href="{site}/product/{product_id}"
+               style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:10px;">
+              View Full Analysis
+            </a>
+          </div>
+
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0;" />
+          <p style="font-size:11px;color:#94a3b8;text-align:center;">
+            TrendScout &mdash; AI product validation for ecommerce<br/>
+            <a href="{site}/product-alerts" style="color:#94a3b8;">Manage your alerts</a>
+          </p>
+        </div>
+        """
+        return await self.send_email(to_email, f"New Product Alert: {product_name} (Score {score})", html)
+
     async def send_product_of_the_week(self, to_email: str, user_name: str, product: dict) -> dict:
         site = self.site_url or "https://trendscout.click"
         name = product.get("product_name", "Unknown")
