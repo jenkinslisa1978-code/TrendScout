@@ -19,7 +19,6 @@ import json
 import logging
 from typing import Dict, Any, List
 from datetime import datetime, timezone
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,8 @@ def _get_api_key() -> str:
     return os.environ.get("EMERGENT_LLM_KEY", "")
 
 
-def _create_chat(session_id: str, system_message: str, provider: str = None) -> LlmChat:
+def _create_chat(session_id: str, system_message: str, provider: str = None):
+    from emergentintegrations.llm.chat import LlmChat
     provider = provider or DEFAULT_PROVIDER
     config = PROVIDERS.get(provider, PROVIDERS[DEFAULT_PROVIDER])
     return LlmChat(
@@ -67,6 +67,7 @@ def _build_product_context(product: Dict[str, Any]) -> str:
 
 async def _llm_step(session_prefix: str, system: str, prompt: str, provider: str = None) -> Dict:
     """Execute a single LLM step and parse JSON response."""
+    from emergentintegrations.llm.chat import UserMessage
     sid = f"{session_prefix}-{uuid.uuid4().hex[:6]}"
     chat = _create_chat(sid, system, provider)
     raw = await chat.send_message(UserMessage(text=prompt))

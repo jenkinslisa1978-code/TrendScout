@@ -11,7 +11,6 @@ import json
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +28,9 @@ def _get_api_key() -> str:
     return os.environ.get('EMERGENT_LLM_KEY', '')
 
 
-def _create_chat(session_id: str, system_message: str, provider: str = None) -> LlmChat:
+def _create_chat(session_id: str, system_message: str, provider: str = None):
     """Create an LlmChat instance with the specified provider."""
+    from emergentintegrations.llm.chat import LlmChat
     provider = provider or DEFAULT_PROVIDER
     config = PROVIDERS.get(provider, PROVIDERS[DEFAULT_PROVIDER])
     
@@ -171,6 +171,7 @@ Generate a PREMIUM ad creative package that will outperform competitors. This mu
 Generate 3 product angles, 5 power headlines, 3 TikTok scripts (different formats), 2 Facebook long-form ads, 3 Instagram captions, 6 storyboard scenes, 5 shots, 1 voiceover, 2 emails, and budget advice. Make EVERY line specific to {product_name} — zero generic filler."""
 
     try:
+        from emergentintegrations.llm.chat import UserMessage
         response = await chat.send_message(UserMessage(text=prompt))
         
         # Parse JSON from response
