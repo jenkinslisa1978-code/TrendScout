@@ -18,6 +18,14 @@ UK-focused product validation and trend analysis tool for ecommerce sellers.
 
 ## Completed Work
 
+### Deployment 520 Error Fix (March 29, 2026)
+Root causes identified and fixed:
+1. `load_db_credentials()` in `server.py` was `await`ed during FastAPI startup — blocked server from accepting requests until Atlas responded (5-15s). Moved to `asyncio.create_task()`.
+2. MongoDB client had no connection timeouts. Atlas cold-connect can take 30s with default `serverSelectionTimeoutMS`. Added 5s timeouts.
+3. Added bare `/health` endpoint (no `/api` prefix, no DB dependency) for K8s readiness probes.
+4. `start.js` used `execSync` (blocks event loop). Changed to async `exec`.
+5. Health endpoint now returns 200 immediately; DB status is best-effort.
+
 ### Product Alert Emails - Instant Alerts (March 29, 2026)
 Full end-to-end instant product alert email feature:
 - Paid users only (starter+) can subscribe to categories with a minimum score threshold

@@ -27,13 +27,19 @@ if (!buildValid) {
   console.log('[start] Starting static server...');
   require('./serve.js');
 
-  // Run prerender AFTER server is up (non-blocking, updates HTML files in-place)
+  // Run prerender AFTER server is up (non-blocking, no event loop blocking)
   setTimeout(() => {
     try {
-      const { execSync } = require('child_process');
+      const { exec } = require('child_process');
       console.log('[start] Running prerender...');
-      execSync('node prerender.js', { cwd: __dirname, stdio: 'inherit', timeout: 30000 });
-      console.log('[start] Prerender complete.');
+      const child = exec('node prerender.js', { cwd: __dirname, timeout: 30000 });
+      child.stdout?.pipe(process.stdout);
+      child.stderr?.pipe(process.stderr);
+      child.on('close', (code) => {
+        if (code === 0) console.log('[start] Prerender complete.');
+        else console.warn(`[start] Prerender exited with code ${code}`);
+      });
+      child.on('error', (e) => console.warn('[start] Prerender error:', e.message));
     } catch (e) {
       console.warn('[start] Prerender skipped:', e.message);
     }

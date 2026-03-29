@@ -166,6 +166,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         content={"success": False, "error": {"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"}},
     )
 
+# Bare /health for K8s readiness probes (no /api prefix, no DB dependency)
+@app.get("/health")
+async def k8s_health():
+    return {"status": "ok"}
+
 # Serve product images from local storage
 IMAGES_DIR = ROOT_DIR / "static" / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
@@ -325,12 +330,15 @@ async def startup_db():
 
     asyncio.create_task(_auto_seed())
 
-    # Load OAuth credentials from DB into memory cache
-    try:
-        from services.oauth_service import load_db_credentials
-        await load_db_credentials()
-    except Exception as e:
-        logger.warning(f"Could not load OAuth credentials from DB: {e}")
+    # Load OAuth credentials from DB into memory cache (non-blocking)
+    async def _load_oauth():
+        try:
+            from services.oauth_service import load_db_credentials
+            await load_db_credentials()
+        except Exception as e:
+            logger.warning(f"Could not load OAuth credentials from DB: {e}")
+
+    asyncio.create_task(_load_oauth())
 
     # Non-blocking: sitemap + scheduler + worker
     async def _deferred_startup():

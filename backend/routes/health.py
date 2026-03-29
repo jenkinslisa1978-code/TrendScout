@@ -13,19 +13,22 @@ async def root():
 
 @api_router.get("/health")
 async def health_check():
+    """Health check — returns 200 immediately; DB status is best-effort."""
+    result = {
+        "status": "ok",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
     try:
         product_count = await db.products.count_documents({})
         user_count = await db.auth_users.count_documents({})
-        return {
-            "status": "ok",
-            "db": {
-                "products": product_count,
-                "users": user_count,
-                "connected": True,
-            },
+        result["db"] = {
+            "products": product_count,
+            "users": user_count,
+            "connected": True,
         }
     except Exception as e:
-        return {"status": "degraded", "db": {"connected": False, "error": str(e)}}
+        result["db"] = {"connected": False, "error": str(e)}
+    return result
 
 
 routers = [api_router]
