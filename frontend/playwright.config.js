@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'https://cro-audit-staging.preview.emergentagent.com';
+const BASE_URL = process.env.BASE_URL || 'https://uk-product-validator.preview.emergentagent.com';
 
 export default defineConfig({
   testDir: './e2e',
