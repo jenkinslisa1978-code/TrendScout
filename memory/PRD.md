@@ -113,3 +113,103 @@ and a product with great margins can fail in the UK if it takes 3-4 weeks to arr
   endCountryCode=GB, productWeight from existing data
 - Cache shipping estimates per product (changes infrequently)
 - For products without CJ data, default to "Check supplier" status
+
+---
+
+### 🇬🇧 Avasam UK Supplier Integration (HIGH PRIORITY)
+**Background:** TrendScout currently only sources products from CJ Dropshipping (China-based).
+Adding Avasam gives access to 100+ genuine UK-based suppliers with 2-5 day delivery.
+This is a massive differentiator — no other product research tool surfaces UK-stocked products.
+
+**What Avasam is:**
+- UK's leading dropshipping platform — avasam.com
+- 100+ UK-based suppliers, all pre-vetted
+- Products already in UK warehouses — 2-5 day delivery to UK buyers
+- Free API access (apply at avasam.com/api)
+- REST API with OAuth2 authentication
+
+**Environment variable needed:**
+- `AVASAM_API_KEY` — add to Render once obtained from avasam.com
+
+**Files to create (mirror CJ structure exactly):**
+
+1. **`backend/services/avasam.py`** — new service file
+```
+AVASAM_BASE = "https://api.avasam.com/v1"
+
+Key functions to implement (mirror cj_dropshipping.py structure):
+- _get_access_token() — OAuth2 Bearer token, cache like CJ
+- search_products(query, page, page_size) → {"success": bool, "products": [...]}
+- get_product_detail(product_id) → {"success": bool, "product": {...}}
+- get_categories() → {"success": bool, "categories": [...]}
+- _map_avasam_product(p) → standard product dict
+
+Product mapping (_map_avasam_product):
+{
+  "avasam_id": p.get("product_id"),
+  "product_name": p.get("title"),
+  "category": p.get("category_name"),
+  "image_url": p.get("images", [{}])[0].get("url", ""),
+  "supplier_cost": p.get("cost_price"),
+  "sell_price": p.get("retail_price"),
+  "currency": "GBP",  ← already in GBP, no conversion needed
+  "stock_status": "in_stock" if p.get("stock_quantity", 0) > 0 else "out_of_stock",
+  "source": "avasam",
+  "source_url": p.get("product_url", ""),
+  "shipping_time": "2-5 days",  ← UK warehouse, always fast
+  "shipping_badge": "uk_warehouse",
+  "uk_supplier": True,
+  "supplier_name": p.get("supplier_name", ""),
+  "description": p.get("description", "")[:500],
+  "sku": p.get("sku", ""),
+}
+```
+
+2. **`backend/routes/avasam.py`** — new route file (mirror cj_dropshipping.py routes)
+```
+Router prefix: /api/avasam
+Endpoints:
+- GET  /api/avasam/products?query=&page=&page_size=
+- GET  /api/avasam/products/{product_id}
+- GET  /api/avasam/categories
+- POST /api/avasam/sync  ← manual sync trigger (admin only)
+- GET  /api/avasam/sync/history
+```
+
+3. **Register in `backend/server.py`** — import and include avasam_router
+
+4. **Update scoring engine** — products with `uk_supplier=True` or
+   `shipping_badge="uk_warehouse"` get +15 points on launch_score
+
+5. **Update product cards** — show "🇬🇧 UK Supplier" badge in green
+   alongside existing trend/opportunity badges
+
+6. **Update sync scheduler** — add Avasam sync to APScheduler
+   (every 6h, same as CJ) searching top 20 trending categories
+
+**Avasam API endpoints (from their docs):**
+- Auth: POST https://api.avasam.com/v1/oauth/token
+  Body: {"grant_type": "api_key", "api_key": AVASAM_API_KEY}
+  Returns: {"access_token": "...", "expires_in": 3600}
+- Search: GET https://api.avasam.com/v1/products?search={query}&page={page}&limit={page_size}
+- Detail: GET https://api.avasam.com/v1/products/{product_id}
+- Categories: GET https://api.avasam.com/v1/categories
+
+**Categories to sync (UK trending):**
+"home decor", "kitchen gadgets", "beauty", "pet supplies", "fitness",
+"electronics accessories", "garden", "baby & kids", "fashion accessories",
+"outdoor & sports", "health & wellness", "office supplies", "toys & games",
+"automotive accessories", "cleaning & organisation"
+
+**UI changes:**
+- Product cards: add "🇬🇧 UK Supplier — 2-5 day delivery" badge in emerald
+- Trending products page: add "UK Suppliers Only" filter toggle
+- Product detail page: show "Ships from UK — estimated 2-5 day delivery" in shipping section
+- Free validator: if Avasam match found, show UK supplier option alongside CJ
+
+**Why this is the biggest feature we can add:**
+- Completely unique in the market — no competitor does this
+- Directly solves the #1 complaint from UK sellers (slow shipping)
+- Justifies the UK-focused positioning 100%
+- Makes TrendScout genuinely useful for TikTok Shop sellers (speed is critical)
+- Real seller on Facebook confirmed this is their top pain point
