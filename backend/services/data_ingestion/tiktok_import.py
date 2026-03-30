@@ -37,7 +37,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 32.99,
         'cost': 8.50,
         'trend_hashtags': ['#sunsetlamp', '#roomdecor', '#aesthetic'],
-        'image_url': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop',
+        'image_url': 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Cloud Slides',
@@ -61,7 +61,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 29.99,
         'cost': 9.00,
         'trend_hashtags': ['#neckfan', '#summermustahve', '#staycool'],
-        'image_url': 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&h=600&fit=crop',
+        'image_url': 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Ice Roller Face Massager',
@@ -73,7 +73,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 14.99,
         'cost': 2.80,
         'trend_hashtags': ['#iceroller', '#skincare', '#morningroutine'],
-        'image_url': 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=600&h=600&fit=crop',
+        'image_url': 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Star Projector Galaxy Light',
@@ -85,7 +85,7 @@ TIKTOK_TRENDING_PRODUCTS = [
         'price': 49.99,
         'cost': 15.00,
         'trend_hashtags': ['#galaxyprojector', '#roomtour', '#ledlights'],
-        'image_url': 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=600&h=600&fit=crop',
+        'image_url': 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600&h=600&fit=crop',
     },
     {
         'product_name': 'Scalp Massager Shampoo Brush',
