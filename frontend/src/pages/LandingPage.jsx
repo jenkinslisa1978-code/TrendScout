@@ -49,21 +49,21 @@ export default function LandingPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
-                <span className="text-xs font-bold text-emerald-400 tracking-[0.15em] uppercase">UK product validation tool</span>
+                <span className="text-xs font-bold text-emerald-400 tracking-[0.15em] uppercase">Built for UK sellers who test before they invest</span>
               </div>
               <h1 className="font-manrope text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tighter text-white leading-[1.05]" data-testid="hero-headline">
-                Know if a product will sell in the UK{' '}
-                <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">before you spend a penny.</span>
+                Stop guessing which products will work.{' '}
+                <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">Validate before you spend a penny.</span>
               </h1>
               <p className="mt-6 text-base sm:text-lg text-zinc-400 leading-relaxed" data-testid="hero-subheadline">
-                TrendScout scores products across demand, competition, margins, and UK-specific factors &mdash; so you know which ideas are worth testing.
+                Most sellers fail because they pick products on gut feel. TrendScout scores real UK demand, margins after VAT, and competition level &mdash; so you eliminate bad ideas in seconds, not months.
               </p>
               <ul className="mt-6 space-y-2.5">
                 {[
-                  'See real UK demand signals, not global vanity metrics',
-                  'Know your margins after VAT, shipping, and platform fees',
-                  'Spot saturated niches before wasting ad budget',
-                  'Get a clear go/no-go score for any product idea',
+                  'Real UK demand signals — not US data repackaged for British sellers',
+                  'True margins after VAT, shipping, and platform fees',
+                  'Spot saturated niches before wasting £500 on ads',
+                  'Clear go/no-go score — no more gut-feel decisions',
                   'Works for Shopify, Amazon UK, and TikTok Shop',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-zinc-400">
