@@ -39,6 +39,8 @@ UK Product Validation Tool for ecommerce sellers. Scores products across demand,
 - /app/backend/services/cj_dropshipping.py — CJ service layer
 - /app/backend/services/jobs/tasks.py — Scheduled tasks (CJ sync, scoring)
 - /app/backend/common/scoring.py — Launch score calculation
+- /app/backend/routes/tools.py — Tools + Competitor Spy endpoints
+- /app/frontend/src/pages/CompetitorSpyPage.jsx — Competitor Spy page
 - /app/frontend/src/pages/LandingPage.jsx — Dark premium landing page
 - /app/frontend/src/components/ProductValidator.jsx — Hero search component
 - /app/frontend/src/pages/ProfitSimulatorPage.jsx — Interactive profit simulator
@@ -58,6 +60,7 @@ UK Product Validation Tool for ecommerce sellers. Scores products across demand,
 - Automation API Key: vs_automation_key_2024
 
 ## What's Implemented
+- Competitor Store Spy (surface scan free, deep AI analysis premium) — March 30, 2026
 - CJ Dropshipping API integration (auth, search, import, sync) — March 30, 2026
 - Free Public Product Validator with CJ live data — March 30, 2026
 - AI Profit Simulator with 30/60/90 day projections + UK VAT — March 30, 2026
