@@ -71,15 +71,18 @@ async def fix_tiktok_images():
         print(f"\nSearching CJ for: '{search_query}' (product: {name})")
 
         try:
-            results = await search_products(search_query, page=1, page_size=3)
+            result = await search_products(search_query, page=1, page_size=3)
             await asyncio.sleep(1.2)  # Respect CJ rate limit
 
-            if results and len(results) > 0:
+            # search_products returns {"success": bool, "products": [...]}
+            product_list = result.get("products", []) if isinstance(result, dict) else []
+
+            if product_list:
                 # Pick first result with a valid image
                 new_image = None
-                for r in results:
-                    img = r.get("image_url") or r.get("image") or r.get("thumbnail")
-                    if img and img.startswith("http"):
+                for r in product_list:
+                    img = r.get("image_url") or r.get("image") or r.get("productImage") or r.get("thumbnail")
+                    if img and isinstance(img, str) and img.startswith("http"):
                         new_image = img
                         break
 
@@ -88,13 +91,16 @@ async def fix_tiktok_images():
                         {"_id": product["_id"]},
                         {"$set": {"image_url": new_image}}
                     )
-                    print(f"  Updated: {name[:40]} -> {new_image[:60]}...")
+                    print(f"  ✓ {name[:40]} -> {new_image[:70]}...")
+                    updated += 1
+                elif new_image == current_image:
+                    print(f"  = {name[:40]} (image already correct)")
                     updated += 1
                 else:
-                    print(f"  No valid image found in CJ results for: {name}")
+                    print(f"  ✗ No valid image in CJ results for: {name}")
                     failed += 1
             else:
-                print(f"  No CJ results for: {name}")
+                print(f"  ✗ No CJ results for: {name}")
                 failed += 1
 
         except Exception as e:
