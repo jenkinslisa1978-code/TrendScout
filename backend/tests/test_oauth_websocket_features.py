@@ -10,7 +10,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://uk-product-validator.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://cj-ingestion-preview.preview.emergentagent.com').rstrip('/')
 
 
 class TestOAuthPlatforms:

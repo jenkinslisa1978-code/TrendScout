@@ -25,7 +25,7 @@
   "seed_data_creation": "Created test subscriptions via API during testing (prefixed with TEST_), cleaned up after tests",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Product Alerts feature fully functional. All CRUD operations work: GET /api/product-alerts/subscriptions, POST create, PUT update, PUT toggle, DELETE. Categories endpoint returns 17 categories from products collection. History endpoint returns sent alerts (currently empty). Frontend at /product-alerts shows DashboardLayout with create form, subscriptions list with toggle/delete, and alert history section. ProGate blocks free users (403). Existing subscription for reviewer@trendscout.click: id=553028f9-32ba-4298-9ed4-5aa01e06f375 (Beauty & Electronics, 60+ score, currently inactive).",
+  "context_for_next_testing_agent": "Product Alerts feature fully functional. All CRUD operations work: GET /api/product-alerts/subscriptions, POST create, PUT update, PUT toggle, DELETE. Categories endpoint returns 17 categories from products collection. History endpoint returns sent alerts (currently empty). Frontend at /product-alerts shows DashboardLayout with create form, subscriptions list with toggle/delete, and alert history section. ProGate blocks free users (403). Existing subscription for reviewer@trendscout.click: id=cj-ingestion-preview (Beauty & Electronics, 60+ score, currently inactive).",
   "test_results": {
     "backend_api_tests": {
       "GET /api/product-alerts/categories (no auth)": "PASS - Returns 401/403",

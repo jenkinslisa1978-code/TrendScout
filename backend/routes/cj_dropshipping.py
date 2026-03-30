@@ -284,4 +284,36 @@ async def import_cj_product(
     }
 
 
+@cj_router.post("/sync")
+async def trigger_cj_sync(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Manually trigger a CJ Dropshipping product sync.
+    Fetches trending products across popular categories and imports new ones.
+    """
+    from services.jobs.tasks import sync_cj_products
+
+    result = await sync_cj_products(db, {})
+    return {
+        "success": True,
+        "message": f"CJ sync complete: {result['details']['created']} new products imported",
+        **result,
+    }
+
+
+@cj_router.get("/sync/history")
+async def cj_sync_history(
+    limit: int = Query(10, ge=1, le=50),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Get CJ Dropshipping sync run history."""
+    cursor = db.automation_logs.find(
+        {"job_name": "sync_cj_products"},
+        {"_id": 0},
+    ).sort("run_time", -1).limit(limit)
+    logs = await cursor.to_list(limit)
+    return {"success": True, "history": logs}
+
+
 routers = [cj_router]

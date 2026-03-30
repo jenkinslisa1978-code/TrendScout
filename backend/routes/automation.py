@@ -148,13 +148,30 @@ async def run_daily_automation(api_key: Optional[str] = Header(None, alias="X-AP
     """
     Run daily scheduled automation.
     Protected endpoint - requires API key for external cron services.
+    Includes CJ Dropshipping sync before product scoring.
     """
     expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
     
     if api_key != expected_key:
         raise HTTPException(status_code=401, detail="Invalid API key")
-    
-    return await run_automation(RunAutomationRequest(job_type=AutomationJobType.SCHEDULED_DAILY))
+
+    # Step 1: Sync new products from CJ Dropshipping
+    cj_result = None
+    try:
+        from services.jobs.tasks import sync_cj_products
+        cj_result = await sync_cj_products(db, {})
+        logging.info(f"Daily CJ sync: {cj_result.get('records_processed', 0)} new products")
+    except Exception as e:
+        logging.error(f"Daily CJ sync failed: {e}")
+
+    # Step 2: Run scoring automation on all products
+    automation_result = await run_automation(RunAutomationRequest(job_type=AutomationJobType.SCHEDULED_DAILY))
+
+    # Merge results
+    if isinstance(automation_result, dict):
+        automation_result["cj_sync"] = cj_result.get("details") if cj_result else {"error": "skipped"}
+
+    return automation_result
 
 
 # =====================

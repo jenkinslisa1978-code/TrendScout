@@ -38,6 +38,18 @@ Root causes and fixes across multiple iterations:
 10. `start.js`: No fallback if serve.js crashes → added try-catch with fallback server
 11. `server.py`: Added startup logging (MONGO_URL set?, DB_NAME set?, SITE_URL)
 
+### CJ Dropshipping API Integration (March 30, 2026)
+Full automated CJ Dropshipping product sourcing:
+- Live CJ API v2 integration: auth with token caching, product search, detail, categories
+- Product import with launch score calculation and deduplication by cj_pid
+- `sync_cj_products` scheduled task (every 6h): searches 8 trending categories, imports new products
+- Hooked into daily automation (`/api/automation/scheduled/daily`) — CJ sync runs before scoring
+- Manual sync trigger: POST /api/cj/sync
+- Sync history: GET /api/cj/sync/history
+- Supplier comparison across CJ, AliExpress, Zendrop
+- CJ API rate limiting handled (1.2s delay between queries)
+- Test: iteration_129.json (100% pass, 23 backend tests)
+
 ### Product Alert Emails - Instant Alerts (March 29, 2026)
 Full end-to-end instant product alert email feature:
 - Paid users only (starter+) can subscribe to categories with a minimum score threshold
@@ -105,6 +117,9 @@ Fixes applied:
 - Tabbed embedded dashboard, SSR for 3 routes, full CRO rewrite
 
 ## Key Files
+- /app/backend/services/cj_dropshipping.py - CJ API auth, search, product detail
+- /app/backend/routes/cj_dropshipping.py - CJ search, import, sync, supplier comparison API
+- /app/backend/services/jobs/tasks.py - sync_cj_products task + all scheduled tasks
 - /app/backend/routes/product_alerts.py - Product alert subscriptions API
 - /app/frontend/src/pages/ProductAlertsPage.jsx - Product alerts UI
 - /app/frontend/src/pages/ComparePage.jsx - Product comparison tool
