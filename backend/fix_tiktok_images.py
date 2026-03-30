@@ -60,6 +60,11 @@ CURATED_IMAGES = {
     "Yoga Wheel Set":               "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&h=600&fit=crop",
     "Magnetic Spice Jars Set":      "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600&h=600&fit=crop",
     "Self-Watering Plant Pots":     "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600&h=600&fit=crop",
+    # Products with generic names that CJ can't match well
+    "Aesthetic Desk Organizer":     "https://images.unsplash.com/photo-1593062096033-9a26b09da705?w=600&h=600&fit=crop",
+    "Smart Water Bottle":           "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=600&h=600&fit=crop",
+    "Pet Hair Remover":             "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=600&fit=crop",
+    "Keyboard Cleaning Gel":        "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&h=600&fit=crop",
 }
 
 STOPWORDS = {'the', 'a', 'an', 'and', 'or', 'for', 'with', 'set', 'of', 'to', 'in', 'is'}
