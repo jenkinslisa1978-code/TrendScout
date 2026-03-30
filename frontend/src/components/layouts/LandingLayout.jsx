@@ -7,12 +7,12 @@ import ExitIntentPopup from '@/components/ExitIntentPopup';
 import SocialProofToast from '@/components/SocialProofToast';
 
 const NAV_ITEMS = [
-  { name: 'Features', href: '/features' },
   { name: 'Product', children: [
     { name: 'Trending Products', href: '/trending-products', desc: 'Browse rising products across channels' },
     { name: 'Leaderboard', href: '/top-trending-products', desc: 'Top-performing products ranked by score' },
+    { name: 'Profit Simulator', href: '/profit-simulator', desc: 'See if a product will actually make money' },
+    { name: 'Competitor Spy', href: '/competitor-spy', desc: 'Analyse any Shopify competitor store' },
     { name: 'Free Tools', href: '/free-tools', desc: 'Profit calculators and validation tools' },
-    { name: 'Product Quiz', href: '/product-quiz', desc: 'Find out which tool suits you' },
   ]},
   { name: 'Solutions', children: [
     { name: 'For Shopify Sellers', href: '/for-shopify' },
@@ -20,7 +20,7 @@ const NAV_ITEMS = [
     { name: 'For TikTok Shop UK', href: '/for-tiktok-shop-uk' },
     { name: 'UK Product Research', href: '/uk-product-research' },
   ]},
-  { name: 'How It Works', href: '/how-it-works' },
+  { name: 'Competitor Spy', href: '/competitor-spy' },
   { name: 'Pricing', href: '/pricing' },
 ];
 

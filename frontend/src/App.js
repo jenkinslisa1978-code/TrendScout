@@ -35,6 +35,7 @@ const OutcomesPage = lazy(() => import("@/pages/OutcomesPage"));
 const AdTestsPage = lazy(() => import("@/pages/AdTestsPage"));
 const ProfitabilitySimulatorPage = lazy(() => import("@/pages/ProfitabilitySimulatorPage"));
 const ProfitSimulatorPage = lazy(() => import("@/pages/ProfitSimulatorPage"));
+const CompetitorSpyPage = lazy(() => import("@/pages/CompetitorSpyPage"));
 const AdSpyPage = lazy(() => import("@/pages/AdSpyPage"));
 const CompetitorIntelPage = lazy(() => import("@/pages/CompetitorIntelPage"));
 const RadarAlertsPage = lazy(() => import("@/pages/RadarAlertsPage"));
@@ -244,6 +245,7 @@ function AppRoutes() {
       <Route path="/tools" element={<FreeToolsPage />} />
       <Route path="/free-tools" element={<FreeToolsPage />} />
       <Route path="/profit-simulator" element={<React.Suspense fallback={<div />}><ProfitSimulatorPage /></React.Suspense>} />
+      <Route path="/competitor-spy" element={<React.Suspense fallback={<div />}><CompetitorSpyPage /></React.Suspense>} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />
       <Route path="/shopify-app" element={<ShopifyAppPage />} />
       <Route path="/embedded" element={<ShopifyEmbeddedDashboard />} />
