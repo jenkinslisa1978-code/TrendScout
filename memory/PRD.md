@@ -62,6 +62,7 @@ UK Product Validation Tool for ecommerce sellers. Scores products across demand,
 - Automation API Key: vs_automation_key_2024
 
 ## What's Implemented
+- Weekly "Products to Launch" email digest with one-click launch links — March 30, 2026
 - TikTok Viral Predictor (AI predictions, free teaser + premium) — March 30, 2026
 - Competitor Store Spy (surface scan free, deep AI analysis premium) — March 30, 2026
 - CJ Dropshipping API integration (auth, search, import, sync) — March 30, 2026
