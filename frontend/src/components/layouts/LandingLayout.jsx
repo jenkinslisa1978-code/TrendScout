@@ -21,6 +21,7 @@ const NAV_ITEMS = [
     { name: 'UK Product Research', href: '/uk-product-research' },
   ]},
   { name: 'Competitor Spy', href: '/competitor-spy' },
+  { name: 'TikTok Viral', href: '/tiktok-viral' },
   { name: 'Pricing', href: '/pricing' },
 ];
 

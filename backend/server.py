@@ -96,6 +96,7 @@ from routes.admin_oauth import routers as admin_oauth_routers
 from routes.platform_sync import routers as platform_sync_routers
 from routes.compare import routers as compare_routers
 from routes.product_alerts import routers as product_alerts_routers
+from routes.viral_predictions import routers as viral_pred_routers
 
 # Include all routers
 all_router_groups = [
@@ -123,6 +124,7 @@ all_router_groups = [
     platform_sync_routers,
     compare_routers,
     product_alerts_routers,
+    viral_pred_routers,
 ]
 
 for group in all_router_groups:
