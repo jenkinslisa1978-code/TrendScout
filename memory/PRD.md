@@ -1,145 +1,75 @@
 # TrendScout PRD
 
 ## Product Vision
-UK-focused product validation and trend analysis tool for ecommerce sellers.
+UK Product Validation Tool for ecommerce sellers. Scores products across demand, competition, margins, and UK-specific factors so sellers launch smarter.
 
-## Core Positioning
-**"UK Product Validation Tool"** — a single positioning angle applied site-wide.
+## Architecture
+- **Backend**: FastAPI + Motor (Async MongoDB) + APScheduler. Serves APIs and static React SPA.
+- **Frontend**: React + TailwindCSS + Shadcn UI. Dark theme with emerald accents.
+- **Deployment**: Single-service monolith on Render (render.yaml). FastAPI serves /api routes + static files.
+- **Integrations**: CJ Dropshipping (live API), OpenAI GPT-5.2 (Emergent LLM Key), Resend (email), Stripe (payments).
 
-## Tech Stack
-- Frontend: React (CRA/Craco) + Tailwind CSS + Shadcn UI
-- Backend: FastAPI + MongoDB (Motor async driver)
-- AI: OpenAI GPT-5.2 (via Emergent LLM Key)
-- Payments: Stripe (GBP), Email: Resend
-- Analytics: GTM -> GA4, consent-gated
-- Serving: Custom static server + prerendering + Dynamic SSR
-- Scheduling: APScheduler (26 tasks including auto-sync every 6h)
-- Build: `cd /app/frontend && CI=false yarn build && sudo supervisorctl restart frontend`
+## Core Features
 
-## Completed Work
+### Free Public Tools (No Auth)
+- **Product Validator**: POST /api/public/validate-product — instant scoring via CJ search + scoring engine
+- **Profit Simulator**: POST /api/public/profit-simulator — unit economics + 30/60/90 day projections with UK VAT
+- **Trending Products**: GET /api/public/trending-products — browse scored products
 
-### Deployment 520 Error Fixes (March 29, 2026) — Comprehensive
-Root causes and fixes across multiple iterations:
+### Premium Features (Auth Required)
+- **One-Click Launch**: POST /api/products/{id}/quick-launch — AI ad copy (GPT-5.2), target audience, profit projections, platform exports (Shopify/WooCommerce/Etsy)
+- **AI Deep Analysis**: POST /api/products/deep-analysis — GPT-5.2 powered product intelligence
+- **CJ Dropshipping Sync**: Auto-imports products every 6h, manual trigger POST /api/cj/sync
+- **Product Alerts**: Email notifications via Resend for trending products matching criteria
+- **Launch Wizard**: Multi-step product launch flow
+- **Competitor Intelligence**: Ad spend, pricing, saturation data
 
-**Round 1 — Startup Blocking:**
-1. `server.py`: `await load_db_credentials()` blocked FastAPI startup → moved to `asyncio.create_task()`
-2. `database.py`: No MongoDB connection timeouts → added 5s serverSelection/connect, 10s socket
-3. `server.py`: Added bare `/health` endpoint (no /api prefix, no DB) for K8s probes
-4. `health.py`: Health returns 200 immediately; DB status best-effort
-5. `start.js`: `execSync` → async `exec` for prerender
-
-**Round 2 — Memory/Import:**
-6. `ad_creative_service.py` + `ad_pipeline.py`: Module-level `from emergentintegrations.llm.chat import LlmChat` pulled in litellm (158MB) at startup → moved to lazy imports inside functions. Memory: 284MB → 157MB. Startup: 3.9s → 1.6s.
-
-**Round 3 — Crash Resilience:**
-7. `database.py` (stale duplicate): `shopify_webhooks.py` + `deps.py` imported from `/app/backend/database.py` (no timeouts) instead of `common/database.py` → fixed imports, made old file a re-export shim
-8. `common/database.py`: `os.environ['MONGO_URL']` crashes with KeyError → changed to `os.environ.get()` with logging
-9. `serve.js`: No error handling in async HTTP handler → added try-catch + `process.on('uncaughtException')`
-10. `start.js`: No fallback if serve.js crashes → added try-catch with fallback server
-11. `server.py`: Added startup logging (MONGO_URL set?, DB_NAME set?, SITE_URL)
-
-### CJ Dropshipping API Integration (March 30, 2026)
-Full automated CJ Dropshipping product sourcing:
-- Live CJ API v2 integration: auth with token caching, product search, detail, categories
-- Product import with launch score calculation and deduplication by cj_pid
-- `sync_cj_products` scheduled task (every 6h): searches 8 trending categories, imports new products
-- Hooked into daily automation (`/api/automation/scheduled/daily`) — CJ sync runs before scoring
-- Manual sync trigger: POST /api/cj/sync
-- Sync history: GET /api/cj/sync/history
-- Supplier comparison across CJ, AliExpress, Zendrop
-- CJ API rate limiting handled (1.2s delay between queries)
-- Test: iteration_129.json (100% pass, 23 backend tests)
-
-### Product Alert Emails - Instant Alerts (March 29, 2026)
-Full end-to-end instant product alert email feature:
-- Paid users only (starter+) can subscribe to categories with a minimum score threshold
-- Instant email alerts via Resend when new products matching criteria are detected (score 50+)
-- CRUD API: create, list, update, toggle, delete subscriptions + alert history
-- Frontend: /product-alerts page with create form (category dropdown, score slider), subscription list with toggle/delete, alert history
-- ProGate blocks free users with upgrade CTA
-- Hooked into product create/update endpoints via BackgroundTasks
-- Dedupe prevents duplicate alerts for the same product+user
-- Test: iteration_128.json (100% pass, 21 backend + 16 frontend tests)
-
-### Product Visibility Fix - P0 (March 29, 2026)
-Root cause: `prerender.js` was not idempotent — each run re-read `build/index.html` (already containing injected prerender content) and injected another `#prerender-content` div. After 9 runs, 9 duplicate divs (42KB) covered the React `#root` div. `index.js` only hid the first via `getElementById()`.
-Fixes applied:
-- Made `prerender.js` idempotent: strips prior prerender-content from base HTML before injecting
-- Fixed `index.js` to use `querySelectorAll` to hide ALL `#prerender-content` / `#ssr-content` elements
-- Added CSS safety net in `index.css`: `#prerender-content, #ssr-content { display: none !important; }`
-- Cleaned `build/index.html` and rebuilt frontend
-
-### Deployment Fix - 520 Errors (March 28, 2026) - FINAL
-Root causes identified and fixed (7 total):
-1. frontend/.gitignore excluded /build → no frontend in production
-2. start.js ran craco build on startup → K8s timeout
-3. CRA's build runs fs.emptyDirSync(build) - deletes committed build during Docker yarn build
-4. yarn.lock not committed → Docker builds got unpredictable package versions
-5. Backend startup blocked on indexes/sitemap/scheduler → health endpoint delayed
-6. WebSocket URLs crashed when REACT_APP_BACKEND_URL was empty
-7. frontend/.env had preview URL → Docker yarn build would bake in wrong URL
-
-Fixes applied:
-- Removed /build from frontend/.gitignore, committed 358 build files
-- Rewrote start.js: serve.js starts FIRST (port binds <100ms), prerender runs after via setTimeout
-- Fallback HTTP server if build missing (returns 200 so K8s doesn't kill pod)
-- Set REACT_APP_BACKEND_URL= (empty) in frontend/.env → relative URLs work in all environments
-- Committed yarn.lock for reproducible Docker builds
-- Backend: ALL startup tasks via asyncio.create_task (indexes, seed, sitemap, scheduler)
-- WebSocket URLs use window.location.origin fallback
-- Deployment agent: PASS x4, zero blockers. Frontend port binds in <100ms.
-
-### Product Comparison Tool (March 28, 2026)
-- Compare 2-4 products side-by-side on demand scores, margins, competition, pricing, trends
-- Compare checkboxes on product cards (hover-reveal, persist when selected)
-- Floating compare bar when 2+ products selected
-- Save & share comparisons via public URL (/compare/:shareId)
-- Sections: Performance Scores, Financial Metrics, Trend & Growth, Score Comparison
-- Visual score bars with best-value highlighting
-- Backend: POST /api/compare, GET /api/compare/shared/:id, POST /api/compare/quick
-- Test: iteration_127.json (100% pass)
-
-### Auto-Sync Scheduling + Sync History (March 28, 2026)
-- 6-hour auto-sync for all connected Shopify/Etsy/WooCommerce stores
-- Sync history dashboard with per-platform stats
-- Test: iteration_126.json (100% pass)
-
-### Connection Wizard + Synced Products (March 28, 2026)
-- Step-by-step guided platform connection wizard
-- Multi-platform synced products dashboard
-- Test: iteration_125.json (100% pass)
-
-### Admin OAuth Credentials (March 28, 2026)
-- Admin panel for platform OAuth app credentials
-- Test: iteration_124.json (100% pass)
-
-### Shopify Embedded Dashboard, Dynamic SSR, CRO/SEO (March 2026)
-- Tabbed embedded dashboard, SSR for 3 routes, full CRO rewrite
+### UI/UX
+- Premium dark theme (bg #09090b) with emerald-500 accents
+- Glassmorphic header, dark footer
+- Product validator embedded in hero section
+- Bento grid features layout
+- Interactive slider-based profit simulator
 
 ## Key Files
-- /app/backend/services/cj_dropshipping.py - CJ API auth, search, product detail
-- /app/backend/routes/cj_dropshipping.py - CJ search, import, sync, supplier comparison API
-- /app/backend/services/jobs/tasks.py - sync_cj_products task + all scheduled tasks
-- /app/backend/routes/product_alerts.py - Product alert subscriptions API
-- /app/frontend/src/pages/ProductAlertsPage.jsx - Product alerts UI
-- /app/frontend/src/pages/ComparePage.jsx - Product comparison tool
-- /app/frontend/src/pages/TrendingProductsPage.jsx - Compare selection UI
-- /app/frontend/src/components/ConnectionWizard.jsx - Connection wizard
-- /app/frontend/src/components/SyncHistory.jsx - Sync history component
-- /app/frontend/src/pages/SyncedProductsPage.jsx - Multi-platform products
-- /app/frontend/src/pages/ShopifyEmbeddedDashboard.jsx - Embedded dashboard
-- /app/backend/routes/compare.py - Comparison API
-- /app/backend/routes/platform_sync.py - Sync endpoints
-- /app/backend/routes/admin_oauth.py - Admin OAuth CRUD
-- /app/backend/services/jobs/tasks.py - Scheduled tasks
-- /app/frontend/serve.js - Static + Dynamic SSR
-- /app/OAUTH_SETUP_GUIDE.md - Step-by-step OAuth setup guide
+- /app/backend/server.py — Main FastAPI app, serves SPA
+- /app/backend/routes/public.py — Public endpoints (validator, simulator)
+- /app/backend/routes/products.py — Product CRUD + quick-launch
+- /app/backend/routes/cj_dropshipping.py — CJ API integration
+- /app/backend/services/cj_dropshipping.py — CJ service layer
+- /app/backend/services/jobs/tasks.py — Scheduled tasks (CJ sync, scoring)
+- /app/backend/common/scoring.py — Launch score calculation
+- /app/frontend/src/pages/LandingPage.jsx — Dark premium landing page
+- /app/frontend/src/components/ProductValidator.jsx — Hero search component
+- /app/frontend/src/pages/ProfitSimulatorPage.jsx — Interactive profit simulator
+- /app/frontend/src/pages/QuickLaunchPage.jsx — One-click launch results
+- /app/frontend/src/components/layouts/LandingLayout.jsx — Dark layout wrapper
 
-## Remaining Tasks (User Actions)
-- Create OAuth apps using /app/OAUTH_SETUP_GUIDE.md
-- Configure GA4 tag in GTM console
-- Configure Resend webhook URL
+## DB Schema
+- products: {id, cj_pid, product_name, category, launch_score, supplier_cost, ...}
+- auth_users: {id, email, password_hash}
+- trend_alerts: {id, user_id, categories, min_score, active}
+- automation_logs: {id, job_name, status, run_time, details}
+- quick_launches: {id, product_id, user_id, created_at, status}
 
 ## Credentials
 - Admin: reviewer@trendscout.click / ShopifyReview2026!
 - Demo: demo@trendscout.click / DemoReview2026!
+- Automation API Key: vs_automation_key_2024
+
+## What's Implemented
+- CJ Dropshipping API integration (auth, search, import, sync) — March 30, 2026
+- Free Public Product Validator with CJ live data — March 30, 2026
+- AI Profit Simulator with 30/60/90 day projections + UK VAT — March 30, 2026
+- One-Click Launch with AI ad copy + Shopify/WooCommerce/Etsy exports — March 30, 2026
+- Premium dark-mode UI/UX redesign — March 30, 2026
+- Product Alert Emails via Resend — March 29, 2026
+- Lazy-loading DB + LLM for fast startup — March 29, 2026
+- Render single-service deployment config — March 29, 2026
+
+## Remaining Tasks
+- P1: Configure GA4 tag in GTM (user task)
+- P1: Configure Resend webhook URL (user task)
+- P1: Create OAuth apps for Shopify/Meta/TikTok
+- P2: Stripe payment configuration for live subscriptions
+- P2: Cleanup obsolete frontend/serve.js and frontend/start.js
