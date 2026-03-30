@@ -128,17 +128,20 @@ This is a massive differentiator — no other product research tool surfaces UK-
 - Free API access (apply at avasam.com/api)
 - REST API with OAuth2 authentication
 
-**Environment variable needed:**
-- `AVASAM_API_KEY` — add to Render once obtained from avasam.com
+**Environment variables (already added to Render):**
+- `AVASAM_CONSUMER_KEY` — OAuth consumer key from avasam.com
+- `AVASAM_CONSUMER_SECRET` — OAuth consumer secret from avasam.com
 
 **Files to create (mirror CJ structure exactly):**
 
 1. **`backend/services/avasam.py`** — new service file
 ```
 AVASAM_BASE = "https://api.avasam.com/v1"
+AVASAM_CONSUMER_KEY = os.environ.get("AVASAM_CONSUMER_KEY", "")
+AVASAM_CONSUMER_SECRET = os.environ.get("AVASAM_CONSUMER_SECRET", "")
 
 Key functions to implement (mirror cj_dropshipping.py structure):
-- _get_access_token() — OAuth2 Bearer token, cache like CJ
+- _get_access_token() — OAuth2 client_credentials, cache like CJ token
 - search_products(query, page, page_size) → {"success": bool, "products": [...]}
 - get_product_detail(product_id) → {"success": bool, "product": {...}}
 - get_categories() → {"success": bool, "categories": [...]}
@@ -189,8 +192,11 @@ Endpoints:
 
 **Avasam API endpoints (from their docs):**
 - Auth: POST https://api.avasam.com/v1/oauth/token
-  Body: {"grant_type": "api_key", "api_key": AVASAM_API_KEY}
+  Body: {"grant_type": "client_credentials",
+         "client_id": AVASAM_CONSUMER_KEY,
+         "client_secret": AVASAM_CONSUMER_SECRET}
   Returns: {"access_token": "...", "expires_in": 3600}
+  Cache token in /tmp/avasam_token.json (same pattern as CJ)
 - Search: GET https://api.avasam.com/v1/products?search={query}&page={page}&limit={page_size}
 - Detail: GET https://api.avasam.com/v1/products/{product_id}
 - Categories: GET https://api.avasam.com/v1/categories
