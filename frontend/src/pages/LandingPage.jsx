@@ -12,6 +12,7 @@ import {
   TrendingUp, ArrowRight, Check, Search, BarChart3, Shield,
   Zap, Package, ChevronRight, ChevronDown, Globe, PoundSterling,
   ShoppingBag, Store, Target, AlertTriangle, X, Rocket, Calculator,
+  Truck,
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -449,6 +450,27 @@ export default function LandingPage() {
   );
 }
 
+/* ── Shipping Badge — UK Delivery Tier ── */
+function ShippingBadge({ shipping }) {
+  if (!shipping) return null;
+  const config = {
+    green:  { dot: 'bg-emerald-400', text: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/25' },
+    yellow: { dot: 'bg-amber-400',   text: 'text-amber-400',   bg: 'bg-amber-500/10 border-amber-500/25' },
+    red:    { dot: 'bg-red-400',     text: 'text-red-400',     bg: 'bg-red-500/10 border-red-500/25' },
+  };
+  const c = config[shipping.tier] || config.red;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold tracking-wide ${c.bg} ${c.text}`}
+      data-testid="shipping-badge"
+      title={shipping.description}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+      {shipping.label}
+    </span>
+  );
+}
+
 /* ── Product Card — Dark ── */
 function ProductCard({ product }) {
   const score = product.launch_score || 0;
@@ -475,10 +497,25 @@ function ProductCard({ product }) {
             <span className="font-mono">{score}</span><span className="text-[10px] ml-0.5 opacity-60">/100</span>
           </span>
         </div>
+        {product.uk_shipping && (
+          <div className="absolute top-2.5 right-2.5">
+            <ShippingBadge shipping={product.uk_shipping} />
+          </div>
+        )}
       </div>
       <div className="p-4">
         <h3 className="text-sm font-semibold text-zinc-200 line-clamp-1 group-hover:text-emerald-400 transition-colors">{product.product_name}</h3>
         <p className="mt-1 text-xs text-zinc-600">{product.category || 'Uncategorised'}</p>
+        {product.uk_shipping && (
+          <div className="flex items-center gap-1.5 mt-2" data-testid="shipping-info-row">
+            <Truck className="h-3 w-3 text-zinc-500" />
+            <span className="text-[11px] text-zinc-500">UK delivery: <span className={
+              product.uk_shipping.tier === 'green' ? 'text-emerald-400 font-medium' :
+              product.uk_shipping.tier === 'yellow' ? 'text-amber-400 font-medium' :
+              'text-red-400 font-medium'
+            }>{product.uk_shipping.days_estimate}</span></span>
+          </div>
+        )}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
           <ViabilityIndicator score={viabilityScore} />
           <span className="text-xs font-medium text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center">

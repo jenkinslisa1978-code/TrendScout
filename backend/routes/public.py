@@ -20,7 +20,7 @@ from common.scoring import (
     generate_ai_summary, calculate_early_trend_score, calculate_market_score,
     calculate_launch_score, generate_mock_competitor_data, calculate_success_probability,
     should_generate_alert, generate_alert, run_full_automation, generate_early_trend_alert,
-    should_generate_early_trend_alert,
+    should_generate_early_trend_alert, compute_uk_shipping_tier,
 )
 from common.models import *
 
@@ -186,6 +186,7 @@ async def public_product_by_slug(slug: str):
         "gallery_images": product.get("gallery_images", []),
         "radar_detected": product.get("radar_detected", False),
         "data_confidence": product.get("data_confidence", "estimated"),
+        "uk_shipping": compute_uk_shipping_tier(product),
         "related_products": related,
     }
 
@@ -250,6 +251,7 @@ async def get_top_trending_products():
             "growth_rate": round(p.get("growth_rate") or p.get("trend_velocity") or 0, 1),
             "supplier_cost": round(p.get("supplier_cost", 0), 2),
             "retail_price": round(p.get("estimated_retail_price", 0), 2),
+            "uk_shipping": compute_uk_shipping_tier(p),
         })
 
     result = {
@@ -339,6 +341,7 @@ async def get_trending_products(limit: int = 20):
             "gallery_images": p.get("gallery_images", []),
             "data_source": p.get("data_source", "unknown"),
             "last_updated": p.get("last_updated") or p.get("updated_at") or p.get("created_at", ""),
+            "uk_shipping": compute_uk_shipping_tier(p),
         })
 
     from datetime import timedelta

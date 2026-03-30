@@ -8,7 +8,7 @@ import {
   TrendingUp, ArrowRight, Package, Zap, Radar, Lock,
   Sparkles, BarChart3, Eye, Flame, Clock, Search, ChevronRight,
   ArrowUpDown, Filter, SlidersHorizontal, ChevronDown,
-  ArrowLeftRight, X,
+  ArrowLeftRight, X, Truck,
 } from 'lucide-react';
 import { API_URL } from '@/lib/config';
 import { SignupGate } from '@/components/SignupGate';
@@ -442,6 +442,26 @@ function ProductCard({ product, compareIds = [], toggleCompare }) {
           <MetricCell label="Supplier" value={`£${(product.supplier_cost || 0).toFixed(0)}`} />
           <MetricCell label="Retail" value={`£${(product.retail_price || 0).toFixed(0)}`} />
         </div>
+
+        {/* UK Shipping */}
+        {product.uk_shipping && (
+          <div className="flex items-center gap-1.5 mt-2.5" data-testid="shipping-info-row">
+            <Truck className="h-3 w-3 text-slate-400" />
+            <span className="text-[11px] text-slate-500">UK:</span>
+            <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
+              product.uk_shipping.tier === 'green' ? 'text-emerald-600' :
+              product.uk_shipping.tier === 'yellow' ? 'text-amber-600' :
+              'text-red-500'
+            }`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${
+                product.uk_shipping.tier === 'green' ? 'bg-emerald-500' :
+                product.uk_shipping.tier === 'yellow' ? 'bg-amber-500' :
+                'bg-red-500'
+              }`} />
+              {product.uk_shipping.label}
+            </span>
+          </div>
+        )}
 
         {/* Bottom row */}
         <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-50">

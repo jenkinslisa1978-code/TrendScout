@@ -721,3 +721,76 @@ def score_label(score: int) -> str:
     if score >= 20: return "Weak"
     return "Poor"
 
+
+
+def compute_uk_shipping_tier(product: dict) -> dict:
+    """
+    Determine UK shipping tier based on supplier/source data.
+    Returns: {tier, label, color, days_estimate, description}
+    
+    Tiers:
+      green  - UK Warehouse (1-3 days)
+      yellow - Tracked shipping (7-14 days, typically CJ ePacket/Yanwen)
+      red    - Standard shipping (3-4 weeks, untracked China post)
+    """
+    suppliers = product.get("suppliers") or []
+    data_source = product.get("data_source", "")
+    cj_pid = product.get("cj_pid", "")
+    avasam_pid = product.get("avasam_pid", "")
+
+    # Check if any supplier is UK-based
+    for sup in suppliers:
+        country = (sup.get("country") or "").upper()
+        if country in ("UK", "GB"):
+            return {
+                "tier": "green",
+                "label": "UK Warehouse",
+                "color": "green",
+                "days_estimate": "1-3 days",
+                "description": "Ships from a UK warehouse. Royal Mail or DPD delivery.",
+            }
+
+    # Avasam products always ship from UK warehouses
+    if avasam_pid or data_source == "avasam":
+        return {
+            "tier": "green",
+            "label": "UK Warehouse",
+            "color": "green",
+            "days_estimate": "1-3 days",
+            "description": "Ships from Avasam UK warehouse. Next-day dispatch available.",
+        }
+
+    # CJ Dropshipping products get tracked fast shipping (ePacket/Yanwen)
+    if cj_pid or data_source == "cj_dropshipping":
+        lead_time = None
+        for sup in suppliers:
+            lt = sup.get("lead_time_days")
+            if lt is not None:
+                lead_time = lt
+                break
+
+        if lead_time is not None and lead_time <= 7:
+            return {
+                "tier": "green",
+                "label": "UK Warehouse",
+                "color": "green",
+                "days_estimate": "1-3 days",
+                "description": "Fast fulfilment via CJ UK/EU warehouse.",
+            }
+
+        return {
+            "tier": "yellow",
+            "label": "7-14 Days",
+            "color": "yellow",
+            "days_estimate": "7-14 days",
+            "description": "Tracked shipping via CJ Dropshipping (ePacket/Yanwen).",
+        }
+
+    # Default: standard China/AliExpress shipping
+    return {
+        "tier": "red",
+        "label": "3-4 Weeks",
+        "color": "red",
+        "days_estimate": "21-28 days",
+        "description": "Standard international shipping from China.",
+    }

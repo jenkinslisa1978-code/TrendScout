@@ -185,6 +185,56 @@ async def supplier_comparison(
     except Exception:
         pass
 
+    # Avasam UK (live)
+    try:
+        from services.avasam import search_products as avasam_search
+        avasam_result = await avasam_search(q, page=1, page_size=3)
+        if avasam_result.get("success") and avasam_result.get("products"):
+            for p in avasam_result["products"][:3]:
+                cost = p["supplier_cost"]
+                retail = p.get("sell_price", round(cost * 2.5, 2))
+                margin = round(((retail - cost) / retail) * 100) if cost > 0 and retail > 0 else 0
+                suppliers.append({
+                    "source": "avasam",
+                    "source_label": "Avasam UK",
+                    "mode": "live",
+                    "product_name": p["product_name"],
+                    "image_url": p.get("image_url", ""),
+                    "supplier_cost": cost,
+                    "estimated_retail": retail,
+                    "margin_pct": margin,
+                    "shipping_days": 2,
+                    "shipping_cost": 0,
+                    "stock_status": p.get("stock_status", "in_stock"),
+                    "moq": 1,
+                    "variants_count": p.get("variants_count", 0),
+                    "source_id": p.get("avasam_pid", ""),
+                    "source_url": p.get("source_url", ""),
+                    "uk_warehouse": True,
+                })
+        else:
+            suppliers.append({
+                "source": "avasam",
+                "source_label": "Avasam UK",
+                "mode": "reference",
+                "product_name": q,
+                "image_url": "",
+                "supplier_cost": 0,
+                "estimated_retail": 0,
+                "margin_pct": 50,
+                "shipping_days": 2,
+                "shipping_cost": 0,
+                "stock_status": "likely_available",
+                "moq": 1,
+                "variants_count": 0,
+                "source_id": "",
+                "source_url": "https://www.avasam.com",
+                "note": "UK-based supplier — visit Avasam to compare prices",
+                "uk_warehouse": True,
+            })
+    except Exception:
+        pass
+
     return {
         "success": True,
         "query": q,

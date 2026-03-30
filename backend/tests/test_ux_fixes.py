@@ -14,7 +14,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://cj-ingestion-preview.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://uk-warehouse-spy.preview.emergentagent.com')
 
 class TestProductValidationAPI:
     """Test that product validation returns real recommendations"""

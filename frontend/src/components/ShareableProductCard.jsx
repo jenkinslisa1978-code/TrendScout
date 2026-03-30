@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Share2, Download, Copy, Check, TrendingUp } from 'lucide-react';
+import { Share2, Download, Copy, Check, TrendingUp, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { SourceTrustBadge } from '@/components/SourceTrustBadge';
 
@@ -137,6 +137,26 @@ export default function ShareableProductCard({ product, onClose }) {
               <p className="text-[9px] text-violet-500 font-medium mt-0.5">Retail</p>
             </div>
           </div>
+
+          {/* UK Shipping indicator */}
+          {product.uk_shipping && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-100" data-testid="shareable-shipping-badge">
+              <Truck className="h-3.5 w-3.5 text-slate-500" />
+              <span className="text-xs text-slate-600">UK Delivery:</span>
+              <span className={`inline-flex items-center gap-1 text-xs font-bold ${
+                product.uk_shipping.tier === 'green' ? 'text-emerald-600' :
+                product.uk_shipping.tier === 'yellow' ? 'text-amber-600' :
+                'text-red-600'
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  product.uk_shipping.tier === 'green' ? 'bg-emerald-500' :
+                  product.uk_shipping.tier === 'yellow' ? 'bg-amber-500' :
+                  'bg-red-500'
+                }`} />
+                {product.uk_shipping.label}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Watermark */}
