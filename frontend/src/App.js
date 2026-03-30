@@ -29,10 +29,12 @@ const DiscoverPage = lazy(() => import("@/pages/DiscoverPage"));
 const ProductDetailPage = lazy(() => import("@/pages/ProductDetailPage"));
 const SavedProductsPage = lazy(() => import("@/pages/SavedProductsPage"));
 const ProductLaunchWizard = lazy(() => import("@/pages/ProductLaunchWizardPage"));
+const QuickLaunchPage = lazy(() => import("@/pages/QuickLaunchPage"));
 const OptimizationPage = lazy(() => import("@/pages/OptimizationPage"));
 const OutcomesPage = lazy(() => import("@/pages/OutcomesPage"));
 const AdTestsPage = lazy(() => import("@/pages/AdTestsPage"));
 const ProfitabilitySimulatorPage = lazy(() => import("@/pages/ProfitabilitySimulatorPage"));
+const ProfitSimulatorPage = lazy(() => import("@/pages/ProfitSimulatorPage"));
 const AdSpyPage = lazy(() => import("@/pages/AdSpyPage"));
 const CompetitorIntelPage = lazy(() => import("@/pages/CompetitorIntelPage"));
 const RadarAlertsPage = lazy(() => import("@/pages/RadarAlertsPage"));
@@ -241,6 +243,7 @@ function AppRoutes() {
       <Route path="/shopify-product-research-uk" element={<ShopifyProductResearchUkPage />} />
       <Route path="/tools" element={<FreeToolsPage />} />
       <Route path="/free-tools" element={<FreeToolsPage />} />
+      <Route path="/profit-simulator" element={<React.Suspense fallback={<div />}><ProfitSimulatorPage /></React.Suspense>} />
       <Route path="/tools/shopify-analyzer" element={<ShopifyAnalyzerPage />} />
       <Route path="/shopify-app" element={<ShopifyAppPage />} />
       <Route path="/embedded" element={<ShopifyEmbeddedDashboard />} />
@@ -298,6 +301,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProductLaunchWizard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/quick-launch/:productId"
+        element={
+          <ProtectedRoute>
+            <QuickLaunchPage />
           </ProtectedRoute>
         }
       />

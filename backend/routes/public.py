@@ -844,5 +844,318 @@ Be realistic and honest. Consider UK-specific factors: VAT (20%), shipping costs
         raise HTTPException(status_code=500, detail="Viability check failed")
 
 
+# =====================================================
+# FREE PUBLIC PRODUCT VALIDATOR
+# =====================================================
+
+@public_router.post("/validate-product")
+async def validate_product(request: Request):
+    """
+    Free public product validation — no auth required.
+    Returns instant scoring using the scoring engine.
+    """
+    body = await request.json()
+    query = (body.get("query") or "").strip()
+    if not query or len(query) < 2:
+        raise HTTPException(status_code=400, detail="Product name required (min 2 chars)")
+
+    # 1. Check if we already have this product in DB
+    product = await db.products.find_one(
+        {"product_name": {"$regex": query, "$options": "i"}},
+        {"_id": 0},
+    )
+
+    if not product:
+        # 2. Search CJ Dropshipping for live data
+        try:
+            from services.cj_dropshipping import search_products
+            cj_result = await search_products(query, page=1, page_size=3)
+            if cj_result.get("success") and cj_result.get("products"):
+                cj_prod = cj_result["products"][0]
+                sell_price = cj_prod.get("sell_price", 0)
+                retail_price = round(sell_price * 2.5, 2) if sell_price > 0 else 0
+                margin_pct = round(((retail_price - sell_price) / retail_price) * 100, 1) if retail_price > 0 else 0
+
+                product = {
+                    "product_name": cj_prod.get("product_name", query),
+                    "category": cj_prod.get("category", "General"),
+                    "image_url": cj_prod.get("image_url", ""),
+                    "supplier_cost": sell_price,
+                    "estimated_retail_price": retail_price,
+                    "estimated_margin": margin_pct,
+                    "stock_status": cj_prod.get("stock_status", "unknown"),
+                    "source_url": cj_prod.get("source_url", ""),
+                    "data_source": "cj_dropshipping",
+                    "trend_score": 50,
+                    "margin_score": min(100, max(0, round(margin_pct))),
+                    "competition_score": 50,
+                    "ad_activity_score": 30,
+                    "supplier_demand_score": 70,
+                    "tiktok_views": 0,
+                    "ad_count": 0,
+                    "competition_level": "unknown",
+                    "market_saturation": 0,
+                    "active_competitor_stores": 0,
+                    "variants_count": cj_prod.get("variants_count", 0),
+                }
+        except Exception as e:
+            logging.warning(f"CJ search failed in validator: {e}")
+
+    if not product:
+        # 3. Fallback — generate basic analysis from name alone
+        product = {
+            "product_name": query,
+            "category": "General",
+            "image_url": "",
+            "supplier_cost": 0,
+            "estimated_retail_price": 0,
+            "estimated_margin": 0,
+            "trend_score": 40,
+            "margin_score": 40,
+            "competition_score": 50,
+            "ad_activity_score": 30,
+            "supplier_demand_score": 50,
+            "tiktok_views": 0,
+            "ad_count": 0,
+            "competition_level": "unknown",
+            "market_saturation": 0,
+            "active_competitor_stores": 0,
+            "data_source": "estimated",
+        }
+
+    # Calculate launch score
+    score, label, reasoning = calculate_launch_score(product)
+
+    # Build response — free tier gets score + basic breakdown
+    signals = {
+        "trend_momentum": product.get("trend_score", 0),
+        "profit_margins": product.get("margin_score", 0),
+        "competition": product.get("competition_score", 0),
+        "ad_opportunity": product.get("ad_activity_score", 0),
+        "supplier_reliability": product.get("supplier_demand_score", 0),
+    }
+
+    return {
+        "success": True,
+        "product_name": product.get("product_name", query),
+        "category": product.get("category", ""),
+        "image_url": product.get("image_url", ""),
+        "launch_score": score,
+        "launch_label": label,
+        "reasoning": reasoning,
+        "signals": signals,
+        "supplier_cost": product.get("supplier_cost", 0),
+        "estimated_retail": product.get("estimated_retail_price", 0),
+        "estimated_margin_pct": product.get("estimated_margin", 0),
+        "stock_status": product.get("stock_status", ""),
+        "data_source": product.get("data_source", ""),
+        "upgrade_cta": "Get AI deep analysis, competitor intelligence, and ad copy with TrendScout Pro",
+    }
+
+
+@api_router.post("/products/deep-analysis")
+async def deep_product_analysis(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Premium AI-powered deep product analysis.
+    Uses GPT to generate actionable insights, competitor analysis, and launch strategy.
+    """
+    body = await request.json()
+    query = (body.get("query") or "").strip()
+    if not query or len(query) < 2:
+        raise HTTPException(status_code=400, detail="Product name required")
+
+    # Get basic validation first
+    product = await db.products.find_one(
+        {"product_name": {"$regex": query, "$options": "i"}},
+        {"_id": 0},
+    )
+
+    score_data = {}
+    if product:
+        s, l, r = calculate_launch_score(product)
+        score_data = {"launch_score": s, "label": l, "reasoning": r}
+    else:
+        score_data = {"launch_score": 50, "label": "unknown", "reasoning": "Limited data"}
+
+    # Generate AI deep analysis
+    import os
+    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not llm_key:
+        raise HTTPException(status_code=503, detail="AI analysis unavailable")
+
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"deep-analysis-{uuid.uuid4().hex[:8]}",
+            system_message=(
+                "You are TrendScout AI, a UK ecommerce product analyst. "
+                "Provide sharp, actionable analysis in JSON format. Be specific to the UK market. "
+                "Include VAT considerations, UK shipping realities, and platform-specific advice."
+            ),
+        ).with_model("openai", "gpt-5.2")
+
+        supplier_cost = product.get("supplier_cost", 0) if product else 0
+        category = product.get("category", "General") if product else "General"
+
+        prompt = (
+            f"Analyse this product for UK dropshipping/ecommerce: \"{query}\"\n"
+            f"Category: {category}, Supplier cost: ${supplier_cost}, Launch score: {score_data['launch_score']}/100\n\n"
+            f"Return a JSON object with these exact keys:\n"
+            f'{{"verdict": "one sentence go/no-go verdict",'
+            f'"strengths": ["strength1", "strength2", "strength3"],'
+            f'"risks": ["risk1", "risk2", "risk3"],'
+            f'"target_audience": "who to sell this to in the UK",'
+            f'"pricing_strategy": "recommended UK retail price and why",'
+            f'"ad_strategy": "best platform and approach for UK audience",'
+            f'"competitor_insight": "what competitors are doing",'
+            f'"launch_tip": "one actionable tip to launch this product"}}'
+        )
+
+        response = await chat.send_message(UserMessage(text=prompt))
+
+        # Parse JSON from response
+        ai_data = {}
+        try:
+            import re as _re
+            json_match = _re.search(r'\{.*\}', response, _re.DOTALL)
+            if json_match:
+                ai_data = json.loads(json_match.group())
+        except (json.JSONDecodeError, AttributeError):
+            ai_data = {"verdict": response[:500]}
+
+        return {
+            "success": True,
+            "product_name": product.get("product_name", query) if product else query,
+            "launch_score": score_data["launch_score"],
+            "launch_label": score_data["label"],
+            "ai_analysis": ai_data,
+        }
+
+    except Exception as e:
+        logging.error(f"Deep analysis AI error: {e}")
+        raise HTTPException(status_code=500, detail="AI analysis failed")
+
+
+# =====================================================
+# ENHANCED PROFIT SIMULATOR WITH 30/60/90 DAY PROJECTIONS
+# =====================================================
+
+@public_router.post("/profit-simulator")
+async def public_profit_simulator(request: Request):
+    """
+    Public profit simulator — no auth required.
+    Returns unit economics + 30/60/90 day projections.
+    """
+    body = await request.json()
+    product_cost = float(body.get("product_cost", 0))
+    selling_price = float(body.get("selling_price", 0))
+    shipping_cost = float(body.get("shipping_cost", 0))
+    monthly_ad_budget = float(body.get("monthly_ad_budget", 500))
+    cpm = float(body.get("cpm", 15))
+    conversion_rate = float(body.get("conversion_rate", 2))
+    competition_level = body.get("competition_level", "medium")
+    include_vat = body.get("include_vat", True)
+
+    if selling_price <= 0:
+        raise HTTPException(status_code=400, detail="Selling price must be positive")
+
+    vat_rate = 0.2 if include_vat else 0
+    vat_per_unit = selling_price * vat_rate
+    margin = selling_price - product_cost - shipping_cost - vat_per_unit
+    margin_pct = (margin / selling_price) * 100
+
+    ctr = 0.015
+    cpa = cpm / (1000 * ctr * (conversion_rate / 100)) if conversion_rate > 0 else 999
+    break_even_cpa = margin
+
+    # Scaling factors by month (account for learning, optimization, fatigue)
+    scale_factors = {
+        "month_1": {"cpa_mult": 1.3, "cvr_mult": 0.8, "label": "Learning phase"},
+        "month_2": {"cpa_mult": 1.0, "cvr_mult": 1.0, "label": "Optimized"},
+        "month_3": {"cpa_mult": 1.15, "cvr_mult": 0.9, "label": "Scaling / fatigue"},
+    }
+
+    # Competition adjustments
+    comp_adj = {"low": 0.85, "medium": 1.0, "high": 1.25}
+    comp_mult = comp_adj.get(competition_level, 1.0)
+
+    projections = []
+    cumulative_profit = 0
+    cumulative_revenue = 0
+    cumulative_orders = 0
+
+    for month_num, (key, sf) in enumerate(scale_factors.items(), 1):
+        adj_cpa = cpa * sf["cpa_mult"] * comp_mult
+        adj_cvr = conversion_rate * sf["cvr_mult"]
+        impressions = (monthly_ad_budget / cpm) * 1000
+        clicks = impressions * ctr
+        orders = clicks * (adj_cvr / 100)
+        revenue = orders * selling_price
+        cogs = orders * (product_cost + shipping_cost)
+        vat_total = orders * vat_per_unit
+        profit = revenue - cogs - vat_total - monthly_ad_budget
+        roas = revenue / max(monthly_ad_budget, 0.01)
+
+        cumulative_profit += profit
+        cumulative_revenue += revenue
+        cumulative_orders += orders
+
+        projections.append({
+            "month": month_num,
+            "label": sf["label"],
+            "ad_budget": monthly_ad_budget,
+            "orders": round(orders, 1),
+            "revenue": round(revenue, 2),
+            "cogs": round(cogs, 2),
+            "vat": round(vat_total, 2),
+            "profit": round(profit, 2),
+            "roas": round(roas, 2),
+            "effective_cpa": round(adj_cpa, 2),
+            "cumulative_profit": round(cumulative_profit, 2),
+            "cumulative_revenue": round(cumulative_revenue, 2),
+            "cumulative_orders": round(cumulative_orders, 1),
+        })
+
+    # Verdict
+    m2_profit = projections[1]["profit"] if len(projections) > 1 else 0
+    m2_roas = projections[1]["roas"] if len(projections) > 1 else 0
+
+    if m2_profit > 0 and m2_roas > 2:
+        verdict = "Strong opportunity"
+        verdict_detail = "Profitable with healthy ROAS after optimization"
+    elif m2_profit > 0:
+        verdict = "Promising with optimisation"
+        verdict_detail = "Profitable but ROAS needs improvement — test creatives"
+    elif m2_profit > -200:
+        verdict = "Risky — needs lower CPA or higher margin"
+        verdict_detail = "Close to break-even — optimize ad targeting or raise prices"
+    else:
+        verdict = "Not viable at current metrics"
+        verdict_detail = "Significant losses projected — reconsider pricing or product"
+
+    saturation_months = {"low": 8, "medium": 5, "high": 3}.get(competition_level, 5)
+
+    return {
+        "unit_economics": {
+            "margin_per_unit": round(margin, 2),
+            "margin_percent": round(margin_pct, 1),
+            "vat_per_unit": round(vat_per_unit, 2),
+            "estimated_cpa": round(cpa * comp_mult, 2),
+            "break_even_cpa": round(break_even_cpa, 2),
+            "is_profitable_per_sale": (cpa * comp_mult) < break_even_cpa,
+        },
+        "projections": projections,
+        "verdict": verdict,
+        "verdict_detail": verdict_detail,
+        "break_even_possible": (cpa * comp_mult) <= break_even_cpa,
+        "saturation_months": saturation_months,
+        "competition_level": competition_level,
+    }
+
 
 routers = [public_router, api_router]

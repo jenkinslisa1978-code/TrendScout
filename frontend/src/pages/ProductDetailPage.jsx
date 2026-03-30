@@ -32,6 +32,7 @@ import {
   Share2,
   ShoppingBag,
   Truck,
+  Zap,
 } from 'lucide-react';
 import { getProductById, getProductCompetitors } from '@/services/productService';
 import { getCompleteAnalysis } from '@/services/intelligenceService';
@@ -386,6 +387,13 @@ export default function ProductDetailPage() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
+            <Button
+              onClick={() => navigate(`/quick-launch/${product.id}`)}
+              data-testid="quick-launch-btn"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              <Zap className="mr-2 h-4 w-4" /> One-Click Launch
+            </Button>
             <Button
               onClick={handleLaunchStore}
               disabled={launching}

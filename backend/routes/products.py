@@ -1358,4 +1358,198 @@ async def get_similar_products(product_id: str, limit: int = 6):
 
 
 
+@api_router.post("/products/{product_id}/quick-launch")
+async def quick_launch_product(
+    product_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    One-Click Launch: Generates everything needed to launch a product in one call.
+    Returns: ad copy, target audience, profit projections, supplier info,
+    and export-ready data for Shopify, WooCommerce, and Etsy.
+    """
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    name = product.get("product_name", "")
+    category = product.get("category", "General")
+    supplier_cost = product.get("supplier_cost", 0) or product.get("estimated_cost", 0)
+    retail_price = product.get("estimated_retail_price", 0) or round(supplier_cost * 2.5, 2)
+    image_url = product.get("image_url", "")
+    description = product.get("description", "")
+    margin = retail_price - supplier_cost
+    margin_pct = round((margin / retail_price) * 100, 1) if retail_price > 0 else 0
+
+    # 1. Profit projections (same logic as public simulator)
+    vat = retail_price * 0.2
+    margin_after_vat = retail_price - supplier_cost - 3.5 - vat  # 3.5 est shipping
+    ad_budget = 500
+    cpm = 15
+    cvr = 2
+    ctr = 0.015
+    cpa = cpm / (1000 * ctr * (cvr / 100)) if cvr > 0 else 999
+
+    projections = []
+    scales = [
+        {"mult_cpa": 1.3, "mult_cvr": 0.8, "label": "Learning"},
+        {"mult_cpa": 1.0, "mult_cvr": 1.0, "label": "Optimized"},
+        {"mult_cpa": 1.15, "mult_cvr": 0.9, "label": "Scaling"},
+    ]
+    cumulative_profit = 0
+    for i, sc in enumerate(scales, 1):
+        adj_cpa = cpa * sc["mult_cpa"]
+        impressions = (ad_budget / cpm) * 1000
+        clicks = impressions * ctr
+        orders = clicks * (cvr * sc["mult_cvr"] / 100)
+        revenue = orders * retail_price
+        profit = revenue - (orders * (supplier_cost + 3.5 + vat)) - ad_budget
+        cumulative_profit += profit
+        projections.append({
+            "month": i, "label": sc["label"],
+            "orders": round(orders, 1), "revenue": round(revenue, 2),
+            "profit": round(profit, 2), "roas": round(revenue / max(ad_budget, 1), 2),
+            "cumulative_profit": round(cumulative_profit, 2),
+        })
+
+    # 2. AI-generated ad copy + target audience
+    ai_content = {}
+    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    if llm_key:
+        try:
+            from emergentintegrations.llm.chat import LlmChat, UserMessage
+            chat = LlmChat(
+                api_key=llm_key,
+                session_id=f"quick-launch-{uuid.uuid4().hex[:8]}",
+                system_message=(
+                    "You are a UK ecommerce copywriter. Return ONLY valid JSON, no markdown."
+                ),
+            ).with_model("openai", "gpt-5.2")
+
+            prompt = (
+                f"Product: \"{name}\", Category: {category}, Price: £{retail_price:.2f}, "
+                f"Margin: {margin_pct}%, Description: {description[:200]}\n\n"
+                f"Generate a complete launch pack as JSON:\n"
+                f'{{"headline": "compelling product headline",'
+                f'"tagline": "short catchy tagline",'
+                f'"product_description": "150-word SEO product description for UK audience",'
+                f'"target_audience": "specific UK audience demographics and interests",'
+                f'"facebook_ad": {{"primary_text": "...", "headline": "...", "description": "..."}},'
+                f'"tiktok_script": "30-second TikTok ad script with hook, body, CTA",'
+                f'"instagram_caption": "Instagram post caption with hashtags",'
+                f'"seo_title": "SEO optimized product page title",'
+                f'"seo_description": "Meta description for product page",'
+                f'"keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]}}'
+            )
+
+            response = await chat.send_message(UserMessage(text=prompt))
+            import re as _re
+            json_match = _re.search(r'\{.*\}', response, _re.DOTALL)
+            if json_match:
+                ai_content = json.loads(json_match.group())
+        except Exception as e:
+            logging.error(f"Quick launch AI error: {e}")
+            ai_content = {"error": "AI generation unavailable, using defaults"}
+
+    # Fallback content if AI fails
+    if not ai_content.get("headline"):
+        ai_content = {
+            "headline": name,
+            "tagline": f"Premium {category} — Free UK Delivery",
+            "product_description": description or f"High-quality {name}. Fast UK shipping.",
+            "target_audience": f"UK shoppers interested in {category}",
+            "facebook_ad": {"primary_text": f"Discover {name}!", "headline": name, "description": f"Shop now — £{retail_price:.2f}"},
+            "tiktok_script": f"Hook: Check out this {name}! Body: Amazing quality. CTA: Link in bio!",
+            "instagram_caption": f"{name} — Now available! #{category.replace(' ', '')} #UKDropshipping",
+            "seo_title": f"{name} | Buy Online UK | Free Delivery",
+            "seo_description": f"Buy {name} online in the UK. {category}. Fast delivery, great price.",
+            "keywords": [name.lower(), category.lower(), "uk", "buy online", "free delivery"],
+        }
+
+    # 3. Supplier info
+    suppliers = product.get("suppliers", [])
+    if not suppliers and supplier_cost > 0:
+        suppliers = [{"name": product.get("data_source", "Supplier"), "unit_cost": supplier_cost, "min_order": 1, "lead_time_days": 8}]
+
+    # 4. Platform exports (Shopify, WooCommerce, Etsy)
+    seo_title = ai_content.get("seo_title", name)
+    seo_desc = ai_content.get("seo_description", "")
+    prod_desc = ai_content.get("product_description", description)
+    keywords = ai_content.get("keywords", [])
+
+    platform_exports = {
+        "shopify": {
+            "title": name,
+            "body_html": f"<p>{prod_desc}</p>",
+            "vendor": "TrendScout",
+            "product_type": category,
+            "tags": ", ".join(keywords[:10]),
+            "variants": [{"price": str(retail_price), "compare_at_price": str(round(retail_price * 1.3, 2)), "sku": f"TS-{product_id[:8]}"}],
+            "images": [{"src": image_url}] if image_url else [],
+            "seo": {"title": seo_title, "description": seo_desc},
+            "status": "draft",
+        },
+        "woocommerce": {
+            "name": name,
+            "type": "simple",
+            "regular_price": str(retail_price),
+            "sale_price": str(round(retail_price * 0.9, 2)),
+            "description": f"<p>{prod_desc}</p>",
+            "short_description": ai_content.get("tagline", ""),
+            "categories": [{"name": category}],
+            "tags": [{"name": k} for k in keywords[:10]],
+            "images": [{"src": image_url}] if image_url else [],
+            "meta_data": [{"key": "_yoast_wpseo_title", "value": seo_title}, {"key": "_yoast_wpseo_metadesc", "value": seo_desc}],
+            "sku": f"TS-{product_id[:8]}",
+            "status": "draft",
+        },
+        "etsy": {
+            "title": seo_title[:140],
+            "description": prod_desc,
+            "price": {"amount": int(retail_price * 100), "divisor": 100, "currency_code": "GBP"},
+            "taxonomy_id": None,
+            "tags": keywords[:13],
+            "materials": [],
+            "shipping_profile_id": None,
+            "state": "draft",
+            "images": [image_url] if image_url else [],
+        },
+    }
+
+    # 5. Save launch data
+    launch_id = str(uuid.uuid4())
+    launch_record = {
+        "id": launch_id,
+        "product_id": product_id,
+        "user_id": current_user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "product_name": name,
+        "status": "ready",
+    }
+    await db.quick_launches.insert_one(launch_record)
+    launch_record.pop("_id", None)
+
+    return {
+        "success": True,
+        "launch_id": launch_id,
+        "product": {
+            "id": product_id,
+            "name": name,
+            "category": category,
+            "image_url": image_url,
+            "supplier_cost": supplier_cost,
+            "retail_price": retail_price,
+            "margin": round(margin, 2),
+            "margin_pct": margin_pct,
+            "vat_per_unit": round(vat, 2),
+            "launch_score": product.get("launch_score", 0),
+            "launch_label": product.get("launch_score_label", ""),
+        },
+        "ai_content": ai_content,
+        "projections": projections,
+        "suppliers": suppliers[:3],
+        "platform_exports": platform_exports,
+    }
+
+
 routers = [api_router]

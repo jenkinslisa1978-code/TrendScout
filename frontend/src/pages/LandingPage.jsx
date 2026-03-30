@@ -7,6 +7,7 @@ import { trackABConversion } from '@/hooks/useABTest';
 import PageMeta, { organizationSchema, websiteSchema, softwareAppSchema } from '@/components/PageMeta';
 import { ViabilityIndicator } from '@/components/ViabilityBadge';
 import { RevealSection, RevealStagger } from '@/hooks/useScrollReveal';
+import ProductValidator from '@/components/ProductValidator';
 import {
   TrendingUp, ArrowRight, Check, Search, BarChart3, Shield,
   Zap, Package, ChevronRight, ChevronDown, Globe, PoundSterling,
@@ -104,23 +105,9 @@ export default function LandingPage() {
             </RevealSection>
             <RevealSection direction="left" delay={200} className="relative lg:ml-4">
               <div className="absolute -inset-4 bg-gradient-to-r from-indigo-100/40 via-violet-100/30 to-transparent rounded-3xl blur-2xl" />
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-slate-900/10 border border-slate-200/60 bg-white">
-                <img
-                  src={HERO_IMG}
-                  alt="TrendScout dashboard showing UK viability scores, demand trends, and margin analysis"
-                  className="w-full h-auto"
-                  loading="eager"
-                  data-testid="hero-dashboard-image"
-                />
-              </div>
-              <div className="absolute -bottom-4 -left-4 bg-white rounded-xl shadow-lg border border-slate-100 px-4 py-3 flex items-center gap-3 z-10" data-testid="hero-floating-badge">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Products scored</p>
-                  <p className="text-sm font-bold text-slate-900 font-mono">150+</p>
-                </div>
+              <div className="relative">
+                <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3 text-center lg:text-left">Try it free — no signup needed</p>
+                <ProductValidator />
               </div>
             </RevealSection>
           </div>
