@@ -818,6 +818,27 @@ async def dismiss_alert(alert_id: str):
     return {"success": True}
 
 
+@api_router.put("/alerts/read-all")
+async def mark_all_alerts_read():
+    """Mark all alerts as read"""
+    result = await db.trend_alerts.update_many(
+        {"read": {"$ne": True}},
+        {"$set": {"read": True}}
+    )
+    return {"success": True, "updated": result.modified_count}
+
+
+@api_router.put("/alerts/cleanup")
+async def cleanup_old_alerts(days_old: int = 30):
+    """Delete alerts older than N days"""
+    from datetime import datetime, timezone, timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days_old)).isoformat()
+    result = await db.trend_alerts.delete_many(
+        {"created_at": {"$lt": cutoff}, "dismissed": True}
+    )
+    return {"success": True, "deleted": result.deleted_count}
+
+
 
 @api_router.get("/products/{product_id}/saturation")
 async def get_product_saturation(product_id: str):

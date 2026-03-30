@@ -94,6 +94,12 @@ async def auth_register(request: Request):
         "user": {"id": user_id, "email": email, "full_name": full_name},
     })
     set_auth_cookies(response, user_id, email)
+
+    # Send welcome email in background (don't block the response)
+    import asyncio
+    from services.email_service import send_welcome_email
+    asyncio.create_task(send_welcome_email(email, full_name.split()[0] if full_name else ""))
+
     return response
 
 
@@ -391,6 +397,12 @@ async def signup_submit(request: Request):
 
     response = RedirectResponse(url="/dashboard", status_code=303)
     set_auth_cookies(response, user_id, email)
+
+    # Send welcome email in background
+    import asyncio
+    from services.email_service import send_welcome_email
+    asyncio.create_task(send_welcome_email(email, full_name.split()[0] if full_name else ""))
+
     return response
 
 

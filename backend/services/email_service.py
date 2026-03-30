@@ -443,3 +443,113 @@ async def send_password_reset_email(to_email: str, reset_link: str) -> bool:
     except Exception as e:
         logger.error(f"Failed to send password reset email to {to_email}: {e}")
         return False
+
+
+async def send_welcome_email(to_email: str, first_name: str = "") -> bool:
+    """Send a welcome email to a new TrendScout user. Returns True on success."""
+    if not resend.api_key:
+        logger.warning("RESEND_API_KEY not set — skipping welcome email")
+        return False
+
+    name = first_name or to_email.split("@")[0].capitalize()
+    site = SITE_URL or "https://trendscout.click"
+
+    html = f"""
+    <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:40px 24px;background:#ffffff;">
+
+      <!-- Header -->
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;padding:12px 16px;margin-bottom:12px;">
+          <span style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">TrendScout</span>
+        </div>
+        <p style="color:#64748b;font-size:13px;margin:4px 0 0;">UK Product Intelligence for Dropshippers</p>
+      </div>
+
+      <!-- Hero -->
+      <h1 style="font-size:26px;font-weight:800;color:#0f172a;margin:0 0 8px;line-height:1.2;">
+        Welcome to TrendScout, {name}! 🎉
+      </h1>
+      <p style="font-size:15px;color:#475569;line-height:1.7;margin:0 0 28px;">
+        You've just unlocked access to the UK's smartest dropshipping product intelligence tool.
+        Here's how to get your first winning product in the next 5 minutes.
+      </p>
+
+      <!-- Steps -->
+      <div style="background:#f8fafc;border-radius:12px;padding:24px;margin-bottom:28px;">
+        <p style="font-size:13px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:1px;margin:0 0 16px;">Get started in 3 steps</p>
+
+        <div style="display:flex;margin-bottom:16px;">
+          <div style="min-width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-right:14px;margin-top:2px;">
+            <span style="color:#fff;font-weight:700;font-size:14px;">1</span>
+          </div>
+          <div>
+            <p style="font-weight:700;color:#0f172a;font-size:14px;margin:0 0 2px;">Browse Trending Products</p>
+            <p style="color:#64748b;font-size:13px;margin:0;line-height:1.5;">See what's trending right now across TikTok and UK marketplaces — with real supplier costs and profit margins.</p>
+          </div>
+        </div>
+
+        <div style="display:flex;margin-bottom:16px;">
+          <div style="min-width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-right:14px;margin-top:2px;">
+            <span style="color:#fff;font-weight:700;font-size:14px;">2</span>
+          </div>
+          <div>
+            <p style="font-weight:700;color:#0f172a;font-size:14px;margin:0 0 2px;">Check the Launch Score</p>
+            <p style="color:#64748b;font-size:13px;margin:0;line-height:1.5;">Each product gets a score out of 100 — combining trend velocity, competition level, and UK demand signals.</p>
+          </div>
+        </div>
+
+        <div style="display:flex;">
+          <div style="min-width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-right:14px;margin-top:2px;">
+            <span style="color:#fff;font-weight:700;font-size:14px;">3</span>
+          </div>
+          <div>
+            <p style="font-weight:700;color:#0f172a;font-size:14px;margin:0 0 2px;">Launch with One Click</p>
+            <p style="color:#64748b;font-size:13px;margin:0;line-height:1.5;">Get your ad copy, target audience, profit calculator and supplier link — ready to go in seconds.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div style="text-align:center;margin-bottom:32px;">
+        <a href="{site}/trending-products"
+           style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:12px;letter-spacing:-0.2px;">
+          Browse Trending Products →
+        </a>
+        <p style="font-size:12px;color:#94a3b8;margin:12px 0 0;">or <a href="{site}/free-tools" style="color:#6366f1;text-decoration:none;">try the free product checker</a></p>
+      </div>
+
+      <!-- This week's highlight -->
+      <div style="border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:28px;">
+        <p style="font-size:13px;font-weight:700;color:#0f172a;margin:0 0 6px;">💡 Pro tip for new members</p>
+        <p style="font-size:13px;color:#475569;margin:0;line-height:1.6;">
+          Filter by <strong>Trend Stage: Rising</strong> on the products page to find items that are growing fast
+          but haven't hit peak competition yet — that's your window.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <hr style="border:none;border-top:1px solid #f1f5f9;margin:24px 0;" />
+      <p style="font-size:12px;color:#94a3b8;text-align:center;line-height:1.6;margin:0;">
+        TrendScout &mdash; Built for UK dropshippers &nbsp;·&nbsp;
+        <a href="{site}/pricing" style="color:#6366f1;text-decoration:none;">View plans</a> &nbsp;·&nbsp;
+        <a href="{site}/help" style="color:#6366f1;text-decoration:none;">Help</a>
+      </p>
+    </div>
+    """
+
+    try:
+        result = await asyncio.to_thread(
+            resend.Emails.send,
+            {
+                "from": SENDER_EMAIL,
+                "to": [to_email],
+                "subject": f"Welcome to TrendScout, {name}! Here's how to find your first winning product 🚀",
+                "html": html,
+            },
+        )
+        email_id = result.get("id") if isinstance(result, dict) else getattr(result, "id", None)
+        logger.info(f"Welcome email sent to {to_email} (id: {email_id})")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send welcome email to {to_email}: {e}")
+        return False

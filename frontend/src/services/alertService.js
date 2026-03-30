@@ -81,17 +81,33 @@ export const dismissAlertById = async (alertId) => {
  * Mark all alerts as read
  */
 export const markAllAlertsRead = async () => {
-  // Would need a backend endpoint for bulk update
-  // For now, this is a placeholder
-  return { error: null };
+  try {
+    const response = await apiPut('/api/alerts/read-all');
+    if (!response.ok) {
+      throw new Error('Failed to mark all alerts as read');
+    }
+    return { error: null };
+  } catch (error) {
+    console.error('Error marking all alerts read:', error);
+    return { error: error.message };
+  }
 };
 
 /**
  * Delete old alerts (cleanup)
  */
 export const cleanupOldAlerts = async (daysOld = 30) => {
-  // Would need a backend endpoint for cleanup
-  return { deleted: 0, error: null };
+  try {
+    const response = await apiPut(`/api/alerts/cleanup?days_old=${daysOld}`);
+    if (!response.ok) {
+      throw new Error('Failed to cleanup old alerts');
+    }
+    const result = await response.json().catch(() => ({}));
+    return { deleted: result.deleted || 0, error: null };
+  } catch (error) {
+    console.error('Error cleaning up alerts:', error);
+    return { deleted: 0, error: error.message };
+  }
 };
 
 /**
