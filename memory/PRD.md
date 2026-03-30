@@ -39,6 +39,8 @@ UK Product Validation Tool for ecommerce sellers. Scores products across demand,
 - /app/backend/services/cj_dropshipping.py — CJ service layer
 - /app/backend/services/jobs/tasks.py — Scheduled tasks (CJ sync, scoring)
 - /app/backend/common/scoring.py — Launch score calculation
+- /app/backend/routes/viral_predictions.py — TikTok Viral Predictor endpoints
+- /app/frontend/src/pages/TikTokViralPage.jsx — Viral predictions page
 - /app/backend/routes/tools.py — Tools + Competitor Spy endpoints
 - /app/frontend/src/pages/CompetitorSpyPage.jsx — Competitor Spy page
 - /app/frontend/src/pages/LandingPage.jsx — Dark premium landing page
@@ -60,6 +62,7 @@ UK Product Validation Tool for ecommerce sellers. Scores products across demand,
 - Automation API Key: vs_automation_key_2024
 
 ## What's Implemented
+- TikTok Viral Predictor (AI predictions, free teaser + premium) — March 30, 2026
 - Competitor Store Spy (surface scan free, deep AI analysis premium) — March 30, 2026
 - CJ Dropshipping API integration (auth, search, import, sync) — March 30, 2026
 - Free Public Product Validator with CJ live data — March 30, 2026
