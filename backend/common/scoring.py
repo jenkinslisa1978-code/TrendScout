@@ -736,6 +736,7 @@ def compute_uk_shipping_tier(product: dict) -> dict:
     suppliers = product.get("suppliers") or []
     data_source = product.get("data_source", "")
     cj_pid = product.get("cj_pid", "")
+    avasam_pid = product.get("avasam_pid", "")
 
     # Check if any supplier is UK-based
     for sup in suppliers:
@@ -748,6 +749,16 @@ def compute_uk_shipping_tier(product: dict) -> dict:
                 "days_estimate": "1-3 days",
                 "description": "Ships from a UK warehouse. Royal Mail or DPD delivery.",
             }
+
+    # Avasam products always ship from UK warehouses
+    if avasam_pid or data_source == "avasam":
+        return {
+            "tier": "green",
+            "label": "UK Warehouse",
+            "color": "green",
+            "days_estimate": "1-3 days",
+            "description": "Ships from Avasam UK warehouse. Next-day dispatch available.",
+        }
 
     # CJ Dropshipping products get tracked fast shipping (ePacket/Yanwen)
     if cj_pid or data_source == "cj_dropshipping":

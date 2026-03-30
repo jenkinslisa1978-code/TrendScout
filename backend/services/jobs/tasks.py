@@ -820,6 +820,168 @@ async def sync_cj_products(db, params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @TaskRegistry.register(
+    name="sync_avasam_products",
+    description="Fetch UK products from Avasam and import into TrendScout",
+    default_schedule="0 */6 * * *"  # Every 6 hours
+)
+async def sync_avasam_products(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Automated Avasam UK product sync.
+
+    Searches Avasam for popular UK dropshipping categories, deduplicates
+    against existing products, and inserts new ones with initial scoring.
+    """
+    import uuid as _uuid
+    from services.avasam import search_products
+    from common.scoring import calculate_launch_score
+
+    search_queries = params.get("queries", [
+        "phone cases",
+        "home decor",
+        "beauty products",
+        "pet accessories",
+        "LED lighting",
+        "kitchen accessories",
+        "fitness equipment",
+        "garden tools",
+    ])
+    page_size = params.get("page_size", 20)
+
+    total_fetched = 0
+    total_created = 0
+    total_skipped = 0
+    errors = []
+
+    import asyncio as _asyncio
+
+    for qi, query in enumerate(search_queries):
+        if qi > 0:
+            await _asyncio.sleep(1.2)
+
+        try:
+            result = await search_products(query, page=1, page_size=page_size)
+            if not result.get("success"):
+                errors.append(f"{query}: {result.get('error', 'unknown')}")
+                continue
+
+            products = result.get("products", [])
+            total_fetched += len(products)
+
+            for avasam_prod in products:
+                avasam_pid = avasam_prod.get("avasam_pid", "")
+                if not avasam_pid:
+                    continue
+
+                # Deduplicate by avasam_pid
+                existing = await db.products.find_one(
+                    {"avasam_pid": avasam_pid}, {"_id": 0, "id": 1}
+                )
+                if existing:
+                    total_skipped += 1
+                    continue
+
+                product_id = str(_uuid.uuid4())
+                cost = avasam_prod.get("supplier_cost", 0)
+                rrp = avasam_prod.get("sell_price", 0)
+                retail_price = rrp if rrp > 0 else round(cost * 2.5, 2)
+                margin = round(
+                    ((retail_price - cost) / retail_price) * 100, 1
+                ) if retail_price > 0 and cost > 0 else 0
+
+                product = {
+                    "id": product_id,
+                    "avasam_pid": avasam_pid,
+                    "product_name": avasam_prod.get("product_name", ""),
+                    "slug": avasam_prod.get("product_name", "").lower().replace(" ", "-")[:80],
+                    "category": avasam_prod.get("category", query.title()),
+                    "image_url": avasam_prod.get("image_url", ""),
+                    "images": avasam_prod.get("images", []),
+                    "estimated_retail_price": retail_price,
+                    "estimated_cost": cost,
+                    "estimated_margin": margin,
+                    "supplier_cost": cost,
+                    "currency": avasam_prod.get("currency", "GBP"),
+                    "data_source": "avasam",
+                    "source_url": avasam_prod.get("source_url", ""),
+                    "stock_status": avasam_prod.get("stock_status", "in_stock"),
+                    "shipping_weight": avasam_prod.get("shipping_weight", 0),
+                    "description": avasam_prod.get("description", ""),
+                    "variants_count": avasam_prod.get("variants_count", 0),
+                    "sku": avasam_prod.get("sku", ""),
+                    "brand": avasam_prod.get("brand", ""),
+                    "ean": avasam_prod.get("ean", ""),
+                    "suppliers": [{
+                        "name": "Avasam",
+                        "country": "GB",
+                        "rating": 4.5,
+                        "unit_cost": cost,
+                        "min_order": 1,
+                        "lead_time_days": 2,
+                        "shipping_cost": 0,
+                    }],
+                    "trend_score": 55,
+                    "margin_score": min(100, max(0, round(margin))),
+                    "competition_score": 50,
+                    "ad_activity_score": 30,
+                    "supplier_demand_score": 75,
+                    "launch_score": 0,
+                    "launch_score_label": "",
+                    "launch_score_reasoning": "",
+                    "tiktok_views": 0,
+                    "ad_count": 0,
+                    "competition_level": "unknown",
+                    "market_saturation": 0,
+                    "active_competitor_stores": 0,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "imported_by": "avasam_auto_sync",
+                }
+
+                score, label, reasoning = calculate_launch_score(product)
+                product["launch_score"] = score
+                product["launch_score_label"] = label
+                product["launch_score_reasoning"] = reasoning
+
+                await db.products.insert_one(product)
+                product.pop("_id", None)
+                total_created += 1
+
+        except Exception as e:
+            logger.error(f"Avasam sync error for query '{query}': {e}")
+            errors.append(f"{query}: {str(e)}")
+
+    # Log the sync run
+    await db.automation_logs.insert_one({
+        "id": str(_uuid.uuid4()),
+        "job_name": "sync_avasam_products",
+        "status": "completed",
+        "run_time": datetime.now(timezone.utc).isoformat(),
+        "details": {
+            "fetched": total_fetched,
+            "created": total_created,
+            "skipped": total_skipped,
+            "errors": errors[:10],
+        },
+    })
+
+    logger.info(
+        f"Avasam sync complete: fetched={total_fetched}, created={total_created}, "
+        f"skipped={total_skipped}, errors={len(errors)}"
+    )
+
+    return {
+        "records_processed": total_created,
+        "details": {
+            "fetched": total_fetched,
+            "created": total_created,
+            "skipped": total_skipped,
+            "queries": len(search_queries),
+            "errors": errors[:10],
+        },
+    }
+
+
+
+@TaskRegistry.register(
     name="full_pipeline",
     description="Run complete data pipeline (all sources + scoring + alerts)",
     default_schedule=None  # Manual only
@@ -858,6 +1020,14 @@ async def full_pipeline(db, params: Dict[str, Any]) -> Dict[str, Any]:
         results['total_records'] += step_result['records_processed']
     except Exception as e:
         results['errors'].append(f"sync_cj_products: {str(e)}")
+
+    # Step 2b: Sync Avasam UK products
+    try:
+        step_result = await sync_avasam_products(db, params)
+        results['steps']['sync_avasam_products'] = step_result
+        results['total_records'] += step_result['records_processed']
+    except Exception as e:
+        results['errors'].append(f"sync_avasam_products: {str(e)}")
     
     # Step 3: Update supplier data
     try:
