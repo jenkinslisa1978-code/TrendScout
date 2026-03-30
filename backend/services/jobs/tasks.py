@@ -14,6 +14,7 @@ Each task is a self-contained unit that:
 """
 
 import logging
+import uuid
 from typing import Dict, Any, Callable, Awaitable, List
 from datetime import datetime, timezone
 

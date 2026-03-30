@@ -439,5 +439,333 @@ async def get_tiktok_intelligence():
 workspace_router = APIRouter(prefix="/api/workspace")
 
 
+# =====================================================
+# COMPETITOR STORE SPY
+# =====================================================
 
-routers = [tools_router, competitor_router]
+spy_router = APIRouter(prefix="/api/competitor-spy")
+
+
+@spy_router.post("/scan")
+async def competitor_surface_scan(request: Request):
+    """
+    Public surface scan of a Shopify store.
+    Scrapes /products.json and provides pricing, categories, product velocity,
+    estimated revenue range, and competitive positioning.
+    """
+    body = await request.json()
+    url = (body.get("url") or "").strip().rstrip("/")
+    if not url:
+        raise HTTPException(status_code=400, detail="Store URL is required")
+
+    if not url.startswith("http"):
+        url = "https://" + url
+
+    domain_match = re.match(r"https?://([^/]+)", url)
+    if not domain_match:
+        raise HTTPException(status_code=400, detail="Invalid URL format")
+    domain = domain_match.group(1)
+
+    products_url = f"https://{domain}/products.json?limit=250"
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                products_url,
+                timeout=aiohttp.ClientTimeout(total=15),
+                headers={"User-Agent": "TrendScout/1.0 Competitor Spy"},
+            ) as resp:
+                if resp.status == 404:
+                    raise HTTPException(status_code=400, detail="Not a Shopify store or products endpoint is disabled.")
+                if resp.status != 200:
+                    raise HTTPException(status_code=400, detail=f"Could not reach store (HTTP {resp.status}).")
+                data = await resp.json()
+    except aiohttp.ClientError:
+        raise HTTPException(status_code=400, detail="Could not connect. Check the URL.")
+
+    raw_products = data.get("products", [])
+    if not raw_products:
+        return {
+            "success": True,
+            "store_url": f"https://{domain}",
+            "domain": domain,
+            "product_count": 0,
+            "analysis": {"verdict": "Empty store — no products found."},
+        }
+
+    # Process products
+    products = []
+    all_prices = []
+    category_counts = {}
+    vendor_counts = {}
+    recent_30d = 0
+    recent_7d = 0
+    now = datetime.now(timezone.utc)
+
+    for p in raw_products:
+        variants = p.get("variants", [])
+        prices = [float(v.get("price", 0)) for v in variants if v.get("price")]
+        avg_price = sum(prices) / len(prices) if prices else 0
+        all_prices.extend(prices)
+
+        product_type = p.get("product_type", "").strip() or "Uncategorized"
+        category_counts[product_type] = category_counts.get(product_type, 0) + 1
+
+        vendor = p.get("vendor", "").strip() or "Unknown"
+        vendor_counts[vendor] = vendor_counts.get(vendor, 0) + 1
+
+        created = p.get("created_at", "")
+        days_old = None
+        if created:
+            try:
+                from dateutil.parser import parse as parse_dt
+                dt = parse_dt(created)
+                days_old = (now - dt).days
+                if days_old <= 30:
+                    recent_30d += 1
+                if days_old <= 7:
+                    recent_7d += 1
+            except Exception:
+                pass
+
+        img = p.get("images", [{}])
+        image_url = img[0].get("src", "") if img else ""
+
+        products.append({
+            "title": p.get("title", ""),
+            "product_type": product_type,
+            "vendor": vendor,
+            "price": round(avg_price, 2),
+            "variants_count": len(variants),
+            "image_url": image_url,
+            "created_at": created,
+            "days_old": days_old,
+            "tags": (p.get("tags", "").split(", ")[:5] if isinstance(p.get("tags"), str) else []),
+        })
+
+    products.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+    # Price analysis
+    min_price = min(all_prices) if all_prices else 0
+    max_price = max(all_prices) if all_prices else 0
+    avg_price = sum(all_prices) / len(all_prices) if all_prices else 0
+    median_price = sorted(all_prices)[len(all_prices) // 2] if all_prices else 0
+
+    # Pricing strategy detection
+    if max_price > avg_price * 3:
+        pricing_strategy = "Wide range with premium products"
+    elif max_price - min_price < avg_price * 0.3:
+        pricing_strategy = "Narrow price band — focused positioning"
+    elif avg_price > 50:
+        pricing_strategy = "Premium positioning"
+    elif avg_price < 15:
+        pricing_strategy = "Budget / impulse buy pricing"
+    else:
+        pricing_strategy = "Mid-range competitive pricing"
+
+    # Estimated monthly revenue range (rough)
+    count = len(raw_products)
+    est_low = round(count * avg_price * 0.5)  # pessimistic: 0.5 sales/product/month
+    est_high = round(count * avg_price * 3)    # optimistic: 3 sales/product/month
+
+    # Store size & velocity
+    if count > 100:
+        store_size = "Large"
+    elif count > 30:
+        store_size = "Medium"
+    elif count > 5:
+        store_size = "Small"
+    else:
+        store_size = "Micro"
+
+    if recent_7d > 5:
+        velocity = "Very active"
+        velocity_detail = f"{recent_7d} products added in last 7 days"
+    elif recent_30d > 10:
+        velocity = "Active"
+        velocity_detail = f"{recent_30d} products added in last 30 days"
+    elif recent_30d > 0:
+        velocity = "Moderate"
+        velocity_detail = f"{recent_30d} products added in last 30 days"
+    else:
+        velocity = "Slow"
+        velocity_detail = "No new products in the last 30 days"
+
+    # Categories sorted
+    categories = sorted(
+        [{"name": k, "count": v, "pct": round(v / count * 100)} for k, v in category_counts.items()],
+        key=lambda c: c["count"], reverse=True,
+    )[:10]
+
+    # Top vendors
+    top_vendors = sorted(
+        [{"name": k, "count": v} for k, v in vendor_counts.items()],
+        key=lambda v: v["count"], reverse=True,
+    )[:5]
+
+    # Best sellers (most variants = usually best sellers)
+    best_sellers = sorted(products, key=lambda p: p["variants_count"], reverse=True)[:5]
+
+    # Newest products
+    newest = products[:5]
+
+    # Threat level assessment
+    if count > 50 and recent_30d > 5 and avg_price < 30:
+        threat_level = "High"
+        threat_detail = "Large, active store with competitive pricing"
+    elif count > 20 and recent_30d > 0:
+        threat_level = "Medium"
+        threat_detail = "Growing store with regular product updates"
+    else:
+        threat_level = "Low"
+        threat_detail = "Small or inactive store"
+
+    return {
+        "success": True,
+        "store_url": f"https://{domain}",
+        "domain": domain,
+        "product_count": count,
+        "store_size": store_size,
+        "pricing": {
+            "min": round(min_price, 2),
+            "max": round(max_price, 2),
+            "avg": round(avg_price, 2),
+            "median": round(median_price, 2),
+            "strategy": pricing_strategy,
+        },
+        "revenue_estimate": {
+            "low": est_low,
+            "high": est_high,
+            "currency": "USD",
+            "note": "Rough estimate based on catalog size and pricing",
+        },
+        "velocity": {
+            "level": velocity,
+            "detail": velocity_detail,
+            "new_7d": recent_7d,
+            "new_30d": recent_30d,
+        },
+        "threat": {
+            "level": threat_level,
+            "detail": threat_detail,
+        },
+        "categories": categories,
+        "top_vendors": top_vendors,
+        "best_sellers": best_sellers,
+        "newest_products": newest,
+        "upgrade_cta": "Unlock AI deep analysis: revenue breakdown, ad strategy, weaknesses, and how to beat this competitor",
+    }
+
+
+@spy_router.post("/deep-analysis")
+async def competitor_deep_analysis(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Premium AI-powered deep analysis of a competitor store.
+    Uses GPT-5.2 to provide strategic insights, weaknesses, and counter-strategies.
+    """
+    body = await request.json()
+    url = (body.get("url") or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="Store URL required")
+
+    # First do a surface scan
+    from starlette.requests import Request as StarletteRequest
+    scan_body = {"url": url}
+
+    # Reuse surface scan logic
+    if not url.startswith("http"):
+        url = "https://" + url
+    domain_match = re.match(r"https?://([^/]+)", url)
+    if not domain_match:
+        raise HTTPException(status_code=400, detail="Invalid URL")
+    domain = domain_match.group(1)
+
+    products_url = f"https://{domain}/products.json?limit=250"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                products_url,
+                timeout=aiohttp.ClientTimeout(total=15),
+                headers={"User-Agent": "TrendScout/1.0"},
+            ) as resp:
+                if resp.status != 200:
+                    raise HTTPException(status_code=400, detail="Could not scan store")
+                data = await resp.json()
+    except aiohttp.ClientError:
+        raise HTTPException(status_code=400, detail="Connection failed")
+
+    raw_products = data.get("products", [])
+    count = len(raw_products)
+    all_prices = []
+    categories = {}
+    for p in raw_products:
+        for v in p.get("variants", []):
+            try:
+                all_prices.append(float(v.get("price", 0)))
+            except (ValueError, TypeError):
+                pass
+        pt = p.get("product_type", "").strip() or "Uncategorized"
+        categories[pt] = categories.get(pt, 0) + 1
+
+    avg_price = sum(all_prices) / len(all_prices) if all_prices else 0
+    top_cats = sorted(categories.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not llm_key:
+        raise HTTPException(status_code=503, detail="AI analysis unavailable")
+
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"spy-{uuid.uuid4().hex[:8]}",
+            system_message="You are a UK ecommerce competitive analyst. Return ONLY valid JSON.",
+        ).with_model("openai", "gpt-5.2")
+
+        prompt = (
+            f"Analyse this Shopify competitor store for a UK seller:\n"
+            f"Domain: {domain}\n"
+            f"Products: {count}, Avg price: ${avg_price:.2f}\n"
+            f"Top categories: {', '.join(f'{c}({n})' for c,n in top_cats)}\n"
+            f"Sample products: {', '.join(p.get('title','') for p in raw_products[:10])}\n\n"
+            f"Return JSON:\n"
+            f'{{"store_profile": "2-sentence store profile",'
+            f'"estimated_monthly_revenue": "estimated range with reasoning",'
+            f'"target_audience": "who they sell to",'
+            f'"strengths": ["s1","s2","s3"],'
+            f'"weaknesses": ["w1","w2","w3"],'
+            f'"pricing_analysis": "detailed pricing strategy analysis",'
+            f'"ad_strategy_likely": "what ad channels and approach they likely use",'
+            f'"product_gaps": ["gap1","gap2","gap3"],'
+            f'"how_to_compete": "specific strategy to compete against this store in the UK",'
+            f'"opportunity_score": 75,'
+            f'"verdict": "one sentence summary of whether this competitor is beatable"}}'
+        )
+
+        response = await chat.send_message(UserMessage(text=prompt))
+        ai_data = {}
+        try:
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                ai_data = json.loads(json_match.group())
+        except (json.JSONDecodeError, AttributeError):
+            ai_data = {"verdict": response[:500]}
+
+        return {
+            "success": True,
+            "domain": domain,
+            "product_count": count,
+            "avg_price": round(avg_price, 2),
+            "ai_analysis": ai_data,
+        }
+
+    except Exception as e:
+        logging.error(f"Competitor deep analysis error: {e}")
+        raise HTTPException(status_code=500, detail="AI analysis failed")
+
+
+routers = [tools_router, competitor_router, spy_router]

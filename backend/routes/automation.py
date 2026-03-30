@@ -355,9 +355,295 @@ async def compute_launch_scores_batch(api_key: Optional[str] = Header(None, alia
 
 
 # =====================
-# ROUTES - Background Jobs
+# WEEKLY DIGEST PIPELINE
 # =====================
 
+@automation_router.post("/weekly-digest/trigger")
+async def trigger_weekly_digest(
+    api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    current_user: AuthenticatedUser = Depends(get_optional_user),
+):
+    """
+    Trigger the full weekly digest pipeline:
+    1. Generate digest content (top 5 products + viral predictions)
+    2. Send enhanced emails to registered users
+    3. Send lead subscriber digest
+
+    Can be triggered by API key (cron) or authenticated admin user.
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    is_admin = current_user and getattr(current_user, 'role', '') == 'admin'
+    is_api_key = api_key == expected_key
+
+    if not is_admin and not is_api_key:
+        raise HTTPException(status_code=401, detail="Admin or API key required")
+
+    from services.jobs.tasks import generate_weekly_digest, send_weekly_email_digest, send_lead_subscriber_digest
+
+    results = {"steps": {}, "errors": []}
+
+    # Step 1: Generate digest
+    try:
+        digest_result = await generate_weekly_digest(db, {})
+        results["steps"]["generate_digest"] = digest_result
+    except Exception as e:
+        results["errors"].append(f"generate_digest: {str(e)}")
+        logging.error(f"Weekly digest generation failed: {e}")
+
+    # Step 2: Send enhanced emails to registered users
+    try:
+        email_result = await _send_enhanced_weekly_emails(db)
+        results["steps"]["send_user_emails"] = email_result
+    except Exception as e:
+        results["errors"].append(f"send_user_emails: {str(e)}")
+        logging.error(f"Weekly user emails failed: {e}")
+
+    # Step 3: Send to leads
+    try:
+        lead_result = await send_lead_subscriber_digest(db, {})
+        results["steps"]["send_lead_emails"] = lead_result
+    except Exception as e:
+        results["errors"].append(f"send_lead_emails: {str(e)}")
+        logging.error(f"Weekly lead emails failed: {e}")
+
+    # Log
+    await db.automation_logs.insert_one({
+        "id": str(uuid.uuid4()),
+        "job_name": "weekly_digest_pipeline",
+        "status": "completed",
+        "run_time": datetime.now(timezone.utc).isoformat(),
+        "details": results,
+    })
+
+    return {"success": True, **results}
+
+
+@automation_router.get("/weekly-digest/preview")
+async def preview_weekly_digest(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Preview the weekly digest email HTML without sending."""
+    html = await _build_enhanced_digest_html(db)
+    if not html:
+        raise HTTPException(status_code=404, detail="Not enough product data to generate digest")
+    return Response(content=html, media_type="text/html")
+
+
+async def _send_enhanced_weekly_emails(database):
+    """Send the enhanced 'Products to Launch This Week' email to all registered users."""
+    import httpx
+
+    html = await _build_enhanced_digest_html(database)
+    if not html:
+        return {"records_processed": 0, "details": {"status": "skipped", "reason": "No content"}}
+
+    # Get subscribed users
+    users = await database.profiles.find(
+        {"email_preferences.weekly_digest": {"$ne": False}},
+        {"_id": 0, "email": 1, "name": 1},
+    ).to_list(5000)
+
+    if not users:
+        users = await database.auth_users.find(
+            {"email": {"$exists": True}},
+            {"_id": 0, "email": 1},
+        ).to_list(200)
+
+    resend_key = os.environ.get("RESEND_API_KEY")
+    sender = os.environ.get("SENDER_EMAIL", "noreply@trendscout.click")
+    if not resend_key:
+        return {"records_processed": 0, "details": {"status": "error", "reason": "Resend not configured"}}
+
+    now = datetime.now(timezone.utc)
+    subject = f"5 Products to Launch This Week — {now.strftime('%d %b %Y')}"
+
+    sent = 0
+    errors = []
+    async with httpx.AsyncClient() as client:
+        for user in users:
+            email = user.get("email")
+            if not email:
+                continue
+            try:
+                resp = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                    json={
+                        "from": f"TrendScout <{sender}>",
+                        "to": [email],
+                        "subject": subject,
+                        "html": html,
+                    },
+                    timeout=10,
+                )
+                if resp.status_code in (200, 201):
+                    sent += 1
+                else:
+                    errors.append(f"{email}: {resp.status_code}")
+            except Exception as e:
+                errors.append(f"{email}: {str(e)}")
+
+    logging.info(f"Enhanced weekly digest: sent {sent}/{len(users)}, errors: {len(errors)}")
+    return {"records_processed": sent, "details": {"total": len(users), "sent": sent, "errors": len(errors)}}
+
+
+async def _build_enhanced_digest_html(database):
+    """Build the premium 'Products to Launch This Week' email HTML."""
+    site_url = os.environ.get("SITE_URL", "https://trendscout.click")
+
+    # Get top 5 products
+    products = await database.products.find(
+        {"launch_score": {"$gte": 40}},
+        {"_id": 0, "id": 1, "product_name": 1, "category": 1, "launch_score": 1,
+         "image_url": 1, "estimated_retail_price": 1, "supplier_cost": 1,
+         "estimated_margin": 1, "competition_level": 1, "tiktok_views": 1,
+         "launch_score_label": 1},
+    ).sort("launch_score", -1).limit(5).to_list(5)
+
+    if not products:
+        return None
+
+    # Get latest viral predictions
+    viral = await database.viral_predictions.find_one(
+        {}, {"_id": 0, "predictions": {"$slice": 3}},
+        sort=[("generated_at", -1)],
+    )
+    viral_preds = viral.get("predictions", []) if viral else []
+
+    now = datetime.now(timezone.utc)
+    week_label = now.strftime("%d %b %Y")
+
+    # Build product rows
+    product_html = ""
+    for i, p in enumerate(products, 1):
+        score = p.get("launch_score", 0)
+        margin = p.get("estimated_margin", 0)
+        retail = p.get("estimated_retail_price", 0)
+        img = p.get("image_url", "")
+        pid = p.get("id", "")
+        label = p.get("launch_score_label", "")
+        comp = p.get("competition_level", "unknown")
+
+        score_color = "#10b981" if score >= 65 else "#f59e0b" if score >= 45 else "#ef4444"
+        badge_bg = "#ecfdf5" if score >= 65 else "#fffbeb" if score >= 45 else "#fef2f2"
+
+        product_html += f"""
+        <tr>
+          <td style="padding:16px;border-bottom:1px solid #1e1e21;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+              <td width="60" valign="top">
+                {"<img src='" + img + "' width='56' height='56' style='border-radius:8px;object-fit:cover;border:1px solid #27272a;' />" if img else "<div style='width:56px;height:56px;border-radius:8px;background:#18181b;'></div>"}
+              </td>
+              <td style="padding-left:12px;" valign="top">
+                <div style="font-weight:700;color:#fafafa;font-size:14px;">{p.get('product_name', '')}</div>
+                <div style="font-size:12px;color:#71717a;margin-top:2px;">{p.get('category', '')} &middot; {comp} competition</div>
+                <div style="margin-top:6px;">
+                  <span style="display:inline-block;background:{badge_bg};color:{score_color};font-weight:700;font-size:12px;padding:2px 8px;border-radius:4px;font-family:monospace;">{score}/100</span>
+                  {f"<span style='display:inline-block;color:#71717a;font-size:11px;margin-left:8px;'>Margin: {margin:.0f}%</span>" if margin > 0 else ""}
+                  {f"<span style='display:inline-block;color:#71717a;font-size:11px;margin-left:8px;'>Retail: £{retail:.2f}</span>" if retail > 0 else ""}
+                </div>
+              </td>
+              <td width="120" valign="middle" align="right">
+                <a href="{site_url}/quick-launch/{pid}?utm_source=email&utm_medium=digest&utm_campaign=weekly_launch" style="display:inline-block;background:#10b981;color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:6px;text-decoration:none;letter-spacing:0.02em;">Launch</a>
+              </td>
+            </tr></table>
+          </td>
+        </tr>"""
+
+    # Viral predictions section
+    viral_html = ""
+    if viral_preds:
+        viral_rows = ""
+        for vp in viral_preds[:3]:
+            vs = vp.get("viral_score", 0)
+            vs_color = "#ef4444" if vs >= 80 else "#f59e0b"
+            viral_rows += f"""
+            <tr>
+              <td style="padding:10px 12px;border-bottom:1px solid #1e1e21;">
+                <div style="font-weight:600;color:#fafafa;font-size:13px;">{vp.get('product_name', '')}</div>
+                <div style="font-size:11px;color:#71717a;margin-top:2px;">{vp.get('tiktok_format', '')} &middot; {vp.get('urgency', '')} urgency</div>
+              </td>
+              <td style="padding:10px 8px;border-bottom:1px solid #1e1e21;text-align:center;">
+                <span style="font-weight:700;font-family:monospace;color:{vs_color};font-size:16px;">{vs}</span>
+              </td>
+            </tr>"""
+
+        viral_html = f"""
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:24px;background:#18181b;border-radius:12px;border:1px solid #27272a;">
+          <tr><td style="padding:16px 16px 8px;">
+            <div style="font-size:12px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.1em;">TikTok Viral Predictions</div>
+            <div style="font-size:11px;color:#52525b;margin-top:2px;">Products predicted to trend in 48-72h</div>
+          </td></tr>
+          <tr><td style="padding:0 16px 12px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">{viral_rows}</table>
+          </td></tr>
+          <tr><td style="padding:0 16px 16px;text-align:center;">
+            <a href="{site_url}/tiktok-viral?utm_source=email&utm_medium=digest&utm_campaign=weekly_viral" style="font-size:12px;color:#10b981;font-weight:600;text-decoration:none;">See all predictions &rarr;</a>
+          </td></tr>
+        </table>"""
+
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#09090b;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#09090b;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;">
+        <!-- Header -->
+        <tr><td style="padding-bottom:24px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:#fafafa;letter-spacing:-0.02em;">TrendScout</div>
+          <div style="font-size:12px;color:#52525b;margin-top:4px;">Products to Launch This Week &middot; {week_label}</div>
+        </td></tr>
+
+        <!-- Intro -->
+        <tr><td style="padding-bottom:20px;">
+          <div style="background:#18181b;border:1px solid #27272a;border-radius:12px;padding:20px;">
+            <div style="font-size:15px;font-weight:700;color:#fafafa;">This week's top 5 launch candidates</div>
+            <div style="font-size:13px;color:#a1a1aa;margin-top:6px;line-height:1.5;">
+              AI-scored products with the highest launch potential for UK sellers. Each includes a one-click launch button to generate ad copy, profit projections, and store-ready exports.
+            </div>
+          </div>
+        </td></tr>
+
+        <!-- Products -->
+        <tr><td>
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#18181b;border-radius:12px;border:1px solid #27272a;">
+            <tr><td style="padding:12px 16px;border-bottom:1px solid #27272a;">
+              <span style="font-size:11px;font-weight:700;color:#52525b;text-transform:uppercase;letter-spacing:0.1em;">Top Products</span>
+            </td></tr>
+            {product_html}
+          </table>
+        </td></tr>
+
+        <!-- Viral Predictions -->
+        <tr><td>{viral_html}</td></tr>
+
+        <!-- CTA -->
+        <tr><td style="padding:24px 0;text-align:center;">
+          <a href="{site_url}/trending-products?utm_source=email&utm_medium=digest&utm_campaign=weekly_launch&utm_content=cta_browse" style="display:inline-block;background:#10b981;color:#fff;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:0.02em;">Browse All Trending Products</a>
+        </td></tr>
+
+        <!-- Quick links -->
+        <tr><td style="padding-bottom:24px;text-align:center;">
+          <a href="{site_url}/profit-simulator?utm_source=email&utm_medium=digest" style="font-size:12px;color:#10b981;text-decoration:none;margin:0 10px;">Profit Simulator</a>
+          <a href="{site_url}/competitor-spy?utm_source=email&utm_medium=digest" style="font-size:12px;color:#10b981;text-decoration:none;margin:0 10px;">Competitor Spy</a>
+          <a href="{site_url}/tiktok-viral?utm_source=email&utm_medium=digest" style="font-size:12px;color:#10b981;text-decoration:none;margin:0 10px;">TikTok Viral</a>
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="border-top:1px solid #1e1e21;padding:16px 0;text-align:center;">
+          <div style="font-size:11px;color:#3f3f46;">You're receiving this because you signed up at TrendScout.</div>
+          <div style="font-size:11px;color:#3f3f46;margin-top:4px;">
+            <a href="{site_url}/settings/notifications?utm_source=email" style="color:#52525b;text-decoration:underline;">Manage preferences</a> &middot;
+            <a href="{site_url}/unsubscribe?utm_source=email" style="color:#52525b;text-decoration:underline;">Unsubscribe</a>
+          </div>
+          <div style="font-size:10px;color:#27272a;margin-top:8px;">TrendScout &middot; United Kingdom</div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>"""
+
+    return html
 
 
 routers = [automation_router]

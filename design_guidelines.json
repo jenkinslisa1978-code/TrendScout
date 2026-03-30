@@ -1,176 +1,109 @@
 {
-  "project_name": "TrendScout - Dropshipping Research Platform",
-  "design_philosophy": {
-    "archetype": "The Performance Pro (Light Mode)",
-    "core_vibe": "Analytic, Crisp, Opportunity-Focused",
-    "description": "A high-performance workspace for entrepreneurs. It blends the density of a financial terminal with the clean aesthetics of modern SaaS. White space is used for grouping, not just emptiness. Data is the hero.",
-    "emotional_tone": "Trust, Clarity, Speed"
+  "theme": "dark",
+  "archetype": "5 (Jewel & Luxury) mixed with 4 (Swiss & High-Contrast). A premium, dark 'Old Money Tech' aesthetic for serious e-commerce sellers.",
+  "colors": {
+    "background": "#09090b",
+    "surface": "#121214",
+    "surface_elevated": "#18181b",
+    "primary": "#10b981",
+    "primary_hover": "#059669",
+    "primary_glow": "rgba(16, 185, 129, 0.25)",
+    "accent": "#f59e0b",
+    "border": "rgba(255, 255, 255, 0.08)",
+    "border_highlight": "rgba(255, 255, 255, 0.15)",
+    "text": {
+      "primary": "#fafafa",
+      "secondary": "#a1a1aa",
+      "muted": "#71717a"
+    }
   },
   "typography": {
-    "font_family": {
-      "headings": "Manrope, sans-serif",
-      "body": "Inter, sans-serif",
-      "data": "JetBrains Mono, monospace"
-    },
-    "installation": {
-      "google_fonts_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
-    },
-    "usage_rules": {
-      "headings": "Use 'Manrope' for all H1-H6. Weights: 600 (Semibold) or 800 (ExtraBold). Tracking: tight (-0.02em).",
-      "body": "Use 'Inter' for paragraphs, labels, and UI text. Weights: 400 (Regular) or 500 (Medium).",
-      "data": "Use 'JetBrains Mono' for prices, trend scores, dates, and IDs. This implies precision."
+    "heading_font": "Cabinet Grotesk",
+    "body_font": "Manrope",
+    "rules": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter font-black text-white",
+      "h2": "text-3xl lg:text-4xl tracking-tight font-bold text-white",
+      "h3": "text-xl sm:text-2xl tracking-tight font-semibold text-zinc-100",
+      "h4": "text-lg tracking-tight font-medium text-zinc-200",
+      "body": "text-base leading-relaxed text-zinc-400 font-normal",
+      "overline": "text-xs tracking-[0.2em] uppercase font-bold text-emerald-500"
     }
   },
-  "colors": {
-    "palette": {
-      "background": {
-        "app": "#F8FAFC",
-        "card": "#FFFFFF",
-        "sidebar": "#FFFFFF"
-      },
-      "primary": {
-        "main": "#4F46E5",
-        "hover": "#4338CA",
-        "foreground": "#FFFFFF"
-      },
-      "secondary": {
-        "main": "#F1F5F9",
-        "foreground": "#0F172A"
-      },
-      "text": {
-        "primary": "#0F172A",
-        "secondary": "#64748B",
-        "muted": "#94A3B8"
-      },
-      "border": {
-        "subtle": "#E2E8F0",
-        "default": "#CBD5E1",
-        "focus": "#4F46E5"
-      },
-      "accents": {
-        "success": "#10B981",
-        "success_bg": "#ECFDF5",
-        "warning": "#F59E0B",
-        "warning_bg": "#FFFBEB",
-        "danger": "#EF4444",
-        "danger_bg": "#FEF2F2",
-        "info": "#3B82F6",
-        "info_bg": "#EFF6FF"
-      }
-    },
-    "gradients": {
-      "hero_overlay": "linear-gradient(180deg, rgba(255,255,255,0) 0%, #F8FAFC 100%)",
-      "subtle_glow": "radial-gradient(circle at center, rgba(79, 70, 229, 0.08) 0%, transparent 70%)"
-    },
-    "forbidden_colors": ["#1B93A4", "#7351B7", "#000000"]
+  "layout_spacing": {
+    "general_philosophy": "Generous spacing. p-8 to p-12 for containers. Let the dark space breathe to create tension and luxury.",
+    "bento_marketing": "grid-cols-1 md:grid-cols-12 gap-8. Mix wide (col-span-8) and tall (col-span-4 row-span-2) shapes for asymmetry.",
+    "bento_dashboard": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6. Dense, edge-to-edge alignment for 'control room' utility."
   },
-  "visual_enhancers": {
-    "glassmorphism": {
-      "heavy": "bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-sm",
-      "light": "bg-white/60 backdrop-blur-md border border-white/40"
-    },
-    "shadows": {
-      "card": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-      "card_hover": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-      "float": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
-    },
-    "borders": {
-      "default": "1px solid #E2E8F0",
-      "interactive": "1px solid #CBD5E1"
-    },
-    "radius": {
-      "card": "rounded-xl",
-      "button": "rounded-lg",
-      "badge": "rounded-full"
-    }
-  },
-  "layout_strategies": {
-    "dashboard_grid": {
-      "description": "Bento-style grid with mixed span sizes.",
-      "classes": "grid grid-cols-1 md:grid-cols-4 gap-6",
-      "areas": {
-        "summary": "col-span-1",
-        "chart": "col-span-2 md:col-span-3",
-        "feed": "col-span-1 md:col-span-1 row-span-2"
-      }
-    },
-    "landing_hero": {
-      "structure": "Centralized text with a large dashboard preview image tilting forward (3D transform).",
-      "spacing": "pt-32 pb-20"
-    },
-    "product_grid": {
-      "classes": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-    }
+  "surface_strategies": {
+    "header": "Crystal Glassmorphism: bg-black/60 backdrop-blur-xl border-b border-white/10. Must be sticky with z-50.",
+    "cards_default": "Flat background (#121214), 1px solid border (rgba(255,255,255,0.08)). No shadow in resting state.",
+    "cards_hover": "-translate-y-1 transition-transform border-white/20 shadow-[0_8px_30px_rgba(16,185,129,0.08)]",
+    "premium_pricing_card": "Tracing Beam layout: Use a glowing border gradient (emerald to amber) with a soft blur behind it to indicate the £39/mo tier."
   },
   "components": {
     "buttons": {
-      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm h-10 px-4 py-2 font-medium transition-transform active:scale-95",
-      "secondary": "bg-white text-secondary-foreground border border-input hover:bg-secondary/80 shadow-sm h-10 px-4 py-2 font-medium"
+      "primary": "bg-emerald-500 text-white font-bold tracking-wide rounded-md hover:bg-emerald-400 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.4)]",
+      "secondary": "bg-zinc-900 border border-white/10 text-white hover:bg-zinc-800 transition-colors",
+      "outline": "bg-transparent border border-zinc-700 text-zinc-300 hover:text-white hover:border-white transition-colors"
     },
-    "cards": {
-      "dashboard": "bg-white border border-border shadow-card rounded-xl p-6 hover:shadow-card_hover transition-shadow duration-200",
-      "product": "group bg-white border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-colors duration-200"
-    },
-    "badges": {
-      "trend_high": "bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider",
-      "trend_med": "bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider",
-      "trend_low": "bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider"
-    },
-    "tables": {
-      "container": "w-full text-sm text-left",
-      "header": "text-xs text-muted-foreground uppercase bg-secondary/50 font-semibold tracking-wider",
-      "row": "bg-white border-b hover:bg-slate-50 transition-colors"
-    }
+    "inputs": "bg-black/50 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-md backdrop-blur-sm text-white",
+    "tags": "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded text-xs uppercase tracking-wider font-bold"
   },
-  "motion": {
-    "page_transition": {
-      "initial": { "opacity": 0, "y": 20 },
-      "animate": { "opacity": 1, "y": 0 },
-      "exit": { "opacity": 0, "y": -20 },
-      "transition": { "duration": 0.3, "ease": "easeOut" }
-    },
-    "list_item": {
-      "initial": { "opacity": 0, "x": -20 },
-      "animate": { "opacity": 1, "x": 0 }
-    },
-    "hover_lift": "hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
-  },
-  "image_assets": {
-    "hero_background": {
-      "url": "https://images.unsplash.com/photo-1759661142441-d77ffb3ca943?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjB0ZWNoJTIwd29ya3NwYWNlJTIwbGlnaHQlMjBtaW5pbWFsaXN0fGVufDB8fHx8MTc3MzA5MjUwMHww&ixlib=rb-4.1.0&q=85",
-      "alt": "Modern minimal workspace with laptop",
-      "usage": "Landing page hero background or side image"
-    },
-    "product_placeholders": [
+  "media": {
+    "images": [
       {
-        "url": "https://images.unsplash.com/photo-1741720928049-2d167982b981?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHw0fHxnYWRnZXRzJTIwcHJvZHVjdHMlMjBtaW5pbWFsaXN0JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MzA5MjUwMXww&ixlib=rb-4.1.0&q=85",
-        "category": "Electronics"
+        "category": "hero_background",
+        "url": "https://static.prod-images.emergentagent.com/jobs/19e567c4-0b4a-48ff-90b7-fa2a9c1d88e2/images/b6d8438eecd6202e27e4992235154ae9a85785b12a0760204d3de353bb236c3b.png",
+        "description": "Abstract dark cinematic background with emerald and gold volumetric light leaks. Use as an absolute positioned background in the Hero section with 30-40% opacity and object-cover."
       },
       {
-        "url": "https://images.unsplash.com/photo-1636820877358-5106624537db?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxnYWRnZXRzJTIwcHJvZHVjdHMlMjBtaW5pbWFsaXN0JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MzA5MjUwMXww&ixlib=rb-4.1.0&q=85",
-        "category": "Mobile Accessories"
+        "category": "validator_showcase",
+        "url": "https://static.prod-images.emergentagent.com/jobs/19e567c4-0b4a-48ff-90b7-fa2a9c1d88e2/images/61b1ce0891198aca37ef1b62f52edf98789b86f7bee4a494935d1ae02e7f8bd2.png",
+        "description": "Macro close up of glowing translucent glass cube with shopping bag icon. Feature this image in the 'Product Validator' section as the primary visual."
       },
       {
-        "url": "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwyfHxnYWRnZXRzJTIwcHJvZHVjdHMlMjBtaW5pbWFsaXN0JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MzA5MjUwMXww&ixlib=rb-4.1.0&q=85",
-        "category": "Audio"
+        "category": "profit_simulator_bg",
+        "url": "https://static.prod-images.emergentagent.com/jobs/19e567c4-0b4a-48ff-90b7-fa2a9c1d88e2/images/382d582cd09bc73421d82b6d95a4b4d79eadfeb442a9405cbc6ab38ceecc43f7.png",
+        "description": "Abstract 3D floating luminous green charts. Use as a background graphic or side-panel image for the 'Profit Simulator' interactive widget."
+      },
+      {
+        "category": "dashboard_analytics",
+        "url": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxlY29tbWVyY2UlMjBkYXNoYm9hcmQlMjBjaGFydCUyMGFuYWx5dGljc3xlbnwwfHx8fDE3NzQ4ODg3NjF8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Dashboard analytics charts. Use in the 'Competitor Intelligence' or 'Product Scoring' feature blocks."
       }
     ]
   },
-  "instructions_to_main_agent": [
-    "1. FONTS: Add the Google Fonts link to the head of 'index.html' immediately.",
-    "2. THEME: Implement the colors in 'tailwind.config.js' extending the theme. Do not just rely on Shadcn defaults.",
-    "3. LAYOUT: Create a 'DashboardLayout' component with a fixed sidebar and scrollable main content area. Use a 'LandingLayout' for public pages with a sticky glassmorphism header.",
-    "4. COMPONENTS: heavily customize Shadcn components. Remove the default heavy radiuses if they exist (keep to 0.5rem/8px). Ensure buttons have the 'Manrope' font weight 600.",
-    "5. CHARTS: Use Recharts for the trend analysis. Style them with the 'primary' color (#4F46E5) for lines/bars and remove grid lines for a cleaner look.",
-    "6. TABLES: Ensure data tables have sticky headers and hoverable rows. Use 'JetBrains Mono' for any column displaying currency or numerical scores.",
-    "7. TESTING: Add 'data-testid' to all buttons, inputs, and product cards."
-  ],
-  "universal_guidelines": [
-    "Do NOT use gradients for backgrounds. Keep it flat and clean.",
-    "Do NOT center-align text in dashboard cards. Left align is better for scanning.",
-    "Use 24px-32px padding inside cards. Don't cram content.",
-    "Always add a 'transition-all duration-200' to interactive elements.",
-    "Use 'sonner' for notifications (success/error states).",
-    "Never use generic 'Lorem Ipsum'. Use realistic product names (e.g., 'Portable Neck Fan', 'Magnetic Phone Mount')."
-  ]
+  "specific_flows_and_features": {
+    "hero_validator": {
+      "design": "Center-aligned massive heading. Instead of a standard CTA, place a massive 'Product Validator' search input dead center. Glowing border when focused. Button inside the input field.",
+      "emotion": "Action-oriented, magical tool right at the start."
+    },
+    "profit_simulator": {
+      "design": "Split layout. Left: Shadcn sliders (Cost, Price, Ad Spend) with emerald accent colors. Right: A massive 'Net Profit' number (text-6xl text-emerald-400 font-black) that updates. Background uses 'profit_simulator_bg' at low opacity.",
+      "emotion": "Greed, excitement, clarity on margins."
+    },
+    "one_click_launch": {
+      "design": "A bento card showcasing 'One-Click Launch'. Feature mockups of Ad Copy blocks, and Shopify/WooCommerce export buttons.",
+      "emotion": "Effortlessness."
+    },
+    "product_scoring_dashboard": {
+      "design": "Strict grid 'Control Room' style. Use donut charts for 'Launch Score' (Out of 100). Use colors to map score (Emerald > 80, Amber > 60).",
+      "emotion": "Data-backed confidence."
+    },
+    "supplier_competitor_intel": {
+      "design": "List views with tight density. Tabbed interface (Shadcn Tabs) to switch between 'CJ Dropshipping Suppliers' and 'Competitor Ads'.",
+      "emotion": "Insider knowledge."
+    },
+    "pricing_page": {
+      "design": "3 columns. Core (£19/mo), Premium (£39/mo), Enterprise (£99/mo). The £39/mo tier must be scaled up (scale-105), feature a glowing border, an 'Emerald' primary button, and an 'OVER 80% CHOOSE THIS' overline.",
+      "emotion": "A no-brainer upgrade."
+    }
+  },
+  "tech_stack_instructions": {
+    "icons": "Use @phosphor-icons/react (Duotone style). Install command: yarn add @phosphor-icons/react",
+    "motion": "Use framer-motion for staggering bento grid items on scroll. Keep animations fast and snappy (0.2s duration, ease-out). Install command: yarn add framer-motion",
+    "data_viz": "Use recharts for scoring/profit trends. Install command: yarn add recharts",
+    "components": "Heavily customize shadcn/ui. Remove border-radius on elements if going for a sharper look, or keep it subtle (rounded-md). Enforce dark mode globally."
+  },
+  "testing_rules": "All interactive elements (buttons, inputs, tabs, sliders, simulator outputs) MUST include a 'data-testid' attribute in kebab-case."
 }
