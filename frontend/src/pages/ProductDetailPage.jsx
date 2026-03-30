@@ -345,6 +345,21 @@ export default function ProductDetailPage() {
                   <Truck className="h-3 w-3 mr-1" /> Sourced from CJ Dropshipping
                 </Badge>
               )}
+              {product.uk_shipping && (
+                <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold" data-testid="detail-shipping-badge"
+                  style={{
+                    background: product.uk_shipping.tier === 'green' ? 'rgb(236 253 245)' : product.uk_shipping.tier === 'yellow' ? 'rgb(255 251 235)' : 'rgb(254 242 242)',
+                    borderColor: product.uk_shipping.tier === 'green' ? 'rgb(167 243 208)' : product.uk_shipping.tier === 'yellow' ? 'rgb(253 230 138)' : 'rgb(254 202 202)',
+                    color: product.uk_shipping.tier === 'green' ? 'rgb(4 120 87)' : product.uk_shipping.tier === 'yellow' ? 'rgb(146 64 14)' : 'rgb(185 28 28)',
+                  }}
+                >
+                  <span className={`h-2 w-2 rounded-full ${
+                    product.uk_shipping.tier === 'green' ? 'bg-emerald-500' :
+                    product.uk_shipping.tier === 'yellow' ? 'bg-amber-500' : 'bg-red-500'
+                  }`} />
+                  UK Delivery: {product.uk_shipping.label}
+                </div>
+              )}
               <p className="mt-3 text-slate-600 max-w-2xl">{product.short_description}</p>
               
               {/* Badges */}
