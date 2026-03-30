@@ -46,8 +46,13 @@ async def fix_tiktok_images():
     products_col = db["products"]
 
     print("Fetching TikTok products from database...")
+    # Try both field names (source and data_source) and also catch Unsplash-image products
     tiktok_products = await products_col.find(
-        {"data_source": "tiktok"},
+        {"$or": [
+            {"source": "tiktok"},
+            {"data_source": "tiktok"},
+            {"tiktok_views": {"$gt": 0}, "image_url": {"$regex": "unsplash.com"}},
+        ]},
         {"_id": 1, "product_name": 1, "image_url": 1}
     ).to_list(length=100)
 
