@@ -75,8 +75,41 @@ UK Product Validation Tool for ecommerce sellers. Scores products across demand,
 - Render single-service deployment config — March 29, 2026
 
 ## Remaining Tasks
-- P1: Configure GA4 tag in GTM (user task)
-- P1: Configure Resend webhook URL (user task)
 - P1: Create OAuth apps for Shopify/Meta/TikTok
-- P2: Stripe payment configuration for live subscriptions
 - P2: Cleanup obsolete frontend/serve.js and frontend/start.js
+
+## Product Roadmap — Next Features
+
+### 🚢 UK Shipping Time Indicator (HIGH PRIORITY — user-validated)
+**Background:** A UK seller on Facebook asked specifically whether TrendScout shows supplier
+shipping times to the UK. This is a major pain point — US trend tools ignore this entirely,
+and a product with great margins can fail in the UK if it takes 3-4 weeks to arrive from China.
+
+**What to build:**
+1. **Shipping badge on product cards** — show one of three statuses:
+   - 🟢 "UK Warehouse" — ships in 2-5 days (CJ has UK stock)
+   - 🟡 "7-14 days" — ships from EU/closer warehouse
+   - 🔴 "3-4 weeks" — ships from China
+2. **Data source:** CJ Dropshipping API — fetch warehouse/shipping data via
+   GET /api/products/{cj_pid}/shipping or use `productWeight` + warehouse fields
+   already returned in product detail calls. CJ has a shipping endpoint:
+   POST /api2.0/v1/logistic/freightCalculate
+3. **Factor into Launch Score** — add shipping_time_score to scoring engine:
+   - UK warehouse: +10 points
+   - 7-14 days: 0 points
+   - 3-4 weeks: -15 points
+4. **Show on product detail page** — "Ships from UK warehouse — arrives in 3-5 days"
+   vs "Ships from China — 3-4 week delivery"
+5. **Filter on trending products page** — "UK warehouse only" toggle
+
+**Why this matters:**
+- Unique differentiator — no other UK tool surfaces this
+- Directly impacts conversion rates (UK buyers expect fast delivery post-Amazon)
+- Validates TrendScout as genuinely UK-focused, not a US tool with a GBP sign
+- Real seller feedback confirmed this is a top pain point
+
+**Implementation notes:**
+- CJ freight calculate API needs: startCountryCode=CN (or GB for UK warehouse),
+  endCountryCode=GB, productWeight from existing data
+- Cache shipping estimates per product (changes infrequently)
+- For products without CJ data, default to "Check supplier" status
