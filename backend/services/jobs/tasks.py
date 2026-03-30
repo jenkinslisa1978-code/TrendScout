@@ -661,6 +661,164 @@ async def weekly_blog_generation(db, params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @TaskRegistry.register(
+    name="sync_cj_products",
+    description="Fetch trending products from CJ Dropshipping and import into TrendScout",
+    default_schedule="0 */6 * * *"  # Every 6 hours
+)
+async def sync_cj_products(db, params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Automated CJ Dropshipping product sync.
+
+    Searches CJ for popular dropshipping categories, deduplicates against
+    existing products, and inserts new ones with initial scoring.
+    """
+    import uuid as _uuid
+    from services.cj_dropshipping import search_products
+    from common.scoring import calculate_launch_score
+
+    search_queries = params.get("queries", [
+        "phone accessories",
+        "home gadgets",
+        "beauty tools",
+        "pet supplies",
+        "LED lights",
+        "kitchen gadgets",
+        "fitness accessories",
+        "car accessories",
+    ])
+    page_size = params.get("page_size", 20)
+
+    total_fetched = 0
+    total_created = 0
+    total_skipped = 0
+    errors = []
+
+    import asyncio as _asyncio
+
+    for qi, query in enumerate(search_queries):
+        # CJ API rate limit: 1 request/second
+        if qi > 0:
+            await _asyncio.sleep(1.2)
+
+        try:
+            result = await search_products(query, page=1, page_size=page_size)
+            if not result.get("success"):
+                errors.append(f"{query}: {result.get('error', 'unknown')}")
+                continue
+
+            products = result.get("products", [])
+            total_fetched += len(products)
+
+            for cj_prod in products:
+                cj_pid = cj_prod.get("cj_pid", "")
+                if not cj_pid:
+                    continue
+
+                # Deduplicate by cj_pid
+                existing = await db.products.find_one(
+                    {"cj_pid": cj_pid}, {"_id": 0, "id": 1}
+                )
+                if existing:
+                    total_skipped += 1
+                    continue
+
+                product_id = str(_uuid.uuid4())
+                sell_price = cj_prod.get("sell_price", 0)
+                retail_price = round(sell_price * 2.5, 2) if sell_price > 0 else 0
+                margin = round(
+                    ((retail_price - sell_price) / retail_price) * 100, 1
+                ) if retail_price > 0 else 0
+
+                product = {
+                    "id": product_id,
+                    "cj_pid": cj_pid,
+                    "product_name": cj_prod.get("product_name", ""),
+                    "slug": cj_prod.get("product_name", "").lower().replace(" ", "-")[:80],
+                    "category": cj_prod.get("category", query.title()),
+                    "image_url": cj_prod.get("image_url", ""),
+                    "images": cj_prod.get("images", []),
+                    "estimated_retail_price": retail_price,
+                    "estimated_cost": sell_price,
+                    "estimated_margin": margin,
+                    "supplier_cost": sell_price,
+                    "currency": cj_prod.get("currency", "USD"),
+                    "data_source": "cj_dropshipping",
+                    "source_url": cj_prod.get("source_url", ""),
+                    "stock_status": cj_prod.get("stock_status", "in_stock"),
+                    "shipping_weight": cj_prod.get("shipping_weight", 0),
+                    "description": cj_prod.get("description", ""),
+                    "variants_count": cj_prod.get("variants_count", 0),
+                    "suppliers": [{
+                        "name": "CJ Dropshipping",
+                        "country": "CN",
+                        "rating": 4.3,
+                        "unit_cost": sell_price,
+                        "min_order": 1,
+                        "lead_time_days": 8,
+                        "shipping_cost": 3.50,
+                    }],
+                    "trend_score": 50,
+                    "margin_score": min(100, max(0, round(margin))),
+                    "competition_score": 50,
+                    "ad_activity_score": 30,
+                    "supplier_demand_score": 70,
+                    "launch_score": 0,
+                    "launch_score_label": "",
+                    "launch_score_reasoning": "",
+                    "tiktok_views": 0,
+                    "ad_count": 0,
+                    "competition_level": "unknown",
+                    "market_saturation": 0,
+                    "active_competitor_stores": 0,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "imported_by": "cj_auto_sync",
+                }
+
+                score, label, reasoning = calculate_launch_score(product)
+                product["launch_score"] = score
+                product["launch_score_label"] = label
+                product["launch_score_reasoning"] = reasoning
+
+                await db.products.insert_one(product)
+                product.pop("_id", None)
+                total_created += 1
+
+        except Exception as e:
+            logger.error(f"CJ sync error for query '{query}': {e}")
+            errors.append(f"{query}: {str(e)}")
+
+    # Log the sync run
+    await db.automation_logs.insert_one({
+        "id": str(_uuid.uuid4()),
+        "job_name": "sync_cj_products",
+        "status": "completed",
+        "run_time": datetime.now(timezone.utc).isoformat(),
+        "details": {
+            "fetched": total_fetched,
+            "created": total_created,
+            "skipped": total_skipped,
+            "errors": errors[:10],
+        },
+    })
+
+    logger.info(
+        f"CJ sync complete: fetched={total_fetched}, created={total_created}, "
+        f"skipped={total_skipped}, errors={len(errors)}"
+    )
+
+    return {
+        "records_processed": total_created,
+        "details": {
+            "fetched": total_fetched,
+            "created": total_created,
+            "skipped": total_skipped,
+            "queries": len(search_queries),
+            "errors": errors[:10],
+        },
+    }
+
+
+@TaskRegistry.register(
     name="full_pipeline",
     description="Run complete data pipeline (all sources + scoring + alerts)",
     default_schedule=None  # Manual only
@@ -671,11 +829,12 @@ async def full_pipeline(db, params: Dict[str, Any]) -> Dict[str, Any]:
     
     Steps:
     1. Ingest trending products
-    2. Update supplier data
-    3. Update competitor data
-    4. Update ad activity
-    5. Update market scores
-    6. Generate alerts
+    2. Sync CJ Dropshipping products
+    3. Update supplier data
+    4. Update competitor data
+    5. Update ad activity
+    6. Update market scores
+    7. Generate alerts
     """
     results = {
         'steps': {},
@@ -690,8 +849,16 @@ async def full_pipeline(db, params: Dict[str, Any]) -> Dict[str, Any]:
         results['total_records'] += step_result['records_processed']
     except Exception as e:
         results['errors'].append(f"ingest_trending: {str(e)}")
+
+    # Step 2: Sync CJ Dropshipping products
+    try:
+        step_result = await sync_cj_products(db, params)
+        results['steps']['sync_cj_products'] = step_result
+        results['total_records'] += step_result['records_processed']
+    except Exception as e:
+        results['errors'].append(f"sync_cj_products: {str(e)}")
     
-    # Step 2: Update supplier data
+    # Step 3: Update supplier data
     try:
         step_result = await update_supplier_data(db, params)
         results['steps']['update_supplier'] = step_result
@@ -699,7 +866,7 @@ async def full_pipeline(db, params: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         results['errors'].append(f"update_supplier: {str(e)}")
     
-    # Step 3: Update competitor data
+    # Step 4: Update competitor data
     try:
         step_result = await update_competitor_data(db, params)
         results['steps']['update_competitor'] = step_result
@@ -707,7 +874,7 @@ async def full_pipeline(db, params: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         results['errors'].append(f"update_competitor: {str(e)}")
     
-    # Step 4: Update ad activity
+    # Step 5: Update ad activity
     try:
         step_result = await update_ad_activity(db, params)
         results['steps']['update_ad_activity'] = step_result
@@ -715,7 +882,7 @@ async def full_pipeline(db, params: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         results['errors'].append(f"update_ad_activity: {str(e)}")
     
-    # Step 5: Update market scores
+    # Step 6: Update market scores
     try:
         step_result = await update_market_scores(db, params)
         results['steps']['update_scores'] = step_result
@@ -723,7 +890,7 @@ async def full_pipeline(db, params: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         results['errors'].append(f"update_scores: {str(e)}")
     
-    # Step 6: Generate alerts
+    # Step 7: Generate alerts
     try:
         step_result = await generate_alerts(db, params)
         results['steps']['generate_alerts'] = step_result
