@@ -363,26 +363,29 @@ async def compute_launch_scores_batch(api_key: Optional[str] = Header(None, alia
 # =====================
 
 @automation_router.post("/viral-predictions/generate")
-async def trigger_viral_predictions(api_key: Optional[str] = Header(None, alias="X-API-Key")):
+async def trigger_viral_predictions(
+    background_tasks: BackgroundTasks,
+    api_key: Optional[str] = Header(None, alias="X-API-Key"),
+):
     """
     Generate a fresh batch of TikTok viral predictions.
+    Returns immediately (202) and runs generation in background.
     Protected by API key — call this from cron-job.org every 6 hours.
     """
     expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
     if api_key != expected_key:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
-    try:
-        from routes.viral_predictions import _generate_predictions
-        predictions = await _generate_predictions()
-        return {
-            "success": True,
-            "count": len(predictions),
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-        }
-    except Exception as e:
-        logging.error(f"Viral predictions generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    async def _run():
+        try:
+            from routes.viral_predictions import _generate_predictions
+            predictions = await _generate_predictions()
+            logging.info(f"Viral predictions generated: {len(predictions)}")
+        except Exception as e:
+            logging.error(f"Viral predictions generation failed: {e}")
+
+    background_tasks.add_task(_run)
+    return {"success": True, "status": "accepted", "message": "Viral predictions generating in background"}
 
 
 # =====================
