@@ -143,20 +143,8 @@ async def get_automation_stats():
         "last_run": logs[0].get('started_at') if logs else None,
     }
 
-@automation_router.post("/scheduled/daily")
-async def run_daily_automation(api_key: Optional[str] = Header(None, alias="X-API-Key")):
-    """
-    Run daily scheduled automation.
-    Protected endpoint - requires API key for external cron services.
-    Includes CJ Dropshipping sync before product scoring.
-    """
-    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
-    
-    if api_key != expected_key:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-
-    # Step 1: Sync new products from CJ Dropshipping
-    cj_result = None
+async def _run_daily_automation_task():
+    """Background worker: CJ sync + product scoring. Runs after HTTP response is returned."""
     try:
         from services.jobs.tasks import sync_cj_products
         cj_result = await sync_cj_products(db, {})
@@ -164,14 +152,30 @@ async def run_daily_automation(api_key: Optional[str] = Header(None, alias="X-AP
     except Exception as e:
         logging.error(f"Daily CJ sync failed: {e}")
 
-    # Step 2: Run scoring automation on all products
-    automation_result = await run_automation(RunAutomationRequest(job_type=AutomationJobType.SCHEDULED_DAILY))
+    try:
+        await run_automation(RunAutomationRequest(job_type=AutomationJobType.SCHEDULED_DAILY))
+        logging.info("Daily scoring automation complete")
+    except Exception as e:
+        logging.error(f"Daily scoring automation failed: {e}")
 
-    # Merge results
-    if isinstance(automation_result, dict):
-        automation_result["cj_sync"] = cj_result.get("details") if cj_result else {"error": "skipped"}
 
-    return automation_result
+@automation_router.post("/scheduled/daily")
+async def run_daily_automation(
+    background_tasks: BackgroundTasks,
+    api_key: Optional[str] = Header(None, alias="X-API-Key"),
+):
+    """
+    Run daily scheduled automation.
+    Returns immediately (202 Accepted) and runs CJ sync + scoring in background.
+    Protected endpoint - requires API key for external cron services.
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    background_tasks.add_task(_run_daily_automation_task)
+    return {"success": True, "status": "accepted", "message": "Daily automation started in background"}
 
 
 # =====================
@@ -351,6 +355,33 @@ async def compute_launch_scores_batch(api_key: Optional[str] = Header(None, alia
         }
     except Exception as e:
         logging.error(f"Launch score computation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =====================
+# VIRAL PREDICTIONS
+# =====================
+
+@automation_router.post("/viral-predictions/generate")
+async def trigger_viral_predictions(api_key: Optional[str] = Header(None, alias="X-API-Key")):
+    """
+    Generate a fresh batch of TikTok viral predictions.
+    Protected by API key — call this from cron-job.org every 6 hours.
+    """
+    expected_key = os.environ.get('AUTOMATION_API_KEY', 'vs_automation_key_2024')
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    try:
+        from routes.viral_predictions import _generate_predictions
+        predictions = await _generate_predictions()
+        return {
+            "success": True,
+            "count": len(predictions),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        logging.error(f"Viral predictions generation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

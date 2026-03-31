@@ -6,6 +6,7 @@ on TikTok in the next 48-72 hours. Predictions are generated periodically
 and cached in MongoDB.
 """
 
+import asyncio
 import os
 import re
 import json
@@ -174,20 +175,20 @@ async def _get_latest_predictions():
 async def get_public_viral_predictions():
     """
     Public endpoint — returns top 3 viral predictions as a teaser.
+    If no cached predictions exist, fires generation in the background
+    and returns an empty list immediately (avoids HTTP timeout on LLM call).
     """
     latest = await _get_latest_predictions()
     if not latest or not latest.get("predictions"):
-        # Generate fresh if none exist
-        predictions = await _generate_predictions()
-        if predictions:
-            return {
-                "success": True,
-                "predictions": predictions[:3],
-                "total_available": len(predictions),
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "upgrade_cta": "Sign up to see all predictions, get alerts, and access TikTok ad scripts",
-            }
-        return {"success": True, "predictions": [], "total_available": 0}
+        # Fire generation in background — don't block the HTTP request
+        asyncio.create_task(_generate_predictions())
+        return {
+            "success": True,
+            "predictions": [],
+            "total_available": 0,
+            "generating": True,
+            "message": "AI is generating predictions — check back in 60 seconds",
+        }
 
     all_preds = latest.get("predictions", [])
     return {
