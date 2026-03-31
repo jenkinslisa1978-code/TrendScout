@@ -31,7 +31,7 @@ async def _generate_predictions():
     """
     # Fetch products with decent scores to analyse
     products = await db.products.find(
-        {"launch_score": {"$gte": 25}},
+        {"launch_score": {"$gte": 1}},
         {"_id": 0, "id": 1, "product_name": 1, "category": 1, "image_url": 1,
          "launch_score": 1, "trend_score": 1, "estimated_retail_price": 1,
          "supplier_cost": 1, "estimated_margin": 1, "tiktok_views": 1,
@@ -40,6 +40,18 @@ async def _generate_predictions():
     ).sort("launch_score", -1).limit(80).to_list(80)
 
     if not products:
+        # Fallback: grab any products regardless of score
+        products = await db.products.find(
+            {},
+            {"_id": 0, "id": 1, "product_name": 1, "category": 1, "image_url": 1,
+             "launch_score": 1, "trend_score": 1, "estimated_retail_price": 1,
+             "supplier_cost": 1, "estimated_margin": 1, "tiktok_views": 1,
+             "competition_level": 1, "ad_activity_score": 1, "data_source": 1,
+             "created_at": 1},
+        ).limit(40).to_list(40)
+
+    if not products:
+        logger.warning("No products in DB to generate viral predictions from")
         return []
 
     # Build summary for AI
