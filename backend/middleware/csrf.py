@@ -22,6 +22,19 @@ CSRF_EXEMPT_PATHS = {
     "/api/stripe/webhook",
 }
 
+# Path prefixes that are always exempt (public tools, cron endpoints, read-only APIs)
+CSRF_EXEMPT_PREFIXES = (
+    "/api/public/",
+    "/api/automation/",
+    "/api/avasam/",
+    "/api/viral-predictions/",
+    "/api/blog/",
+    "/api/competitor-spy/",   # public free tool — no auth required
+    "/api/analytics/",        # internal event tracking — no state changes
+    "/api/alerts",            # read-only polling
+    "/api/dashboard/opportunity-feed",  # public feed
+)
+
 # Only enforce CSRF on routes that use cookie auth
 CSRF_COOKIE_NAME = "__Host-csrf"
 CSRF_HEADER_NAME = "x-csrf-token"
@@ -51,8 +64,12 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
         path = request.url.path
 
-        # Skip exempt paths
+        # Skip exempt paths (exact match)
         if path in CSRF_EXEMPT_PATHS:
+            return await call_next(request)
+
+        # Skip exempt path prefixes (public / cron routes)
+        if any(path.startswith(prefix) for prefix in CSRF_EXEMPT_PREFIXES):
             return await call_next(request)
 
         # Only enforce CSRF on cookie-authenticated requests
