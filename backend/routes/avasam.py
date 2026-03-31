@@ -2,7 +2,8 @@
 Avasam UK Supplier API routes — product sourcing and supplier enrichment.
 Mirrors the CJ Dropshipping route structure.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+import os
+from fastapi import APIRouter, Depends, HTTPException, Query, Header
 from typing import Optional
 from datetime import datetime, timezone
 
@@ -159,14 +160,17 @@ async def import_avasam_product(
 
 @avasam_router.post("/sync")
 async def trigger_avasam_sync(
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    api_key: Optional[str] = Header(None, alias="X-API-Key"),
 ):
     """
     Manually trigger an Avasam product sync.
-    Fetches trending products across popular categories and imports new ones.
+    Accepts API key (for cron-job.org).
     """
-    from services.jobs.tasks import sync_avasam_products
+    expected_key = os.environ.get("AUTOMATION_API_KEY", "vs_automation_key_2024")
+    if api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
+    from services.jobs.tasks import sync_avasam_products
     result = await sync_avasam_products(db, {})
     return {
         "success": True,
