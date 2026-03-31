@@ -837,12 +837,13 @@ Respond in this exact JSON format (no markdown, just raw JSON):
 }}"""
 
         _launch_completion = await _launch_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are TrendScout's AI Launch Strategist. You analyze product data and provide actionable launch strategies for ecommerce entrepreneurs. Be specific, data-driven, and practical. Use British pounds (£) for currency. Keep your response concise but insightful."},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.7,
+            max_tokens=1500,
         )
         response = _launch_completion.choices[0].message.content
 
@@ -936,12 +937,13 @@ Respond in this exact JSON format (raw JSON only, no markdown):
 }}"""
 
         _creative_completion = await _creative_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are TrendScout's AI Ad Strategist. You create viral TikTok ad scripts for ecommerce products. Be creative, specific, and format-aware."},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.8,
+            max_tokens=1200,
         )
         response = _creative_completion.choices[0].message.content
 
