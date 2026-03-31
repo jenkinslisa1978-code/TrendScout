@@ -1439,17 +1439,11 @@ async def quick_launch_product(
 
     # 2. AI-generated ad copy + target audience
     ai_content = {}
-    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
     if llm_key:
         try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
-            chat = LlmChat(
-                api_key=llm_key,
-                session_id=f"quick-launch-{uuid.uuid4().hex[:8]}",
-                system_message=(
-                    "You are a UK ecommerce copywriter. Return ONLY valid JSON, no markdown."
-                ),
-            ).with_model("openai", "gpt-5.2")
+            from openai import AsyncOpenAI
+            _ql_client = AsyncOpenAI(api_key=llm_key)
 
             prompt = (
                 f"Product: \"{name}\", Category: {category}, Price: £{retail_price:.2f}, "
@@ -1467,7 +1461,15 @@ async def quick_launch_product(
                 f'"keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]}}'
             )
 
-            response = await chat.send_message(UserMessage(text=prompt))
+            _ql_completion = await _ql_client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a UK ecommerce copywriter. Return ONLY valid JSON, no markdown."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.7,
+            )
+            response = _ql_completion.choices[0].message.content
             import re as _re
             json_match = _re.search(r'\{.*\}', response, _re.DOTALL)
             if json_match:

@@ -796,8 +796,8 @@ async def quick_viability_check(request: Request):
         if not product_name or len(product_name) < 2 or len(product_name) > 100:
             raise HTTPException(status_code=400, detail="Product name must be 2-100 characters")
 
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        from openai import AsyncOpenAI
+        llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
         if not llm_key:
             raise HTTPException(status_code=503, detail="AI service unavailable")
 
@@ -820,13 +820,16 @@ Return a JSON object with exactly these fields (no markdown, just raw JSON):
 
 Be realistic and honest. Consider UK-specific factors: VAT (20%), shipping costs, competition on Amazon.co.uk/TikTok Shop UK/Shopify, and consumer demand."""
 
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"quick-viability-{uuid.uuid4().hex[:8]}",
-            system_message="You are a UK ecommerce product viability analyst. Always respond with valid JSON only, no markdown."
-        ).with_model("openai", "gpt-5.2")
-
-        response = await chat.send_message(UserMessage(text=prompt))
+        _viability_client = AsyncOpenAI(api_key=llm_key)
+        _viability_completion = await _viability_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a UK ecommerce product viability analyst. Always respond with valid JSON only, no markdown."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.5,
+        )
+        response = _viability_completion.choices[0].message.content
         text = response.strip() if isinstance(response, str) else str(response)
         if text.startswith("```"):
             text = text.split("\n", 1)[1] if "\n" in text else text[3:]
@@ -985,22 +988,13 @@ async def deep_product_analysis(
 
     # Generate AI deep analysis
     import os
-    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
     if not llm_key:
         raise HTTPException(status_code=503, detail="AI analysis unavailable")
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"deep-analysis-{uuid.uuid4().hex[:8]}",
-            system_message=(
-                "You are TrendScout AI, a UK ecommerce product analyst. "
-                "Provide sharp, actionable analysis in JSON format. Be specific to the UK market. "
-                "Include VAT considerations, UK shipping realities, and platform-specific advice."
-            ),
-        ).with_model("openai", "gpt-5.2")
+        from openai import AsyncOpenAI
+        _deep_client = AsyncOpenAI(api_key=llm_key)
 
         supplier_cost = product.get("supplier_cost", 0) if product else 0
         category = product.get("category", "General") if product else "General"
@@ -1019,7 +1013,15 @@ async def deep_product_analysis(
             f'"launch_tip": "one actionable tip to launch this product"}}'
         )
 
-        response = await chat.send_message(UserMessage(text=prompt))
+        _deep_completion = await _deep_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are TrendScout AI, a UK ecommerce product analyst. Provide sharp, actionable analysis in JSON format. Be specific to the UK market. Include VAT considerations, UK shipping realities, and platform-specific advice."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.6,
+        )
+        response = _deep_completion.choices[0].message.content
 
         # Parse JSON from response
         ai_data = {}

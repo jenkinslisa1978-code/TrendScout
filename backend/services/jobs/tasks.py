@@ -618,9 +618,7 @@ async def weekly_competitor_scan(db, params: Dict[str, Any]) -> Dict[str, Any]:
 async def weekly_blog_generation(db, params: Dict[str, Any]) -> Dict[str, Any]:
     """Generate blog posts for the top categories with enough products."""
     import os
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
-
-    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
     if not llm_key:
         return {"records_processed": 0, "details": {"error": "No LLM key"}}
 

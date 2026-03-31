@@ -103,16 +103,11 @@ async def _generate_blog_post(category_slug: str):
     products_text = "\n".join(product_list)
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        from openai import AsyncOpenAI
+        llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
         if not llm_key:
             return
-
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"blog-gen-{category_slug}-{datetime.now(timezone.utc).strftime('%Y%m%d')}",
-            system_message="You are TrendScout's content strategist. Write engaging, SEO-optimized blog articles about trending ecommerce products. Use British English. Be data-driven and practical."
-        ).with_model("openai", "gpt-5.2")
+        _blog_client = AsyncOpenAI(api_key=llm_key)
 
         today = datetime.now(timezone.utc).strftime("%B %d, %Y")
         prompt = f"""Write a blog article titled "Top Trending {category_name} Products This Week" for ecommerce entrepreneurs.
@@ -147,7 +142,15 @@ Write in this JSON format (raw JSON, no markdown):
 
 Include sections for: Market Overview, Top Products Analysis, Seller Opportunities, Tips for Launching. Be specific and actionable."""
 
-        response = await chat.send_message(UserMessage(text=prompt))
+        _blog_completion = await _blog_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are TrendScout's content strategist. Write engaging, SEO-optimized blog articles about trending ecommerce products. Use British English. Be data-driven and practical."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        response = _blog_completion.choices[0].message.content
 
         import re
         json_match = re.search(r'\{[\s\S]*\}', response)

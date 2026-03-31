@@ -25,22 +25,7 @@ DEFAULT_PROVIDER = "openai"
 
 
 def _get_api_key() -> str:
-    return os.environ.get('EMERGENT_LLM_KEY', '')
-
-
-def _create_chat(session_id: str, system_message: str, provider: str = None):
-    """Create an LlmChat instance with the specified provider."""
-    from emergentintegrations.llm.chat import LlmChat
-    provider = provider or DEFAULT_PROVIDER
-    config = PROVIDERS.get(provider, PROVIDERS[DEFAULT_PROVIDER])
-    
-    chat = LlmChat(
-        api_key=_get_api_key(),
-        session_id=session_id,
-        system_message=system_message,
-    ).with_model(config["provider"], config["model"])
-    
-    return chat
+    return os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY", "")
 
 
 SYSTEM_PROMPT = """You are the world's #1 e-commerce direct-response copywriter. You've generated over £50M in revenue for dropshipping and DTC brands.
@@ -70,7 +55,6 @@ async def generate_ad_creatives(product: Dict[str, Any], provider: str = None) -
     Generate a premium suite of ad creatives for a product.
     """
     session_id = f"ad-gen-{uuid.uuid4().hex[:8]}"
-    chat = _create_chat(session_id, SYSTEM_PROMPT, provider)
     
     product_name = product.get('product_name', 'Unknown Product')
     category = product.get('category', 'General')
@@ -171,8 +155,17 @@ Generate a PREMIUM ad creative package that will outperform competitors. This mu
 Generate 3 product angles, 5 power headlines, 3 TikTok scripts (different formats), 2 Facebook long-form ads, 3 Instagram captions, 6 storyboard scenes, 5 shots, 1 voiceover, 2 emails, and budget advice. Make EVERY line specific to {product_name} — zero generic filler."""
 
     try:
-        from emergentintegrations.llm.chat import UserMessage
-        response = await chat.send_message(UserMessage(text=prompt))
+        from openai import AsyncOpenAI
+        _ac_client = AsyncOpenAI(api_key=_get_api_key())
+        _ac_completion = await _ac_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.8,
+        )
+        response = _ac_completion.choices[0].message.content
         
         # Parse JSON from response
         response_text = response.strip()

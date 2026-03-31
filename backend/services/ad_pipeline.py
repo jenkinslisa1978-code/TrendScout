@@ -31,18 +31,7 @@ DEFAULT_PROVIDER = "openai"
 
 
 def _get_api_key() -> str:
-    return os.environ.get("EMERGENT_LLM_KEY", "")
-
-
-def _create_chat(session_id: str, system_message: str, provider: str = None):
-    from emergentintegrations.llm.chat import LlmChat
-    provider = provider or DEFAULT_PROVIDER
-    config = PROVIDERS.get(provider, PROVIDERS[DEFAULT_PROVIDER])
-    return LlmChat(
-        api_key=_get_api_key(),
-        session_id=session_id,
-        system_message=system_message,
-    ).with_model(config["provider"], config["model"])
+    return os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY", "")
 
 
 def _build_product_context(product: Dict[str, Any]) -> str:
@@ -67,10 +56,17 @@ def _build_product_context(product: Dict[str, Any]) -> str:
 
 async def _llm_step(session_prefix: str, system: str, prompt: str, provider: str = None) -> Dict:
     """Execute a single LLM step and parse JSON response."""
-    from emergentintegrations.llm.chat import UserMessage
-    sid = f"{session_prefix}-{uuid.uuid4().hex[:6]}"
-    chat = _create_chat(sid, system, provider)
-    raw = await chat.send_message(UserMessage(text=prompt))
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=_get_api_key())
+    completion = await client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.7,
+    )
+    raw = completion.choices[0].message.content
     text = raw.strip()
     # Strip markdown code blocks
     if text.startswith("```"):

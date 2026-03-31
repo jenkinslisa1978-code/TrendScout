@@ -784,16 +784,11 @@ Potential Rating: {base_sim['potential']}
 Risks: {', '.join(base_sim['risks']) if base_sim['risks'] else 'None identified'}"""
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        from openai import AsyncOpenAI
+        llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
         if not llm_key:
             raise HTTPException(status_code=500, detail="LLM key not configured")
-
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"launch-sim-{product_id}-{current_user.user_id}",
-            system_message="""You are TrendScout's AI Launch Strategist. You analyze product data and provide actionable launch strategies for ecommerce entrepreneurs. Be specific, data-driven, and practical. Use British pounds (£) for currency. Keep your response concise but insightful."""
-        ).with_model("openai", "gpt-5.2")
+        _launch_client = AsyncOpenAI(api_key=llm_key)
 
         prompt = f"""Analyze this product and provide a launch strategy:
 
@@ -841,7 +836,15 @@ Respond in this exact JSON format (no markdown, just raw JSON):
   "creative_angles": ["ad angle 1", "ad angle 2", "ad angle 3"]
 }}"""
 
-        response = await chat.send_message(UserMessage(text=prompt))
+        _launch_completion = await _launch_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are TrendScout's AI Launch Strategist. You analyze product data and provide actionable launch strategies for ecommerce entrepreneurs. Be specific, data-driven, and practical. Use British pounds (£) for currency. Keep your response concise but insightful."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        response = _launch_completion.choices[0].message.content
 
         # Parse AI response
         import re
@@ -870,16 +873,11 @@ async def generate_ad_creatives(
         raise HTTPException(status_code=404, detail="Product not found")
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        from openai import AsyncOpenAI
+        llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
         if not llm_key:
             raise HTTPException(status_code=500, detail="LLM key not configured")
-
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"ad-creative-{product_id}-{current_user.user_id}",
-            system_message="You are TrendScout's AI Ad Strategist. You create viral TikTok ad scripts for ecommerce products. Be creative, specific, and format-aware."
-        ).with_model("openai", "gpt-5.2")
+        _creative_client = AsyncOpenAI(api_key=llm_key)
 
         prompt = f"""Create 3 TikTok ad concepts for this product:
 
@@ -931,7 +929,15 @@ Respond in this exact JSON format (raw JSON only, no markdown):
   ]
 }}"""
 
-        response = await chat.send_message(UserMessage(text=prompt))
+        _creative_completion = await _creative_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are TrendScout's AI Ad Strategist. You create viral TikTok ad scripts for ecommerce products. Be creative, specific, and format-aware."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.8,
+        )
+        response = _creative_completion.choices[0].message.content
 
         import re
         json_match = re.search(r'\{[\s\S]*\}', response)

@@ -713,18 +713,13 @@ async def competitor_deep_analysis(
     avg_price = sum(all_prices) / len(all_prices) if all_prices else 0
     top_cats = sorted(categories.items(), key=lambda x: x[1], reverse=True)[:5]
 
-    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
     if not llm_key:
         raise HTTPException(status_code=503, detail="AI analysis unavailable")
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"spy-{uuid.uuid4().hex[:8]}",
-            system_message="You are a UK ecommerce competitive analyst. Return ONLY valid JSON.",
-        ).with_model("openai", "gpt-5.2")
+        from openai import AsyncOpenAI
+        _spy_client = AsyncOpenAI(api_key=llm_key)
 
         prompt = (
             f"Analyse this Shopify competitor store for a UK seller:\n"
@@ -746,7 +741,15 @@ async def competitor_deep_analysis(
             f'"verdict": "one sentence summary of whether this competitor is beatable"}}'
         )
 
-        response = await chat.send_message(UserMessage(text=prompt))
+        _spy_completion = await _spy_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a UK ecommerce competitive analyst. Return ONLY valid JSON."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        response = _spy_completion.choices[0].message.content
         ai_data = {}
         try:
             json_match = re.search(r'\{.*\}', response, re.DOTALL)
