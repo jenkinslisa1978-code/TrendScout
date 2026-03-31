@@ -1,7 +1,12 @@
 """
 Avasam UK Supplier API integration service.
 Handles authentication, product search, and supplier data enrichment.
-Mirrors the CJ Dropshipping service structure.
+
+Actual API base: https://app.avasam.com
+Auth:    POST https://app.avasam.com/api/auth/request-token
+Search:  POST https://app.avasam.com/apiseeker/ProductModule/GetInventoryListWithFilter
+List:    POST https://app.avasam.com/apiseeker/Products/GetSellerProductList
+Stock:   POST https://app.avasam.com/apiseeker/Products/SellerStockList
 """
 import os
 import json
@@ -11,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
 
-AVASAM_BASE = "https://api.avasam.com/v1"
+AVASAM_BASE = "https://app.avasam.com"
 _TOKEN_FILE = "/tmp/avasam_api_token.json"
 
 # Module-level token cache
@@ -64,11 +69,11 @@ async def _get_access_token() -> str:
 
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            f"{AVASAM_BASE}/auth/request-token",
+            f"{AVASAM_BASE}/api/auth/request-token",
             json={"consumer_key": consumer_key, "secret_key": consumer_secret},
             headers={"Content-Type": "application/json"},
         ) as resp:
-            data = await resp.json()
+            data = await resp.json(content_type=None)
             token = data.get("access_token") or data.get("token")
             if token:
                 expires_at = data.get("expires_at")
@@ -87,33 +92,39 @@ async def _get_access_token() -> str:
 
 
 async def search_products(query: str, page: int = 1, page_size: int = 20, category_id: str = "") -> dict:
-    """Search Avasam products by keyword."""
+    """Search Avasam products by keyword using GetInventoryListWithFilter."""
     try:
         token = await _get_access_token()
     except ValueError as e:
         return {"success": False, "error": str(e), "products": []}
 
-    params = {
-        "search": query,
-        "page": page,
-        "limit": min(page_size, 50),
+    # Avasam uses page index starting at 0
+    page_index = max(0, page - 1)
+
+    body = {
+        "Supplier": query,          # searches by SKU or product title
+        "Sortby": "Title",
+        "SortStatus": "up",
+        "limit": str(min(page_size, 50)),
+        "page": page_index,
+        "Category": category_id or "",
+        "CategoryName": "",
+        "IsMapped": "",
+        "Variation": "",
     }
-    if category_id:
-        params["category_id"] = category_id
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{AVASAM_BASE}/products",
-                params=params,
+            async with session.post(
+                f"{AVASAM_BASE}/apiseeker/ProductModule/GetInventoryListWithFilter",
+                json=body,
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json",
                 },
             ) as resp:
-                data = await resp.json()
+                data = await resp.json(content_type=None)
 
-                # Avasam may return different response shapes
                 items = []
                 total = 0
                 if isinstance(data, dict):
@@ -123,7 +134,11 @@ async def search_products(query: str, page: int = 1, page_size: int = 20, catego
                     items = data
                     total = len(data)
 
+                if not isinstance(items, list):
+                    items = []
+
                 products = [_map_avasam_product(p) for p in items if isinstance(p, dict)]
+                logger.info(f"Avasam search '{query}': found {len(products)} products (total={total})")
                 return {
                     "success": True,
                     "products": products,
@@ -137,69 +152,87 @@ async def search_products(query: str, page: int = 1, page_size: int = 20, catego
         return {"success": False, "error": str(e), "products": []}
 
 
-async def get_product_detail(product_id: str) -> dict:
-    """Get detailed product info from Avasam by product ID."""
+async def get_all_products(page: int = 1, page_size: int = 50) -> dict:
+    """Get full seller product list from Avasam (no keyword filter)."""
     try:
         token = await _get_access_token()
     except ValueError as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": str(e), "products": []}
+
+    body = {
+        "Page": page,
+        "Limit": min(page_size, 50),
+    }
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{AVASAM_BASE}/products/{product_id}",
+            async with session.post(
+                f"{AVASAM_BASE}/apiseeker/Products/GetSellerProductList",
+                json=body,
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json",
                 },
             ) as resp:
-                data = await resp.json()
-                product = data.get("data", data) if isinstance(data, dict) else None
-                if product and isinstance(product, dict):
-                    return {"success": True, "product": _map_avasam_product_detail(product)}
-                return {"success": False, "error": data.get("message", "Product not found")}
+                data = await resp.json(content_type=None)
+
+                items = []
+                total = 0
+                if isinstance(data, dict):
+                    items = data.get("data", data.get("products", []))
+                    total = data.get("total", len(items))
+                elif isinstance(data, list):
+                    items = data
+                    total = len(data)
+
+                if not isinstance(items, list):
+                    items = []
+
+                products = [_map_avasam_product(p) for p in items if isinstance(p, dict)]
+                return {
+                    "success": True,
+                    "products": products,
+                    "total": total,
+                    "page": page,
+                    "page_size": page_size,
+                    "source": "avasam",
+                }
     except aiohttp.ClientError as e:
-        logger.error(f"Avasam product detail error: {e}")
-        return {"success": False, "error": str(e)}
+        logger.error(f"Avasam get_all_products error: {e}")
+        return {"success": False, "error": str(e), "products": []}
+
+
+async def get_product_detail(product_id: str) -> dict:
+    """Get detailed product info from Avasam by product ID."""
+    # Avasam doesn't have a single-product endpoint in the public docs;
+    # fall back to searching by SKU via GetInventoryListWithFilter
+    result = await search_products(product_id, page=1, page_size=1)
+    if result.get("success") and result.get("products"):
+        return {"success": True, "product": result["products"][0]}
+    return {"success": False, "error": "Product not found"}
 
 
 async def get_categories() -> dict:
-    """Get Avasam product categories."""
-    try:
-        token = await _get_access_token()
-    except ValueError as e:
-        return {"success": False, "error": str(e), "categories": []}
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{AVASAM_BASE}/categories",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type": "application/json",
-                },
-            ) as resp:
-                data = await resp.json()
-                raw = data.get("data", data.get("categories", []))
-                if not isinstance(raw, list):
-                    raw = []
-                return {
-                    "success": True,
-                    "categories": [
-                        {
-                            "id": str(c.get("id", c.get("category_id", ""))),
-                            "name": c.get("name", c.get("category_name", "")),
-                        }
-                        for c in raw
-                    ],
-                }
-    except aiohttp.ClientError as e:
-        logger.error(f"Avasam categories error: {e}")
-        return {"success": False, "error": str(e), "categories": []}
+    """Get Avasam product categories (derived from inventory data)."""
+    # Avasam doesn't expose a standalone categories endpoint in the seller API.
+    # Return a static list of common UK dropshipping categories.
+    categories = [
+        {"id": "home-garden", "name": "Home & Garden"},
+        {"id": "beauty-health", "name": "Beauty & Health"},
+        {"id": "electronics", "name": "Electronics"},
+        {"id": "sports-fitness", "name": "Sports & Fitness"},
+        {"id": "pet-supplies", "name": "Pet Supplies"},
+        {"id": "toys-games", "name": "Toys & Games"},
+        {"id": "clothing-accessories", "name": "Clothing & Accessories"},
+        {"id": "kitchen", "name": "Kitchen & Dining"},
+        {"id": "automotive", "name": "Automotive"},
+        {"id": "office-stationery", "name": "Office & Stationery"},
+    ]
+    return {"success": True, "categories": categories}
 
 
 async def get_stock(product_id: str) -> dict:
-    """Get live stock / inventory for an Avasam product."""
+    """Get live stock levels for an Avasam product via SellerStockList."""
     try:
         token = await _get_access_token()
     except ValueError as e:
@@ -207,15 +240,19 @@ async def get_stock(product_id: str) -> dict:
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{AVASAM_BASE}/stock/{product_id}",
+            async with session.post(
+                f"{AVASAM_BASE}/apiseeker/Products/SellerStockList",
+                json={},
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json",
                 },
             ) as resp:
-                data = await resp.json()
-                return {"success": True, "stock": data}
+                data = await resp.json(content_type=None)
+                # Filter for the specific product_id / SKU
+                items = data if isinstance(data, list) else data.get("data", [])
+                match = next((i for i in items if str(i.get("SKU", "")) == product_id), None)
+                return {"success": True, "stock": match or data}
     except aiohttp.ClientError as e:
         logger.error(f"Avasam stock error: {e}")
         return {"success": False, "error": str(e)}
@@ -242,13 +279,22 @@ def _parse_price(val) -> float:
 
 
 def _map_avasam_product(p: dict) -> dict:
-    """Map Avasam product to our internal format."""
-    cost = _parse_price(p.get("cost_price", p.get("price", p.get("wholesale_price", 0))))
-    rrp = _parse_price(p.get("rrp", p.get("retail_price", p.get("recommended_retail_price", 0))))
+    """Map Avasam product to our internal format.
+
+    Avasam API returns capitalised keys: SKU, Price, RetailPrice, Title,
+    image, Stock, Category, IsActive, isMapped.
+    """
+    # Support both capitalised (real API) and lowercase (legacy/mock) keys
+    cost = _parse_price(
+        p.get("Price", p.get("cost_price", p.get("price", p.get("wholesale_price", 0))))
+    )
+    rrp = _parse_price(
+        p.get("RetailPrice", p.get("rrp", p.get("retail_price", p.get("recommended_retail_price", 0))))
+    )
     if rrp <= 0 and cost > 0:
         rrp = round(cost * 2.5, 2)
 
-    image = p.get("image_url", p.get("image", p.get("main_image", "")))
+    image = p.get("image", p.get("image_url", p.get("main_image", "")))
     images = p.get("images", p.get("image_urls", []))
     if isinstance(images, str):
         try:
@@ -257,28 +303,39 @@ def _map_avasam_product(p: dict) -> dict:
             images = [images] if images else []
     if not isinstance(images, list):
         images = []
+    # Ensure the main image is included
+    if image and image not in images:
+        images = [image] + images
 
-    pid = str(p.get("id", p.get("product_id", p.get("avasam_id", ""))))
+    sku = p.get("SKU", p.get("sku", ""))
+    pid = str(p.get("id", p.get("product_id", p.get("avasam_id", sku or ""))))
+
+    stock_val = p.get("Stock", p.get("stock", p.get("quantity", 0)))
+    try:
+        in_stock = int(stock_val) > 0
+    except (TypeError, ValueError):
+        in_stock = p.get("IsActive", p.get("in_stock", False))
 
     return {
         "avasam_pid": pid,
-        "product_name": p.get("name", p.get("title", p.get("product_name", ""))),
-        "category": p.get("category", p.get("category_name", "")),
+        "product_name": p.get("Title", p.get("name", p.get("title", p.get("product_name", "")))),
+        "category": p.get("Category", p.get("category", p.get("category_name", ""))),
         "category_id": str(p.get("category_id", "")),
         "image_url": image,
         "images": images,
         "supplier_cost": round(cost, 2),
         "sell_price": round(rrp, 2),
         "currency": "GBP",
-        "stock_status": "in_stock" if p.get("in_stock", p.get("stock_status")) in (True, "in_stock", "available") else "limited",
+        "stock_status": "in_stock" if in_stock else "limited",
+        "stock_qty": int(stock_val) if isinstance(stock_val, (int, float)) else 0,
         "source": "avasam",
-        "source_url": f"https://www.avasam.com/products/{pid}",
+        "source_url": f"https://app.avasam.com/products/{pid}",
         "shipping_weight": p.get("weight", p.get("shipping_weight", 0)),
-        "description": (p.get("description", "") or "")[:500],
+        "description": (p.get("description", p.get("Description", "")) or "")[:500],
         "variants_count": len(p.get("variants", [])),
-        "sku": p.get("sku", ""),
-        "brand": p.get("brand", p.get("supplier_name", "")),
-        "ean": p.get("ean", p.get("barcode", "")),
+        "sku": sku,
+        "brand": p.get("brand", p.get("supplier_name", p.get("Supplier", ""))),
+        "ean": p.get("ean", p.get("barcode", p.get("EAN", ""))),
     }
 
 
@@ -290,11 +347,11 @@ def _map_avasam_product_detail(p: dict) -> dict:
         {
             "vid": str(v.get("id", v.get("variant_id", ""))),
             "name": v.get("name", v.get("title", "")),
-            "sku": v.get("sku", ""),
-            "price": round(_parse_price(v.get("price", v.get("cost_price", 0))), 2),
-            "stock": v.get("stock", v.get("quantity", 0)),
+            "sku": v.get("sku", v.get("SKU", "")),
+            "price": round(_parse_price(v.get("price", v.get("Price", v.get("cost_price", 0)))), 2),
+            "stock": v.get("stock", v.get("Stock", v.get("quantity", 0))),
             "image": v.get("image_url", v.get("image", "")),
-            "ean": v.get("ean", v.get("barcode", "")),
+            "ean": v.get("ean", v.get("barcode", v.get("EAN", ""))),
         }
         for v in variants
     ]
