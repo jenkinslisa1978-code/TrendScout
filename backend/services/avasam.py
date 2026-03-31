@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
 
-AVASAM_BASE = "https://app.avasam.com/api"
+AVASAM_BASE = "https://api.avasam.com/v1"
 _TOKEN_FILE = "/tmp/avasam_api_token.json"
 
 # Module-level token cache
@@ -94,9 +94,9 @@ async def search_products(query: str, page: int = 1, page_size: int = 20, catego
         return {"success": False, "error": str(e), "products": []}
 
     params = {
-        "keyword": query,
+        "search": query,
         "page": page,
-        "per_page": min(page_size, 50),
+        "limit": min(page_size, 50),
     }
     if category_id:
         params["category_id"] = category_id
@@ -104,7 +104,7 @@ async def search_products(query: str, page: int = 1, page_size: int = 20, catego
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f"{AVASAM_BASE}/products/search",
+                f"{AVASAM_BASE}/products",
                 params=params,
                 headers={
                     "Authorization": f"Bearer {token}",
@@ -272,7 +272,7 @@ def _map_avasam_product(p: dict) -> dict:
         "currency": "GBP",
         "stock_status": "in_stock" if p.get("in_stock", p.get("stock_status")) in (True, "in_stock", "available") else "limited",
         "source": "avasam",
-        "source_url": f"https://app.avasam.com/products/{pid}",
+        "source_url": f"https://www.avasam.com/products/{pid}",
         "shipping_weight": p.get("weight", p.get("shipping_weight", 0)),
         "description": (p.get("description", "") or "")[:500],
         "variants_count": len(p.get("variants", [])),
