@@ -12,51 +12,49 @@ UK Product Validation Tool for ecommerce sellers. Scores products across demand,
 ## Core Features
 
 ### Free Public Tools (No Auth)
-- **Product Validator**: POST /api/public/validate-product — instant scoring via CJ search + scoring engine
-- **Profit Simulator**: POST /api/public/profit-simulator — unit economics + 30/60/90 day projections with UK VAT
-- **Trending Products**: GET /api/public/trending-products — browse scored products
+- **Product Validator**: POST /api/public/validate-product
+- **Profit Simulator**: POST /api/public/profit-simulator
+- **Trending Products**: GET /api/public/trending-products
 
 ### Premium Features (Auth Required)
-- **One-Click Launch**: POST /api/products/{id}/quick-launch — AI ad copy (GPT-5.2), target audience, profit projections, platform exports (Shopify/WooCommerce/Etsy)
-- **AI Deep Analysis**: POST /api/products/deep-analysis — GPT-5.2 powered product intelligence
-- **CJ Dropshipping Sync**: Auto-imports products every 6h, manual trigger POST /api/cj/sync
-- **Avasam UK Sync**: Auto-imports UK products every 6h, manual trigger POST /api/avasam/sync
-- **Product Alerts**: Email notifications via Resend for trending products matching criteria
-- **Supplier Comparison**: GET /api/cj/supplier-comparison — compares CJ, AliExpress, Zendrop, and Avasam UK
-- **Launch Wizard**: Multi-step product launch flow
+- **One-Click Launch**: POST /api/products/{id}/quick-launch
+- **AI Deep Analysis**: POST /api/products/deep-analysis
+- **CJ Dropshipping Sync**: Auto-imports every 6h, POST /api/cj/sync
+- **Avasam UK Sync**: Auto-imports UK products every 6h, POST /api/avasam/sync
+- **Supplier Comparison**: GET /api/cj/supplier-comparison (CJ, AliExpress, Zendrop, Avasam UK)
+- **UK Suppliers Only Filter**: Toggle on trending products page
 - **Competitor Intelligence**: Ad spend, pricing, saturation data
+
+### Scoring
+- **UK Supplier Bonus**: +15 points added to launch_score for uk_supplier=true products
+- **is_uk_supplier()**: Returns true if avasam_pid, data_source=avasam, or any supplier has country=GB/UK
 
 ### UI/UX
 - Premium dark theme (bg #09090b) with emerald-500 accents
-- Glassmorphic header, dark footer
-- Product validator embedded in hero section
-- Bento grid features layout
-- Interactive slider-based profit simulator
 - UK Shipping Time Indicator badges on all product cards (green/yellow/red)
+- "UK SUPPLIER" badge on all product cards when uk_supplier=true
+- "UK Suppliers Only" filter toggle on trending products page
 
 ## Key Files
-- /app/backend/server.py — Main FastAPI app, serves SPA
-- /app/backend/routes/public.py — Public endpoints (validator, simulator)
+- /app/backend/server.py — Main FastAPI app
+- /app/backend/routes/public.py — Public endpoints
 - /app/backend/routes/products.py — Product CRUD + quick-launch
-- /app/backend/routes/cj_dropshipping.py — CJ API integration + supplier comparison
-- /app/backend/routes/avasam.py — Avasam UK supplier API routes
+- /app/backend/routes/cj_dropshipping.py — CJ API + supplier comparison
+- /app/backend/routes/avasam.py — Avasam UK supplier routes
 - /app/backend/services/cj_dropshipping.py — CJ service layer
-- /app/backend/services/avasam.py — Avasam UK service layer (auth, search, detail, stock, categories)
-- /app/backend/services/jobs/tasks.py — Scheduled tasks (CJ sync, Avasam sync, scoring)
-- /app/backend/common/scoring.py — Launch score + compute_uk_shipping_tier()
-- /app/backend/routes/viral_predictions.py — TikTok Viral Predictor endpoints
-- /app/backend/routes/tools.py — Tools + Competitor Spy endpoints
-- /app/frontend/src/pages/LandingPage.jsx — Dark premium landing page (ShippingBadge + ProductCard)
-- /app/frontend/src/pages/TrendingProductsPage.jsx — Full trending products page with shipping info
-- /app/frontend/src/pages/ProductDetailPage.jsx — Product detail with shipping badge
-- /app/frontend/src/components/ShareableProductCard.jsx — Shareable card with shipping badge
+- /app/backend/services/avasam.py — Avasam UK service layer
+- /app/backend/services/jobs/tasks.py — Scheduled tasks
+- /app/backend/common/scoring.py — Scoring (launch_score, uk_shipping_tier, is_uk_supplier)
+- /app/frontend/src/pages/LandingPage.jsx — Landing page (ProductCard + ShippingBadge + UK Supplier badge)
+- /app/frontend/src/pages/TrendingProductsPage.jsx — Trending page (UK filter toggle + badges)
+- /app/frontend/src/pages/ProductDetailPage.jsx — Product detail (all badges)
+- /app/frontend/src/components/ShareableProductCard.jsx — Shareable card (all badges)
 
 ## DB Schema
 - products: {id, cj_pid, avasam_pid, product_name, category, launch_score, supplier_cost, suppliers, data_source, ...}
 - auth_users: {id, email, password_hash}
 - trend_alerts: {id, user_id, categories, min_score, active}
 - automation_logs: {id, job_name, status, run_time, details}
-- quick_launches: {id, product_id, user_id, created_at, status}
 
 ## Credentials
 - Admin: reviewer@trendscout.click / ShopifyReview2026!
@@ -64,31 +62,23 @@ UK Product Validation Tool for ecommerce sellers. Scores products across demand,
 - Automation API Key: vs_automation_key_2024
 
 ## What's Implemented
-- Avasam UK Supplier Integration (service, routes, sync task, supplier comparison, green UK shipping tier) — March 31, 2026
+- UK Supplier badge + filter toggle + launch_score +15 boost — March 31, 2026
+- Avasam UK Supplier Integration (service, routes, sync task, supplier comparison) — March 31, 2026
 - UK Shipping Time Indicator (3-tier badges on all product cards) — March 31, 2026
-- Weekly "Products to Launch" email digest with one-click launch links — March 30, 2026
-- TikTok Viral Predictor (AI predictions, free teaser + premium) — March 30, 2026
-- Competitor Store Spy (surface scan free, deep AI analysis premium) — March 30, 2026
-- CJ Dropshipping API integration (auth, search, import, sync) — March 30, 2026
-- Free Public Product Validator with CJ live data — March 30, 2026
-- AI Profit Simulator with 30/60/90 day projections + UK VAT — March 30, 2026
-- One-Click Launch with AI ad copy + Shopify/WooCommerce/Etsy exports — March 30, 2026
-- Premium dark-mode UI/UX redesign — March 30, 2026
-- Product Alert Emails via Resend — March 29, 2026
-- Lazy-loading DB + LLM for fast startup — March 29, 2026
-- Render single-service deployment config — March 29, 2026
+- Weekly email digest, TikTok Viral Predictor, Competitor Store Spy — March 30, 2026
+- CJ Dropshipping API integration, Product Validator, Profit Simulator — March 30, 2026
+- One-Click Launch, Premium dark-mode UI/UX redesign — March 30, 2026
+- Product Alert Emails, Lazy-loading, Render deployment — March 29, 2026
 
-## Avasam Integration Details
-- **Auth**: POST https://app.avasam.com/api/auth/request-token with consumer_key + secret_key
-- **Endpoints**: /api/avasam/search, /api/avasam/product/{id}, /api/avasam/categories, /api/avasam/stock/{id}, /api/avasam/import/{id}, /api/avasam/sync
-- **Env vars**: AVASAM_CONSUMER_KEY, AVASAM_CONSUMER_SECRET (configured in Render)
-- **Shipping**: All Avasam products get green "UK Warehouse" tier (country=GB, lead_time=2d)
-- **Sync**: Runs every 6h via APScheduler (sync_avasam_products task)
-- **Supplier comparison**: Included in /api/cj/supplier-comparison with uk_warehouse=True
+## Avasam Integration
+- **Auth**: POST https://app.avasam.com/api/auth/request-token
+- **Env**: AVASAM_CONSUMER_KEY, AVASAM_CONSUMER_SECRET (in Render)
+- **Endpoints**: /api/avasam/search, /product/{id}, /categories, /stock/{id}, /import/{id}, /sync, /sync/history
+- **Shipping**: Green "UK Warehouse" tier (1-3 days)
+- **Scoring**: +15 launch_score bonus
 
 ## Remaining Tasks
 - P1: Configure GA4 tag in GTM (user task)
 - P1: Configure Resend webhook URL (user task)
 - P1: Create OAuth apps for Shopify/Meta/TikTok
 - P2: Stripe payment configuration for live subscriptions
-- P2: Cleanup obsolete frontend/serve.js and frontend/start.js
