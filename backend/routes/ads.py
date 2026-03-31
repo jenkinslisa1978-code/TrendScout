@@ -860,6 +860,12 @@ Respond in this exact JSON format (no markdown, just raw JSON):
         logging.error(f"AI simulation error: {e}")
         ai_analysis = {"verdict": base_sim["potential_description"], "error": str(e)[:100]}
 
+    return {
+        "success": True,
+        "product_id": product_id,
+        "ai_analysis": ai_analysis,
+        "base_simulation": base_sim,
+    }
 
 
 @ad_test_router.get("/ad-creatives/{product_id}")
