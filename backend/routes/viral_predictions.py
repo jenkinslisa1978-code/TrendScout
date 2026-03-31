@@ -67,23 +67,21 @@ async def _generate_predictions():
             f"Competition: {p.get('competition_level', '?')}"
         )
 
-    llm_key = os.environ.get("EMERGENT_LLM_KEY")
+    llm_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
     if not llm_key:
-        logger.warning("No LLM key for viral predictions")
+        logger.warning("No LLM key for viral predictions (set OPENAI_API_KEY in Render)")
         return []
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        from openai import AsyncOpenAI
 
-        chat = LlmChat(
-            api_key=llm_key,
-            session_id=f"viral-pred-{uuid.uuid4().hex[:8]}",
-            system_message=(
-                "You are a TikTok trend analyst specialising in UK ecommerce. "
-                "You predict which products will go viral on TikTok in the next 48-72 hours. "
-                "Return ONLY valid JSON array, no markdown."
-            ),
-        ).with_model("openai", "gpt-5.2")
+        client = AsyncOpenAI(api_key=llm_key)
+
+        system_message = (
+            "You are a TikTok trend analyst specialising in UK ecommerce. "
+            "You predict which products will go viral on TikTok in the next 48-72 hours. "
+            "Return ONLY valid JSON array, no markdown."
+        )
 
         prompt = (
             "Analyse these products and predict the TOP 12 most likely to go viral on TikTok "
@@ -106,7 +104,15 @@ async def _generate_predictions():
             '"urgency": "high/medium/low"}]'
         )
 
-        response = await chat.send_message(UserMessage(text=prompt))
+        completion = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+        response = completion.choices[0].message.content
 
         # Parse JSON array
         predictions = []
