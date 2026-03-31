@@ -21,7 +21,7 @@ from common.scoring import (
     generate_ai_summary, calculate_early_trend_score, calculate_market_score,
     calculate_launch_score, generate_mock_competitor_data, calculate_success_probability,
     should_generate_alert, generate_alert, run_full_automation, generate_early_trend_alert,
-    should_generate_early_trend_alert, compute_uk_shipping_tier,
+    should_generate_early_trend_alert, compute_uk_shipping_tier, is_uk_supplier,
 )
 from common.models import *
 
@@ -220,9 +220,10 @@ async def get_products(
     cursor = db.products.find(query, {"_id": 0}).sort(sort_by, sort_direction).limit(limit)
     products = await cursor.to_list(limit)
 
-    # Attach UK shipping tier to each product
+    # Attach UK shipping tier and supplier flag to each product
     for p in products:
         p["uk_shipping"] = compute_uk_shipping_tier(p)
+        p["uk_supplier"] = is_uk_supplier(p)
     
     # If include_integrity is True, add data integrity metadata to each product
     if include_integrity:
@@ -262,7 +263,7 @@ async def get_product(product_id: str, include_integrity: bool = False):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    response = {"data": {**product, "uk_shipping": compute_uk_shipping_tier(product)}}
+    response = {"data": {**product, "uk_shipping": compute_uk_shipping_tier(product), "uk_supplier": is_uk_supplier(product)}}
     
     # Add data integrity info
     if include_integrity:

@@ -114,6 +114,9 @@ export default function ShareableProductCard({ product, onClose }) {
                 {product.data_confidence && (
                   <SourceTrustBadge confidence={product.data_confidence} size="xs" showIcon={false} />
                 )}
+                {product.uk_supplier && (
+                  <Badge className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200" data-testid="uk-supplier-badge">UK SUPPLIER</Badge>
+                )}
               </div>
             </div>
           </div>

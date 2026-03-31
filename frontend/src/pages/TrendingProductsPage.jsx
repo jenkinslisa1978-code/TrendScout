@@ -50,6 +50,7 @@ export default function TrendingProductsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchParams] = useSearchParams();
   const [compareIds, setCompareIds] = useState([]);
+  const [ukSuppliersOnly, setUkSuppliersOnly] = useState(false);
 
   const toggleCompare = (id) => {
     setCompareIds(prev =>
@@ -85,6 +86,11 @@ export default function TrendingProductsPage() {
   const filteredAndSorted = useMemo(() => {
     let result = [...products];
 
+    // UK Suppliers Only filter
+    if (ukSuppliersOnly) {
+      result = result.filter(p => p.uk_supplier === true);
+    }
+
     // Category filter
     if (selectedCategory) {
       result = result.filter(p => p.category === selectedCategory);
@@ -117,7 +123,7 @@ export default function TrendingProductsPage() {
     }
 
     return result;
-  }, [products, selectedCategory, sortBy, minMargin]);
+  }, [products, selectedCategory, sortBy, minMargin, ukSuppliersOnly]);
 
   const highConfCount = products.filter(p => p.launch_score >= 75).length;
 
@@ -197,6 +203,18 @@ export default function TrendingProductsPage() {
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Filters
+              </button>
+              <button
+                onClick={() => setUkSuppliersOnly(!ukSuppliersOnly)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                  ukSuppliersOnly
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700'
+                }`}
+                data-testid="uk-suppliers-filter"
+              >
+                <Truck className="h-3.5 w-3.5" />
+                UK Suppliers Only
               </button>
               {minMargin > 0 && (
                 <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200 rounded-full">
@@ -434,6 +452,11 @@ function ProductCard({ product, compareIds = [], toggleCompare }) {
         <h3 className="font-semibold text-slate-900 text-sm line-clamp-1 group-hover:text-indigo-600 transition-colors">{product.product_name}</h3>
         {product.category && (
           <p className="text-[11px] text-slate-400 mt-0.5">{product.category}</p>
+        )}
+        {product.uk_supplier && (
+          <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5" data-testid="uk-supplier-badge">
+            <span className="text-[10px] font-bold tracking-wide text-emerald-700">UK SUPPLIER</span>
+          </span>
         )}
 
         {/* Key metrics */}

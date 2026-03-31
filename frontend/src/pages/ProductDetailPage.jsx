@@ -345,6 +345,16 @@ export default function ProductDetailPage() {
                   <Truck className="h-3 w-3 mr-1" /> Sourced from CJ Dropshipping
                 </Badge>
               )}
+              {product.data_source === 'avasam' && (
+                <Badge className="mt-1 bg-emerald-50 text-emerald-700 border-emerald-200 text-xs" data-testid="avasam-source-badge">
+                  <Truck className="h-3 w-3 mr-1" /> Sourced from Avasam UK
+                </Badge>
+              )}
+              {product.uk_supplier && (
+                <Badge className="mt-1 ml-1 bg-emerald-100 text-emerald-800 border-emerald-300 text-xs font-bold" data-testid="uk-supplier-badge">
+                  UK SUPPLIER
+                </Badge>
+              )}
               {product.uk_shipping && (
                 <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold" data-testid="detail-shipping-badge"
                   style={{

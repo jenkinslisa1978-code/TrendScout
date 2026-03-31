@@ -506,6 +506,11 @@ function ProductCard({ product }) {
       <div className="p-4">
         <h3 className="text-sm font-semibold text-zinc-200 line-clamp-1 group-hover:text-emerald-400 transition-colors">{product.product_name}</h3>
         <p className="mt-1 text-xs text-zinc-600">{product.category || 'Uncategorised'}</p>
+        {product.uk_supplier && (
+          <div className="inline-flex items-center gap-1 mt-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 px-2 py-0.5" data-testid="uk-supplier-badge">
+            <span className="text-[10px] font-bold tracking-wide text-emerald-400">UK SUPPLIER</span>
+          </div>
+        )}
         {product.uk_shipping && (
           <div className="flex items-center gap-1.5 mt-2" data-testid="shipping-info-row">
             <Truck className="h-3 w-3 text-zinc-500" />

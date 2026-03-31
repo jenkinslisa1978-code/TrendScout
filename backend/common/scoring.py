@@ -356,6 +356,18 @@ def calculate_market_score(product: dict) -> tuple:
     return market_score, market_label, score_breakdown
 
 
+def is_uk_supplier(product: dict) -> bool:
+    """Check if a product is sourced from a UK-based supplier."""
+    if product.get("avasam_pid") or product.get("data_source") == "avasam":
+        return True
+    for sup in (product.get("suppliers") or []):
+        country = (sup.get("country") or "").upper()
+        if country in ("UK", "GB"):
+            return True
+    return False
+
+
+
 def calculate_launch_score(product: dict) -> tuple:
     trend_score = product.get('trend_score', 0)
     margin_score = product.get('margin_score', 0)
@@ -399,6 +411,11 @@ def calculate_launch_score(product: dict) -> tuple:
         supplier_demand_score * 0.10
     ) - saturation_penalty
 
+    # UK supplier bonus: +15 for products sourced from UK warehouses
+    uk_supplier = is_uk_supplier(product)
+    uk_bonus = 15 if uk_supplier else 0
+    launch_score += uk_bonus
+
     launch_score = min(100, max(0, round(launch_score)))
     if launch_score >= 80:
         label = 'strong_launch'
@@ -427,6 +444,8 @@ def calculate_launch_score(product: dict) -> tuple:
         reasoning_parts.append(f"Heavy competition penalty (-{round(saturation_penalty)}pts)")
     elif saturation_penalty > 5:
         reasoning_parts.append(f"Moderate competition drag (-{round(saturation_penalty)}pts)")
+    if uk_bonus:
+        reasoning_parts.append(f"UK supplier bonus (+{uk_bonus}pts)")
     if label == 'strong_launch':
         reasoning_parts.append("Excellent conditions for launch")
     elif label == 'promising':

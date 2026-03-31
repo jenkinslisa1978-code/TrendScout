@@ -20,7 +20,7 @@ from common.scoring import (
     generate_ai_summary, calculate_early_trend_score, calculate_market_score,
     calculate_launch_score, generate_mock_competitor_data, calculate_success_probability,
     should_generate_alert, generate_alert, run_full_automation, generate_early_trend_alert,
-    should_generate_early_trend_alert, compute_uk_shipping_tier,
+    should_generate_early_trend_alert, compute_uk_shipping_tier, is_uk_supplier,
 )
 from common.models import *
 
@@ -187,6 +187,7 @@ async def public_product_by_slug(slug: str):
         "radar_detected": product.get("radar_detected", False),
         "data_confidence": product.get("data_confidence", "estimated"),
         "uk_shipping": compute_uk_shipping_tier(product),
+        "uk_supplier": is_uk_supplier(product),
         "related_products": related,
     }
 
@@ -252,6 +253,7 @@ async def get_top_trending_products():
             "supplier_cost": round(p.get("supplier_cost", 0), 2),
             "retail_price": round(p.get("estimated_retail_price", 0), 2),
             "uk_shipping": compute_uk_shipping_tier(p),
+            "uk_supplier": is_uk_supplier(p),
         })
 
     result = {
@@ -342,6 +344,7 @@ async def get_trending_products(limit: int = 20):
             "data_source": p.get("data_source", "unknown"),
             "last_updated": p.get("last_updated") or p.get("updated_at") or p.get("created_at", ""),
             "uk_shipping": compute_uk_shipping_tier(p),
+            "uk_supplier": is_uk_supplier(p),
         })
 
     from datetime import timedelta
