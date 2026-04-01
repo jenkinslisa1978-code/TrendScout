@@ -359,6 +359,37 @@ export default function PlatformConnectionsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8" data-testid="platform-connections">
+
+        {/* Beginner Getting Started Banner */}
+        {!connections.stores?.length && (
+          <div className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 p-5 text-white">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 flex-shrink-0">
+                <Store className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-bold text-lg">New to dropshipping? Start here 👇</h2>
+                <p className="text-white/80 text-sm mt-1">You need three things: a store, a supplier, and an ad account. Connect them in that order and TrendScout handles the rest.</p>
+                <div className="flex flex-wrap gap-3 mt-3">
+                  <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 text-sm">
+                    <span className="font-bold text-white">1.</span>
+                    <span>Connect Shopify (below)</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 text-sm">
+                    <span className="font-bold text-white">2.</span>
+                    <span>Connect CJ Dropshipping</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 text-sm">
+                    <span className="font-bold text-white">3.</span>
+                    <span>Connect Meta or TikTok Ads</span>
+                  </div>
+                </div>
+                <p className="text-white/60 text-xs mt-2">Don't have a Shopify store yet? <a href="https://www.shopify.com/free-trial" target="_blank" rel="noopener noreferrer" className="text-white underline font-medium">Start your free trial here →</a></p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 font-manrope">Platform Connections</h1>

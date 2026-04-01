@@ -205,11 +205,8 @@ export default function DashboardPage() {
         {/* Data Trust Banner */}
         <DataTrustBanner />
 
-        {/* Connect Accounts Prompt */}
-        <ConnectAccountsPrompt />
-
-        {/* Beginner Panel */}
-        <BeginnerPanel />
+        {/* Connect Accounts Prompt — only shown in beginner/simple view so it doesn't compete with QuickLaunchFlow */}
+        {isAdvanced && <ConnectAccountsPrompt />}
 
         {/* Product Decision Panel — What Should I Do Next? */}
         <ProductDecisionPanel />

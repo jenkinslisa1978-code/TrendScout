@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Rocket, Store, Megaphone, ArrowRight, CheckCircle2, Loader2, Sparkles, Link2, AlertCircle } from 'lucide-react';
+import { Rocket, Store, Megaphone, ArrowRight, CheckCircle2, Loader2, Sparkles, Link2, AlertCircle, ExternalLink, Plug } from 'lucide-react';
 import { apiGet, apiPost } from '@/lib/api';
 
 export default function QuickLaunchFlow() {
@@ -205,47 +205,96 @@ export default function QuickLaunchFlow() {
         {/* Step 2: Set Up Shop */}
         {step >= 2 && (
           <div className={`rounded-xl border p-4 mb-4 ${step === 2 ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-200 bg-slate-50'}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${step > 2 ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
-                  <Store className={`h-5 w-5 ${step > 2 ? 'text-emerald-600' : 'text-indigo-600'}`} />
+            {/* No store connected — show beginner-friendly setup options */}
+            {step === 2 && !storeCreated && !hasStoreConnection ? (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
+                    <Store className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900">Set Up Your Shop</h4>
+                    <p className="text-sm text-slate-500">You need a store to sell this product. Takes about 5 minutes.</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-slate-900">Set Up Your Shop</h4>
-                  <p className="text-sm text-slate-500">
-                    {storeCreated?.published
-                      ? `Published to your ${storeCreated.platform} store`
-                      : storeCreated
-                      ? `"${storeCreated.name}" created as draft`
-                      : hasStoreConnection
-                      ? 'Auto-publish to your connected store'
-                      : 'Create a store with this product ready to sell'}
-                  </p>
-                  {!hasStoreConnection && step === 2 && !storeCreated && (
-                    <button onClick={() => navigate('/settings/connections')} className="text-xs text-indigo-600 hover:underline mt-1">
-                      Connect your Shopify/WooCommerce for auto-publish
-                    </button>
-                  )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* New to dropshipping */}
+                  <a
+                    href="https://www.shopify.com/free-trial"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 rounded-lg border-2 border-indigo-200 bg-indigo-50 p-3 hover:border-indigo-400 hover:bg-indigo-100 transition-colors group"
+                    data-testid="quick-launch-shopify-trial"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 flex-shrink-0">
+                      <ExternalLink className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-indigo-900 text-sm">New to dropshipping?</p>
+                      <p className="text-xs text-indigo-700 mt-0.5">Start your free Shopify trial — no credit card needed</p>
+                    </div>
+                  </a>
+                  {/* Already have a store */}
+                  <button
+                    onClick={() => navigate('/settings/connections')}
+                    className="flex items-start gap-3 rounded-lg border-2 border-slate-200 bg-white p-3 hover:border-indigo-200 hover:bg-indigo-50 transition-colors text-left"
+                    data-testid="quick-launch-connect-store"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 flex-shrink-0">
+                      <Plug className="h-4 w-4 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900 text-sm">Already have a store?</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Connect Shopify, WooCommerce or another platform</p>
+                    </div>
+                  </button>
                 </div>
-              </div>
-              {step === 2 && !storeCreated && (
-                <Button
+                <button
                   onClick={handleSetUpShop}
                   disabled={launching}
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="text-xs text-slate-400 hover:text-slate-600 mt-3 block mx-auto"
                   data-testid="quick-launch-shop-btn"
                 >
-                  {launching ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Store className="mr-1 h-4 w-4" />}
-                  {launching ? 'Creating...' : 'Create Shop'}
-                </Button>
-              )}
-              {step > 2 && (
-                <div className="flex items-center gap-1 text-emerald-600">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="text-sm font-medium">Shop Created</span>
+                  {launching ? 'Creating draft...' : 'Skip for now — I\'ll just create a draft to explore'}
+                </button>
+              </div>
+            ) : (
+              /* Has store connection OR store already created */
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${step > 2 ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
+                    <Store className={`h-5 w-5 ${step > 2 ? 'text-emerald-600' : 'text-indigo-600'}`} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900">Set Up Your Shop</h4>
+                    <p className="text-sm text-slate-500">
+                      {storeCreated?.published
+                        ? `Published to your ${storeCreated.platform} store`
+                        : storeCreated
+                        ? `"${storeCreated.name}" created as draft`
+                        : 'Auto-publish to your connected store'}
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
+                {step === 2 && !storeCreated && (
+                  <Button
+                    onClick={handleSetUpShop}
+                    disabled={launching}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                    data-testid="quick-launch-shop-btn"
+                  >
+                    {launching ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Store className="mr-1 h-4 w-4" />}
+                    {launching ? 'Publishing...' : 'Publish to Store'}
+                  </Button>
+                )}
+                {step > 2 && (
+                  <div className="flex items-center gap-1 text-emerald-600">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span className="text-sm font-medium">Shop Created</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -270,7 +319,7 @@ export default function QuickLaunchFlow() {
                   </p>
                   {!hasAdConnection && step === 3 && !adsGenerated && (
                     <button onClick={() => navigate('/settings/connections')} className="text-xs text-indigo-600 hover:underline mt-1">
-                      Connect your ad accounts for auto-posting
+                      Connect Meta / TikTok to auto-post ads (optional)
                     </button>
                   )}
                 </div>
