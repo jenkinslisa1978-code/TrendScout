@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 AVASAM_BASE = "https://app.avasam.com"
 _TOKEN_FILE = "/tmp/avasam_api_token.json"
+_TIMEOUT = aiohttp.ClientTimeout(total=15, connect=8)
 
 # Module-level token cache
 _token_cache = {"access_token": None, "expires_at": None}
@@ -67,28 +68,35 @@ async def _get_access_token() -> str:
     if not consumer_key or not consumer_secret:
         raise ValueError("AVASAM_CONSUMER_KEY / AVASAM_CONSUMER_SECRET not configured")
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            f"{AVASAM_BASE}/api/auth/request-token",
-            json={"consumer_key": consumer_key, "secret_key": consumer_secret},
-            headers={"Content-Type": "application/json"},
-        ) as resp:
-            data = await resp.json(content_type=None)
-            token = data.get("access_token") or data.get("token")
-            if token:
-                expires_at = data.get("expires_at")
-                if expires_at:
-                    _token_cache["expires_at"] = expires_at
+    try:
+        async with aiohttp.ClientSession(timeout=_TIMEOUT) as session:
+            async with session.post(
+                f"{AVASAM_BASE}/api/auth/request-token",
+                json={"consumer_key": consumer_key, "secret_key": consumer_secret},
+                headers={"Content-Type": "application/json"},
+            ) as resp:
+                data = await resp.json(content_type=None)
+                token = data.get("access_token") or data.get("token")
+                if token:
+                    expires_at = data.get("expires_at")
+                    if expires_at:
+                        _token_cache["expires_at"] = expires_at
+                    else:
+                        _token_cache["expires_at"] = (now + timedelta(hours=12)).isoformat()
+                    _token_cache["access_token"] = token
+                    _save_token_cache()
+                    logger.info("Avasam: obtained new access token")
+                    return token
                 else:
-                    _token_cache["expires_at"] = (now + timedelta(hours=12)).isoformat()
-                _token_cache["access_token"] = token
-                _save_token_cache()
-                logger.info("Avasam: obtained new access token")
-                return token
-            else:
-                msg = data.get("message") or data.get("error") or "Unknown error"
-                logger.error(f"Avasam auth failed: {msg}")
-                raise ValueError(f"Avasam auth failed: {msg}")
+                    msg = data.get("message") or data.get("error") or "Unknown error"
+                    logger.error(f"Avasam auth failed: {msg}")
+                    raise ValueError(f"Avasam auth failed: {msg}")
+    except aiohttp.ClientConnectorError as e:
+        logger.error(f"Avasam: cannot reach {AVASAM_BASE} — DNS/connection error: {e}")
+        raise ValueError(f"Avasam API unreachable: {e}")
+    except aiohttp.ServerTimeoutError:
+        logger.error("Avasam: auth request timed out")
+        raise ValueError("Avasam API timed out")
 
 
 async def search_products(query: str, page: int = 1, page_size: int = 20, category_id: str = "") -> dict:
@@ -114,7 +122,7 @@ async def search_products(query: str, page: int = 1, page_size: int = 20, catego
     }
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=_TIMEOUT) as session:
             async with session.post(
                 f"{AVASAM_BASE}/apiseeker/ProductModule/GetInventoryListWithFilter",
                 json=body,
@@ -165,7 +173,7 @@ async def get_all_products(page: int = 1, page_size: int = 50) -> dict:
     }
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=_TIMEOUT) as session:
             async with session.post(
                 f"{AVASAM_BASE}/apiseeker/Products/GetSellerProductList",
                 json=body,
@@ -239,7 +247,7 @@ async def get_stock(product_id: str) -> dict:
         return {"success": False, "error": str(e)}
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=_TIMEOUT) as session:
             async with session.post(
                 f"{AVASAM_BASE}/apiseeker/Products/SellerStockList",
                 json={},
