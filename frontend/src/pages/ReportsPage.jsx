@@ -300,7 +300,7 @@ export default function ReportsPage() {
                               <Clock className="h-3 w-3" />
                               {formatDate(report.metadata?.generated_at)}
                               <span className="text-slate-300">•</span>
-                              {report.summary?.total_products_analysed || 0} products
+                              {report.summary?.total_products_analyzed ?? report.summary?.total_products_analysed ?? 0} products
                             </p>
                           </div>
                         </div>

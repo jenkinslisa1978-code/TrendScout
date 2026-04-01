@@ -592,6 +592,11 @@ function AppRoutes() {
         }
       />
 
+      {/* Redirects for common mistyped / legacy URLs */}
+      <Route path="/winners" element={<Navigate to="/verified-winners" replace />} />
+      <Route path="/settings" element={<Navigate to="/settings/connections" replace />} />
+      <Route path="/account" element={<Navigate to="/settings/connections" replace />} />
+
       {/* Fallback */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
