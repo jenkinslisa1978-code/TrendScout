@@ -517,6 +517,184 @@ function SupplierComparisonView({ query, active }) {
   );
 }
 
+function AvasamProductCard({ product, onImport, importing }) {
+  const isImporting = importing === product.avasam_pid;
+  const retailPrice = product.sell_price > 0 ? product.sell_price : (product.supplier_cost * 2.5);
+  const margin = product.supplier_cost > 0
+    ? Math.round(((retailPrice - product.supplier_cost) / retailPrice) * 100)
+    : 0;
+
+  return (
+    <Card className="border border-slate-200/60 hover:shadow-md hover:border-slate-300 transition-all">
+      <CardContent className="p-0">
+        <div className="flex gap-4 p-4">
+          {product.image_url ? (
+            <img src={product.image_url} alt={product.product_name} className="w-16 h-16 rounded-lg object-cover bg-slate-100 flex-shrink-0" loading="lazy" />
+          ) : (
+            <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <Package className="h-6 w-6 text-slate-300" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-900 text-sm line-clamp-2 leading-snug">{product.product_name}</p>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <Badge className="bg-violet-50 text-violet-700 border-violet-200 text-[10px]">Avasam</Badge>
+                  {product.category && <Badge variant="outline" className="text-[10px]">{product.category}</Badge>}
+                  <StockBadge status={product.stock_status} />
+                </div>
+              </div>
+              <div className="flex-shrink-0 text-right">
+                <PriceBadge price={product.supplier_cost} label="Cost" />
+                {margin > 0 && <p className="text-xs font-semibold text-emerald-600 mt-0.5">{margin}% margin</p>}
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center gap-3 text-xs text-slate-400">
+                {product.sku && <span>SKU: {product.sku}</span>}
+                {product.brand && <span>{product.brand}</span>}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => window.open(product.source_url, '_blank')}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" /> View
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs bg-violet-600 hover:bg-violet-700"
+                  disabled={isImporting}
+                  onClick={() => onImport(product.avasam_pid, product)}
+                >
+                  {isImporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Import className="h-3 w-3 mr-1" /> Import</>}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AvasamSearchView({ query, onQueryChange }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(null);
+  const [error, setError] = useState('');
+  const [searched, setSearched] = useState(false);
+
+  const handleSearch = useCallback(async () => {
+    if (!query.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.get(`/api/avasam/search?q=${encodeURIComponent(query)}&page_size=20`);
+      if (res.ok) {
+        setProducts(res.data.products || []);
+      } else {
+        setError(res.data?.error || 'Avasam search failed. Check your credentials in Settings → Connections.');
+      }
+    } catch {
+      setError('Connection error');
+    }
+    setLoading(false);
+    setSearched(true);
+  }, [query]);
+
+  const handleImport = useCallback(async (avasamPid, product) => {
+    setImporting(avasamPid);
+    try {
+      const res = await api.post(`/api/avasam/import/${avasamPid}`);
+      if (res.ok) {
+        toast.success(`Imported: ${product.product_name}`);
+      } else {
+        toast.error(res.data?.detail || 'Import failed');
+      }
+    } catch {
+      toast.error('Connection error');
+    }
+    setImporting(null);
+  }, []);
+
+  return (
+    <div>
+      <div className="flex gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Search Avasam UK suppliers (e.g. phone case, kitchen gadget)"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="pl-10 h-11"
+          />
+        </div>
+        <Button onClick={handleSearch} disabled={loading || !query.trim()} className="h-11 px-6 bg-violet-600 hover:bg-violet-700">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Search className="h-4 w-4 mr-2" /> Search</>}
+        </Button>
+      </div>
+
+      {error && (
+        <Card className="border-amber-200 bg-amber-50 mb-4">
+          <CardContent className="p-3 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+            <p className="text-sm text-amber-700">{error}</p>
+          </CardContent>
+        </Card>
+      )}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+          <p className="text-sm text-slate-400">Searching Avasam UK suppliers...</p>
+        </div>
+      )}
+      {!loading && searched && products.length === 0 && !error && (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="text-center py-12">
+            <Package className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-lg font-semibold text-slate-700">No products found</p>
+            <p className="text-sm text-slate-500 mt-1">Try a different search term or check your Avasam catalogue</p>
+          </CardContent>
+        </Card>
+      )}
+      {!loading && products.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-sm text-slate-500"><strong>{products.length}</strong> products found</p>
+          {products.map((p) => (
+            <AvasamProductCard key={p.avasam_pid} product={p} onImport={handleImport} importing={importing} />
+          ))}
+        </div>
+      )}
+      {!searched && (
+        <div className="space-y-6 mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { icon: ShoppingBag, title: 'UK-Based Suppliers', desc: 'Source from Avasam\'s network of verified UK wholesalers and dropshippers' },
+              { icon: Truck, title: 'Fast UK Shipping', desc: 'UK suppliers mean faster delivery times and lower shipping costs for your customers' },
+              { icon: Star, title: 'One-Click Import', desc: 'Import Avasam products directly into TrendScout for instant launch analysis' },
+            ].map(f => (
+              <Card key={f.title} className="border-slate-200/60">
+                <CardContent className="p-5">
+                  <div className="h-9 w-9 rounded-lg bg-violet-50 flex items-center justify-center mb-3">
+                    <f.icon className="h-5 w-5 text-violet-500" />
+                  </div>
+                  <h3 className="font-semibold text-sm text-slate-900">{f.title}</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{f.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CJSourcingPage() {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState([]);
@@ -602,6 +780,15 @@ export default function CJSourcingPage() {
             CJ Search
           </button>
           <button
+            onClick={() => setActiveTab('avasam')}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'avasam' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+            data-testid="tab-avasam"
+          >
+            Avasam UK
+          </button>
+          <button
             onClick={() => setActiveTab('compare')}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'compare' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
@@ -612,28 +799,35 @@ export default function CJSourcingPage() {
           </button>
         </div>
 
-        {/* Search */}
-        <div className="flex gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search products (e.g. LED strip lights, phone case, yoga mat)"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (activeTab === 'search' ? handleSearch() : null)}
-              className="pl-10 h-11"
-              data-testid="cj-search-input"
-            />
+        {/* CJ Search bar — only shown on CJ and compare tabs */}
+        {activeTab !== 'avasam' && (
+          <div className="flex gap-3 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search products (e.g. LED strip lights, phone case, yoga mat)"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (activeTab === 'search' ? handleSearch() : null)}
+                className="pl-10 h-11"
+                data-testid="cj-search-input"
+              />
+            </div>
+            <Button
+              onClick={() => activeTab === 'search' ? handleSearch() : null}
+              disabled={loading || !query.trim()}
+              className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700"
+              data-testid="cj-search-btn"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Search className="h-4 w-4 mr-2" /> Search</>}
+            </Button>
           </div>
-          <Button
-            onClick={() => activeTab === 'search' ? handleSearch() : null}
-            disabled={loading || !query.trim()}
-            className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700"
-            data-testid="cj-search-btn"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Search className="h-4 w-4 mr-2" /> Search</>}
-          </Button>
-        </div>
+        )}
+
+        {/* Avasam Tab */}
+        {activeTab === 'avasam' && (
+          <AvasamSearchView query={query} onQueryChange={setQuery} />
+        )}
 
         {/* Compare Suppliers Tab */}
         {activeTab === 'compare' && (

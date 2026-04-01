@@ -109,6 +109,12 @@ SUPPORTED_SUPPLIERS = {
         "help": "Log in to app.zendrop.com → Settings → API → Generate API Key.",
         "url": "https://app.zendrop.com",
     },
+    "avasam": {
+        "name": "Avasam",
+        "fields": ["consumer_key", "consumer_secret"],
+        "help": "Log in to app.avasam.com → Settings → API Access → copy your Consumer Key and Consumer Secret.",
+        "url": "https://app.avasam.com",
+    },
 }
 
 SUPPORTED_SOCIAL = {
