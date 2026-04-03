@@ -41,7 +41,7 @@ export default function AdCreativeGenerator({ productId, productName }) {
           AI Ad Creative Generator
         </CardTitle>
         <p className="text-xs text-rose-200 mt-1">
-          GPT 5.2 generates 3 viral TikTok ad scripts for this product
+          TrendScout AI generates 3 viral TikTok ad scripts for this product
         </p>
       </CardHeader>
 

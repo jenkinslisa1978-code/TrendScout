@@ -52,8 +52,10 @@ import StoreBuilderModal from '@/components/store/StoreBuilderModal';
 import { ExplainScoreButton } from '@/components/LaunchScoreExplainerModal';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import ViewModeToggle from '@/components/ViewModeToggle';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export default function DiscoverPage() {
+  usePageTitle("Discover Products");
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isBeginner } = useViewMode();

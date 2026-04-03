@@ -12,6 +12,7 @@ import {
 import api from '@/lib/api';
 import { useSubscription } from '@/hooks/useSubscription';
 import { LockedContent } from '@/components/common/UpgradePrompts';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 const COMPETITION_OPTIONS = [
   { value: 'low', label: 'Low', desc: 'Few competitors, niche product' },
@@ -20,6 +21,7 @@ const COMPETITION_OPTIONS = [
 ];
 
 export default function ProfitabilitySimulatorPage() {
+  usePageTitle("Profit Simulator");
   const [form, setForm] = useState({
     product_cost: 12, selling_price: 29.99, cpm: 15,
     conversion_rate: 2, monthly_ad_budget: 1000, shipping_cost: 3,
@@ -75,21 +77,21 @@ export default function ProfitabilitySimulatorPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-slate-600">Product Cost ($)</Label>
+                  <Label className="text-xs text-slate-600">Product Cost (£)</Label>
                   <Input type="number" value={form.product_cost} onChange={e => update('product_cost', +e.target.value)} className="mt-1" data-testid="input-product-cost" />
                 </div>
                 <div>
-                  <Label className="text-xs text-slate-600">Selling Price ($)</Label>
+                  <Label className="text-xs text-slate-600">Selling Price (£)</Label>
                   <Input type="number" value={form.selling_price} onChange={e => update('selling_price', +e.target.value)} className="mt-1" data-testid="input-selling-price" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-slate-600">Shipping Cost ($)</Label>
+                  <Label className="text-xs text-slate-600">Shipping Cost (£)</Label>
                   <Input type="number" value={form.shipping_cost} onChange={e => update('shipping_cost', +e.target.value)} className="mt-1" data-testid="input-shipping-cost" />
                 </div>
                 <div>
-                  <Label className="text-xs text-slate-600">CPM ($)</Label>
+                  <Label className="text-xs text-slate-600">CPM (£)</Label>
                   <Input type="number" value={form.cpm} onChange={e => update('cpm', +e.target.value)} className="mt-1" data-testid="input-cpm" />
                 </div>
               </div>
@@ -99,7 +101,7 @@ export default function ProfitabilitySimulatorPage() {
                   <Input type="number" step="0.1" value={form.conversion_rate} onChange={e => update('conversion_rate', +e.target.value)} className="mt-1" data-testid="input-cvr" />
                 </div>
                 <div>
-                  <Label className="text-xs text-slate-600">Monthly Ad Budget ($)</Label>
+                  <Label className="text-xs text-slate-600">Monthly Ad Budget (£)</Label>
                   <Input type="number" value={form.monthly_ad_budget} onChange={e => update('monthly_ad_budget', +e.target.value)} className="mt-1" data-testid="input-budget" />
                 </div>
               </div>
@@ -169,9 +171,9 @@ export default function ProfitabilitySimulatorPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <MetricCard label="Margin/Unit" value={`$${result.unit_economics.margin_per_unit}`} sub={`${result.unit_economics.margin_percent}%`} positive={result.unit_economics.margin_per_unit > 0} />
-                      <MetricCard label="Est. CPA" value={`$${result.unit_economics.estimated_cpa}`} sub="cost per acquisition" positive={result.unit_economics.is_profitable_per_sale} />
-                      <MetricCard label="Break-even CPA" value={`$${result.unit_economics.break_even_cpa}`} sub="max affordable CPA" />
+                      <MetricCard label="Margin/Unit" value={`£${result.unit_economics.margin_per_unit}`} sub={`${result.unit_economics.margin_percent}%`} positive={result.unit_economics.margin_per_unit > 0} />
+                      <MetricCard label="Est. CPA" value={`£${result.unit_economics.estimated_cpa}`} sub="cost per acquisition" positive={result.unit_economics.is_profitable_per_sale} />
+                      <MetricCard label="Break-even CPA" value={`£${result.unit_economics.break_even_cpa}`} sub="max affordable CPA" />
                       <MetricCard label="Profitable?" value={result.unit_economics.is_profitable_per_sale ? 'Yes' : 'No'} positive={result.unit_economics.is_profitable_per_sale} highlight />
                     </div>
                   </CardContent>
@@ -186,10 +188,10 @@ export default function ProfitabilitySimulatorPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <MetricCard label="Ad Budget" value={`$${result.monthly_projection.ad_budget.toLocaleString()}`} />
+                      <MetricCard label="Ad Budget" value={`£${result.monthly_projection.ad_budget.toLocaleString()}`} />
                       <MetricCard label="Est. Orders" value={result.monthly_projection.estimated_orders} sub={`${result.monthly_projection.estimated_clicks?.toLocaleString()} clicks`} />
-                      <MetricCard label="Revenue" value={`$${result.monthly_projection.revenue.toLocaleString()}`} positive={result.monthly_projection.revenue > result.monthly_projection.ad_budget} />
-                      <MetricCard label="Net Profit" value={`$${result.monthly_projection.profit.toLocaleString()}`} positive={result.monthly_projection.profit > 0} highlight />
+                      <MetricCard label="Revenue" value={`£${result.monthly_projection.revenue.toLocaleString()}`} positive={result.monthly_projection.revenue > result.monthly_projection.ad_budget} />
+                      <MetricCard label="Net Profit" value={`£${result.monthly_projection.profit.toLocaleString()}`} positive={result.monthly_projection.profit > 0} highlight />
                     </div>
                     <div className="mt-3 flex items-center gap-4">
                       <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-xs">

@@ -77,7 +77,7 @@ export default function LaunchSimulator({ productId }) {
           </Badge>
         </CardTitle>
         <p className="text-xs text-emerald-200 mt-1">
-          Powered by GPT 5.2 — projected outcomes based on product signals and market data
+          Powered by TrendScout AI — projected outcomes based on product signals and market data
         </p>
       </CardHeader>
 

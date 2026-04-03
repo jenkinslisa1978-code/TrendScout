@@ -100,6 +100,7 @@ import {
 import { ExplainScoreButton } from '@/components/LaunchScoreExplainerModal';
 import ScoreBreakdownPanel from '@/components/product/ScoreBreakdownPanel';
 import ShareSnippet from '@/components/product/ShareSnippet';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -108,6 +109,7 @@ export default function ProductDetailPage() {
   const { isFree, isStarter, canAccessFullInsights, canAccessEarlyTrends, canDirectPublish, isStarterOrAbove, isProOrAbove, isTrialFeature } = useSubscription();
   const hasDeepDive = isStarterOrAbove || isTrialFeature('saturation') || isTrialFeature('ad_patterns');
   const [product, setProduct] = useState(null);
+  usePageTitle(product?.product_name ?? null);
   const [competitorData, setCompetitorData] = useState(null);
   const [dataIntegrity, setDataIntegrity] = useState(null);
   const [intelligenceData, setIntelligenceData] = useState(null);
@@ -314,7 +316,7 @@ export default function ProductDetailPage() {
 
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div className="flex items-start gap-6">
+          <div className="flex items-start gap-6 min-w-0 flex-1">
             {/* Product image */}
             <div className="flex-shrink-0 h-32 w-32 rounded-xl bg-slate-100 overflow-hidden">
               {product.image_url ? (
@@ -330,9 +332,9 @@ export default function ProductDetailPage() {
               </div>
             </div>
             
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="font-manrope text-2xl font-bold text-slate-900">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3 min-w-0">
+                <h1 className="font-manrope text-2xl font-bold text-slate-900 line-clamp-2">
                   {product.product_name}
                 </h1>
                 {product.is_premium && (
@@ -401,7 +403,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center flex-shrink-0 flex-wrap gap-2">
             <Button
               onClick={() => navigate(`/quick-launch/${product.id}`)}
               data-testid="quick-launch-btn"
@@ -883,6 +885,26 @@ export default function ProductDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
+              <div className="px-4 pt-4">
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                  <svg
+                    className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <p className="text-sm text-amber-800">
+                    <strong>Illustrative data:</strong> Competitor store names, reviews, and
+                    sales estimates are simulated examples. Real competitor data requires a
+                    live integration.
+                  </p>
+                </div>
+              </div>
               <div className="divide-y divide-slate-100">
                 {competitorData.competitor_stores.slice(0, 8).map((store, index) => (
                   <div key={store.id} className="flex items-center justify-between p-4 hover:bg-slate-50">

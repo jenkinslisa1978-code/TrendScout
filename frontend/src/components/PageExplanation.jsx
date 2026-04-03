@@ -11,7 +11,7 @@ const PAGE_EXPLANATIONS = {
     description: 'TrendScout evaluates whether this product may be worth testing. See scores, profit estimates, competitor data, and a step-by-step launch plan.',
   },
   '/ad-tests': {
-    title: 'Ad Ideas',
+    title: 'Ad Testing',
     description: 'Suggested marketing angles for advertising products. AI-generated ad copy for TikTok, Facebook, Instagram, and more.',
   },
   '/outcomes': {

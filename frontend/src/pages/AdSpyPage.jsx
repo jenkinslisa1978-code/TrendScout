@@ -13,6 +13,7 @@ import {
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useSubscription } from '@/hooks/useSubscription';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { LockedContent } from '@/components/common/UpgradePrompts';
 
 const PLATFORMS = [
@@ -29,6 +30,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function AdSpyPage() {
+  usePageTitle("Ad Intelligence");
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');

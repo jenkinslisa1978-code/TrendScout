@@ -21,7 +21,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Product Analysis', href: '/discover', icon: Search },
   { name: 'Ad Intelligence', href: '/ad-spy', icon: Radar },
-  { name: 'Ad Ideas', href: '/ad-tests', icon: Zap },
+  { name: 'Ad Testing', href: '/ad-tests', icon: Zap },
   { name: 'Profit Simulator', href: '/profitability-simulator', icon: Target },
   { name: 'Competitor Intel', href: '/competitor-intel', icon: Shield },
   { name: 'Radar Alerts', href: '/radar-alerts', icon: Activity },

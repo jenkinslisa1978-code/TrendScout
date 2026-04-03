@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { LockedContent, EarlyTrendUpgradePrompt, LimitHitBanner, InsightLockedNudge } from '@/components/common/UpgradePrompts';
 import { 
   Trophy,
@@ -56,6 +57,7 @@ import BeginnerPanel from '@/components/dashboard/BeginnerPanel';
 import ProductDecisionPanel from '@/components/dashboard/ProductDecisionPanel';
 
 export default function DashboardPage() {
+  usePageTitle("Dashboard");
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { canAccessEarlyTrends, isElite, isFree, isStarter, maxAnalysesDaily, canUseBudgetOptimiser } = useSubscription();
