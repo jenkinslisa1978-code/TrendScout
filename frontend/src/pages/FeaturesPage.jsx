@@ -19,8 +19,8 @@ export default function FeaturesPage() {
   return (
     <LandingLayout>
       <PageMeta
-        title="Product Research Features for UK Ecommerce Sellers | TrendScout"
-        description="Trend detection, competition analysis, margin estimation, UK Viability Scores, AI launch insights, and free tools — built for UK sellers on Shopify, Amazon, and TikTok Shop."
+        title="UK Product Validation Features for Ecommerce Sellers | TrendScout"
+        description="See how TrendScout helps UK ecommerce sellers validate product ideas with demand signals, competition analysis, margin estimation, and UK Viability Scores."
         canonical="/features"
       />
 
@@ -31,10 +31,10 @@ export default function FeaturesPage() {
           <RevealSection>
             <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Features</p>
             <h1 className="font-manrope text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.1]" data-testid="features-headline">
-              Built for <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">smarter product decisions</span>
+              Built for <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">smarter UK product decisions</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto">
-              TrendScout combines multi-channel trend data, UK-specific viability analysis, and AI-powered scoring to help you find products that can actually sell.
+              TrendScout helps UK ecommerce sellers move from product ideas to clearer go / no-go decisions using demand signals, competition analysis, and UK-specific viability checks.
             </p>
           </RevealSection>
         </div>
@@ -57,20 +57,20 @@ export default function FeaturesPage() {
               </div>
             </RevealSection>
             <RevealSection direction="right" delay={150} className="order-1 lg:order-2">
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Core Capabilities</p>
+              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Core capabilities</p>
               <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-snug">
-                Trend data is easy.<br />Profitable decisions are harder.
+                Trend data is easy.<br />Knowing what is worth testing is harder.
               </h2>
               <p className="mt-4 text-base text-slate-500 leading-relaxed">
-                Most product research tools show you what is trending. TrendScout tells you whether it is commercially viable in the UK with our{' '}
-                <Link to="/uk-product-viability-score" className="text-indigo-600 hover:text-indigo-700 font-medium">UK Product Viability Score</Link>.
+                Most product research tools stop at what is trending. TrendScout is built to answer the more useful question: is this product commercially worth testing in the UK? That is what our{' '}
+                <Link to="/uk-product-viability-score" className="text-indigo-600 hover:text-indigo-700 font-medium">UK Product Viability Score</Link> is for.
               </p>
               <div className="mt-8 space-y-4">
                 {[
-                  { icon: Search, title: 'Multi-channel trend detection', desc: 'Spot rising products across TikTok, Amazon, Shopify, and Google Trends before they peak.' },
-                  { icon: Shield, title: 'Saturation & competition analysis', desc: 'See how many sellers are already active and where gaps exist.' },
-                  { icon: PoundSterling, title: 'UK-first viability insights', desc: 'Estimate landed costs, margins, VAT impact, and shipping practicality.' },
-                  { icon: Zap, title: 'AI-assisted launch decisions', desc: 'Get launch scores, ad angle suggestions, and profit projections.' },
+                  { icon: Search, title: 'Multi-channel demand signals', desc: 'Spot rising products across TikTok, Amazon, Shopify, and Google Trends before they become obvious.' },
+                  { icon: Shield, title: 'Competition & saturation analysis', desc: 'See how crowded the niche already is and whether the opportunity is already thinning out.' },
+                  { icon: PoundSterling, title: 'UK-first viability insights', desc: 'Estimate landed costs, margins, VAT impact, and shipping practicality before you commit budget.' },
+                  { icon: Zap, title: 'Decision support, not just data', desc: 'Use launch scores, reasoning, and supporting tools to decide what is worth testing next.' },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
@@ -96,15 +96,15 @@ export default function FeaturesPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <RevealSection direction="right">
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">UK-Focused</p>
+              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">UK-focused</p>
               <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                Not every viral product works in the UK
+                Not every trending product is a good UK business
               </h2>
               <p className="mt-4 text-base text-slate-500 leading-relaxed">
                 A product can have millions of TikTok views and still lose money in the UK market. Different VAT rules, higher shipping costs, and saturated ad channels mean UK sellers need UK-specific intelligence.
               </p>
               <p className="mt-3 text-base text-slate-500 leading-relaxed">
-                Our <Link to="/uk-product-viability-score" className="text-indigo-600 hover:text-indigo-700 font-semibold">UK Product Viability Score</Link> answers one question: <strong className="text-slate-900">can this product actually sell profitably in the UK?</strong>
+                Our <Link to="/uk-product-viability-score" className="text-indigo-600 hover:text-indigo-700 font-semibold">UK Product Viability Score</Link> answers one question: <strong className="text-slate-900">is this product actually worth testing in the UK?</strong>
               </p>
               <div className="mt-8 grid grid-cols-2 gap-3">
                 {[
@@ -153,13 +153,13 @@ export default function FeaturesPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-start">
             <RevealSection>
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Scoring Model</p>
+              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Scoring model</p>
               <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Scored on 7 signals. Not vibes.
               </h2>
               <p className="mt-4 text-base text-slate-500 leading-relaxed">
                 Every product in TrendScout is evaluated using a multi-signal scoring model. The{' '}
-                <Link to="/uk-product-viability-score" className="text-indigo-600 hover:text-indigo-700 font-medium">UK Viability Score</Link>{' '}
+                <Link to="/uk-product-viability-score" className="text-indigo-600 hover:text-indigo-700 font-medium">UK Product Viability Score</Link>{' '}
                 combines trend momentum, market saturation, margin potential, ad opportunity, and more.
               </p>
               <div className="mt-6 flex flex-col gap-3">
@@ -204,19 +204,19 @@ export default function FeaturesPage() {
       <section className="py-20 lg:py-24 bg-slate-50" data-testid="use-cases-section">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <RevealSection className="text-center max-w-2xl mx-auto mb-14">
-            <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Solutions</p>
+            <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Use cases</p>
             <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              Built for how UK sellers actually work
+              Built for sellers making real product decisions
             </h2>
           </RevealSection>
           <RevealStagger className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" staggerMs={100}>
             {[
-              { icon: Store, title: 'Shopify sellers', desc: 'Find products to test on your Shopify store. Push products directly from TrendScout to your store as drafts.', link: '/for-shopify' },
-              { icon: ShoppingBag, title: 'Amazon UK sellers', desc: 'Spot products gaining demand on Amazon.co.uk before the category gets crowded.', link: '/for-amazon-uk' },
-              { icon: Eye, title: 'TikTok Shop UK sellers', desc: 'Find products going viral on TikTok and check whether the UK audience, margins, and logistics work.', link: '/for-tiktok-shop-uk' },
-              { icon: Package, title: 'UK dropshippers', desc: 'Research products before committing to suppliers. See estimated margins and competition levels.', link: '/dropshipping-product-research-uk' },
-              { icon: Sparkles, title: 'Ecommerce founders', desc: 'Validate product ideas with data instead of guesswork. Reduce risk before investing in inventory or ads.', link: '/product-validation-uk' },
-              { icon: BarChart3, title: 'Agencies & power users', desc: 'Research products for multiple clients. Use the API for custom integrations and automated screening.', link: '/pricing' },
+              { icon: Store, title: 'Shopify sellers', desc: 'Validate products before you add them to your store or spend money testing them.', link: '/for-shopify' },
+              { icon: ShoppingBag, title: 'Amazon UK sellers', desc: 'Check whether demand, competition, and margin potential make a product worth listing.', link: '/for-amazon-uk' },
+              { icon: Eye, title: 'TikTok Shop UK sellers', desc: 'See whether a viral-looking product still works once UK margins, audience, and logistics are considered.', link: '/for-tiktok-shop-uk' },
+              { icon: Package, title: 'UK dropshippers', desc: 'Research products before committing to suppliers, shipping assumptions, and ad spend.', link: '/dropshipping-product-research-uk' },
+              { icon: Sparkles, title: 'Ecommerce founders', desc: 'Use data to prioritise what to test next and reduce bad bets before you invest in stock or ads.', link: '/product-validation-uk' },
+              { icon: BarChart3, title: 'Agencies & teams', desc: 'Research and compare opportunities across multiple clients or brands using a more consistent scoring workflow.', link: '/pricing' },
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -241,12 +241,12 @@ export default function FeaturesPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <RevealSection direction="right">
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Free Tools</p>
+              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Free tools</p>
               <h2 className="font-manrope text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Try before you commit
               </h2>
               <p className="mt-3 text-base text-slate-500 leading-relaxed">
-                Use our free calculators and validation tools to get a taste of what TrendScout can do for your ecommerce business.
+                Use our free calculators and validation tools to get a feel for how TrendScout helps you make clearer product decisions.
               </p>
               <div className="mt-6">
                 <Link to="/free-tools">
@@ -279,10 +279,10 @@ export default function FeaturesPage() {
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.15),transparent_60%)]" />
               <div className="relative p-10 sm:p-16 text-center">
                 <h2 className="font-manrope text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight max-w-2xl mx-auto">
-                  Ready to find your next winning product?
+                  Ready to validate your next product properly?
                 </h2>
                 <p className="mt-5 text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
-                  Start free. Browse trending products, check UK Viability Scores, and explore margin insights — no credit card needed.
+                  Start free. Check UK Viability Scores, compare demand and competition, and make clearer product decisions before you spend.
                 </p>
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link to="/signup">

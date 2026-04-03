@@ -19,15 +19,15 @@ const PLANS = [
     name: 'Starter',
     monthlyPrice: 19,
     annualPrice: 15,
-    tagline: 'Start validating product ideas',
+    tagline: 'For first-pass product validation',
     icon: Eye,
     features: [
       '10 product views per day',
-      'Basic trend insights',
+      'Basic demand and trend insights',
       'Daily product updates',
       'Category filters',
-      'Trend score access',
-      'UK viability indicators',
+      'UK viability score access',
+      'Early margin visibility',
       'Email support',
     ],
     cta: 'Try free for 7 days',
@@ -38,16 +38,16 @@ const PLANS = [
     name: 'Growth',
     monthlyPrice: 39,
     annualPrice: 31,
-    tagline: 'Best for serious sellers',
+    tagline: 'For sellers actively testing products',
     icon: TrendingUp,
     features: [
       'Unlimited product discovery',
-      'Full trend score analytics',
+      'Full score breakdowns and reasoning',
       'AI ad creative generator',
       'Trend alerts and notifications',
       'Supplier intelligence',
       'Profitability simulator',
-      'Saturation analysis',
+      'Competition and saturation analysis',
       'Saved product workspace',
       'Priority email support',
     ],
@@ -59,12 +59,12 @@ const PLANS = [
     name: 'Pro',
     monthlyPrice: 79,
     annualPrice: 63,
-    tagline: 'For agencies and power users',
+    tagline: 'For teams, agencies, and heavier workflows',
     icon: Rocket,
     features: [
       'Everything in Growth',
       'Competitor store tracking',
-      'AI launch simulator',
+      'Launch simulator',
       'Advanced analytics and reports',
       'TikTok intelligence dashboard',
       'API access (100 req/min)',
@@ -94,12 +94,12 @@ const COMPARISON_ROWS = [
 ];
 
 const FAQS = [
-  { q: 'Is there a free plan?', a: 'Yes. You can browse trending products and access basic trend scores without paying. The free plan gives you a taste of TrendScout so you can decide if it is worth upgrading.' },
+  { q: 'Is there a free plan?', a: 'Yes. You can try TrendScout before committing. The aim is to help you see whether the workflow and scoring are useful before you pay for more depth.' },
   { q: 'Can I cancel anytime?', a: 'Yes. No lock-in contracts. Cancel your subscription at any time from your account settings. You keep access until the end of your billing period.' },
   { q: 'Do you offer refunds?', a: 'If you are not happy within the first 7 days of a paid plan, contact us and we will sort it out. After that, cancellations take effect at the end of the billing period.' },
   { q: 'Is pricing in GBP?', a: 'Yes. All prices shown are in British pounds (GBP). VAT may apply depending on your billing address.' },
   { q: 'What happens after my free trial?', a: 'Your trial converts to a paid subscription after 7 days. You will be notified before any charge. Cancel before the trial ends and you will not be billed.' },
-  { q: 'Why should I use TrendScout instead of Jungle Scout or Sell The Trend?', a: 'TrendScout is built specifically for UK ecommerce sellers. It factors in VAT, UK shipping costs, local demand signals, and UK market saturation — things generic US-focused tools do not cover.' },
+  { q: 'Why should I use TrendScout instead of manual research or generic tools?', a: 'Manual research usually means jumping between marketplaces, trend charts, social platforms, AI prompts, and spreadsheets. TrendScout brings the key signals together in one UK-focused workflow so you can compare ideas faster and make more consistent decisions.' },
 ];
 
 export default function PricingPage() {
@@ -179,8 +179,8 @@ export default function PricingPage() {
   return (
     <LandingLayout>
       <PageMeta
-        title="Plans and Pricing — Start from £19/mo | TrendScout"
-        description="Simple pricing for UK product validation. Starter £19/mo, Growth £39/mo, Pro £79/mo. Start free, no credit card required. Cancel anytime."
+        title="Pricing for UK Product Validation | TrendScout"
+        description="Simple pricing for UK product validation. Starter £19/mo, Growth £39/mo, Pro £79/mo. Validate products before you waste money on stock, ads, or time."
         canonical="/pricing"
         schema={[
           softwareAppSchema,
@@ -197,11 +197,11 @@ export default function PricingPage() {
             <RevealSection>
               <p className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Pricing</p>
               <h1 className="font-manrope text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.1]" data-testid="pricing-headline">
-                Pick a plan.{' '}
-                <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Built for UK sellers.</span>
+                Pricing built around{' '}
+                <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">better product decisions.</span>
               </h1>
               <p className="mt-5 text-base sm:text-lg text-slate-500 leading-relaxed max-w-xl mx-auto">
-                One winning product can generate thousands in revenue. TrendScout costs less than testing a single ad campaign.
+                TrendScout costs less than a bad product test, a weak ad campaign, or time spent chasing the wrong idea. Start small and upgrade when the workflow proves itself.
               </p>
 
               {/* Billing toggle */}

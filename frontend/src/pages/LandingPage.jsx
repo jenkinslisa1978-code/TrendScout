@@ -57,15 +57,15 @@ export default function LandingPage() {
                 <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">Validate before you spend a penny.</span>
               </h1>
               <p className="mt-6 text-base sm:text-lg text-zinc-400 leading-relaxed" data-testid="hero-subheadline">
-                Most sellers fail because they pick products on gut feel. TrendScout scores real UK demand, margins after VAT, and competition level &mdash; so you eliminate bad ideas in seconds, not months.
+                TrendScout helps UK ecommerce sellers assess demand, competition, margins, and launch viability before they waste money on stock, ads, or time.
               </p>
               <ul className="mt-6 space-y-2.5">
                 {[
-                  'Real UK demand signals — not US data repackaged for British sellers',
-                  'True margins after VAT, shipping, and platform fees',
-                  'Spot saturated niches before wasting £500 on ads',
-                  'Clear go/no-go score — no more gut-feel decisions',
-                  'Works for Shopify, Amazon UK, and TikTok Shop',
+                  'Validate products for the UK market before you commit budget',
+                  'See true margins after VAT, shipping, and platform fees',
+                  'Spot saturated categories before they become expensive mistakes',
+                  'Use a clear UK Viability Score instead of gut-feel decisions',
+                  'Built for sellers testing products on Shopify, Amazon UK, and TikTok Shop',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-zinc-400">
                     <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
@@ -161,7 +161,7 @@ export default function LandingPage() {
           <RevealSection className="text-center max-w-2xl mx-auto mb-16">
             <p className="text-xs font-bold text-emerald-500 uppercase tracking-[0.2em] mb-3">Features</p>
             <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-white tracking-tight">
-              Everything you need to validate and launch
+              Validate first. Launch with more confidence.
             </h2>
           </RevealSection>
           <RevealStagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" staggerMs={100}>
@@ -169,11 +169,11 @@ export default function LandingPage() {
             <div className="md:col-span-2 rounded-2xl bg-[#18181b] border border-white/[0.08] p-8 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_8px_30px_rgba(16,185,129,0.08)] transition-all group" data-testid="feature-one-click-launch">
               <div className="flex items-center gap-2 mb-3">
                 <Rocket className="h-5 w-5 text-emerald-400" />
-                <span className="text-xs font-bold text-emerald-500 tracking-[0.15em] uppercase">One-Click Launch</span>
+                <span className="text-xs font-bold text-emerald-500 tracking-[0.15em] uppercase">Decision support</span>
               </div>
-              <h3 className="font-manrope text-xl font-bold text-white mb-2">From product idea to launch-ready in 30 seconds</h3>
+              <h3 className="font-manrope text-xl font-bold text-white mb-2">Go beyond trend spotting and decide what is actually worth testing</h3>
               <p className="text-sm text-zinc-500 leading-relaxed max-w-lg">
-                Click "Launch" on any product and instantly get AI-generated ad copy, target audience, 90-day profit projections, and export-ready listings for Shopify, WooCommerce, and Etsy.
+                TrendScout helps you turn product research into a clearer go / no-go decision with launch scores, profit projections, and practical next-step guidance.
               </p>
               <div className="mt-5 flex gap-3">
                 <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded text-xs font-bold tracking-wider">SHOPIFY</span>
@@ -186,11 +186,11 @@ export default function LandingPage() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Calculator className="h-5 w-5 text-amber-400" />
-                  <span className="text-xs font-bold text-amber-500 tracking-[0.15em] uppercase">Profit Simulator</span>
+                  <span className="text-xs font-bold text-amber-500 tracking-[0.15em] uppercase">Margin reality</span>
                 </div>
-                <h3 className="font-manrope text-xl font-bold text-white mb-2">Will this product actually make money?</h3>
+                <h3 className="font-manrope text-xl font-bold text-white mb-2">Check whether the numbers still work in the UK</h3>
                 <p className="text-sm text-zinc-500 leading-relaxed">
-                  Interactive sliders, UK VAT factored in, and 30/60/90-day revenue projections. See exactly what your bank balance looks like before you start.
+                  Test margins with UK VAT, shipping, supplier costs, and realistic revenue assumptions before you sink money into a weak product.
                 </p>
               </div>
               <Link to="/profit-simulator" className="mt-6">
@@ -203,19 +203,19 @@ export default function LandingPage() {
             <div className="rounded-2xl bg-[#18181b] border border-white/[0.08] p-8 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_8px_30px_rgba(16,185,129,0.08)] transition-all" data-testid="feature-cj-supplier">
               <div className="flex items-center gap-2 mb-3">
                 <Package className="h-5 w-5 text-violet-400" />
-                <span className="text-xs font-bold text-violet-400 tracking-[0.15em] uppercase">Supplier Intel</span>
+                <span className="text-xs font-bold text-violet-400 tracking-[0.15em] uppercase">Supplier context</span>
               </div>
-              <h3 className="font-manrope text-lg font-semibold text-white mb-2">CJ Dropshipping integrated</h3>
-              <p className="text-sm text-zinc-500 leading-relaxed">Live supplier costs, stock status, and shipping estimates from CJ Dropshipping. Auto-synced every 6 hours.</p>
+              <h3 className="font-manrope text-lg font-semibold text-white mb-2">Bring supplier costs into the decision early</h3>
+              <p className="text-sm text-zinc-500 leading-relaxed">Use live supplier costs, stock status, and shipping estimates to judge whether a product is commercially viable before you test it.</p>
             </div>
             {/* Competitor Intel */}
             <div className="rounded-2xl bg-[#18181b] border border-white/[0.08] p-8 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_8px_30px_rgba(16,185,129,0.08)] transition-all" data-testid="feature-competitor-intel">
               <div className="flex items-center gap-2 mb-3">
                 <Target className="h-5 w-5 text-sky-400" />
-                <span className="text-xs font-bold text-sky-400 tracking-[0.15em] uppercase">Competitor Intel</span>
+                <span className="text-xs font-bold text-sky-400 tracking-[0.15em] uppercase">Competition context</span>
               </div>
-              <h3 className="font-manrope text-lg font-semibold text-white mb-2">See what competitors are doing</h3>
-              <p className="text-sm text-zinc-500 leading-relaxed">Ad spend estimates, pricing strategies, and market saturation data so you know exactly what you're up against.</p>
+              <h3 className="font-manrope text-lg font-semibold text-white mb-2">See how crowded the opportunity already is</h3>
+              <p className="text-sm text-zinc-500 leading-relaxed">Review pricing strategies, competition levels, and market saturation so you do not walk blindly into an overcrowded niche.</p>
             </div>
           </RevealStagger>
         </div>
@@ -328,15 +328,15 @@ export default function LandingPage() {
           <RevealSection className="text-center max-w-2xl mx-auto mb-14">
             <p className="text-xs font-bold text-emerald-500 uppercase tracking-[0.2em] mb-3">Pricing</p>
             <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-white tracking-tight">
-              One validated product pays for months of TrendScout
+              Better product decisions cost less than bad product bets
             </h2>
-            <p className="mt-3 text-base text-zinc-500">Start free. Upgrade when you see the value. Cancel anytime.</p>
+            <p className="mt-3 text-base text-zinc-500">Start free. Upgrade when TrendScout is saving you time, bad tests, and wasted budget.</p>
           </RevealSection>
           <RevealStagger className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto items-stretch" staggerMs={120}>
             {[
-              { name: 'Starter', price: '19', desc: 'Validate your first ideas', features: ['10 product analyses/day', 'UK Viability Scores', 'Basic trend data', 'Email support'], popular: false },
-              { name: 'Growth', price: '39', desc: 'For active sellers testing products', features: ['Unlimited analyses', 'One-Click Launch', 'Profit simulator', 'AI ad copy generator', 'CJ Dropshipping sync', 'Priority support'], popular: true },
-              { name: 'Pro', price: '79', desc: 'For agencies and power sellers', features: ['Everything in Growth', 'Competitor tracking', 'AI launch simulator', 'API access', 'Dedicated support'], popular: false },
+              { name: 'Starter', price: '19', desc: 'For first-pass product validation', features: ['10 product analyses/day', 'UK Viability Scores', 'Basic trend data', 'Email support'], popular: false },
+              { name: 'Growth', price: '39', desc: 'For sellers actively testing products', features: ['Unlimited analyses', 'Profit simulator', 'AI ad copy generator', 'Supplier intelligence', 'Competition context', 'Priority support'], popular: true },
+              { name: 'Pro', price: '79', desc: 'For teams, agencies, and heavier workflows', features: ['Everything in Growth', 'Competitor tracking', 'Launch simulator', 'API access', 'Dedicated support'], popular: false },
             ].map((plan) => (
               <div
                 key={plan.name}
@@ -391,16 +391,16 @@ export default function LandingPage() {
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
           <RevealSection className="text-center mb-12">
             <p className="text-xs font-bold text-emerald-500 uppercase tracking-[0.2em] mb-3">Questions</p>
-            <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-white tracking-tight">Frequently asked questions</h2>
+            <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-white tracking-tight">Questions people ask before they trust a score</h2>
           </RevealSection>
           <div className="space-y-3">
             {[
-              { q: 'What is the UK Viability Score?', a: 'A 0-100 score evaluating a product\'s commercial potential in the UK. It considers demand, competition, margins, VAT, shipping, channel fit, and trend trajectory.' },
-              { q: 'How is TrendScout different from Jungle Scout?', a: 'Jungle Scout is Amazon US-centric. TrendScout is built from the ground up for UK economics — 20% VAT, GBP, UK shipping costs, and covers Shopify + TikTok Shop too.' },
-              { q: 'Do I need to be UK-based?', a: 'No, but our data is optimised for selling TO UK customers. If you sell or plan to sell in the UK market, it\'s for you.' },
-              { q: 'Can TrendScout guarantee a winning product?', a: 'No. We give you better data to make better decisions. It reduces the risk of launching a dud by showing real demand, competition, and margin data.' },
-              { q: 'Is there a free plan?', a: 'Yes. Free trial on any plan, no credit card required. The Starter plan at £19/mo gives you 10 analyses per day.' },
-              { q: 'How often is data updated?', a: 'Trending products are re-scored weekly. CJ Dropshipping supply data syncs every 6 hours. Market signals update as new data becomes available.' },
+              { q: 'What is the UK Viability Score?', a: 'A 0-100 score evaluating a product\'s commercial potential in the UK. It combines demand, competition, margins, VAT, shipping practicality, channel fit, and trend trajectory into one clearer decision signal.' },
+              { q: 'How is TrendScout different from manual research?', a: 'Manual research usually means bouncing between trend charts, marketplaces, social platforms, AI prompts, and spreadsheets. TrendScout brings the key signals together in one UK-focused workflow so you can compare ideas faster and more consistently.' },
+              { q: 'How is TrendScout different from Jungle Scout?', a: 'Jungle Scout is heavily Amazon-centric and more general-market. TrendScout is built around UK economics — VAT, GBP, shipping costs, and whether a product is commercially viable for UK sellers across Shopify, Amazon UK, and TikTok Shop.' },
+              { q: 'Can TrendScout guarantee a winning product?', a: 'No. TrendScout is a decision-support tool, not a magic winner machine. It helps you reduce bad bets by showing real demand, competition, and margin context before you commit.' },
+              { q: 'Is there a free plan?', a: 'Yes. You can try the validator and explore the product before paying. The Starter plan at £19/month gives you enough daily analysis to validate ideas without a big commitment.' },
+              { q: 'How often is data updated?', a: 'Trending products are re-scored regularly, supplier data syncs frequently, and market signals refresh as new data becomes available. We show freshness so you can judge how current the picture is.' },
             ].map((item, idx) => (
               <div key={idx} className="rounded-xl border border-white/[0.08] bg-[#18181b] overflow-hidden" data-testid={`faq-item-${idx}`}>
                 <button className="w-full flex items-center justify-between px-6 py-4 text-left" onClick={() => setOpenFaq(openFaq === idx ? null : idx)} data-testid={`faq-toggle-${idx}`}>
@@ -424,10 +424,10 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.12),transparent_60%)]" />
               <div className="relative p-12 sm:p-20 text-center">
                 <h2 className="font-manrope text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tighter max-w-2xl mx-auto">
-                  Stop guessing. Start validating.
+                  Validate product ideas before they become expensive mistakes.
                 </h2>
                 <p className="mt-5 text-base text-zinc-500 max-w-xl mx-auto leading-relaxed">
-                  Check UK demand, analyse margins, and score viability &mdash; before you spend money on ads, stock, or supplier orders.
+                  Check UK demand, margins, competition, and viability before you spend money on stock, ads, or supplier orders.
                 </p>
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link to="/signup">
