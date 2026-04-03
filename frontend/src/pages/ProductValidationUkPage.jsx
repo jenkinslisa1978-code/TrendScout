@@ -20,13 +20,13 @@ export default function ProductValidationUkPage() {
         { icon: Target, title: 'Channel fit', desc: 'Know which UK sales channel suits the product best: Shopify, Amazon.co.uk, or TikTok Shop.' },
         { icon: BarChart3, title: 'Competition intelligence', desc: 'Analyse existing competitors, their pricing, and their market positioning.' },
         { icon: Search, title: 'Cross-channel signals', desc: 'Validate demand across TikTok, Amazon, Google Trends, and Shopify stores simultaneously.' },
-        { icon: Zap, title: 'AI launch readiness', desc: 'Get AI-generated ad angles and launch recommendations based on validated data.' },
+        { icon: Zap, title: 'Decision support', desc: 'Use score breakdowns and supporting insights to decide whether to move forward, hold off, or drop the idea.' },
       ]}
       steps={[
         { title: 'Research the product', desc: 'Search for a product idea or browse trending products in TrendScout.' },
         { title: 'Check viability signals', desc: 'Review the UK Viability Score and individual factor breakdown.' },
         { title: 'Validate margins', desc: 'Estimate real profit after all UK costs. Use the free margin calculator for quick checks.' },
-        { title: 'Make a decision', desc: 'Go forward with data-backed confidence or move on to the next opportunity.' },
+        { title: 'Make a go / no-go decision', desc: 'Move forward with data-backed confidence or drop the idea before it becomes an expensive distraction.' },
       ]}
       ukPoints={[
         'Product validation must account for UK-specific costs — not just global averages.',
@@ -42,7 +42,7 @@ export default function ProductValidationUkPage() {
         { q: 'Can I validate a product before signing up?', a: 'You can browse trending products and basic scores for free. Sign up to access full viability analysis, margin estimation, and competitive intelligence.' },
         { q: 'What should I do after validation?', a: 'If the data supports the opportunity, proceed to test with a small ad budget or sample order. If signals are weak, move on to the next product idea.' },
       ]}
-      ctaText="Start validating product ideas today"
+      ctaText="Start making better product decisions today"
       canonical="/product-validation-uk"
       metaDesc="Product validation for UK ecommerce sellers. Validate demand, competition, margins, and UK market fit before investing in inventory or ads."
       relatedLinks={[

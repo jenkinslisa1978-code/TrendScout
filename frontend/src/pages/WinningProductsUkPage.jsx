@@ -5,12 +5,12 @@ import { TrendingUp, Search, PoundSterling, Shield, Zap, Target, Layers, Globe }
 export default function WinningProductsUkPage() {
   return (
     <SeoLandingTemplate
-      headline="Winning products UK: find what actually sells"
-      subtitle="Stop guessing which products to sell in the UK. TrendScout identifies products with real commercial potential in the UK market — not just viral videos or trending hashtags."
+      headline="Winning products UK: find ideas worth testing"
+      subtitle="Stop guessing which products to sell in the UK. TrendScout helps you identify products with real commercial potential in the UK market — not just viral videos or trending hashtags."
       intro={[
         'The phrase "winning products" gets thrown around constantly in ecommerce communities, but for UK sellers, what counts as a winner is different. A product needs to be profitable after UK-specific costs, have manageable competition in the UK market, and be practical to fulfil for UK customers.',
         'TrendScout goes beyond basic trend lists by scoring every product on UK commercial viability. Our UK Product Viability Score measures margin potential, saturation, shipping practicality, and channel fit specifically for the UK market.',
-        'Whether you sell on Shopify, Amazon.co.uk, or TikTok Shop UK, TrendScout helps you find products that can actually make money — not just get likes.',
+        'Whether you sell on Shopify, Amazon.co.uk, or TikTok Shop UK, TrendScout helps you find products that are worth testing commercially — not just products that get likes.',
       ]}
       features={[
         { icon: TrendingUp, title: 'UK Viability Score', desc: 'Every product scored 0-100 on UK commercial viability, not just popularity or trend status.' },
@@ -18,13 +18,13 @@ export default function WinningProductsUkPage() {
         { icon: PoundSterling, title: 'Profit estimation', desc: 'See estimated margins after supplier costs, UK shipping, VAT, and platform fees before you invest.' },
         { icon: Shield, title: 'Competition check', desc: 'Understand how saturated a product category is in the UK before entering.' },
         { icon: Target, title: 'Channel fit analysis', desc: 'Know which UK sales channel suits each product: Shopify, Amazon.co.uk, or TikTok Shop.' },
-        { icon: Zap, title: 'Launch intelligence', desc: 'Get AI ad suggestions, target audience ideas, and competitive insights for each product.' },
+        { icon: Zap, title: 'Decision support', desc: 'Use score breakdowns, margin context, and competition insights to decide what deserves a real test.' },
       ]}
       steps={[
         { title: 'Browse winning products', desc: 'Explore products with high UK Viability Scores, updated daily across categories.' },
         { title: 'Validate before investing', desc: 'Check margins, saturation, and competition data specific to the UK market.' },
         { title: 'Choose your channel', desc: 'See which sales channel is best suited for each product.' },
-        { title: 'Launch smarter', desc: 'Use data and AI suggestions to test products with more confidence and less waste.' },
+        { title: 'Test smarter', desc: 'Use data and product context to test stronger ideas with more confidence and less waste.' },
       ]}
       ukPoints={[
         'UK Viability Score separates genuinely profitable products from viral noise.',
@@ -39,7 +39,7 @@ export default function WinningProductsUkPage() {
         { q: 'How often are products updated?', a: 'Products and scores are updated daily. New products are added as they gain multi-channel traction.' },
         { q: 'Can I use this for Amazon UK and Shopify?', a: 'Yes. TrendScout evaluates products across all major UK ecommerce channels and recommends which channel suits each product.' },
       ]}
-      ctaText="Find winning products for the UK market"
+      ctaText="Find UK product ideas worth testing"
       canonical="/winning-products-uk"
       metaDesc="Find winning products for the UK market. TrendScout identifies products with real commercial potential using UK Viability Scores and margin analysis."
       relatedLinks={[
