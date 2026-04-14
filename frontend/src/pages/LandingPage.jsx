@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import { trackABConversion } from '@/hooks/useABTest';
 import PageMeta, { organizationSchema, websiteSchema, softwareAppSchema } from '@/components/PageMeta';
-import { ViabilityIndicator } from '@/components/ViabilityBadge';
+import { ViabilityIndicator } from '@/components/VihabilityBadge';
 import { RevealSection, RevealStagger } from '@/hooks/useScrollReveal';
 import ProductValidator from '@/components/ProductValidator';
 import {
@@ -334,7 +334,7 @@ export default function LandingPage() {
           </RevealSection>
           <RevealStagger className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto items-stretch" staggerMs={120}>
             {[
-              { name: 'Starter', price: '19', desc: 'For first-pass product validation', features: ['10 product views per day views per day', 'UK Viability Scores', 'Basic trend data', 'Email support'], popular: false },
+              { name: 'Starter', price: '19', desc: 'For first-pass product validation', features: ['10 product views per day', 'UK Viability Scores', 'Basic trend data', 'Email support'], popular: false },
               { name: 'Growth', price: '39', desc: 'For sellers actively testing products', features: ['Unlimited analyses', 'Profit simulator', 'AI ad copy generator', 'Supplier intelligence', 'Competition context', 'Priority support'], popular: true },
               { name: 'Pro', price: '79', desc: 'For teams, agencies, and heavier workflows', features: ['Everything in Growth', 'Competitor tracking', 'Launch simulator', 'API access', 'Dedicated support'], popular: false },
             ].map((plan) => (
