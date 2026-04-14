@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { trackEvent, EVENTS } from '@/services/analytics';
 import { trackABConversion } from '@/hooks/useABTest';
 import PageMeta, { organizationSchema, websiteSchema, softwareAppSchema } from '@/components/PageMeta';
-import { ViabilityIndicator } from '@/components/VihabilityBadge';
+import { ViabilityIndicator } from '@/components/ViabilityBadge';
 import { RevealSection, RevealStagger } from '@/hooks/useScrollReveal';
 import ProductValidator from '@/components/ProductValidator';
 import {
