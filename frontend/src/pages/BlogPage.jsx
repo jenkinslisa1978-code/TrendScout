@@ -49,7 +49,7 @@ export default function BlogPage() {
       .then(r => r.json())
               .then(d => { const fetched = d.posts || (Array.isArray(d) ? d : []); setPosts(fetched.length > 0 ? fetched : STATIC_POSTS); setLoading(false); })
               .catch(() => { setPosts(STATIC_POSTS); setLoading(false); });
-  }, []);  }, []);
+  }, []);
 
   return (
     <LandingLayout>
