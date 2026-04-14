@@ -20,7 +20,6 @@ const NAV_ITEMS = [
     { name: 'For TikTok Shop UK', href: '/for-tiktok-shop-uk' },
     { name: 'UK Product Research', href: '/uk-product-research' },
   ]},
-  { name: 'Competitor Spy', href: '/competitor-spy' },
   { name: 'TikTok Viral', href: '/tiktok-viral' },
   { name: 'Pricing', href: '/pricing' },
 ];
