@@ -10,6 +10,36 @@ import { formatDistanceToNow } from 'date-fns';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
+
+const STATIC_POSTS = [
+  {
+        id: 'uk-product-validation-guide',
+        title: 'UK Product Validation: How to Test Before You Invest',
+        excerpt: 'Most sellers jump straight to sourcing. Here\'s how to validate demand, margins, and competition before you spend a penny on stock.',
+        category: 'Guide',
+        readTime: '7 min read',
+        publishedAt: '2026-03-15T10:00:00Z',
+        slug: 'uk-product-validation-guide',
+  },
+  {
+        id: 'uk-vat-guide-ecommerce',
+        title: 'VAT for UK Ecommerce Sellers: What It Really Costs Your Margins',
+        excerpt: 'A practical breakdown of how 20% VAT affects your product margins — and why products that work in the US often don\'t stack up in the UK.',
+        category: 'Finance',
+        readTime: '5 min read',
+        publishedAt: '2026-03-20T10:00:00Z',
+        slug: 'uk-vat-guide-ecommerce',
+  },
+  {
+        id: 'tiktok-shop-uk-product-research',
+        title: 'TikTok Shop UK: How to Find Products Before They Go Viral',
+        excerpt: 'TikTok Shop UK is growing fast. This guide shows you how to spot products with genuine UK traction before saturation sets in.',
+        category: 'TikTok',
+        readTime: '6 min read',
+        publishedAt: '2026-03-25T10:00:00Z',
+        slug: 'tiktok-shop-uk-product-research',
+  },
+  ];
 export default function BlogPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,9 +47,9 @@ export default function BlogPage() {
   useEffect(() => {
     fetch(`${API_URL}/api/blog/posts`)
       .then(r => r.json())
-      .then(d => { setPosts(d.posts || []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+              .then(d => { const fetched = d.posts || (Array.isArray(d) ? d : []); setPosts(fetched.length > 0 ? fetched : STATIC_POSTS); setLoading(false); })
+              .catch(() => { setPosts(STATIC_POSTS); setLoading(false); });
+  }, []);  }, []);
 
   return (
     <LandingLayout>
