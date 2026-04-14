@@ -75,7 +75,7 @@ export default function TrendingProductsPage() {
           setWeekCount(data.detected_this_week || 0);
         }
         if (catRes.ok) {
-          setCategories(await catRes.json());
+          setCategories([]); /* categories derived from products after load */;
         }
       } catch (e) { console.error(e); }
       setLoading(false);
@@ -119,11 +119,22 @@ export default function TrendingProductsPage() {
     return result;
   }, [products, selectedCategory, sortBy, minMargin]);
 
-  const highConfCount = products.filter(p => p.launch_score >= 75).length;
+  const highConfCount = products.filter(p => p.launch_score >= 65).length;
 
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
       <Helmet>
+
+                // Derive categories from actual loaded products so counts match what's filterable
+                const derivedCategories = useMemo(() => {
+                            const catMap = {};
+                  products.forEach(p => {
+                                if (p.category) {
+                                                catMap[p.category] = (catMap[p.category] || 0) + 1;
+        }
+        });
+                  return Object.entries(catMap).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+        }, [products]);
         <title>Trending Products — Discover Winning Products Before They Go Viral | TrendScout</title>
         <meta name="description" content="Browse trending ecommerce products detected by TrendScout AI. Find high-margin opportunities before they go viral on TikTok and Amazon." />
         <meta property="og:title" content="Trending Products — TrendScout" />
@@ -155,7 +166,7 @@ export default function TrendingProductsPage() {
         {/* Toolbar: Categories + Sort + Filters */}
         <div className="flex flex-col gap-4 mb-6">
           {/* Category pills */}
-          {categories.length > 0 && (
+          {derivedCategories.length > 0 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="category-filter">
               <button
                 onClick={() => setSelectedCategory(null)}
@@ -168,7 +179,7 @@ export default function TrendingProductsPage() {
               >
                 All ({products.length})
               </button>
-              {categories.map(cat => (
+              {derivedCategories.map(cat => (
                 <button
                   key={cat.name}
                   onClick={() => setSelectedCategory(cat.name === selectedCategory ? null : cat.name)}
