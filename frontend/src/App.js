@@ -596,6 +596,7 @@ function AppRoutes() {
       <Route path="/winners" element={<Navigate to="/verified-winners" replace />} />
       <Route path="/settings" element={<Navigate to="/settings/connections" replace />} />
       <Route path="/account" element={<Navigate to="/settings/connections" replace />} />
+        <Route path="/products" element={<Navigate to="/trending-products" replace />} />
 
       {/* Fallback */}
       <Route path="*" element={<NotFoundPage />} />
