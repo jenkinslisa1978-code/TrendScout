@@ -87,13 +87,12 @@ export default function TrendingProductPage() {
     );
   }
 
+  const marginPercent = product.estimated_retail_price > 0 ? Math.round((product.estimated_margin / product.estimated_retail_price) * 100) : 0;
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const stageClass = STAGE_COLORS[product.trend_stage] || STAGE_COLORS.Unknown;
   const hasImage = product.image_url && !product.image_url.includes('01jrA-8DXYL');
   const seoTitle = `${product.product_name} — Trending Product Analysis | TrendScout`;
   const seoDesc = `${product.product_name} has a TrendScout Launch Score of ${product.launch_score}. Trend stage: ${product.trend_stage}. Estimated margin: ${marginPercent}%.`;
-  const marginPercent = product.estimated_retail_price > 0 ? Math.round((product.estimated_margin / product.estimated_retail_price) * 100) : 0;
-
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
