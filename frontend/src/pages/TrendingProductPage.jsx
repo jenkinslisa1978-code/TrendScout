@@ -13,6 +13,26 @@ import {
 } from 'lucide-react';
 import { API_URL } from '@/lib/config';
 
+const CATEGORY_IMAGES = {
+  'Home & Kitchen': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=600&fit=crop',
+  'Beauty': 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=600&fit=crop',
+  'Sports & Outdoors': 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=600&h=600&fit=crop',
+  'DIY & Tools': 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=600&h=600&fit=crop',
+  'Garden & Outdoors': 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=600&fit=crop',
+  'Pet Supplies': 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&h=600&fit=crop',
+  'Toys & Games': 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&h=600&fit=crop',
+  'Electronics': 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=600&h=600&fit=crop',
+  'Clothing': 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=600&h=600&fit=crop',
+  'Food & Drink': 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=600&h=600&fit=crop',
+  'Health': 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=600&h=600&fit=crop',
+  'Baby': 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=600&fit=crop',
+  'Office': 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=600&fit=crop',
+  'Automotive': 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=600&fit=crop',
+  'Home Decor': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&h=600&fit=crop',
+  'Furniture': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=600&fit=crop',
+  'default': 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=600&h=600&fit=crop',
+};
+
 const STAGE_COLORS = {
   exploding: 'bg-red-100 text-red-700 border-red-200',
   rising: 'bg-amber-100 text-amber-700 border-amber-200',
@@ -71,7 +91,8 @@ export default function TrendingProductPage() {
   const stageClass = STAGE_COLORS[product.trend_stage] || STAGE_COLORS.Unknown;
   const hasImage = product.image_url && !product.image_url.includes('01jrA-8DXYL');
   const seoTitle = `${product.product_name} — Trending Product Analysis | TrendScout`;
-  const seoDesc = `${product.product_name} has a TrendScout Launch Score of ${product.launch_score}. Trend stage: ${product.trend_stage}. Estimated margin: ${product.margin_percent}%.`;
+  const seoDesc = `${product.product_name} has a TrendScout Launch Score of ${product.launch_score}. Trend stage: ${product.trend_stage}. Estimated margin: ${product.marginPercent}%.`;
+  const marginPercent = product.estimated_retail_price > 0 ? Math.round((product.estimated_margin / product.estimated_retail_price) * 100) : 0;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -114,7 +135,7 @@ export default function TrendingProductPage() {
       {
         '@type': 'Question',
         name: `What is the profit margin for ${product.product_name}?`,
-        acceptedAnswer: { '@type': 'Answer', text: `The estimated profit margin is ${product.margin_percent}%. Supplier cost is £${product.supplier_cost} with an estimated retail price of £${product.estimated_retail_price}.` },
+        acceptedAnswer: { '@type': 'Answer', text: `The estimated profit margin is ${product.marginPercent}%. Supplier cost is £${product.supplier_cost} with an estimated retail price of £${product.estimated_retail_price}.` },
       },
       {
         '@type': 'Question',
@@ -133,6 +154,9 @@ export default function TrendingProductPage() {
     product.gallery_images.forEach(url => {
       if (url && !allImages.includes(url)) allImages.push(url);
     });
+  }
+  if (allImages.length === 0 && (CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES['default'])) {
+    allImages.push(CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES['default']);
   }
 
   return (
@@ -250,7 +274,7 @@ export default function TrendingProductPage() {
               {isAuthenticated ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="metrics-grid">
                 <MetricCard icon={BarChart3} label="Launch Score" value={product.launch_score} color="indigo" />
-                <MetricCard icon={TrendingUp} label="Margin" value={`${product.margin_percent}%`} color="emerald" />
+                <MetricCard icon={TrendingUp} label="Margin" value={`${product.marginPercent}%`} color="emerald" />
                 <MetricCard icon={DollarSign} label="Est. Retail" value={product.estimated_retail_price > 0 ? `£${product.estimated_retail_price}` : '—'} color="amber" />
                 <MetricCard icon={Truck} label="Supplier Cost" value={product.supplier_cost > 0 ? `£${product.supplier_cost}` : '—'} color="blue" />
               </div>
@@ -291,9 +315,9 @@ export default function TrendingProductPage() {
                         on current market signals.
                       </p>
                     )}
-                    {product.margin_percent > 0 && (
+                    {product.marginPercent > 0 && (
                       <p>
-                        With an estimated margin of <span className="font-semibold text-emerald-400">{product.margin_percent}%</span>,
+                        With an estimated margin of <span className="font-semibold text-emerald-400">{product.marginPercent}%</span>,
                         this product shows strong profitability potential for dropshipping.
                       </p>
                     )}
@@ -319,9 +343,9 @@ export default function TrendingProductPage() {
                         <p className="text-lg font-bold text-white">{product.estimated_retail_price > 0 ? `£${product.estimated_retail_price}` : '—'}</p>
                       </div>
                     </div>
-                    {product.margin_percent > 0 && (
+                    {product.marginPercent > 0 && (
                       <p>
-                        With a <span className="font-semibold text-emerald-400">{product.margin_percent}% profit margin</span>,
+                        With a <span className="font-semibold text-emerald-400">{product.marginPercent}% profit margin</span>,
                         sellers can expect approximately <span className="text-white font-semibold">
                         £{(product.estimated_retail_price - product.supplier_cost).toFixed(2)}
                         </span> profit per unit sold.
