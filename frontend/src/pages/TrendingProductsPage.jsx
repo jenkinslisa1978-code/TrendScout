@@ -121,20 +121,20 @@ export default function TrendingProductsPage() {
 
   const highConfCount = products.filter(p => p.launch_score >= 65).length;
 
+    // Derive categories from actual loaded products so counts match what's filterable
+    const derivedCategories = useMemo(() => {
+      const catMap = {};
+      products.forEach(p => {
+        if (p.category) {
+          catMap[p.category] = (catMap[p.category] || 0) + 1;
+        }
+      });
+      return Object.entries(catMap).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    }, [products]);
+
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
       <Helmet>
-
-                // Derive categories from actual loaded products so counts match what's filterable
-                const derivedCategories = useMemo(() => {
-                            const catMap = {};
-                  products.forEach(p => {
-                                if (p.category) {
-                                                catMap[p.category] = (catMap[p.category] || 0) + 1;
-        }
-        });
-                  return Object.entries(catMap).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
-        }, [products]);
         <title>Trending Products — Discover Winning Products Before They Go Viral | TrendScout</title>
         <meta name="description" content="Browse trending ecommerce products detected by TrendScout AI. Find high-margin opportunities before they go viral on TikTok and Amazon." />
         <meta property="og:title" content="Trending Products — TrendScout" />
