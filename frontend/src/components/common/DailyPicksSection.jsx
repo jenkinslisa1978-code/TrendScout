@@ -7,6 +7,30 @@ import {
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
+const CATEGORY_IMAGES = {
+  'Furniture': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=600&fit=crop',
+  'Home Office Storage': 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&h=600&fit=crop',
+  'Kitchen Storage': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=600&fit=crop',
+  'Hand Tools': 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=600&h=600&fit=crop',
+  'Beauty': 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&h=600&fit=crop',
+  'Electronics': 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=600&h=600&fit=crop',
+  'Pet Bowls': 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=600&fit=crop',
+  'Vehicle Cams': 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&h=600&fit=crop',
+  'Fashion': 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=600&h=600&fit=crop',
+  'DIY & Tools': 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=600&h=600&fit=crop',
+  'Garden & Outdoors': 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=600&fit=crop',
+  'Pet Supplies': 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=600&fit=crop',
+  'Sports & Outdoors': 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&h=600&fit=crop',
+  'Home & Kitchen': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=600&fit=crop',
+  'Health & Fitness': 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&h=600&fit=crop',
+  'Home Decor': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=600&fit=crop',
+  'Baby & Kids': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&h=600&fit=crop',
+  'Automotive': 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&h=600&fit=crop',
+  'Kitchen': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=600&fit=crop',
+  'Toys & Games': 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&h=600&fit=crop',
+  'default': 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=600&h=600&fit=crop',
+};
+
 export default function DailyPicksSection() {
   const [picks, setPicks] = useState([]);
   const [date, setDate] = useState('');
@@ -66,8 +90,12 @@ export default function DailyPicksSection() {
               data-testid={`daily-pick-${product.id}`}
             >
               <div className="relative h-28 bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
-                {product.image_url ? (
-                  <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"  loading="lazy" /> 
+                {(product.image_url || CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES['default']) ? (
+                  <img
+                    src={product.image_url || CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES['default']}
+                    alt={product.product_name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Package className="h-8 w-8 text-slate-300" />
