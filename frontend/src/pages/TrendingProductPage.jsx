@@ -33,9 +33,9 @@ export default function TrendingProductPage() {
     if (!slug) return;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/public/product/${slug}`);
+        const res = await fetch(`${API_URL}/api/public/trending/${slug}`);
         if (res.ok) {
-          setProduct(await res.json());
+          const data = await res.json(); setProduct(data.product || data);
         } else {
           setNotFound(true);
         }
