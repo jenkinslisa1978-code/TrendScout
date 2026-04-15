@@ -1,4 +1,4 @@
-# render.yaml — single-service deployment for TrendScout
+# render.yaml — single-service deployhment for TrendScout
 # FastAPI serves both the API (/api/*) and the React SPA (everything else)
 services:
   - type: web
@@ -9,7 +9,7 @@ services:
     rootDir: .
     buildCommand: >-
       pip install -r backend/requirements.txt &&
-      cd frontend && yarn install --frozen-lockfile && CI=false yarn build
+      cd frontend && yarn install --network-timeout 600000 && CI=false yarn build
     startCommand: cd backend && python -m uvicorn server:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
