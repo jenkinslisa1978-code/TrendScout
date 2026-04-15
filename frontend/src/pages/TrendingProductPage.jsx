@@ -91,7 +91,7 @@ export default function TrendingProductPage() {
   const stageClass = STAGE_COLORS[product.trend_stage] || STAGE_COLORS.Unknown;
   const hasImage = product.image_url && !product.image_url.includes('01jrA-8DXYL');
   const seoTitle = `${product.product_name} — Trending Product Analysis | TrendScout`;
-  const seoDesc = `${product.product_name} has a TrendScout Launch Score of ${product.launch_score}. Trend stage: ${product.trend_stage}. Estimated margin: ${product.marginPercent}%.`;
+  const seoDesc = `${product.product_name} has a TrendScout Launch Score of ${product.launch_score}. Trend stage: ${product.trend_stage}. Estimated margin: ${marginPercent}%.`;
   const marginPercent = product.estimated_retail_price > 0 ? Math.round((product.estimated_margin / product.estimated_retail_price) * 100) : 0;
 
   const jsonLd = {
@@ -135,7 +135,7 @@ export default function TrendingProductPage() {
       {
         '@type': 'Question',
         name: `What is the profit margin for ${product.product_name}?`,
-        acceptedAnswer: { '@type': 'Answer', text: `The estimated profit margin is ${product.marginPercent}%. Supplier cost is £${product.supplier_cost} with an estimated retail price of £${product.estimated_retail_price}.` },
+        acceptedAnswer: { '@type': 'Answer', text: `The estimated profit margin is ${marginPercent}%. Supplier cost is £${product.supplier_cost} with an estimated retail price of £${product.estimated_retail_price}.` },
       },
       {
         '@type': 'Question',
@@ -274,7 +274,7 @@ export default function TrendingProductPage() {
               {isAuthenticated ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="metrics-grid">
                 <MetricCard icon={BarChart3} label="Launch Score" value={product.launch_score} color="indigo" />
-                <MetricCard icon={TrendingUp} label="Margin" value={`${product.marginPercent}%`} color="emerald" />
+                <MetricCard icon={TrendingUp} label="Margin" value={`${marginPercent}%`} color="emerald" />
                 <MetricCard icon={DollarSign} label="Est. Retail" value={product.estimated_retail_price > 0 ? `£${product.estimated_retail_price}` : '—'} color="amber" />
                 <MetricCard icon={Truck} label="Supplier Cost" value={product.supplier_cost > 0 ? `£${product.supplier_cost}` : '—'} color="blue" />
               </div>
@@ -315,9 +315,9 @@ export default function TrendingProductPage() {
                         on current market signals.
                       </p>
                     )}
-                    {product.marginPercent > 0 && (
+                    {marginPercent > 0 && (
                       <p>
-                        With an estimated margin of <span className="font-semibold text-emerald-400">{product.marginPercent}%</span>,
+                        With an estimated margin of <span className="font-semibold text-emerald-400">{marginPercent}%</span>,
                         this product shows strong profitability potential for dropshipping.
                       </p>
                     )}
@@ -343,9 +343,9 @@ export default function TrendingProductPage() {
                         <p className="text-lg font-bold text-white">{product.estimated_retail_price > 0 ? `£${product.estimated_retail_price}` : '—'}</p>
                       </div>
                     </div>
-                    {product.marginPercent > 0 && (
+                    {marginPercent > 0 && (
                       <p>
-                        With a <span className="font-semibold text-emerald-400">{product.marginPercent}% profit margin</span>,
+                        With a <span className="font-semibold text-emerald-400">{marginPercent}% profit margin</span>,
                         sellers can expect approximately <span className="text-white font-semibold">
                         £{(product.estimated_retail_price - product.supplier_cost).toFixed(2)}
                         </span> profit per unit sold.
